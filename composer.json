@@ -1,6 +1,6 @@
 {
-    "name": "lunarphp/lunar",
-    "description": "Lunar Monorepo",
+    "name": "minicstudio/lunar",
+    "description": "Custom minic fork of Lunar package",
     "license": "MIT",
     "authors": [
         {
