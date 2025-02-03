@@ -61,8 +61,8 @@ class AttributeData
 
                 return $state;
             })
-            ->mutateDehydratedStateUsing(function ($state) use ($attribute) {
-                if ($attribute->type == FileFieldType::class) {
+            ->mutateDehydratedStateUsing(function ($state) use ($attribute, $fieldType) {
+                if ($fieldType::isFileField()) {
                     $instance = new $attribute->type;
                     $instance->setValue($state);
 

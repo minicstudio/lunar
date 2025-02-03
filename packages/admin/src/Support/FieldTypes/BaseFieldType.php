@@ -22,4 +22,9 @@ abstract class BaseFieldType
     {
         Livewire::propertySynthesizer(static::$synthesizer);
     }
+
+    public static function isFileField(): bool
+    {
+        return false;
+    }
 }
