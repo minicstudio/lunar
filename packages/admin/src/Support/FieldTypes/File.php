@@ -79,4 +79,9 @@ class File extends BaseFieldType
             )->nullable()->numeric(),
         ];
     }
+
+    public static function isFileField(): bool
+    {
+        return true;
+    }
 }
