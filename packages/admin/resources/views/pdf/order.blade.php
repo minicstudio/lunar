@@ -95,6 +95,9 @@
                                     @if($record->billingAddress->company_name)
                                       {{ $record->billingAddress->company_name }}<br>
                                     @endif
+                                    @if($record->billingAddress->meta?->vatNumber)
+                                      {{ $record->billingAddress->meta->vatNumber }}<br>
+                                    @endif
                                     {{ $record->billingAddress->line_one }}
                                     @if($record->billingAddress->line_two)
                                       <br>{{ $record->billingAddress->line_two }}<br>
