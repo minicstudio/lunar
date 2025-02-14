@@ -63,6 +63,7 @@ class OrderAddress extends BaseModel implements Addressable, Contracts\OrderAddr
         'first_name',
         'last_name',
         'company_name',
+        'vat_number',
         'line_one',
         'line_two',
         'line_three',
