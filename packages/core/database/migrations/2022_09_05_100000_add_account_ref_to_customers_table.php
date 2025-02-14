@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table($this->prefix.'customers', function (Blueprint $table) {
-            $table->string('account_ref')->nullable()->index()->after('vat_number');
+            $table->string('account_ref')->nullable()->index()->after('vat_no');
         });
     }
 
