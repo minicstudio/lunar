@@ -30,3 +30,16 @@
 .vp-doc .header-anchor {
   margin-left: -1.1em;
 }
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #22baf7;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.btn:hover {
+    background: #08a1dd;
+}
