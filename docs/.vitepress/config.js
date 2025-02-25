@@ -29,7 +29,7 @@ export default defineConfig({
             {
                 src: 'https://cdn.usefathom.com/script.js',
                 'data-spa': 'auto',
-                'data-site': 'DJLTDNAI',
+                'data-site': 'KMZGQTYE',
                 defer: ''
             }
         ],
