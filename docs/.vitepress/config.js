@@ -27,6 +27,15 @@ export default defineConfig({
         [
             'script',
             {
+                src: 'https://cdn.usefathom.com/script.js',
+                'data-spa': 'auto',
+                'data-site': 'DJLTDNAI',
+                defer: ''
+            }
+        ],
+        [
+            'script',
+            {
                 async: '',
                 src: 'https://tally.so/widgets/embed.js'
             }
