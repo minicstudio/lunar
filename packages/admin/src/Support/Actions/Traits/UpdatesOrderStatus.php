@@ -7,6 +7,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Lunar\Admin\Events\OrderStatusUpdatedEvent;
 use Lunar\Models\Order;
 
 trait UpdatesOrderStatus
@@ -162,6 +163,8 @@ trait UpdatesOrderStatus
                     ])->log('email-notification');
             }
         }
+
+        event(new OrderStatusUpdatedEvent($record, $data['status']));
 
         Notification::make()->title(
             __('lunarpanel::actions.orders.update_status.notification.label')
