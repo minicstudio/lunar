@@ -181,7 +181,7 @@ class OrderResource extends BaseResource
         ];
     }
 
-    public static function getRelations(): array
+    public static function getDefaultRelations(): array
     {
         return [
             //
