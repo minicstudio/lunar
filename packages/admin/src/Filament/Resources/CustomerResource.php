@@ -109,7 +109,7 @@ class CustomerResource extends BaseResource
 
     protected static function getAttributeDataFormComponent(): Component
     {
-        return \Lunar\Admin\Support\Forms\Components\Attributes::make()->statePath('attribute_data');
+        return \Lunar\Admin\Support\Forms\Components\Attributes::make();
     }
 
     protected static function getFirstNameFormComponent(): Component
@@ -207,7 +207,13 @@ class CustomerResource extends BaseResource
             ->filters([
                 Tables\Filters\SelectFilter::make('customer_group')
                     ->label(__('lunarpanel::customergroup.label'))
-                    ->relationship('customerGroups', 'name')
+                    ->relationship(
+                        name: 'customerGroups',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query) => $query->distinct(
+                            ['id', 'name', 'handle', 'default']
+                        )
+                    )
                     ->multiple()
                     ->searchable()
                     ->preload(),
