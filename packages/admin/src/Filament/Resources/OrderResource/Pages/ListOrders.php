@@ -28,10 +28,10 @@ class ListOrders extends BaseListRecords
         );
 
         return [
-            'all' => Tab::make('All'),
+            'all' => Tab::make(__('All')),
             ...collect($statuses)->mapWithKeys(
                 fn ($config, $status) => [
-                    $status => Tab::make($config['label'])
+                    $status => Tab::make(__($config['label']))
                         ->modifyQueryUsing(fn (Builder $query) => $query->where('status', $status)),
                 ]
             ),
