@@ -62,7 +62,7 @@ class OrdersSalesChart extends ApexChartWidget
         $salesData = [];
 
         foreach ($orders as $order) {
-            $labels[] = $order->date;
+            $labels[] = \Carbon\Carbon::parse($order->date)->locale(app()->getLocale())->isoFormat('MMMM YYYY');
             $ordersData[] = $order->count;
             $salesData[] = $order->sub_total->decimal;
         }

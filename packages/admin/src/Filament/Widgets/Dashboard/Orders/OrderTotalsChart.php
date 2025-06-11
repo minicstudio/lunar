@@ -71,7 +71,7 @@ class OrderTotalsChart extends ApexChartWidget
             ],
             'xaxis' => [
                 'categories' => $previousPeriod->map(
-                    fn ($record) => "{$record->month}"
+                    fn ($record) => \Carbon\Carbon::createFromFormat('F', $record->month)->locale(app()->getLocale())->translatedFormat('F')
                 ),
             ],
             'yaxis' => [

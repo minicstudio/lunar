@@ -81,10 +81,19 @@ return [
                 'series_two' => [
                     'label' => 'Powracający klienci',
                 ],
+                'yaxis' => [
+                    'label' => '# Klienci',
+                ],
             ],
             'popular_products' => [
                 'heading' => 'Popularne produkty w tym miesiącu',
                 'description' => 'Wartości te są oparte na liczbie razy, kiedy produkt pojawia się w zamówieniu, a nie na ilości zamówionej.',
+                'table' => [
+                    'description' => 'Opis',
+                    'identifier' => 'Identyfikator',
+                    'quantity' => 'Ilość',
+                    'sub_total' => 'Suma częściowa',
+                ],
             ],
             'latest_orders' => [
                 'heading' => 'Ostatnie zamówienia',

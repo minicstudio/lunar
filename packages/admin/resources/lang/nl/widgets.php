@@ -81,10 +81,19 @@ return [
                 'series_two' => [
                     'label' => 'Terugkerende Klanten',
                 ],
+                'yaxis' => [
+                    'label' => '# Klanten',
+                ],
             ],
             'popular_products' => [
                 'heading' => 'Bestverkochte producten (laatste 12 maanden)',
                 'description' => 'Deze cijfers zijn gebaseerd op het aantal keren dat een product in een bestelling voorkomt, niet op de bestelde hoeveelheid.',
+                'table' => [
+                    'description' => 'Beschrijving',
+                    'identifier' => 'Identificatie',
+                    'quantity' => 'Hoeveelheid',
+                    'sub_total' => 'Subtotaal',
+                ],
             ],
             'latest_orders' => [
                 'heading' => 'Laatste bestellingen',

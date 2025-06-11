@@ -81,10 +81,19 @@ return [
                 'series_two' => [
                     'label' => 'Returning Customers',
                 ],
+                'yaxis' => [
+                    'label' => '# Customers',
+                ],
             ],
             'popular_products' => [
                 'heading' => 'Best sellers (last 12 months)',
                 'description' => 'These figures are based on the number of times a product appears on an order, not the quantity ordered.',
+                'table' => [
+                    'description' => 'Description',
+                    'identifier' => 'Identifier',
+                    'quantity' => 'Quantity',
+                    'sub_total' => 'Sub Total',
+                ],
             ],
             'latest_orders' => [
                 'heading' => 'Latest orders',
