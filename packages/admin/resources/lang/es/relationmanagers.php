@@ -6,6 +6,11 @@ return [
             'attach' => [
                 'label' => 'Adjuntar Grupo de Clientes',
             ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Editar Grupo de Clientes',
+                ],
+            ],
         ],
         'form' => [
             'name' => [
@@ -53,6 +58,11 @@ return [
         'actions' => [
             'attach' => [
                 'label' => 'Programar otro Canal',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Editar canal',
+                ],
             ],
         ],
         'form' => [
@@ -128,6 +138,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Crear URL',
+                'modal' => [
+                    'heading' => 'Crear URL',
+                ],
             ],
         ],
         'filters' => [

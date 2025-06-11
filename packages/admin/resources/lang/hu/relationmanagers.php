@@ -6,6 +6,11 @@ return [
             'attach' => [
                 'label' => 'Vevőcsoport csatolása',
             ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Vevőcsoport szerkesztése',
+                ],
+            ],
         ],
         'form' => [
             'name' => [
@@ -53,6 +58,11 @@ return [
         'actions' => [
             'attach' => [
                 'label' => 'Csatorna ütemezése',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Csatorna szerkesztése',
+                ],
             ],
         ],
         'form' => [
@@ -136,6 +146,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'URL létrehozása',
+                'modal' => [
+                    'heading' => 'URL létrehozása',
+                ],
             ],
         ],
         'filters' => [

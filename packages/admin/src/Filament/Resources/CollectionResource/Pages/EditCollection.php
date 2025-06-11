@@ -51,6 +51,7 @@ class EditCollection extends BaseEditRecord
         return [
             DeleteAction::make('delete')->form([
                 Forms\Components\Select::make('target_collection')
+                    ->label(__('lunarpanel::collection.pages.edit.actions.delete.select'))
                     ->model(Collection::class)
                     ->searchable()
                     ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search) use ($record): array {
@@ -62,7 +63,7 @@ class EditCollection extends BaseEditRecord
                             ->mapWithKeys(fn (Collection $record): array => [$record->getKey() => $record->translateAttribute('name')])
                             ->all();
                     })->helperText(
-                        'Choose which collection the children of this collection should be transferred to.'
+                        __('lunarpanel::collection.pages.edit.actions.delete.helper_text')
                     )->hidden(
                         fn () => ! $record->children()->count()
                     ),

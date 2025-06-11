@@ -135,6 +135,7 @@ class CollectionTreeView extends Widget implements HasActions, HasForms
     public function deleteAction()
     {
         return DeleteCollection::make('delete')
+            ->modalHeading(__('lunarpanel::components.collection-tree-view.actions.delete.modal.heading'))
             ->after(function (array $arguments) {
                 $index = $this->findIndex($arguments['id'], $this->nodes);
 
@@ -166,7 +167,7 @@ class CollectionTreeView extends Widget implements HasActions, HasForms
             $this->loadRootNodes();
         })->hidden(function (array $arguments) {
             return Collection::find($arguments['id'])->isRoot();
-        });
+        })->label(__('lunarpanel::components.collection-tree-view.actions.make_root.label'));
     }
 
     public function createRootCollectionAction()

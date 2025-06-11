@@ -67,6 +67,14 @@ return [
                     ],
                 ],
             ],
+            'make_root' => [
+                'label' => 'Créer une racine',
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Supprimer la collection',
+                ],
+            ]
         ],
         'notifications' => [
             'collections-reordered' => [

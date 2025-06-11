@@ -96,7 +96,11 @@ class ManageUrlsRelatedRecords extends BaseManageRelatedRecords
             ->headerActions([
                 Tables\Actions\CreateAction::make()->label(
                     __('lunarpanel::relationmanagers.urls.actions.create.label')
-                )->after(
+                )
+                ->modalHeading(
+                    __('lunarpanel::relationmanagers.urls.actions.create.modal.heading')
+                )
+                ->after(
                     fn () => ModelUrlsUpdated::dispatch(
                         $this->getOwnerRecord()
                     )

@@ -18,6 +18,9 @@ return [
             'actions' => [
                 'create_child' => [
                     'label' => 'Create Child Collection',
+                    'name' => [
+                        'label' => 'Name',
+                    ],
                 ],
             ],
             'table' => [
@@ -31,15 +34,29 @@ return [
         ],
         'edit' => [
             'label' => 'Basic Information',
+            'actions' => [
+                'delete' => [
+                    'select' => 'Target collection',
+                    'helper_text' => 'Choose which collection the children of this collection should be transferred to.'
+                ],
+            ]
         ],
         'products' => [
             'label' => 'Products',
             'actions' => [
                 'attach' => [
                     'label' => 'Attach Product',
+                    'select' => 'Product',
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Detach Product',
+                    ]
                 ],
             ],
         ],
     ],
-
+    'nested_set_item' => [
+        'more_actions' => 'More Actions',
+    ]
 ];

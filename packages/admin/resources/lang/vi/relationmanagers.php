@@ -6,6 +6,11 @@ return [
             'attach' => [
                 'label' => 'Gắn nhóm khách hàng',
             ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Chỉnh sửa nhóm khách hàng',
+                ],
+            ],
         ],
         'form' => [
             'name' => [
@@ -53,6 +58,11 @@ return [
         'actions' => [
             'attach' => [
                 'label' => 'Lên lịch kênh khác',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Chỉnh sửa kênh',
+                ],
             ],
         ],
         'form' => [
@@ -128,6 +138,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Tạo đường dẫn',
+                'modal' => [
+                    'heading' => 'Tạo đường dẫn',
+                ],
             ],
         ],
         'filters' => [

@@ -26,6 +26,11 @@ class MediaRelationManager extends BaseRelationManager
         return false;
     }
 
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('kecske');
+    }
+
     public function form(Form $form): Form
     {
         return $form
@@ -56,7 +61,7 @@ class MediaRelationManager extends BaseRelationManager
     {
         return $table
             ->heading(function () {
-                return $this->getOwnerRecord()->getMediaCollectionTitle($this->mediaCollection) ?? Str::ucfirst($this->mediaCollection);
+                return __($this->getOwnerRecord()->getMediaCollectionTitle($this->mediaCollection) ?? Str::ucfirst($this->mediaCollection));
             })
             ->description(function () {
                 return $this->getOwnerRecord()->getMediaCollectionDescription($this->mediaCollection) ?? '';

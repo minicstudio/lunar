@@ -34,6 +34,9 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Asociar un producto',
+                    'modal' => [
+                        'heading' => 'Asociar un producto',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Producto',
@@ -46,6 +49,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'Producto desasociado.',
+                    ],
+                    'modal' => [
+                        'heading' => 'Desasociar producto',
                     ],
                 ],
             ],
@@ -64,6 +70,14 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Asociar una colección',
+                    'modal' => [
+                        'heading' => 'Asociar colección',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Desasociar colección',
+                    ],
                 ],
             ],
         ],

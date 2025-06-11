@@ -4,9 +4,19 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Créer une collection racine',
+            'form' => [
+                'name' => [
+                    'label' => 'Nom',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Créer une collection enfant',
+            'form' => [
+                'name' => [
+                    'label' => 'Nom',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Déplacer la collection',

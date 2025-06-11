@@ -80,6 +80,14 @@ return [
                     ],
                 ],
             ],
+            'make_root' => [
+                'label' => 'Gyökérré tétel',
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Gyűjtemény törlése',
+                ],
+            ]
         ],
         'notifications' => [
             'collections-reordered' => [

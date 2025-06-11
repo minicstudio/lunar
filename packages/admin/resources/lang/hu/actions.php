@@ -4,9 +4,19 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Gyökér gyűjtemény létrehozása',
+            'form' => [
+                'name' => [
+                    'label' => 'Név',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Gyermek gyűjtemény létrehozása',
+            'form' => [
+                'name' => [
+                    'label' => 'Név',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Gyűjtemény áthelyezése',
