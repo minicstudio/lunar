@@ -307,11 +307,13 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                     ]) :
                     ProductOptionValue::find($value['id']);
 
-                $optionValueModel->name = [
-                    $language->code => $value['value'],
-                ];
-                $optionValueModel->position = $value['position'];
-                $optionValueModel->save();
+                if (! $optionModel->shared) {
+                    $optionValueModel->name = [
+                        $language->code => $value['value'],
+                    ];
+                    $optionValueModel->position = $value['position'];
+                    $optionValueModel->save();
+                }
 
                 $this->configuredOptions[$optionIndex]['option_values'][$optionValueIndex]['id'] =
                     $optionValueModel->id;

@@ -6,6 +6,7 @@ use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\ProductOptionValueUpdated;
 use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
@@ -44,7 +45,10 @@ class ValuesRelationManager extends BaseRelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->after(function (Model $record) {
+                        ProductOptionValueUpdated::dispatch($record);
+                    }),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
