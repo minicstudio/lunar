@@ -49,14 +49,15 @@ class ManageShippingExclusions extends ManageRelatedRecords
                 ->label(
                     __('lunarpanel.shipping::relationmanagers.exclusions.actions.attach.label')
                 )
+                ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.attach.modal.heading'))
                 ->preloadRecordSelect()
                 ->recordTitleAttribute('name'),
         ])->actions([
             Tables\Actions\DetachAction::make('detach')
                 ->label(
                     __('lunarpanel.shipping::relationmanagers.exclusions.actions.detach.label')
-                ),
-
+                )
+                ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.detach.modal.heading')),
         ]);
     }
 }

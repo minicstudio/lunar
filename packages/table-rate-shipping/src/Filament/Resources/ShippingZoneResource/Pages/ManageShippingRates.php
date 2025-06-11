@@ -148,7 +148,9 @@ class ManageShippingRates extends ManageRelatedRecords
         ])->headerActions([
             Tables\Actions\CreateAction::make()->label(
                 __('lunarpanel.shipping::relationmanagers.shipping_rates.actions.create.label')
-            )->action(function (Table $table, ?ShippingRate $shippingRate = null, array $data = []) {
+            )
+            ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.create.label'))
+            ->action(function (Table $table, ?ShippingRate $shippingRate = null, array $data = []) {
                 $relationship = $table->getRelationship();
 
                 $record = new ShippingRate;
@@ -160,9 +162,12 @@ class ManageShippingRates extends ManageRelatedRecords
         ])->actions([
 
             Tables\Actions\EditAction::make()->slideOver()->action(function (ShippingRate $shippingRate, array $data) {
-                static::saveShippingRate($shippingRate, $data);
-            }),
-            Tables\Actions\DeleteAction::make()->requiresConfirmation(),
+                    static::saveShippingRate($shippingRate, $data);
+                })
+                ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.edit.modal.heading')),
+            Tables\Actions\DeleteAction::make()
+                ->requiresConfirmation()
+                ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.delete.modal.heading')),
         ]);
     }
 

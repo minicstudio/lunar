@@ -12,6 +12,16 @@ return [
             'create' => [
                 'label' => 'Tạo phí vận chuyển',
             ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Xóa giá vận chuyển',
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Chỉnh sửa giá vận chuyển',
+                ],
+            ],
         ],
         'notices' => [
             'prices_incl_tax' => 'Tất cả giá đã bao gồm thuế, điều này sẽ được xem xét khi tính toán chi tiêu tối thiểu.',
@@ -65,12 +75,36 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Thêm danh sách loại trừ vận chuyển',
+                'modal' => [
+                    'heading' => 'Thêm loại trừ vận chuyển',
+                ],
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Xóa loại trừ vận chuyển',
+                ],
+                'bulk' => [
+                    'modal' => [
+                        'heading' => 'Xóa loại trừ vận chuyển đã chọn',
+                    ],
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Chỉnh sửa loại trừ vận chuyển',
+                ],
             ],
             'attach' => [
                 'label' => 'Thêm danh sách loại trừ',
+                'modal' => [
+                    'heading' => 'Đính kèm danh sách loại trừ',
+                ],
             ],
             'detach' => [
                 'label' => 'Xóa',
+                'modal' => [
+                    'heading' => 'Tách danh sách loại trừ',
+                ],
             ],
         ],
     ],

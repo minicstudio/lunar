@@ -12,6 +12,16 @@ return [
             'create' => [
                 'label' => 'Új szállítási díj létrehozása',
             ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Szállítási díj törlése',
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Szállítási díj szerkesztése',
+                ],
+            ],
         ],
         'notices' => [
             'prices_incl_tax' => 'Minden ár tartalmazza az adót, amelyet figyelembe veszünk a minimális vásárlási összeg kiszámításakor.',
@@ -65,12 +75,36 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Új szállítási kizárás hozzáadása',
+                'modal' => [
+                    'heading' => 'Új szállítási kizárás hozzáadása',
+                ],
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Szállítási kizárás törlése',
+                ],
+                'bulk' => [
+                    'modal' => [
+                        'heading' => 'Kijelölt szállítási kizárások törlése',
+                    ],
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Szállítási kizárás szerkesztése',
+                ],
             ],
             'attach' => [
                 'label' => 'Kizárási lista hozzáadása',
+                'modal' => [
+                    'heading' => 'Kizárási lista csatolása',
+                ],
             ],
             'detach' => [
                 'label' => 'Eltávolítás',
+                'modal' => [
+                    'heading' => 'Kizárási lista leválasztása',
+                ],
             ],
         ],
     ],
