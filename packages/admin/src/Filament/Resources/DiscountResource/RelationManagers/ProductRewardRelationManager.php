@@ -45,9 +45,13 @@ class ProductRewardRelationManager extends BaseRelationManager
                 Tables\Actions\CreateAction::make()->form([
                     Forms\Components\MorphToSelect::make('purchasable')
                         ->searchable(true)
+                        ->label(
+                            __('lunarpanel::discount.relationmanagers.rewards.form.purchasable.label')
+                        )
                         ->types([
                             Forms\Components\MorphToSelect\Type::make(Product::class)
                                 ->titleAttribute('name.en')
+                                ->label(__('lunarpanel::discount.relationmanagers.rewards.form.purchasable.types.product.label'))
                                 ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
                                     return get_search_builder(Product::class, $search)
                                         ->get()
@@ -57,7 +61,11 @@ class ProductRewardRelationManager extends BaseRelationManager
                         ]),
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.rewards.actions.attach.label')
-                )->mutateFormDataUsing(function (array $data) {
+                )
+                ->modalHeading(
+                    __('lunarpanel::discount.relationmanagers.rewards.actions.attach.modal.heading')
+                )
+                ->mutateFormDataUsing(function (array $data) {
                     $data['type'] = 'reward';
 
                     return $data;
@@ -77,9 +85,15 @@ class ProductRewardRelationManager extends BaseRelationManager
                         fn (Model $record) => $record->purchasable->attr('name')
                     ),
             ])->actions([
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.rewards.actions.delete.modal.heading')
+                    ),
             ])->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.rewards.actions.delete.modal.bulk.heading')
+                    ),
             ]);
     }
 }

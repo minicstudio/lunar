@@ -74,6 +74,23 @@ return [
             'label' => 'Jutalmak automatikus hozzáadása',
             'helper_text' => 'Kapcsolja be, hogy a jutalomtermékek automatikusan hozzáadódjanak, ha nem szerepelnek a kosárban.',
         ],
+        'type' => [
+            'label' => 'Típus',
+            'options' => [
+                'buy_x_get_y' => [
+                    'label' => 'Vásárolj X-et, kapj Y-t',
+                ],
+                'amount_off' => [
+                    'label' => 'Kedvezmény összege',
+                ],
+            ],
+        ],
+        'fixed_value' => [
+            'label' => 'Fix összeg',
+        ],
+        'percentage' => [
+            'label' => 'Százalék',
+        ],
     ],
     'table' => [
         'name' => [
@@ -120,6 +137,12 @@ return [
                 'attach' => [
                     'label' => 'Gyűjtemény csatolása',
                 ],
+                'detach' => [
+                    'label' => 'Gyűjtemény leválasztása',
+                    'bulk' => [
+                        'label' => 'Kiválasztott gyűjtemények leválasztása',
+                    ],
+                ],
             ],
             'table' => [
                 'name' => [
@@ -137,6 +160,7 @@ return [
             ],
             'form' => [
                 'type' => [
+                    'label' => 'Típus',
                     'options' => [
                         'limitation' => [
                             'label' => 'Korlátozás',
@@ -155,6 +179,9 @@ return [
                 'attach' => [
                     'label' => 'Ügyfél csatolása',
                 ],
+                'detach' => [
+                    'label' => 'Ügyfél leválasztása',
+                ],
             ],
             'table' => [
                 'name' => [
@@ -168,6 +195,12 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Márka csatolása',
+                ],
+                'detach' => [
+                    'heading' => 'Márka leválasztása',
+                    'bulk' => [
+                        'heading' => 'Kiválasztott márkák leválasztása',
+                    ],
                 ],
             ],
             'table' => [
@@ -186,6 +219,7 @@ return [
             ],
             'form' => [
                 'type' => [
+                    'label' => 'Típus',
                     'options' => [
                         'limitation' => [
                             'label' => 'Korlátozás',
@@ -203,6 +237,15 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Termék hozzáadása',
+                    'modal' => [
+                        'heading' => 'Kedvezményes termék létrehozása',
+                    ],
+                ],
+                'delete' => [
+                    'heading' => 'Kedvezményes tétel törlése',
+                    'bulk' => [
+                        'heading' => 'Kiválasztott kedvezményes tételek törlése',
+                    ],
                 ],
             ],
             'table' => [
@@ -227,6 +270,14 @@ return [
                         ],
                         'exclusion' => [
                             'label' => 'Kizárás',
+                        ],
+                    ],
+                ],
+                'purchasable' => [
+                    'label' => 'Vásárolható tétel',
+                    'types' => [
+                        'product' => [
+                            'label' => 'Termék',
                         ],
                     ],
                 ],
@@ -238,6 +289,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Termék hozzáadása',
+                    'modal' => [
+                        'heading' => 'Kedvezményes tétel létrehozása',
+                    ],
+                ],
+                'delete' => [
+                    'modal' => [
+                        'heading' => 'Kedvezményes tétel törlése',
+                        'bulk' => [
+                            'heading' => 'Kiválasztott kedvezményes tételek törlése',
+                        ],
+                    ]
                 ],
             ],
             'table' => [
@@ -262,6 +324,14 @@ return [
                         ],
                         'exclusion' => [
                             'label' => 'Kizárás',
+                        ],
+                    ],
+                ],
+                'purchasable' => [
+                    'label' => 'Vásárolható tétel',
+                    'types' => [
+                        'product' => [
+                            'label' => 'Termék',
                         ],
                     ],
                 ],
@@ -273,6 +343,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Termék hozzáadása',
+                    'modal' => [
+                        'heading' => 'Kedvezményes tétel létrehozása',
+                    ],
+                ],
+                'delete' => [
+                    'modal' => [
+                        'heading' => 'Kedvezményes tétel törlése',
+                        'bulk' => [
+                            'heading' => 'Kiválasztott kedvezményes tételek törlése',
+                        ],
+                    ]
                 ],
             ],
             'table' => [
@@ -300,6 +381,14 @@ return [
                         ],
                     ],
                 ],
+                'purchasable' => [
+                    'label' => 'Vásárolható tétel',
+                    'types' => [
+                        'product' => [
+                            'label' => 'Termék',
+                        ],
+                    ],
+                ],
             ],
         ],
         'productvariants' => [
@@ -308,6 +397,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Termékváltozat hozzáadása',
+                    'modal' => [
+                        'heading' => 'Kedvezményes termékváltozat létrehozása',
+                    ],
+                ],
+                'delete' => [
+                     'modal' => [
+                         'heading' => 'Kedvezményes tétel törlése',
+                         'bulk' => [
+                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
+                         ],
+                     ]
                 ],
             ],
             'table' => [
@@ -329,6 +429,14 @@ return [
                         ],
                         'exclusion' => [
                             'label' => 'Kizárás',
+                        ],
+                    ],
+                ],
+                'purchasable' => [
+                    'label' => 'Vásárolható tétel',
+                    'types' => [
+                        'product_variant' => [
+                            'label' => 'Termékváltozat',
                         ],
                     ],
                 ],

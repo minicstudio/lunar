@@ -24,6 +24,9 @@ class CollectionLimitationRelationManager extends BaseRelationManager
     {
 
         return $table
+            ->heading(
+                __('lunarpanel::discount.relationmanagers.collections.title')
+            )
             ->description(
                 __('lunarpanel::discount.relationmanagers.collections.description')
             )
@@ -32,6 +35,9 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\AttachAction::make()->form(fn (Tables\Actions\AttachAction $action): array => [
                     $action->getRecordSelect(),
                     Select::make('type')
+                        ->label(
+                            __('lunarpanel::discount.relationmanagers.collections.form.type.label')
+                        )
                         ->options(
                             fn () => [
                                 'limitation' => __('lunarpanel::discount.relationmanagers.collections.form.type.options.limitation.label'),
@@ -42,6 +48,9 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                     return $record->attr('name');
                 })->preloadRecordSelect()
                     ->label(
+                        __('lunarpanel::discount.relationmanagers.collections.actions.attach.label')
+                    )
+                    ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.collections.actions.attach.label')
                     ),
             ])->columns([
@@ -60,9 +69,15 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                         fn (string $state) => __("lunarpanel::discount.relationmanagers.collections.table.type.{$state}.label")
                     ),
             ])->actions([
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.collections.actions.detach.label')
+                    ),
             ])->bulkActions([
-                Tables\Actions\DetachBulkAction::make(),
+                Tables\Actions\DetachBulkAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.collections.actions.detach.bulk.label')
+                    ),
             ]);
     }
 }

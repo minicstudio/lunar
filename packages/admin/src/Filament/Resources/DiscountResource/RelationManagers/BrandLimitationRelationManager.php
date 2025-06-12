@@ -22,6 +22,9 @@ class BrandLimitationRelationManager extends BaseRelationManager
     {
 
         return $table
+            ->heading(
+                __('lunarpanel::discount.relationmanagers.brands.title')
+            )
             ->description(
                 __('lunarpanel::discount.relationmanagers.brands.description')
             )
@@ -30,6 +33,7 @@ class BrandLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\AttachAction::make()->form(fn (Tables\Actions\AttachAction $action): array => [
                     $action->getRecordSelect(),
                     Select::make('type')
+                        ->label(__('lunarpanel::discount.relationmanagers.brands.form.type.label'))
                         ->options(
                             fn () => [
                                 'limitation' => __('lunarpanel::discount.relationmanagers.brands.form.type.options.limitation.label'),
@@ -40,6 +44,9 @@ class BrandLimitationRelationManager extends BaseRelationManager
                     return $record->name;
                 })->preloadRecordSelect()
                     ->label(
+                        __('lunarpanel::discount.relationmanagers.brands.actions.attach.label')
+                    )
+                    ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.attach.label')
                     ),
             ])->columns([
@@ -54,9 +61,15 @@ class BrandLimitationRelationManager extends BaseRelationManager
                         fn (string $state) => __("lunarpanel::discount.relationmanagers.brands.table.type.{$state}.label")
                     ),
             ])->actions([
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.brands.actions.detach.heading')
+                    ),
             ])->bulkActions([
-                Tables\Actions\DetachBulkAction::make(),
+                Tables\Actions\DetachBulkAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.brands.actions.detach.bulk.heading')
+                    ),
             ]);
     }
 }
