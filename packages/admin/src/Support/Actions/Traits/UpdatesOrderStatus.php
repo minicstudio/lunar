@@ -28,7 +28,7 @@ trait UpdatesOrderStatus
             ->label(__('lunarpanel::order.action.update_status.new_status.label'))
             ->default(fn ($record) => $record?->status)
             ->options(fn () => collect(config('lunar.orders.statuses', []))
-                ->mapWithKeys(fn ($data, $status) => [$status => $data['label']]))
+                ->mapWithKeys(fn ($data, $status) => [$status => __($data['label'])]))
             ->required()
             ->live();
     }

@@ -6,6 +6,12 @@ return [
 
     'plural_label' => 'Ügyfelek',
 
+    'actions' => [
+        'view' => [
+            'label' => 'Ügyfél megtekintése',
+        ],
+    ],
+
     'table' => [
         'full_name' => [
             'label' => 'Név',

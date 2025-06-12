@@ -23,9 +23,9 @@ class StatusUpdate extends AbstractRender
             'previousStatus' => $previousStatus,
             'newStatus' => $newStatus,
             'previousStatusColor' => OrderStatus::getColor($previousStatus),
-            'previousStatusLabel' => OrderStatus::getLabel($previousStatus),
+            'previousStatusLabel' => __(OrderStatus::getLabel($previousStatus)),
             'newStatusColor' => OrderStatus::getColor($newStatus),
-            'newStatusLabel' => OrderStatus::getLabel($newStatus),
+            'newStatusLabel' => __(OrderStatus::getLabel($newStatus)),
         ]);
     }
 }

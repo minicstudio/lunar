@@ -6,6 +6,12 @@ return [
 
     'plural_label' => 'Customers',
 
+    'actions' => [
+        'view' => [
+            'label' => 'View Customer',
+        ],
+    ],
+
     'table' => [
         'full_name' => [
             'label' => 'Name',

@@ -189,7 +189,7 @@ return [
             'label' => 'Létrehozás dátuma',
         ],
         'date_placed' => [
-            'label' => 'Megrendelés dátuma',
+            'label' => 'Rendelés dátuma',
         ],
         'new_returning' => [
             'label' => 'Új / Visszatérő',

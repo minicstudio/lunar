@@ -25,7 +25,7 @@ trait DisplaysOrderSummary
     {
         return Infolists\Components\TextEntry::make('status')
             ->label(__('lunarpanel::order.infolist.status.label'))
-            ->formatStateUsing(fn ($state) => OrderStatus::getLabel($state))
+            ->formatStateUsing(fn ($state) => __(OrderStatus::getLabel($state)))
             ->alignEnd()
             ->color(fn ($state) => OrderStatus::getColor($state))
             ->badge();
