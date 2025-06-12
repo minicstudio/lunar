@@ -76,6 +76,9 @@ class AddressRelationManager extends BaseRelationManager
                 ),
             ])->actions([
                 Tables\Actions\EditAction::make('editAddress')
+                    ->modalHeading(
+                        __('lunarpanel::address.form.edit.heading')
+                    )
                     ->after(
                         fn (Model $record) => CustomerAddressEdited::dispatch($record)
                     )
@@ -160,7 +163,10 @@ class AddressRelationManager extends BaseRelationManager
                             ),
                         ])->columns(2),
                     ]),
-                Tables\Actions\DeleteAction::make('deleteAddress'),
+                Tables\Actions\DeleteAction::make('deleteAddress')
+                    ->modalHeading(
+                        __('lunarpanel::address.form.delete.heading')
+                    ),
             ]);
     }
 }

@@ -52,6 +52,12 @@ return [
     ],
 
     'form' => [
+        'edit' => [
+            'heading' => 'Edit Address',
+        ],
+        'delete' => [
+            'heading' => 'Delete Address',
+        ],
         'title' => [
             'label' => 'Title',
         ],
