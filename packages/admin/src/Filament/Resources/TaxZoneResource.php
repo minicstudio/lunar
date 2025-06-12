@@ -151,7 +151,7 @@ class TaxZoneResource extends BaseResource
     {
         return Forms\Components\Select::make('zone_states')
             ->label(__('lunarpanel::taxzone.form.zone_states.label'))
-            ->visible(fn ($get) => $get('zone_type') == 'states')
+            ->visible(fn ($get) => $get('zone_type') == 'stat   es')
             ->dehydrated(false)
             ->options(fn ($get) => State::where('country_id', $get('zone_country'))->get()->pluck('name', 'code'))
             ->multiple()
@@ -328,7 +328,8 @@ class TaxZoneResource extends BaseResource
                 ])
                 ->label(__('lunarpanel::taxzone.table.name.label')),
             Tables\Columns\TextColumn::make('zone_type')
-                ->label(__('lunarpanel::taxzone.table.zone_type.label')),
+                ->label(__('lunarpanel::taxzone.table.zone_type.label'))
+                ->formatStateUsing(fn ($state) => __('lunarpanel::taxzone.table.zone_type.options.' . $state)),
             Tables\Columns\IconColumn::make('active')
                 ->boolean()
                 ->label(__('lunarpanel::taxzone.table.active.label')),

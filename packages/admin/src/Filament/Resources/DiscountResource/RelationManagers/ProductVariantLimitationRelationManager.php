@@ -41,9 +41,13 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\CreateAction::make()->form([
                     Forms\Components\MorphToSelect::make('purchasable')
                         ->searchable(true)
+                        ->label(
+                            __('lunarpanel::discount.relationmanagers.productvariants.form.purchasable.label')
+                        )
                         ->types([
                             Forms\Components\MorphToSelect\Type::make(ProductVariant::class)
                                 ->titleAttribute('sku')
+                                ->label(__('lunarpanel::discount.relationmanagers.productvariants.form.purchasable.types.product_variant.label'))
                                 ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
                                     $products = get_search_builder(Product::class, $search)
                                         ->get();
@@ -56,7 +60,11 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                         ]),
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.productvariants.actions.attach.label')
-                )->mutateFormDataUsing(function (array $data) {
+                )
+                ->modalHeading(
+                    __('lunarpanel::discount.relationmanagers.productvariants.actions.attach.modal.heading')
+                )
+                ->mutateFormDataUsing(function (array $data) {
                     $data['type'] = 'limitation';
 
                     return $data;
@@ -82,9 +90,13 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                         __('lunarpanel::discount.relationmanagers.productvariants.table.values.label')
                     ),
             ])->actions([
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading(__('lunarpanel::discount.relationmanagers.productvariants.actions.delete.modal.heading')),
             ])->bulkActions([
-                Tables\Actions\DeleteBulkAction::make(),
+                Tables\Actions\DeleteBulkAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.productvariants.actions.delete.modal.bulk.heading')
+                    ),
             ]);
     }
 }

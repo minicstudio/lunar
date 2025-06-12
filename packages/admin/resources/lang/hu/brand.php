@@ -35,6 +35,9 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Termék társítása',
+                    'modal' => [
+                        'heading' => 'Termék társítása',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Termék',
@@ -47,6 +50,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'A termék le lett választva.',
+                    ],
+                    'modal' => [
+                        'heading' => 'Termék leválasztása',
                     ],
                 ],
             ],
@@ -65,6 +71,14 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Gyűjtemény társítása',
+                    'modal' => [
+                        'heading' => 'Gyűjtemény csatolása',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Gyűjtemény leválasztása',
+                    ],
                 ],
             ],
         ],

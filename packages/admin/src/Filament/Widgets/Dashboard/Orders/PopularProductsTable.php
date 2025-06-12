@@ -47,10 +47,14 @@ class PopularProductsTable extends TableWidget
                     ->whereType('physical');
             })->defaultSort('quantity', 'desc')
             ->columns([
-                TextColumn::make('description'),
-                TextColumn::make('identifier'),
-                TextColumn::make('quantity'),
-                TextColumn::make('sub_total')->formatStateUsing(fn ($state): string => $state->formatted),
+                TextColumn::make('description')
+                    ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.description')),
+                TextColumn::make('identifier')
+                    ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.identifier')),
+                TextColumn::make('quantity')
+                    ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.quantity')),                
+                TextColumn::make('sub_total')
+                    ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.sub_total')),
             ]);
     }
 }

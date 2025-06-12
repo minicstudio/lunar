@@ -81,10 +81,19 @@ return [
                 'series_two' => [
                     'label' => 'Visszatérő vásárlók',
                 ],
+                'yaxis' => [
+                    'label' => '# Vásárlók',
+                ],
             ],
             'popular_products' => [
                 'heading' => 'Legnépszerűbb termékek (utóbbi 12 hónap)',
                 'description' => 'Ezek az adatok a termékek előfordulásán alapulnak rendelésekben, nem a rendelt mennyiségen.',
+                'table' => [
+                    'description' => 'Leírás',
+                    'identifier' => 'Azonosító',
+                    'quantity' => 'Mennyiség',
+                    'sub_total' => 'Részösszeg',
+                ],
             ],
             'latest_orders' => [
                 'heading' => 'Legfrissebb rendelések',
@@ -108,7 +117,7 @@ return [
         'label' => 'Válasszon változatot',
         'table' => [
             'sku' => [
-                'label' => 'SKU',
+                'label' => 'SKU (Egyedi azonosító)',
             ],
             'values' => [
                 'label' => 'Értékek',

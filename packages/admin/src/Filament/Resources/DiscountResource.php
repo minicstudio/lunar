@@ -255,11 +255,20 @@ class DiscountResource extends BaseResource
 
     public static function getDiscountTypeFormComponent(): Component
     {
-        return Forms\Components\Select::make('type')->options(
-            Discounts::getTypes()->mapWithKeys(
-                fn ($type) => [get_class($type) => $type->getName()]
+        return Forms\Components\Select::make('type')
+            ->options(
+                Discounts::getTypes()->mapWithKeys(function ($type) {
+                    $class = get_class($type);
+                    $slug = str($class)->classBasename()->kebab()->replace('-', '_');
+
+                    return [
+                        $class => __('lunarpanel::discount.form.type.options.' . $slug . '.label'),
+                    ];
+                })
             )
-        )->required()->live();
+            ->required()
+            ->live()
+            ->label(__('lunarpanel::discount.form.type.label'));
     }
 
     protected static function getAmountOffFormComponents(): array
@@ -284,10 +293,18 @@ class DiscountResource extends BaseResource
         }
 
         return [
-            Forms\Components\Toggle::make('data.fixed_value')->live(),
+            Forms\Components\Toggle::make('data.fixed_value')
+                ->live()
+                ->label(
+                    __('lunarpanel::discount.form.fixed_value.label')
+                ),
             Forms\Components\TextInput::make('data.percentage')->visible(
-                fn (Forms\Get $get) => ! $get('data.fixed_value')
-            )->numeric(),
+                    fn (Forms\Get $get) => ! $get('data.fixed_value')
+                )
+                ->numeric()
+                ->label(
+                    __('lunarpanel::discount.form.percentage.label')
+                ),
             Forms\Components\Group::make(
                 $currencyInputs
             )->visible(

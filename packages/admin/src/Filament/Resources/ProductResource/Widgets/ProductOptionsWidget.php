@@ -55,6 +55,12 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             ->get();
 
         return Action::make('addSharedOption')
+            ->label(
+                __('lunarpanel::productoption.widgets.product-options.actions.add-shared-option.label')
+            )
+            ->modalHeading(
+                __('lunarpanel::productoption.widgets.product-options.actions.add-shared-option.modal.heading')
+            )
             ->form([
                 Shout::make('no_shared_components')
                     ->content(
@@ -307,11 +313,13 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                     ]) :
                     ProductOptionValue::find($value['id']);
 
-                $optionValueModel->name = [
-                    $language->code => $value['value'],
-                ];
-                $optionValueModel->position = $value['position'];
-                $optionValueModel->save();
+                if (! $optionModel->shared) {
+                    $optionValueModel->name = [
+                        $language->code => $value['value'],
+                    ];
+                    $optionValueModel->position = $value['position'];
+                    $optionValueModel->save();
+                }
 
                 $this->configuredOptions[$optionIndex]['option_values'][$optionValueIndex]['id'] =
                     $optionValueModel->id;

@@ -83,7 +83,7 @@ class OrderResource extends BaseResource
             Tables\Columns\TextColumn::make('status')
                 ->label(__('lunarpanel::order.table.status.label'))
                 ->toggleable()
-                ->formatStateUsing(fn (string $state) => OrderStatus::getLabel($state))
+                ->formatStateUsing(fn (string $state) => __(OrderStatus::getLabel($state)))
                 ->color(fn (string $state) => OrderStatus::getColor($state))
                 ->badge(),
             Tables\Columns\TextColumn::make('reference')
@@ -137,7 +137,7 @@ class OrderResource extends BaseResource
             Tables\Filters\SelectFilter::make('status')
                 ->label(__('lunarpanel::order.table.status.label'))
                 ->options(collect(config('lunar.orders.statuses', []))
-                    ->mapWithKeys(fn ($data, $status) => [$status => $data['label']]))
+                    ->mapWithKeys(fn ($data, $status) => [$status => __($data['label'])]))
                 ->multiple(),
             Tables\Filters\Filter::make('placed_at')
 

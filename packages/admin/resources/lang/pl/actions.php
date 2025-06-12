@@ -4,9 +4,21 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Utwórz główną kolekcję',
+            'form' => [
+                'name' => [
+                    'label' => 'Nazwa',
+                ],
+            ],
+
         ],
         'create_child' => [
             'label' => 'Utwórz podkolekcję',
+            'form' => [
+                'name' => [
+                    'label' => 'Nazwa',
+                ],
+            ],
+
         ],
         'move' => [
             'label' => 'Przenieś kolekcję',

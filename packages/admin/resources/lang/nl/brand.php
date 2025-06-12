@@ -34,6 +34,9 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Koppel een product',
+                    'modal' => [
+                        'heading' => 'Koppel een product',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Product',
@@ -46,6 +49,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'Product ontkoppeld.',
+                    ],
+                    'modal' => [
+                        'heading' => 'Ontkoppel product',
                     ],
                 ],
             ],
@@ -64,6 +70,14 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Koppel een collectie',
+                    'modal' => [
+                        'heading' => 'Koppel collectie',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Ontkoppel collectie',
+                    ],
                 ],
             ],
         ],

@@ -34,6 +34,9 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Dołącz produkt',
+                    'modal' => [
+                        'heading' => 'Dołącz produkt',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Produkt',
@@ -46,6 +49,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'Produkt odpięty od marki.',
+                    ],
+                    'modal' => [
+                        'heading' => 'Odłącz produkt',
                     ],
                 ],
             ],
@@ -64,6 +70,14 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Powiąż kolekcję',
+                    'modal' => [
+                        'heading' => 'Powiąż kolekcję',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Odłącz kolekcję',
+                    ],
                 ],
             ],
         ],

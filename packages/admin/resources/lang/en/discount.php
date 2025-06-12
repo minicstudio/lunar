@@ -74,6 +74,23 @@ return [
             'label' => 'Automatically add rewards',
             'helper_text' => 'Switch on to add reward products when not present in the basket.',
         ],
+        'type' => [
+            'label' => 'Type',
+            'options' => [
+                'buy_x_get_y' => [
+                    'label' => 'Buy X Get Y',
+                ],
+                'amount_off' => [
+                    'label' => 'Amount Off',
+                ],
+            ],
+        ],
+        'fixed_value' => [
+            'label' => 'Fixed Value',
+        ],
+        'percentage' => [
+            'label' => 'Percentage',
+        ],
     ],
     'table' => [
         'name' => [
@@ -120,6 +137,12 @@ return [
                 'attach' => [
                     'label' => 'Attach Collection',
                 ],
+                'detach' => [
+                    'label' => 'Detach Collection',
+                    'bulk' => [
+                        'label' => 'Detach selected collections',
+                    ],
+                ],
             ],
             'table' => [
                 'name' => [
@@ -137,6 +160,7 @@ return [
             ],
             'form' => [
                 'type' => [
+                    'label' => 'Type',
                     'options' => [
                         'limitation' => [
                             'label' => 'Limitation',
@@ -155,6 +179,9 @@ return [
                 'attach' => [
                     'label' => 'Attach Customer',
                 ],
+                'detach' => [
+                    'label' => 'Detach Customer',
+                ],
             ],
             'table' => [
                 'name' => [
@@ -168,6 +195,12 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Attach Brand',
+                ],
+                'detach' => [
+                    'heading' => 'Detach Brand',
+                    'bulk' => [
+                        'heading' => 'Detach selected brands',
+                    ],
                 ],
             ],
             'table' => [
@@ -186,6 +219,7 @@ return [
             ],
             'form' => [
                 'type' => [
+                    'label' => 'Type',
                     'options' => [
                         'limitation' => [
                             'label' => 'Limitation',
@@ -203,6 +237,15 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Add Product',
+                    'modal' => [
+                        'heading' => 'Create discount purchasable',
+                    ],
+                ],
+                'delete' => [
+                    'heading' => 'Delete discount purchasable',
+                    'bulk' => [
+                        'heading' => 'Delete selected discount purchasables',
+                    ],
                 ],
             ],
             'table' => [
@@ -227,6 +270,14 @@ return [
                         ],
                         'exclusion' => [
                             'label' => 'Exclusion',
+                        ],
+                    ],
+                ],
+                'purchasable' => [
+                    'label' => 'Product',
+                    'types' => [
+                        'product' => [
+                            'label' => 'Product',
                         ],
                     ],
                 ],
@@ -238,6 +289,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Add Product',
+                    'modal' => [
+                        'heading' => 'Create discount purchasable',
+                    ],
+                ],
+                'delete' => [
+                    'modal' => [
+                        'heading' => 'Delete discount purchasable',
+                        'bulk' => [
+                            'heading' => 'Delete selected discount purchasables',
+                        ],
+                    ]
                 ],
             ],
             'table' => [
@@ -262,6 +324,14 @@ return [
                         ],
                         'exclusion' => [
                             'label' => 'Exclusion',
+                        ],
+                    ],
+                ],
+                'purchasable' => [
+                    'label' => 'Purchasable',
+                    'types' => [
+                        'product' => [
+                            'label' => 'Product',
                         ],
                     ],
                 ],
@@ -273,6 +343,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Add Product',
+                    'modal' => [
+                        'heading' => 'Create discount purchasable',
+                    ],
+                ],
+                'delete' => [
+                    'modal' => [
+                        'heading' => 'Delete discount purchasable',
+                        'bulk' => [
+                            'heading' => 'Delete selected discount purchasables',
+                        ],
+                    ]
                 ],
             ],
             'table' => [
@@ -300,6 +381,14 @@ return [
                         ],
                     ],
                 ],
+                'purchasable' => [
+                    'label' => 'Purchasable',
+                    'types' => [
+                        'product' => [
+                            'label' => 'Product',
+                        ],
+                    ],
+                ],
             ],
         ],
         'productvariants' => [
@@ -308,6 +397,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Add Product Variant',
+                    'modal' => [
+                        'heading' => 'Create discount purchasable',
+                    ],
+                ],
+                'delete' => [
+                    'modal' => [
+                        'heading' => 'Delete discount purchasable',
+                        'bulk' => [
+                            'heading' => 'Delete selected discount purchasables',
+                        ],
+                    ]
                 ],
             ],
             'table' => [
@@ -329,6 +429,14 @@ return [
                         ],
                         'exclusion' => [
                             'label' => 'Exclusion',
+                        ],
+                    ],
+                ],
+                'purchasable' => [
+                    'label' => 'Purchasable',
+                    'types' => [
+                        'product_variant' => [
+                            'label' => 'Product Variant',
                         ],
                     ],
                 ],

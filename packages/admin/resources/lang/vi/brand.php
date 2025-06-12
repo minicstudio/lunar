@@ -34,6 +34,9 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Liên kết sản phẩm',
+                    'modal' => [
+                        'heading' => 'Liên kết sản phẩm',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Sản phẩm',
@@ -46,6 +49,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'Đã hủy liên kết sản phẩm',
+                    ],
+                    'modal' => [
+                        'heading' => 'Hủy liên kết sản phẩm',
                     ],
                 ],
             ],
@@ -64,6 +70,14 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Liên kết bộ sưu tập',
+                    'modal' => [
+                        'heading' => 'Liên kết bộ sưu tập',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Hủy liên kết bộ sưu tập',
+                    ],
                 ],
             ],
         ],

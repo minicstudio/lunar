@@ -110,7 +110,7 @@ class ManageOrder extends BaseViewRecord
             ->weight(FontWeight::SemiBold)
             ->size(TextEntrySize::Large)
             ->hiddenLabel()
-            ->suffixAction(fn ($state) => Action::make('view customer')
+            ->suffixAction(fn ($state) => Action::make(__('lunarpanel::customer.actions.view.label'))
                 ->color('gray')
                 ->button()
                 ->size(ActionSize::ExtraSmall)
@@ -158,7 +158,7 @@ class ManageOrder extends BaseViewRecord
 
                     return Infolists\Components\TextEntry::make('meta_'.$key)
                         ->state($value)
-                        ->label($key)
+                        ->label(__($key))
                         ->copyable()
                         ->limit(50)->tooltip(function (Infolists\Components\TextEntry $component): ?string {
                             $state = $component->getState();

@@ -80,6 +80,14 @@ return [
                     ],
                 ],
             ],
+            'make_root' => [
+                'label' => 'Zrób roota',
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Usuń kolekcję',
+                ],
+            ]
         ],
         'notifications' => [
             'collections-reordered' => [

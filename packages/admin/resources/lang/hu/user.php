@@ -16,6 +16,9 @@ return [
     ],
 
     'form' => [
+        'edit' => [
+            'heading' => 'Felhasználó szerkesztése',
+        ],
         'email' => [
             'label' => 'Email',
         ],

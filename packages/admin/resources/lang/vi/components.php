@@ -65,6 +65,14 @@ return [
                     ],
                 ],
             ],
+            'make-root' => [
+                'label' => 'Tạo gốc',
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Xóa bộ sưu tập',
+                ],
+            ]
         ],
         'notifications' => [
             'collections-reordered' => [

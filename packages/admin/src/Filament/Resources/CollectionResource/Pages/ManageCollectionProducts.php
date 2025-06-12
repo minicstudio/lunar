@@ -69,9 +69,13 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
                 ->formatStateUsing(fn (Model $record): string => $record->translateAttribute('name'))
                 ->label(__('lunarpanel::product.table.name.label')),
         ])->actions([
-            Tables\Actions\DetachAction::make()->after(
-                fn () => CollectionProductDetached::dispatch($this->getOwnerRecord())
-            ),
+            Tables\Actions\DetachAction::make()
+                ->modalHeading(
+                    __('lunarpanel::collection.pages.products.actions.detach.modal.heading')
+                )
+                ->after(
+                    fn () => CollectionProductDetached::dispatch($this->getOwnerRecord())
+                ),
             Tables\Actions\EditAction::make()->url(
                 fn (Model $record) => ProductResource::getUrl('edit', [
                     'record' => $record,
@@ -81,9 +85,11 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
             Tables\Actions\AttachAction::make()
                 ->label(
                     __('lunarpanel::collection.pages.products.actions.attach.label')
-                )->form([
+                )
+                ->modalHeading(__('lunarpanel::collection.pages.products.actions.attach.label'))
+                ->form([
                     Forms\Components\Select::make('recordId')
-                        ->label('Product')
+                        ->label(__('lunarpanel::collection.pages.products.actions.attach.select'))
                         ->required()
                         ->searchable(true)
                         ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search, ManageCollectionProducts $livewire): array {

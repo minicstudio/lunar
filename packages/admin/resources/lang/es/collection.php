@@ -18,6 +18,9 @@ return [
             'actions' => [
                 'create_child' => [
                     'label' => 'Crear Colección Hija',
+                    'name' => [
+                        'label' => 'Nombre',
+                    ],
                 ],
             ],
             'table' => [
@@ -31,15 +34,29 @@ return [
         ],
         'edit' => [
             'label' => 'Información Básica',
+            'actions' => [
+                'delete' => [
+                    'select' => 'Colección Objetivo',
+                    'helper_text' => 'Seleccione a qué colección se transferirán los elementos secundarios de esta colección.'
+                ],
+            ],
         ],
         'products' => [
             'label' => 'Productos',
             'actions' => [
                 'attach' => [
                     'label' => 'Asociar Producto',
+                    'select' => 'Producto',
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Separar producto',
+                    ]
                 ],
             ],
         ],
     ],
-
+    'nested_set_item' => [
+        'more_actions' => 'Más acciones',
+    ],
 ];

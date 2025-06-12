@@ -103,6 +103,7 @@ class ProductOptionResource extends BaseResource
             ])
             ->filters([
                 Tables\Filters\Filter::make('shared')
+                    ->label(__('lunarpanel::productoption.table.shared.label'))
                     ->query(fn (Builder $query): Builder => $query->where('shared', true)),
             ])
             ->actions([

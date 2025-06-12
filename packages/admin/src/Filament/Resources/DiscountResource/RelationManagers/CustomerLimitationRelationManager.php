@@ -21,6 +21,9 @@ class CustomerLimitationRelationManager extends BaseRelationManager
     {
 
         return $table
+            ->heading(
+                __('lunarpanel::discount.relationmanagers.customers.title')
+            )
             ->description(
                 __('lunarpanel::discount.relationmanagers.customers.description')
             )
@@ -33,6 +36,9 @@ class CustomerLimitationRelationManager extends BaseRelationManager
                 })->preloadRecordSelect()
                     ->label(
                         __('lunarpanel::discount.relationmanagers.customers.actions.attach.label')
+                    )
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.customers.actions.attach.label')
                     ),
             ])->columns([
                 Tables\Columns\TextColumn::make('full_name')
@@ -40,7 +46,10 @@ class CustomerLimitationRelationManager extends BaseRelationManager
                         __('lunarpanel::discount.relationmanagers.customers.table.name.label')
                     ),
             ])->actions([
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.customers.actions.detach.label')
+                    ),
             ]);
     }
 }

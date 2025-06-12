@@ -33,6 +33,38 @@ return [
         ],
     ],
 
+    'values' => [
+        'title' => 'Values',
+        'form' => [
+            'name' => [
+                'label' => 'Name',
+            ],
+        ],
+        'table' => [
+            'name' => [
+                'label' => 'Name',
+            ],
+            'position' => [
+                'label' => 'Position',
+            ],
+            'actions' => [
+                'create' => [
+                    'label' => 'New product option value',
+                    'heading' => 'Create product option value',
+                ],
+                'edit' => [
+                    'heading' => 'Edit product option value',
+                ],
+                'delete' => [
+                    'heading' => 'Delete product option value',
+                    'bulk' => [
+                        'heading' => 'Delete selected product option values',
+                    ],
+                ],
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [
@@ -58,6 +90,9 @@ return [
                         'no_shared_components' => [
                             'label' => 'No shared options are available.',
                         ],
+                    ],
+                    'modal' => [
+                        'heading' => 'Add Shared Option',
                     ],
                 ],
                 'add-restricted-option' => [

@@ -7,6 +7,7 @@ use Filament\Forms\Components\Section;
 use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\ProductVariantPricingUpdated;
 use Lunar\Admin\Filament\Resources\ProductVariantResource;
 use Lunar\Models\Currency;
 use Lunar\Models\Price;
@@ -73,6 +74,8 @@ trait ManagesProductPricing
         $this->basePrices = $this->getBasePrices($variant);
 
         $this->dispatch('refresh-relation-manager');
+
+        ProductVariantPricingUpdated::dispatch($variant);
 
         return $this->callLunarHook('afterUpdate', $record, $data);
     }

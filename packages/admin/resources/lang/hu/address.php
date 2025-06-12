@@ -52,6 +52,12 @@ return [
     ],
 
     'form' => [
+        'edit' => [
+            'heading' => 'Cím szerkesztése',
+        ],
+        'delete' => [
+            'heading' => 'Cím törlése',
+        ],
         'title' => [
             'label' => 'Megszólítás',
         ],

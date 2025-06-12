@@ -73,7 +73,7 @@ class NewVsReturningCustomersChart extends ApexChartWidget
         $returningCustomers = [];
 
         foreach ($period as $date) {
-            $labels[] = $date->format('F Y');
+            $labels[] = $date->locale(app()->getLocale())->isoFormat('MMMM YYYY');
             $report = $results->first(function ($month) use ($date) {
                 return $month->monthstamp == $date->format('Ym');
             });
@@ -108,7 +108,7 @@ class NewVsReturningCustomersChart extends ApexChartWidget
             ],
             'yaxis' => [
                 'title' => [
-                    'text' => '# Customers',
+                    'text' => __('lunarpanel::widgets.dashboard.orders.new_returning_customers.yaxis.label')
                 ],
             ],
             'tooltip' => [

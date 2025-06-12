@@ -4,9 +4,19 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Create Root Collection',
+            'form' => [
+                'name' => [
+                    'label' => 'Name',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Create Child Collection',
+            'form' => [
+                'name' => [
+                    'label' => 'Name',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Move Collection',

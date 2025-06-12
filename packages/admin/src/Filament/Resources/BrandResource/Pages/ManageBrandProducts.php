@@ -57,11 +57,17 @@ class ManageBrandProducts extends BaseManageRelatedRecords
                         ->success()
                         ->body(__('lunarpanel::brand.pages.products.actions.detach.notification.success'))
                         ->send();
-                }),
+                })
+                ->modalHeading(
+                    __('lunarpanel::brand.pages.products.actions.detach.modal.heading')
+                )
         ])->headerActions([
             AttachAction::make()
                 ->label(
                     __('lunarpanel::brand.pages.products.actions.attach.label')
+                )
+                ->modalHeading(
+                    __('lunarpanel::brand.pages.products.actions.attach.modal.heading')
                 )
                 ->form([
                     Forms\Components\Select::make('recordId')

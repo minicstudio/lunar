@@ -6,6 +6,11 @@ return [
             'attach' => [
                 'label' => 'Klantengroep Koppelen',
             ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Klantengroep Bewerken',
+                ],
+            ],
         ],
         'form' => [
             'name' => [
@@ -53,6 +58,11 @@ return [
         'actions' => [
             'attach' => [
                 'label' => 'Nog een Kanaal Inplannen',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Kanaal Bewerken',
+                ],
             ],
         ],
         'form' => [
@@ -128,6 +138,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'URL Aanmaken',
+                'modal' => [
+                    'heading' => 'URL Aanmaken',
+                ],
             ],
         ],
         'filters' => [

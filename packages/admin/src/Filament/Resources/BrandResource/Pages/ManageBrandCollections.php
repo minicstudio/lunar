@@ -44,9 +44,11 @@ class ManageBrandCollections extends BaseManageRelatedRecords
                 ->limit(50)
                 ->label(__('lunarpanel::product.table.name.label')),
         ])->actions([
-            DetachAction::make(),
+            DetachAction::make()
+                ->modalHeading(__('lunarpanel::brand.pages.collections.actions.detach.modal.heading'))
         ])->headerActions([
             Tables\Actions\AttachAction::make()
+                ->modalHeading(__('lunarpanel::brand.pages.collections.actions.attach.modal.heading'))
                 ->recordSelect(
                     function (Forms\Components\Select $select) {
                         return $select->placeholder(

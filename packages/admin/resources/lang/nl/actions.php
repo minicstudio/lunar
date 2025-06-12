@@ -4,9 +4,19 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Maak Hoofdcategorie',
+            'form' => [
+                'name' => [
+                    'label' => 'Naam',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Maak Subcategorie',
+            'form' => [
+                'name' => [
+                    'label' => 'Naam',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Verplaats Categorie',

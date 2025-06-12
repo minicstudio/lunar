@@ -71,6 +71,12 @@ return [
                         'label' => 'Bovenliggende collectie',
                     ],
                 ],
+                'modal' => [
+                    'heading' => 'Verwijder Categorie',
+                ],
+            ],
+            'make_root' => [
+                'label' => 'Maak wortel',
             ],
         ],
         'notifications' => [

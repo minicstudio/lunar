@@ -12,6 +12,11 @@ return [
         ],
         'zone_type' => [
             'label' => 'Zone Type',
+            'options' => [
+                'country' => 'Countries',
+                'states' => 'States',
+                'postcodes' => 'Postcodes',
+            ],
         ],
         'active' => [
             'label' => 'Active',

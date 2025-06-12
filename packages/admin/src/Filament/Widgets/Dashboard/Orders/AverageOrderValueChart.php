@@ -110,7 +110,7 @@ class AverageOrderValueChart extends ApexChartWidget
         $labels = [];
 
         foreach ($period as $date) {
-            $labels[] = $date->format('F Y');
+            $labels[] = $date->locale(app()->getLocale())->isoFormat('MMMM YYYY');
         }
 
         $currency = Currency::getDefault();
