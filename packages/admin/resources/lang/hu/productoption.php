@@ -33,6 +33,38 @@ return [
         ],
     ],
 
+    'values' => [
+        'title' => 'Értékek',
+        'form' => [
+            'name' => [
+                'label' => 'Név',
+            ],
+        ],
+        'table' => [
+            'name' => [
+                'label' => 'Név',
+            ],
+            'position' => [
+                'label' => 'Pozíció',
+            ],
+            'actions' => [
+                'create' => [
+                    'label' => 'Új termékopció érték',
+                    'heading' => 'Termékopció érték létrehozása',
+                ],
+                'edit' => [
+                    'heading' => 'Termékopció érték szerkesztése',
+                ],
+                'delete' => [
+                    'heading' => 'Termékopció érték törlése',
+                    'bulk' => [
+                        'heading' => 'Kiválasztott termékopció értékek törlése',
+                    ],
+                ],
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [
