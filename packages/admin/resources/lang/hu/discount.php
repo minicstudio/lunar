@@ -315,7 +315,7 @@ return [
                     'label' => 'Név',
                 ],
                 'sku' => [
-                    'label' => 'SKU',
+                    'label' => 'SKU (Egyedi azonosító)',
                 ],
                 'values' => [
                     'label' => 'Opció(k)',

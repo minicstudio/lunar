@@ -32,7 +32,7 @@ return [
             'label' => 'Márka',
         ],
         'sku' => [
-            'label' => 'SKU',
+            'label' => 'SKU (Egyedi azonosító)',
         ],
         'stock' => [
             'label' => 'Készlet',
@@ -57,7 +57,10 @@ return [
             'label' => 'Márka',
         ],
         'sku' => [
-            'label' => 'SKU',
+            'label' => 'SKU (Egyedi azonosító)',
+        ],
+        'base_price' => [
+            'label' => 'Alapár',
         ],
         'producttype' => [
             'label' => 'Terméktípus',
@@ -116,9 +119,50 @@ return [
         ],
         'collections' => [
             'label' => 'Gyűjtemények',
+            'actions' => [
+                'attach' => [
+                    'heading' => 'Gyűjtemény csatolása',
+                    'form' => [
+                        'collection' => [
+                            'placeholder' => 'Válasszon egy gyűjteményt',
+                        ],
+                    ],
+                ],
+                'detach' => [
+                    'heading' => 'Gyűjtemény leválasztása',
+                    'bulk' => [
+                        'heading' => 'Kijelölt gyűjtemények leválasztása',
+                    ],
+                ],
+            ],
         ],
         'associations' => [
             'label' => 'Termék asszociációk',
+            'actions' => [
+                'create' => [
+                    'label' => 'Új termék asszociáció',     
+                    'heading' => 'Termék asszociáció létrehozása',
+                ],
+                'delete' => [
+                    'heading' => 'Termék asszociáció törlése',
+                    'bulk' => [
+                        'heading' => 'Kijelölt termék asszociációk törlése',
+                    ],
+                ],
+            ],
+            'form' => [
+                'target' => [
+                    'label' => 'Termék',
+                ],
+                'type' => [
+                    'label' => 'Típus',
+                    'options' => [
+                        'alternate' => 'Váltakozó',
+                        'cross-sell' => 'Keresztértékesítés',
+                        'up-sell' => 'Felülértékesítés',
+                    ],
+                ],
+            ],
         ],
     ],
 

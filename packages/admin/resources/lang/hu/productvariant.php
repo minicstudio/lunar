@@ -34,7 +34,7 @@ return [
     ],
     'form' => [
         'sku' => [
-            'label' => 'SKU',
+            'label' => 'SKU (Egyedi azonosító)',
         ],
         'gtin' => [
             'label' => 'Globális kereskedelmi cikkszám (GTIN)',
@@ -43,7 +43,7 @@ return [
             'label' => 'Gyártói cikkszám (MPN)',
         ],
         'ean' => [
-            'label' => 'UPC/EAN',
+            'label' => 'Globális termékkód (UPC/EAN)',
         ],
         'stock' => [
             'label' => 'Készleten',

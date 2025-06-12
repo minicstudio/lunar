@@ -53,7 +53,7 @@ class ManageProductCollections extends BaseManageRelatedRecords
                 Tables\Actions\AttachAction::make()
                     ->recordSelect(
                         function (Forms\Components\Select $select) {
-                            return $select->placeholder('Select a collection') // TODO: needs translation
+                            return $select->placeholder(__('lunarpanel::product.pages.collections.actions.attach.form.collection.placeholder'))
                                 ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search, ManageProductCollections $livewire): array {
                                     $relationModel = $livewire->getRelationship()->getRelated()::class;
 
@@ -67,14 +67,15 @@ class ManageProductCollections extends BaseManageRelatedRecords
                         fn () => ProductCollectionsUpdated::dispatch(
                             $this->getOwnerRecord()
                         )
-                    ),
+                    )->modalHeading(__('lunarpanel::product.pages.collections.actions.attach.heading')),
             ])
             ->actions([
                 Tables\Actions\DetachAction::make()->after(
                     fn () => ProductCollectionsUpdated::dispatch(
                         $this->getOwnerRecord()
                     )
-                ),
+                )
+                ->modalHeading(__('lunarpanel::product.pages.collections.actions.detach.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -82,7 +83,8 @@ class ManageProductCollections extends BaseManageRelatedRecords
                         fn () => ProductCollectionsUpdated::dispatch(
                             $this->getOwnerRecord()
                         )
-                    ),
+                    )
+                    ->modalHeading(__('lunarpanel::product.pages.collections.actions.detach.bulk.heading')),
                 ]),
             ]);
     }

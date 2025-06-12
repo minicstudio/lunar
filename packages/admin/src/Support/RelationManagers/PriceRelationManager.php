@@ -102,7 +102,11 @@ class PriceRelationManager extends BaseRelationManager
                                 ->where('priceable_type', $owner->getMorphClass())
                                 ->where('priceable_id', $owner->id);
                         }
-                    )->helperText(
+                    )
+                    ->label(
+                        __('lunarpanel::relationmanagers.pricing.form.price.label')
+                    )
+                    ->helperText(
                         __('lunarpanel::relationmanagers.pricing.form.price.helper_text')
                     )->required(),
                     Forms\Components\TextInput::make('compare_price')->formatStateUsing(

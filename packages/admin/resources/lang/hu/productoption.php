@@ -59,6 +59,9 @@ return [
                             'label' => 'Nincsenek elérhető megosztott opciók.',
                         ],
                     ],
+                    'modal' => [
+                        'heading' => 'Megosztott opció hozzáadása',
+                    ],
                 ],
                 'add-restricted-option' => [
                     'label' => 'Opció hozzáadása',
@@ -108,7 +111,7 @@ return [
                         'label' => 'Opció',
                     ],
                     'sku' => [
-                        'label' => 'SKU',
+                        'label' => 'SKU (Egyedi azonosító)',
                     ],
                     'price' => [
                         'label' => 'Ár',

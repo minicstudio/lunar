@@ -59,6 +59,9 @@ return [
                             'label' => 'No shared options are available.',
                         ],
                     ],
+                    'modal' => [
+                        'heading' => 'Add Shared Option',
+                    ],
                 ],
                 'add-restricted-option' => [
                     'label' => 'Add Option',

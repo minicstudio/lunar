@@ -166,12 +166,15 @@ class ProductResource extends BaseResource
     {
         $currency = Currency::getDefault();
 
-        return Forms\Components\TextInput::make('base_price')->numeric()->prefix(
-            $currency->code
-        )->rules([
-            'min:'.(1 / $currency->factor),
-            "decimal:0,{$currency->decimal_places}",
-        ])->required();
+        return Forms\Components\TextInput::make('base_price')
+            ->label(__('lunarpanel::product.form.base_price.label'))
+            ->numeric()
+            ->prefix(
+                $currency->code
+            )->rules([
+                'min:'.(1 / $currency->factor),
+                "decimal:0,{$currency->decimal_places}",
+            ])->required();
     }
 
     public static function getBaseNameFormComponent(): Component
@@ -243,6 +246,7 @@ class ProductResource extends BaseResource
             ->columns(static::getTableColumns())
             ->filters([
                 Tables\Filters\SelectFilter::make('brand')
+                ->label(__('lunarpanel::product.table.brand.label'))
                     ->relationship('brand', 'name'),
                 Tables\Filters\TrashedFilter::make(),
             ])

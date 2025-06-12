@@ -85,7 +85,8 @@ class ProductVariantResource extends BaseResource
 
     public static function getSkuFormComponent(): Forms\Components\TextInput
     {
-        return Forms\Components\TextInput::make('sku');
+        return Forms\Components\TextInput::make('sku')
+            ->label(__('lunarpanel::productvariant.form.sku.label'));
     }
 
     public static function getGtinFormComponent(): Forms\Components\TextInput

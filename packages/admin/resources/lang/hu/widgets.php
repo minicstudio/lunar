@@ -117,7 +117,7 @@ return [
         'label' => 'Válasszon változatot',
         'table' => [
             'sku' => [
-                'label' => 'SKU',
+                'label' => 'SKU (Egyedi azonosító)',
             ],
             'values' => [
                 'label' => 'Értékek',
