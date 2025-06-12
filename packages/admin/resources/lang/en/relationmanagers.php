@@ -270,6 +270,7 @@ return [
         ],
     ],
     'tax_rate_amounts' => [
+        'title' => 'Tax Rate Amounts',
         'table' => [
             'description' => '',
             'percentage' => [
@@ -277,6 +278,26 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Tax Class',
+            ],
+            'actions' => [
+                'create' => [
+                    'label' => 'New Tax Rate Amount',
+                    'heading' => 'Create Tax Rate Amount',
+                ],
+                'edit' => [
+                    'heading' => 'Edit tax rate amount',
+                ],
+                'delete' => [
+                    'heading' => 'Delete tax rate amount',
+                ],
+            ],
+        ],
+        'form' => [
+            'tax_class' => [
+                'label' => 'Tax Class',
+            ],
+            'percentage' => [
+                'label' => 'Percentage',
             ],
         ],
     ],

@@ -12,6 +12,11 @@ return [
         ],
         'zone_type' => [
             'label' => 'Zóna típusa',
+            'options' => [
+                'country' => 'Országok',
+                'states' => 'Államok',
+                'postcodes' => 'Irányítószámok',
+            ],
         ],
         'active' => [
             'label' => 'Aktív',

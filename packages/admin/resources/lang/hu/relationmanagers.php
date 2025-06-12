@@ -270,6 +270,7 @@ return [
         ],
     ],
     'tax_rate_amounts' => [
+        'title' => 'Adókulcs összegek',
         'table' => [
             'description' => '',
             'percentage' => [
@@ -277,6 +278,26 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Adóosztály',
+            ],
+            'actions' => [
+                'create' => [
+                    'label' => 'Új adókulcs összeg',
+                    'heading' => 'Adókulcs összeg létrehozása',
+                ],
+                'edit' => [
+                    'heading' => 'Adókulcs összeg szerkesztése',
+                ],
+                'delete' => [
+                    'heading' => 'Adókulcs összeg törlése',
+                ],
+            ],
+        ],
+        'form' => [
+            'tax_class' => [
+                'label' => 'Adóosztály',
+            ],
+            'percentage' => [
+                'label' => 'Százalék',
             ],
         ],
     ],

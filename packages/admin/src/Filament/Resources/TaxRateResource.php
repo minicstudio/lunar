@@ -98,7 +98,8 @@ class TaxRateResource extends BaseResource
     protected static function getTableColumns(): array
     {
         return [
-            Tables\Columns\TextColumn::make('name'),
+            Tables\Columns\TextColumn::make('name')
+                ->label(__('lunarpanel::taxrate.table.name.label')),
             Tables\Columns\TextColumn::make('taxZone.name')
                 ->label(__('lunarpanel::taxrate.table.tax_zone.label')),
             Tables\Columns\TextColumn::make('priority')
