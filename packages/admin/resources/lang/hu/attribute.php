@@ -19,6 +19,21 @@ return [
         'type' => [
             'label' => 'Típus',
         ],
+        'actions' => [
+            'create' => [
+                'label' => 'Új attribútum',
+                'heading' => 'Attribútum létrehozása',
+            ],
+            'edit' => [
+                'heading' => 'Attribútum szerkesztése',
+            ],
+            'delete' => [
+                'heading' => 'Attribútum törlése',
+                'bulk' => [
+                    'heading' => 'Kiválasztott attribútumok törlése',
+                ],
+            ],
+        ],
     ],
 
     'form' => [
