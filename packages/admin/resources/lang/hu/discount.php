@@ -128,6 +128,9 @@ return [
         'limitations' => [
             'label' => 'Korlátozások',
         ],
+        'edit' => [
+            'navigation_label' => 'Kedvezmény szerkesztése',
+        ]
     ],
     'relationmanagers' => [
         'collections' => [

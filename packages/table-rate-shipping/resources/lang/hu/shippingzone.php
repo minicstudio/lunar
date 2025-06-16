@@ -47,4 +47,9 @@ return [
             ],
         ],
     ],
+    'pages' => [
+        'edit' => [
+            'navigation_label' => 'Szállítási zóna szerkesztése',
+        ],
+    ],
 ];

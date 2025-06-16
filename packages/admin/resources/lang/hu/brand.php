@@ -82,6 +82,9 @@ return [
                 ],
             ],
         ],
+        'edit' => [
+            'navigation_label' => 'Márka szerkesztése',
+        ],
     ],
 
 ];

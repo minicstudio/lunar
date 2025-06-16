@@ -81,6 +81,9 @@ return [
                 ],
             ],
         ],
+        'edit' => [
+            'navigation_label' => 'Edit Brand',
+        ],
     ],
 
 ];

@@ -72,7 +72,7 @@ class AttributeGroupResource extends BaseResource
             ->options(function () {
                 return AttributeManifest::getTypes()->mapWithKeys(
                     fn ($type) => [
-                        \Lunar\Facades\ModelManifest::getMorphMapKey($type) => class_basename($type),
+                        \Lunar\Facades\ModelManifest::getMorphMapKey($type) => __(class_basename($type)),
                     ]
                 );
             })
