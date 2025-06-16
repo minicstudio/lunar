@@ -54,5 +54,8 @@ return [
             'label' => 'Elérhetőség',
             'customer_groups' => 'Ez a szállítási mód jelenleg egyetlen vásárlói csoport számára sem elérhető.',
         ],
+        'edit' => [
+            'navigation_label' => 'Szállítási mód szerkesztése',
+        ],
     ],
 ];

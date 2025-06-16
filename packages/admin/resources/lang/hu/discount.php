@@ -20,10 +20,10 @@ return [
             'label' => 'Azonosító',
         ],
         'starts_at' => [
-            'label' => 'Kezdési dátum',
+            'label' => 'Kezdési dátum (UTC)',
         ],
         'ends_at' => [
-            'label' => 'Befejezési dátum',
+            'label' => 'Befejezési dátum (UTC)',
         ],
         'priority' => [
             'label' => 'Prioritás',
@@ -128,6 +128,9 @@ return [
         'limitations' => [
             'label' => 'Korlátozások',
         ],
+        'edit' => [
+            'navigation_label' => 'Kedvezmény szerkesztése',
+        ]
     ],
     'relationmanagers' => [
         'collections' => [

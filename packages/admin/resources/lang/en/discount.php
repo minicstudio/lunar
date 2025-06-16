@@ -20,10 +20,10 @@ return [
             'label' => 'Handle',
         ],
         'starts_at' => [
-            'label' => 'Start Date',
+            'label' => 'Start Date (UTC)',
         ],
         'ends_at' => [
-            'label' => 'End Date',
+            'label' => 'End Date (UTC)',
         ],
         'priority' => [
             'label' => 'Priority',
@@ -128,6 +128,9 @@ return [
         'limitations' => [
             'label' => 'Limitations',
         ],
+        'edit' => [
+            'navigation_label' => 'Edit Discount',
+        ]
     ],
     'relationmanagers' => [
         'collections' => [
