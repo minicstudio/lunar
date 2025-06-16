@@ -20,10 +20,10 @@ return [
             'label' => 'Handle',
         ],
         'starts_at' => [
-            'label' => 'Start Date',
+            'label' => 'Start Date (UTC)',
         ],
         'ends_at' => [
-            'label' => 'End Date',
+            'label' => 'End Date (UTC)',
         ],
         'priority' => [
             'label' => 'Priority',
