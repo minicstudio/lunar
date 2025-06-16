@@ -60,7 +60,7 @@ trait UpdatesOrderStatus
                 ])->filter()->unique()->mapWithKeys(
                     fn ($email) => [$email => $email]
                 )->toArray();
-            });
+            })->label(__('lunarpanel::order.action.update_status.email_addresses.label'));
     }
 
     protected static function getAdditionalEmailInput(): Forms\Components\TextInput
@@ -82,16 +82,17 @@ trait UpdatesOrderStatus
 
             return collect($mailers)->mapWithKeys(function ($mailer) {
                 return [
-                    $mailer => Str::title(
+                    $mailer => __(Str::title(
                         Str::snake(class_basename($mailer), ' ')
-                    ),
+                    )),
                 ];
             });
         })->hidden(function (Forms\Get $get) {
             return ! count(
                 static::getMailers($get('status'))
             );
-        })->live();
+        })->live()
+        ->label(__('lunarpanel::order.action.update_status.mailers.label'));
     }
 
     protected function getFormSteps()

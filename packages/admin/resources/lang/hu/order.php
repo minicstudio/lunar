@@ -251,6 +251,12 @@ return [
                 'label' => 'További email címzett',
                 'placeholder' => 'opcionális',
             ],
+            'mailers' => [
+                'label' => 'Levélküldők',
+            ],
+            'email_addresses' => [
+                'label' => 'Email címek',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'PDF letöltése',
