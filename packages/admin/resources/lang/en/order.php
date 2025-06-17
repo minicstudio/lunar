@@ -251,6 +251,12 @@ return [
                 'label' => 'Additional email recipient',
                 'placeholder' => 'optional',
             ],
+            'mailers' => [
+                'label' => 'Mailers',
+            ],
+            'email_addresses' => [
+                'label' => 'Email addresses',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Download PDF',
