@@ -6,6 +6,7 @@ use Filament\Forms\Form;
 use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\ProductVariantUpdated;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Filament\Resources\ProductVariantResource\Pages\ManageVariantInventory;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
@@ -76,6 +77,8 @@ class ManageProductInventory extends BaseEditRecord
         $variant = $this->getVariant();
 
         $variant->update($data);
+
+        event(new ProductVariantUpdated($variant));
 
         return $record;
     }
