@@ -90,6 +90,9 @@ return [
                         'no_shared_components' => [
                             'label' => 'No shared options are available.',
                         ],
+                        'preselect' => [
+                            'label' => 'Preselect all values by default.',
+                        ],
                     ],
                     'modal' => [
                         'heading' => 'Add Shared Option',

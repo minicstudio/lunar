@@ -16,6 +16,11 @@ class EditBrand extends BaseEditRecord
         return __('lunarpanel::brand.pages.edit.navigation_label');
     }
 
+    public function getTitle(): string
+    {
+        return __('lunarpanel::brand.pages.edit.title');
+    }
+
     protected function getDefaultHeaderActions(): array
     {
         return [

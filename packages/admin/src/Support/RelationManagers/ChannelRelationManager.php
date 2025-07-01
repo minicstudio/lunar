@@ -15,6 +15,11 @@ class ChannelRelationManager extends BaseRelationManager
 
     protected static string $relationship = 'channels';
 
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::relationmanagers.channels.title');
+    }
+
     public function isReadOnly(): bool
     {
         return false;
