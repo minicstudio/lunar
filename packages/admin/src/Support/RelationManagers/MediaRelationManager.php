@@ -26,12 +26,7 @@ class MediaRelationManager extends BaseRelationManager
         return false;
     }
 
-    public static function getTitle(Model $ownerRecord, string $pageClass): string
-    {
-        return __('kecske');
-    }
-
-    public function form(Form $form): Form
+    public function getDefaultForm(Form $form): Form
     {
         return $form
             ->schema([
@@ -57,7 +52,7 @@ class MediaRelationManager extends BaseRelationManager
             ]);
     }
 
-    public function table(Table $table): Table
+    public function getDefaultTable(Table $table): Table
     {
         return $table
             ->heading(function () {

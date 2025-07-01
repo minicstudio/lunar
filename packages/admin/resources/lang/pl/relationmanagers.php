@@ -2,6 +2,7 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Grupy klientów',
         'actions' => [
             'attach' => [
                 'label' => 'Dodaj grupę klientów',
@@ -55,6 +56,7 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Kanały',
         'actions' => [
             'attach' => [
                 'label' => 'Zaplanuj kolejny kanał',
@@ -232,6 +234,17 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Klasa podatkowa',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Wartości',
+        'table' => [
+            'name' => [
+                'label' => 'Nazwa',
+            ],
+            'position' => [
+                'label' => 'Pozycja',
             ],
         ],
     ],

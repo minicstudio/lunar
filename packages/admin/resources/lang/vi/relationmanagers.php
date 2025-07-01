@@ -2,6 +2,7 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Nhóm khách hàng',
         'actions' => [
             'attach' => [
                 'label' => 'Gắn nhóm khách hàng',
@@ -55,6 +56,7 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Kênh',
         'actions' => [
             'attach' => [
                 'label' => 'Lên lịch kênh khác',
@@ -269,6 +271,17 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Loại thuế',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Giá trị',
+        'table' => [
+            'name' => [
+                'label' => 'Tên',
+            ],
+            'position' => [
+                'label' => 'Vị trí',
             ],
         ],
     ],

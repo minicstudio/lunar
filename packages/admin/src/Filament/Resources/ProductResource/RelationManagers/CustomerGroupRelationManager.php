@@ -19,6 +19,11 @@ class CustomerGroupRelationManager extends BaseRelationManager
 
     public ?string $description = null;
 
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::relationmanagers.customer_groups.title');
+    }
+
     public function isReadOnly(): bool
     {
         return false;

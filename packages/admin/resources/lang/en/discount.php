@@ -74,19 +74,8 @@ return [
             'label' => 'Automatically add rewards',
             'helper_text' => 'Switch on to add reward products when not present in the basket.',
         ],
-        'type' => [
-            'label' => 'Type',
-            'options' => [
-                'buy_x_get_y' => [
-                    'label' => 'Buy X Get Y',
-                ],
-                'amount_off' => [
-                    'label' => 'Amount Off',
-                ],
-            ],
-        ],
         'fixed_value' => [
-            'label' => 'Fixed Value',
+            'label' => 'Fixed value',
         ],
         'percentage' => [
             'label' => 'Percentage',
@@ -120,10 +109,19 @@ return [
         'ends_at' => [
             'label' => 'End Date',
         ],
+        'created_at' => [
+            'label' => 'Created At',
+        ],
+        'coupon' => [
+            'label' => 'Coupon',
+        ],
     ],
     'pages' => [
         'availability' => [
             'label' => 'Availability',
+        ],
+        'edit' => [
+            'title' => 'Basic Information',
         ],
         'limitations' => [
             'label' => 'Limitations',

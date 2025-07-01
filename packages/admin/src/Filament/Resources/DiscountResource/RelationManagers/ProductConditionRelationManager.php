@@ -7,6 +7,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
+use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Product;
 
 class ProductConditionRelationManager extends BaseRelationManager
@@ -49,13 +50,13 @@ class ProductConditionRelationManager extends BaseRelationManager
                             __('lunarpanel::discount.relationmanagers.conditions.form.purchasable.label')
                         )
                         ->types([
-                            Forms\Components\MorphToSelect\Type::make(Product::class)
+                            Forms\Components\MorphToSelect\Type::make(Product::modelClass())
                                 ->titleAttribute('name.en')
                                 ->label(__('lunarpanel::discount.relationmanagers.conditions.form.purchasable.types.product.label'))
                                 ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
-                                    return get_search_builder(Product::class, $search)
+                                    return get_search_builder(Product::modelClass(), $search)
                                         ->get()
-                                        ->mapWithKeys(fn (Product $record): array => [$record->getKey() => $record->attr('name')])
+                                        ->mapWithKeys(fn (ProductContract $record): array => [$record->getKey() => $record->attr('name')])
                                         ->all();
                                 }),
                         ]),

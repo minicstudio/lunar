@@ -2,6 +2,7 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Klantengroepen',
         'actions' => [
             'attach' => [
                 'label' => 'Klantengroep Koppelen',
@@ -55,6 +56,7 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Kanalen',
         'actions' => [
             'attach' => [
                 'label' => 'Nog een Kanaal Inplannen',
@@ -269,6 +271,17 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Belastingklasse',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Waarden',
+        'table' => [
+            'name' => [
+                'label' => 'Naam',
+            ],
+            'position' => [
+                'label' => 'Positie',
             ],
         ],
     ],

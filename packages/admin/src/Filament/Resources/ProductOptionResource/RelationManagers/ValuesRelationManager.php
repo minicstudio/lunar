@@ -15,6 +15,11 @@ class ValuesRelationManager extends BaseRelationManager
 {
     protected static string $relationship = 'values';
 
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::relationmanagers.values.title');
+    }
+
     public function getTableRecordTitle(Model $record): ?string
     {
         return $record->translate('name');

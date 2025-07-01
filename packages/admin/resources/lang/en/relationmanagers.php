@@ -2,6 +2,7 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Customer Groups',
         'actions' => [
             'attach' => [
                 'label' => 'Attach Customer Group',
@@ -55,6 +56,7 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Channels',
         'actions' => [
             'attach' => [
                 'label' => 'Schedule another Channel',
@@ -301,4 +303,16 @@ return [
             ],
         ],
     ],
+    'values' => [
+        'title' => 'Values',
+        'table' => [
+            'name' => [
+                'label' => 'Name',
+            ],
+            'position' => [
+                'label' => 'Position',
+            ],
+        ],
+    ],
+
 ];

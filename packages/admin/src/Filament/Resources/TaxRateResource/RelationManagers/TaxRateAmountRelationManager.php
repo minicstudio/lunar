@@ -35,7 +35,7 @@ class TaxRateAmountRelationManager extends RelationManager
                 ->required()
                 ->label(__('lunarpanel::relationmanagers.tax_rate_amounts.form.tax_class.label'))
                 ->unique(
-                    TaxRateAmount::class,
+                    TaxRateAmount::modelClass(),
                     'tax_class_id',
                     ignoreRecord: true,
                     modifyRuleUsing: fn (Unique $rule) => $rule->when(

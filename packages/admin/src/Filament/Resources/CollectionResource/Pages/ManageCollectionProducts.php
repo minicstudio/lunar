@@ -14,6 +14,7 @@ use Lunar\Admin\Events\CollectionProductDetached;
 use Lunar\Admin\Filament\Resources\CollectionResource;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
+use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Product;
 
 class ManageCollectionProducts extends BaseManageRelatedRecords
@@ -53,6 +54,15 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
         return $form->schema([
             Tables\Columns\TextColumn::make('foo'),
         ]);
+    }
+
+    public function reorderTable(array $order): void
+    {
+        parent::reorderTable($order);
+
+        foreach (Product::whereIn('id', $order)->get() as $product) {
+            $product->searchable();
+        }
     }
 
     public function table(Table $table): Table
@@ -97,7 +107,7 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
 
                             return get_search_builder($relationModel, $search)
                                 ->get()
-                                ->mapWithKeys(fn (Product $record): array => [$record->getKey() => $record->translateAttribute('name')])
+                                ->mapWithKeys(fn (ProductContract $record): array => [$record->getKey() => $record->translateAttribute('name')])
                                 ->all();
                         }),
                 ])->action(function (array $arguments, array $data, Form $form, Table $table) {
