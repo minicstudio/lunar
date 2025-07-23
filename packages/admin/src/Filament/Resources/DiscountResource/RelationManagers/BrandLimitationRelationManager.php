@@ -54,7 +54,8 @@ class BrandLimitationRelationManager extends BaseRelationManager
                     )
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.attach.label')
-                    ),
+                    )
+                    ->recordSelectSearchColumns(['name']),
             ])->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(
