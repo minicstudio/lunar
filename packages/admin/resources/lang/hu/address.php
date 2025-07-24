@@ -19,7 +19,7 @@ return [
         'company_name' => [
             'label' => 'Cégnév',
         ],
-        'vat_number' => [
+        'tax_identifier' => [
             'label' => 'Adószám',
         ],
         'line_one' => [
@@ -70,7 +70,7 @@ return [
         'company_name' => [
             'label' => 'Cégnév',
         ],
-        'vat_number' => [
+        'tax_identifier' => [
             'label' => 'Adószám',
         ],
         'line_one' => [
