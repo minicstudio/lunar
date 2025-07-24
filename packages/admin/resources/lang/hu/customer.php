@@ -28,7 +28,7 @@ return [
         'company_name' => [
             'label' => 'Cégnév',
         ],
-        'vat_number' => [
+        'tax_identifier' => [
             'label' => 'Adószám',
         ],
         'account_reference' => [
@@ -58,7 +58,7 @@ return [
         'account_ref' => [
             'label' => 'Számlahivatkozás',
         ],
-        'vat_number' => [
+        'tax_identifier' => [
             'label' => 'Adószám',
         ],
         'customer_groups' => [

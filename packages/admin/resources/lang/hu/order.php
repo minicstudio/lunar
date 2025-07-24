@@ -80,7 +80,7 @@ return [
             'company_name' => [
                 'label' => 'Cégnév',
             ],
-            'vat_number' => [
+            'tax_identifier' => [
                 'label' => 'Adószám',
             ],
             'contact_phone' => [
