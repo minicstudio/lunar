@@ -15,7 +15,7 @@
 ### Composer Require Package
 
 ```sh
-composer require lunarphp/lunar:"^1.0"
+composer require lunarphp/lunar:"^1.0" -W
 ```
 
 ### Add the LunarUser Trait
