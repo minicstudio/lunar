@@ -6,6 +6,11 @@ use Lunar\Base\Migration;
 
 return new class extends Migration
 {
+    public function shouldRun()
+    {
+        return Schema::hasColumn($this->prefix.'customers', 'vat_number');
+    }
+
     public function up(): void
     {
         Schema::table($this->prefix.'customers', function (Blueprint $table) {
