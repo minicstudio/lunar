@@ -6,7 +6,7 @@ use Lunar\Base\Migration;
 
 return new class extends Migration
 {
-    public function shouldRun()
+    public function shouldRun(): bool
     {
         return Schema::hasColumn($this->prefix.'customers', 'vat_number');
     }
