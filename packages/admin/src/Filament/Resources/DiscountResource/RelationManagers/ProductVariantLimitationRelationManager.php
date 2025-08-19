@@ -49,6 +49,7 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                             Forms\Components\MorphToSelect\Type::make(ProductVariant::modelClass())
                                 ->titleAttribute('sku')
                                 ->label(__('lunarpanel::discount.relationmanagers.productvariants.form.purchasable.types.product_variant.label'))
+                                ->searchColumns(['sku'])
                                 ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
                                     $products = get_search_builder(Product::modelClass(), $search)
                                         ->get();

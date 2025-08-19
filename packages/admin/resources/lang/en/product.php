@@ -140,6 +140,7 @@ return [
                     ],
                 ],
             ],
+            'select_collection' => 'Select a collection',
         ],
         'associations' => [
             'label' => 'Product Associations',
