@@ -244,9 +244,7 @@ class AmountOff extends AbstractDiscountType
 
             $amount = (int) round($subTotal * ($value / 100));
 
-            // If this line already has a greater discount value
-            // don't add this one as they already have a better deal.
-            if ($lineDiscount > $amount) {
+            if ($amount <= 0) {
                 continue;
             }
 
