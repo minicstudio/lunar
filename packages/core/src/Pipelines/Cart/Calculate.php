@@ -21,7 +21,9 @@ class Calculate
 
         $subTotal = $cart->lines->sum('subTotal.value');
 
-        $total = $cart->lines->sum('total.value') + $cart->shippingTotal?->value;
+        $total = $cart->lines->sum(function ($line) {
+            return $line->subTotalDiscounted ? $line->subTotalDiscounted->value : $line->subTotal->value;
+        }) + $cart->shippingTotal?->value;
 
         $subTotalDiscounted = $cart->lines->sum(function ($line) {
             return $line->subTotalDiscounted ?
