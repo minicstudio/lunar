@@ -6,6 +6,9 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationBulkDetached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 use Lunar\Models\Contracts\ProductVariant as ProductVariantContract;
 use Lunar\Models\Product;
@@ -71,6 +74,9 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                     $data['type'] = 'limitation';
 
                     return $data;
+                })
+                ->after(function ($record) {
+                    DiscountLimitationAttached::dispatch($this->getOwnerRecord());
                 }),
             ])->columns([
                 Tables\Columns\TextColumn::make('discountable')
@@ -94,12 +100,18 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                     ),
             ])->actions([
                 Tables\Actions\DeleteAction::make()
-                    ->modalHeading(__('lunarpanel::discount.relationmanagers.productvariants.actions.delete.modal.heading')),
+                    ->modalHeading(__('lunarpanel::discount.relationmanagers.productvariants.actions.delete.modal.heading'))
+                    ->after(function ($record) {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    }),
             ])->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.productvariants.actions.delete.modal.bulk.heading')
-                    ),
+                    )
+                    ->after(function () {
+                        DiscountLimitationBulkDetached::dispatch();
+                    }),
             ]);
     }
 }

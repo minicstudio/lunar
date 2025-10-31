@@ -6,6 +6,9 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationBulkDetached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Product;
@@ -64,6 +67,9 @@ class ProductLimitationRelationManager extends BaseRelationManager
                     $data['type'] = 'limitation';
 
                     return $data;
+                })
+                ->after(function ($record) {
+                    DiscountLimitationAttached::dispatch($this->getOwnerRecord());
                 }),
             ])->columns([
                 Tables\Columns\SpatieMediaLibraryImageColumn::make('discountable.thumbnail')
@@ -83,12 +89,18 @@ class ProductLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\DeleteAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.products.actions.delete.heading')
-                    ),
+                    )
+                    ->after(function ($record) {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    }),
             ])->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.products.actions.delete.bulk.heading')
-                    ),
+                    )
+                    ->after(function () {
+                        DiscountLimitationBulkDetached::dispatch();
+                    }),
             ]);
     }
 }

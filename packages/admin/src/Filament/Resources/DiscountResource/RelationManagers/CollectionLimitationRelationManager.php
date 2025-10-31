@@ -6,6 +6,9 @@ use Filament\Forms\Components\Select;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationBulkDetached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 use Lunar\Models\Collection;
 
@@ -58,7 +61,10 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                     )
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.collections.actions.attach.label')
-                    ),
+                    )
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\TextColumn::make('attribute_data.name')
                     ->label(
@@ -78,12 +84,18 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\DetachAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.collections.actions.detach.label')
-                    ),
+                    )
+                    ->after(function () {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    }),
             ])->bulkActions([
                 Tables\Actions\DetachBulkAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.collections.actions.detach.bulk.label')
-                    ),
+                    )
+                    ->after(function () {
+                        DiscountLimitationBulkDetached::dispatch();
+                    }),
             ]);
     }
 }
