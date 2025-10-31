@@ -6,6 +6,9 @@ use Filament\Forms\Components\Select;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationBulkDetached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 
 class BrandLimitationRelationManager extends BaseRelationManager
@@ -55,7 +58,10 @@ class BrandLimitationRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.attach.label')
                     )
-                    ->recordSelectSearchColumns(['name']),
+                    ->recordSelectSearchColumns(['name'])
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(
@@ -69,6 +75,9 @@ class BrandLimitationRelationManager extends BaseRelationManager
                     ),
             ])->actions([
                 Tables\Actions\DetachAction::make()
+                    ->after(function ($record) {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    })
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.detach.heading')
                     ),
@@ -76,7 +85,10 @@ class BrandLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\DetachBulkAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.detach.bulk.heading')
-                    ),
+                    )
+                    ->after(function () {
+                        DiscountLimitationBulkDetached::dispatch();
+                    }),
             ]);
     }
 }

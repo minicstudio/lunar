@@ -5,6 +5,8 @@ namespace Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 
 class CustomerLimitationRelationManager extends BaseRelationManager
@@ -45,7 +47,10 @@ class CustomerLimitationRelationManager extends BaseRelationManager
                     )
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.customers.actions.attach.label')
-                    ),
+                    )
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\TextColumn::make('full_name')
                     ->label(
@@ -55,7 +60,10 @@ class CustomerLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\DetachAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.customers.actions.detach.label')
-                    ),
+                    )
+                    ->after(function () {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    }),
             ]);
     }
 }
