@@ -8,7 +8,7 @@ This repository serves as a monorepo for the main packages that make up Lunar.
 
 ## Documentation
 
-- [v1.0 documentation](https://docs-v1.lunarphp.io/)
+- [v1.0 documentation](https://docs.lunarphp.com/)
 
 ## Contribution
 
@@ -18,8 +18,8 @@ This repository serves as a monorepo for the main packages that make up Lunar.
 
 ## Community
 
-- [Join our discord server](https://discord.gg/v6qVWaf) and chat to the developers and people using Lunar.
-- [We have a roadmap](https://github.com/orgs/lunarphp/projects/8) where we will be detailing which features are next.
+- [Join our discord server](https://lunarphp.com/discord) and chat to the developers and people using Lunar.
+- [We have a roadmap](https://github.com/orgs/lunarphp/projects/9) where we will be detailing which features are next.
 
 ## Packages in this monorepo
 
