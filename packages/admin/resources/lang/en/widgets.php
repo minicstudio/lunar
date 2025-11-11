@@ -89,6 +89,23 @@ return [
             'latest_orders' => [
                 'heading' => 'Latest orders',
             ],
+            'orders_by_status' => [
+                'heading' => 'Orders by Status',
+                'yaxis' => [
+                    'count' => [
+                        'label' => 'Number of Orders',
+                    ],
+                ],
+                'tooltip' => [
+                    'orders' => 'orders',
+                ],
+            ],
+            'order_values_by_status' => [
+                'heading' => 'Order Values by Status',
+                'yaxis' => [
+                    'label' => 'Order Value',
+                ],
+            ],
         ],
     ],
     'customer' => [
