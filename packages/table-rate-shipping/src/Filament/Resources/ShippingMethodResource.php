@@ -140,7 +140,7 @@ class ShippingMethodResource extends BaseResource
             ->options([
                 'ship-by' => __('lunarpanel.shipping::shippingmethod.form.driver.options.ship-by'),
                 'collection' => __('lunarpanel.shipping::shippingmethod.form.driver.options.collection'),
-            ])->label('Type')
+            ])
             ->default('ship-by');
     }
 
@@ -188,7 +188,7 @@ class ShippingMethodResource extends BaseResource
         ];
     }
 
-    public static function getPages(): array
+    public static function getDefaultPages(): array
     {
         return [
             'index' => Pages\ListShippingMethod::route('/'),

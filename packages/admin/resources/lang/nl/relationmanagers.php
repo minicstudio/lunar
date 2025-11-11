@@ -2,9 +2,15 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Klantengroepen',
         'actions' => [
             'attach' => [
                 'label' => 'Klantengroep Koppelen',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Klantengroep Bewerken',
+                ],
             ],
         ],
         'form' => [
@@ -50,9 +56,15 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Kanalen',
         'actions' => [
             'attach' => [
                 'label' => 'Nog een Kanaal Inplannen',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Kanaal Bewerken',
+                ],
             ],
         ],
         'form' => [
@@ -128,6 +140,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'URL Aanmaken',
+                'modal' => [
+                    'heading' => 'URL Aanmaken',
+                ],
             ],
         ],
         'filters' => [
@@ -256,6 +271,17 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Belastingklasse',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Waarden',
+        'table' => [
+            'name' => [
+                'label' => 'Naam',
+            ],
+            'position' => [
+                'label' => 'Positie',
             ],
         ],
     ],

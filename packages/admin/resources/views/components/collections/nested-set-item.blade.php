@@ -64,7 +64,7 @@
                             icon="heroicon-m-ellipsis-vertical"
                             color="primary"
                             size="md"
-                            tooltip="More actions"
+                            tooltip="{{ __('lunarpanel::collection.nested_set_item.more_actions') }}"
                             dropdown-placement="bottom-start"
                     />
                 </div>

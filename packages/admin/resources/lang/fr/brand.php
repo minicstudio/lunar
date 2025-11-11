@@ -29,11 +29,17 @@ return [
         ],
     ],
     'pages' => [
+        'edit' => [
+            'title' => 'Informations de base',
+        ],
         'products' => [
             'label' => 'Produits',
             'actions' => [
                 'attach' => [
                     'label' => 'Associer un produit',
+                    'modal' => [
+                        'heading' => 'Associer un produit',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Produit',
@@ -46,6 +52,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'Produit dissocié.',
+                    ],
+                    'modal' => [
+                        'heading' => 'Dissocier le produit',
                     ],
                 ],
             ],
@@ -64,6 +73,14 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Associer une collection',
+                    'modal' => [
+                        'heading' => 'Associer la collection',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Dissocier la collection',
+                    ],
                 ],
             ],
         ],

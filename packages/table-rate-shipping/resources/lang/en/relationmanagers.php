@@ -12,6 +12,16 @@ return [
             'create' => [
                 'label' => 'Create Shipping Rate',
             ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Delete Shipping Rate',
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Edit Shipping Rate',
+                ],
+            ],
         ],
         'notices' => [
             'prices_incl_tax' => 'All prices include tax, which will be considered when calculating minimum spend.',
@@ -34,8 +44,11 @@ return [
                     'currency_id' => [
                         'label' => 'Currency',
                     ],
-                    'min_quantity' => [
+                    'min_spend' => [
                         'label' => 'Min. Spend',
+                    ],
+                    'min_weight' => [
+                        'label' => 'Min. Weight',
                     ],
                     'price' => [
                         'label' => 'Price',
@@ -65,12 +78,36 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Add shipping exclusion list',
+                'modal' => [
+                    'heading' => 'Add shipping exclusion',
+                ],
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Delete shipping exclusion',
+                ],
+                'bulk' => [
+                    'modal' => [
+                        'heading' => 'Delete selected shipping exclusions',
+                    ],
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Edit shipping exclusion',
+                ],
             ],
             'attach' => [
                 'label' => 'Add exclusion list',
+                'modal' => [
+                    'heading' => 'Attach exclusion list',
+                ],
             ],
             'detach' => [
                 'label' => 'Remove',
+                'modal' => [
+                    'heading' => 'Detach Exclusion List',
+                ],
             ],
         ],
     ],

@@ -36,7 +36,9 @@ class CreateChildCollection extends CreateAction
         }
 
         $this->form([
-            $formInput::make('name')->required(),
+            $formInput::make('name')
+                ->required()
+                ->label(__('lunarpanel::actions.collections.create_child.form.name.label')),
         ]);
 
         $this->label(

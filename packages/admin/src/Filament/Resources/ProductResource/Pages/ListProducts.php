@@ -83,10 +83,10 @@ class ListProducts extends BaseListRecords
     public function getDefaultTabs(): array
     {
         return [
-            'all' => Tab::make('All'),
-            'published' => Tab::make('Published')
+            'all' => Tab::make(__('All')),
+            'published' => Tab::make(__('Published'))
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'published')),
-            'draft' => Tab::make('Draft')
+            'draft' => Tab::make(__('Draft'))
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'draft'))
                 ->badge(Product::query()->where('status', 'draft')->count()),
         ];

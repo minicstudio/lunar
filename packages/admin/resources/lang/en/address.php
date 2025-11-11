@@ -19,8 +19,8 @@ return [
         'company_name' => [
             'label' => 'Company Name',
         ],
-        'vat_number' => [
-            'label' => 'VAT number',
+        'tax_identifier' => [
+            'label' => 'Tax Identifier',
         ],
         'line_one' => [
             'label' => 'Address',
@@ -52,6 +52,12 @@ return [
     ],
 
     'form' => [
+        'edit' => [
+            'heading' => 'Edit Address',
+        ],
+        'delete' => [
+            'heading' => 'Delete Address',
+        ],
         'title' => [
             'label' => 'Title',
         ],
@@ -64,8 +70,8 @@ return [
         'company_name' => [
             'label' => 'Company Name',
         ],
-        'vat_number' => [
-            'label' => 'VAT number',
+        'tax_identifier' => [
+            'label' => 'Tax Identifier',
         ],
         'line_one' => [
             'label' => 'Line One',

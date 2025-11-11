@@ -26,7 +26,7 @@ class MediaRelationManager extends BaseRelationManager
         return false;
     }
 
-    public function form(Form $form): Form
+    public function getDefaultForm(Form $form): Form
     {
         return $form
             ->schema([
@@ -52,11 +52,11 @@ class MediaRelationManager extends BaseRelationManager
             ]);
     }
 
-    public function table(Table $table): Table
+    public function getDefaultTable(Table $table): Table
     {
         return $table
             ->heading(function () {
-                return $this->getOwnerRecord()->getMediaCollectionTitle($this->mediaCollection) ?? Str::ucfirst($this->mediaCollection);
+                return __($this->getOwnerRecord()->getMediaCollectionTitle($this->mediaCollection) ?? Str::ucfirst($this->mediaCollection));
             })
             ->description(function () {
                 return $this->getOwnerRecord()->getMediaCollectionDescription($this->mediaCollection) ?? '';

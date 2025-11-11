@@ -23,14 +23,14 @@ use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Facades\Discounts;
-use Lunar\Models\Contracts\Discount;
+use Lunar\Models\Contracts\Discount as DiscountContract;
 use Lunar\Models\Currency;
 
 class DiscountResource extends BaseResource
 {
     protected static ?string $permission = 'sales:manage-discounts';
 
-    protected static ?string $model = Discount::class;
+    protected static ?string $model = DiscountContract::class;
 
     protected static ?int $navigationSort = 3;
 
@@ -209,7 +209,8 @@ class DiscountResource extends BaseResource
                 __('lunarpanel::discount.form.coupon.label')
             )->helperText(
                 __('lunarpanel::discount.form.coupon.helper_text')
-            );
+            )
+            ->unique(ignoreRecord: true);
     }
 
     protected static function getMaxUsesFormComponent(): Component
@@ -255,11 +256,20 @@ class DiscountResource extends BaseResource
 
     public static function getDiscountTypeFormComponent(): Component
     {
-        return Forms\Components\Select::make('type')->options(
-            Discounts::getTypes()->mapWithKeys(
-                fn ($type) => [get_class($type) => $type->getName()]
+        return Forms\Components\Select::make('type')
+            ->options(
+                Discounts::getTypes()->mapWithKeys(function ($type) {
+                    $class = get_class($type);
+                    $slug = str($class)->classBasename()->kebab()->replace('-', '_');
+
+                    return [
+                        $class => __('lunarpanel::discount.form.type.options.' . $slug . '.label'),
+                    ];
+                })
             )
-        )->required()->live();
+            ->required()
+            ->live()
+            ->label(__('lunarpanel::discount.form.type.label'));
     }
 
     protected static function getAmountOffFormComponents(): array
@@ -284,10 +294,18 @@ class DiscountResource extends BaseResource
         }
 
         return [
-            Forms\Components\Toggle::make('data.fixed_value')->live(),
+            Forms\Components\Toggle::make('data.fixed_value')
+                ->live()
+                ->label(
+                    __('lunarpanel::discount.form.fixed_value.label')
+                ),
             Forms\Components\TextInput::make('data.percentage')->visible(
-                fn (Forms\Get $get) => ! $get('data.fixed_value')
-            )->numeric(),
+                    fn (Forms\Get $get) => ! $get('data.fixed_value')
+                )
+                ->numeric()
+                ->label(
+                    __('lunarpanel::discount.form.percentage.label')
+                ),
             Forms\Components\Group::make(
                 $currencyInputs
             )->visible(
@@ -359,21 +377,39 @@ class DiscountResource extends BaseResource
                     \Lunar\Models\Discount::EXPIRED => 'danger',
                     \Lunar\Models\Discount::PENDING => 'gray',
                     \Lunar\Models\Discount::SCHEDULED => 'info',
-                }),
+                })
+                ->toggleable(),
             Tables\Columns\TextColumn::make('name')
                 ->label(__('lunarpanel::discount.table.name.label'))
-                ->searchable(),
+                ->searchable()
+                ->sortable()
+                ->toggleable(),
             Tables\Columns\TextColumn::make('type')
                 ->formatStateUsing(function ($state) {
                     return (new $state)->getName();
                 })
-                ->label(__('lunarpanel::discount.table.type.label')),
+                ->label(__('lunarpanel::discount.table.type.label'))
+                ->toggleable(),
             Tables\Columns\TextColumn::make('starts_at')
                 ->label(__('lunarpanel::discount.table.starts_at.label'))
-                ->date(),
+                ->date()
+                ->sortable()
+                ->toggleable(),
             Tables\Columns\TextColumn::make('ends_at')
                 ->label(__('lunarpanel::discount.table.ends_at.label'))
-                ->date(),
+                ->date()
+                ->sortable()
+                ->toggleable(),
+            Tables\Columns\TextColumn::make('coupon')
+                ->label(__('lunarpanel::discount.table.coupon.label'))
+                ->searchable()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+            Tables\Columns\TextColumn::make('created_at')
+                ->label(__('lunarpanel::discount.table.created_at.label'))
+                ->date()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 

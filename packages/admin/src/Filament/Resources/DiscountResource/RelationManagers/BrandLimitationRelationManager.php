@@ -5,6 +5,10 @@ namespace Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers;
 use Filament\Forms\Components\Select;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationBulkDetached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 
 class BrandLimitationRelationManager extends BaseRelationManager
@@ -12,6 +16,11 @@ class BrandLimitationRelationManager extends BaseRelationManager
     protected static bool $isLazy = false;
 
     protected static string $relationship = 'brands';
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::brand.plural_label');
+    }
 
     public function isReadOnly(): bool
     {
@@ -22,6 +31,9 @@ class BrandLimitationRelationManager extends BaseRelationManager
     {
 
         return $table
+            ->heading(
+                __('lunarpanel::discount.relationmanagers.brands.title')
+            )
             ->description(
                 __('lunarpanel::discount.relationmanagers.brands.description')
             )
@@ -30,6 +42,7 @@ class BrandLimitationRelationManager extends BaseRelationManager
                 Tables\Actions\AttachAction::make()->form(fn (Tables\Actions\AttachAction $action): array => [
                     $action->getRecordSelect(),
                     Select::make('type')
+                        ->label(__('lunarpanel::discount.relationmanagers.brands.form.type.label'))
                         ->options(
                             fn () => [
                                 'limitation' => __('lunarpanel::discount.relationmanagers.brands.form.type.options.limitation.label'),
@@ -41,7 +54,14 @@ class BrandLimitationRelationManager extends BaseRelationManager
                 })->preloadRecordSelect()
                     ->label(
                         __('lunarpanel::discount.relationmanagers.brands.actions.attach.label')
-                    ),
+                    )
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.brands.actions.attach.label')
+                    )
+                    ->recordSelectSearchColumns(['name'])
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(
@@ -54,9 +74,21 @@ class BrandLimitationRelationManager extends BaseRelationManager
                         fn (string $state) => __("lunarpanel::discount.relationmanagers.brands.table.type.{$state}.label")
                     ),
             ])->actions([
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->after(function ($record) {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    })
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.brands.actions.detach.heading')
+                    ),
             ])->bulkActions([
-                Tables\Actions\DetachBulkAction::make(),
+                Tables\Actions\DetachBulkAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.brands.actions.detach.bulk.heading')
+                    )
+                    ->after(function () {
+                        DiscountLimitationBulkDetached::dispatch();
+                    }),
             ]);
     }
 }

@@ -6,6 +6,10 @@ return [
 
     'plural_label' => 'Products',
 
+    'tabs' => [
+        'all' => 'All',
+    ],
+
     'status' => [
         'unpublished' => [
             'content' => 'Currently in draft status, this product is hidden across all channels and customer groups.',
@@ -59,6 +63,9 @@ return [
         'sku' => [
             'label' => 'SKU',
         ],
+        'base_price' => [
+            'label' => 'Base price',
+        ],
         'producttype' => [
             'label' => 'Product Type',
         ],
@@ -81,6 +88,7 @@ return [
         ],
         'collections' => [
             'label' => 'Collections',
+            'select_collection' => 'Select a collection',
         ],
     ],
 
@@ -116,9 +124,51 @@ return [
         ],
         'collections' => [
             'label' => 'Collections',
+            'actions' => [
+                'attach' => [
+                    'heading' => 'Attach Collection',
+                    'form' => [
+                        'collection' => [
+                            'placeholder' => 'Select a collection',
+                        ],
+                    ],
+                ],
+                'detach' => [
+                    'heading' => 'Detach Collection',
+                    'bulk' => [
+                        'heading' => 'Detach selected collections',
+                    ],
+                ],
+            ],
+            'select_collection' => 'Select a collection',
         ],
         'associations' => [
             'label' => 'Product Associations',
+            'actions' => [
+                'create' => [
+                    'label' => 'New product association',
+                    'heading' => 'Create product association',
+                ],
+                'delete' => [
+                    'heading' => 'Delete product association',
+                    'bulk' => [
+                        'heading' => 'Delete selected product associations',
+                    ],
+                ],
+            ],
+            'form' => [
+                'target' => [
+                    'label' => 'Product',
+                ],
+                'type' => [
+                    'label' => 'Type',
+                    'options' => [
+                        'alternate' => 'Alternate',
+                        'cross-sell' => 'Cross-sell',
+                        'up-sell' => 'Up-sell',
+                    ],
+                ],
+            ],
         ],
     ],
 

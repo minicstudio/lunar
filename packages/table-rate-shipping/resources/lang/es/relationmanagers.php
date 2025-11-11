@@ -12,6 +12,16 @@ return [
             'create' => [
                 'label' => 'Crear Tarifa de Envío',
             ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Eliminar tarifa de envío',
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Editar tarifa de envío',
+                ],
+            ],
         ],
         'notices' => [
             'prices_incl_tax' => 'Todos los precios incluyen impuestos, que se tendrán en cuenta al calcular el gasto mínimo.',
@@ -34,8 +44,11 @@ return [
                     'currency_id' => [
                         'label' => 'Moneda',
                     ],
-                    'min_quantity' => [
+                    'min_spend' => [
                         'label' => 'Gasto Mín.',
+                    ],
+                    'min_weight' => [
+                        'label' => 'Peso Mín.',
                     ],
                     'price' => [
                         'label' => 'Precio',
@@ -65,12 +78,36 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Agregar lista de exclusión de envío',
+                'modal' => [
+                    'heading' => 'Agregar exclusión de envío',
+                ],
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Eliminar exclusión de envío',
+                ],
+                'bulk' => [
+                    'modal' => [
+                        'heading' => 'Eliminar exclusiones de envío seleccionadas',
+                    ],
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Editar exclusión de envío',
+                ],
             ],
             'attach' => [
                 'label' => 'Agregar lista de exclusión',
+                'modal' => [
+                    'heading' => 'Adjuntar lista de exclusión',
+                ],
             ],
             'detach' => [
                 'label' => 'Eliminar',
+                'modal' => [
+                    'heading' => 'Desprender lista de exclusión',
+                ],
             ],
         ],
     ],

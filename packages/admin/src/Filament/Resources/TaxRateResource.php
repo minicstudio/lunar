@@ -11,7 +11,7 @@ use Lunar\Admin\Filament\Clusters\Taxes;
 use Lunar\Admin\Filament\Resources\TaxRateResource\Pages;
 use Lunar\Admin\Filament\Resources\TaxRateResource\RelationManagers\TaxRateAmountRelationManager;
 use Lunar\Admin\Support\Resources\BaseResource;
-use Lunar\Models\TaxRate;
+use Lunar\Models\Contracts\TaxRate as TaxRateContract;
 
 class TaxRateResource extends BaseResource
 {
@@ -19,7 +19,7 @@ class TaxRateResource extends BaseResource
 
     protected static ?string $permission = 'settings:core';
 
-    protected static ?string $model = TaxRate::class;
+    protected static ?string $model = TaxRateContract::class;
 
     protected static ?int $navigationSort = 1;
 
@@ -98,7 +98,8 @@ class TaxRateResource extends BaseResource
     protected static function getTableColumns(): array
     {
         return [
-            Tables\Columns\TextColumn::make('name'),
+            Tables\Columns\TextColumn::make('name')
+                ->label(__('lunarpanel::taxrate.table.name.label')),
             Tables\Columns\TextColumn::make('taxZone.name')
                 ->label(__('lunarpanel::taxrate.table.tax_zone.label')),
             Tables\Columns\TextColumn::make('priority')

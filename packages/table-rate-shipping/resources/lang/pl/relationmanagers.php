@@ -12,6 +12,16 @@ return [
             'create' => [
                 'label' => 'Utwórz stawkę dostawy',
             ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Usuń stawkę wysyłki',
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Edytuj stawkę wysyłki',
+                ],
+            ],
         ],
         'notices' => [
             'prices_incl_tax' => 'Wszystkie ceny zawierają podatek, który będzie brany pod uwagę przy obliczaniu minimalnej kwoty.',
@@ -34,8 +44,11 @@ return [
                     'currency_id' => [
                         'label' => 'Waluta',
                     ],
-                    'min_quantity' => [
-                        'label' => 'Minimalna kwota',
+                    'min_spend' => [
+                        'label' => 'Min. Kwota',
+                    ],
+                    'min_weight' => [
+                        'label' => 'Min. Waga',
                     ],
                     'price' => [
                         'label' => 'Cena',
@@ -65,12 +78,36 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Dodaj listę wyłączeń dostawy',
+                'modal' => [
+                    'heading' => 'Dodaj wykluczenie wysyłki',
+                ],
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Usuń wykluczenie wysyłki',
+                ],
+                'bulk' => [
+                    'modal' => [
+                        'heading' => 'Usuń wybrane wykluczenia wysyłki',
+                    ],
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Edytuj wykluczenie wysyłki',
+                ],
             ],
             'attach' => [
                 'label' => 'Dodaj listę wyłączeń',
+                'modal' => [
+                    'heading' => 'Dołącz listę wykluczeń',
+                ],
             ],
             'detach' => [
                 'label' => 'Usuń',
+                'modal' => [
+                    'heading' => 'Odłącz listę wykluczeń',
+                ],
             ],
         ],
     ],

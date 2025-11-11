@@ -134,22 +134,28 @@ class AttributesRelationManager extends BaseRelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()->mutateFormDataUsing(function (array $data, RelationManager $livewire) {
-                    $data['configuration'] = $data['configuration'] ?? [];
-                    $data['system'] = false;
-                    $data['attribute_type'] = $livewire->ownerRecord->attributable_type;
-                    $data['position'] = $livewire->ownerRecord->attributes()->count() + 1;
+                Tables\Actions\CreateAction::make()
+                    ->mutateFormDataUsing(function (array $data, RelationManager $livewire) {
+                        $data['configuration'] = $data['configuration'] ?? [];
+                        $data['system'] = false;
+                        $data['attribute_type'] = $livewire->ownerRecord->attributable_type;
+                        $data['position'] = $livewire->ownerRecord->attributes()->count() + 1;
 
-                    return $data;
-                }),
+                        return $data;
+                    })
+                    ->label(__('lunarpanel::attribute.table.actions.create.label'))
+                    ->modalHeading(__('lunarpanel::attribute.table.actions.create.heading'))
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalHeading(__('lunarpanel::attribute.table.actions.edit.heading')),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading(__('lunarpanel::attribute.table.actions.delete.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->modalHeading(__('lunarpanel::attribute.table.actions.delete.bulk.heading')),
                 ]),
             ])
             ->defaultSort('position', 'asc')

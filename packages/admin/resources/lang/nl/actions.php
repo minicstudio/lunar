@@ -4,15 +4,31 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Maak Hoofdcategorie',
+            'form' => [
+                'name' => [
+                    'label' => 'Naam',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Maak Subcategorie',
+            'form' => [
+                'name' => [
+                    'label' => 'Naam',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Verplaats Categorie',
         ],
         'delete' => [
             'label' => 'Verwijderen',
+            'notifications' => [
+                'cannot_delete' => [
+                    'title' => 'Kan niet verwijderen',
+                    'body' => 'Deze collectie heeft onderliggende collecties en kan niet worden verwijderd.',
+                ],
+            ],
         ],
     ],
     'orders' => [

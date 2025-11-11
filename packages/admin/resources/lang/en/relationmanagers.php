@@ -2,9 +2,15 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Customer Groups',
         'actions' => [
             'attach' => [
                 'label' => 'Attach Customer Group',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Edit Customer Group',
+                ],
             ],
         ],
         'form' => [
@@ -50,9 +56,15 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Channels',
         'actions' => [
             'attach' => [
                 'label' => 'Schedule another Channel',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Edit Channel',
+                ],
             ],
         ],
         'form' => [
@@ -136,6 +148,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Create URL',
+                'modal' => [
+                    'heading' => 'Create URL',
+                ],
             ],
         ],
         'filters' => [
@@ -246,6 +261,7 @@ return [
                     'price' => [
                         'label' => 'Price',
                         'helper_text' => 'The purchase price, before discounts.',
+                        'sync_price' => 'Price is synced with the default currency.',
                     ],
                     'compare_price' => [
                         'label' => 'Comparison Price',
@@ -257,6 +273,7 @@ return [
         ],
     ],
     'tax_rate_amounts' => [
+        'title' => 'Tax Rate Amounts',
         'table' => [
             'description' => '',
             'percentage' => [
@@ -265,6 +282,38 @@ return [
             'tax_class' => [
                 'label' => 'Tax Class',
             ],
+            'actions' => [
+                'create' => [
+                    'label' => 'New Tax Rate Amount',
+                    'heading' => 'Create Tax Rate Amount',
+                ],
+                'edit' => [
+                    'heading' => 'Edit tax rate amount',
+                ],
+                'delete' => [
+                    'heading' => 'Delete tax rate amount',
+                ],
+            ],
+        ],
+        'form' => [
+            'tax_class' => [
+                'label' => 'Tax Class',
+            ],
+            'percentage' => [
+                'label' => 'Percentage',
+            ],
         ],
     ],
+    'values' => [
+        'title' => 'Values',
+        'table' => [
+            'name' => [
+                'label' => 'Name',
+            ],
+            'position' => [
+                'label' => 'Position',
+            ],
+        ],
+    ],
+
 ];

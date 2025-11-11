@@ -8,6 +8,7 @@ use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rules\Unique;
 use Lunar\Models\TaxRateAmount;
 
@@ -22,13 +23,19 @@ class TaxRateAmountRelationManager extends RelationManager
         return false;
     }
 
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::relationmanagers.tax_rate_amounts.title');
+    }
+
     public function form(Form $form): Form
     {
         return $form->schema([
             Select::make('tax_class_id')
                 ->required()
+                ->label(__('lunarpanel::relationmanagers.tax_rate_amounts.form.tax_class.label'))
                 ->unique(
-                    TaxRateAmount::class,
+                    TaxRateAmount::modelClass(),
                     'tax_class_id',
                     ignoreRecord: true,
                     modifyRuleUsing: fn (Unique $rule) => $rule->when(
@@ -37,7 +44,8 @@ class TaxRateAmountRelationManager extends RelationManager
                     )
                 )
                 ->relationship(name: 'taxClass', titleAttribute: 'name'),
-            TextInput::make('percentage')->numeric()->required(),
+            TextInput::make('percentage')->numeric()->required()
+                ->label(__('lunarpanel::relationmanagers.tax_rate_amounts.form.percentage.label')),
         ])->columns(2);
     }
 
@@ -49,7 +57,11 @@ class TaxRateAmountRelationManager extends RelationManager
             )
             ->paginated(false)
             ->headerActions([
-                Tables\Actions\CreateAction::make('create'),
+                Tables\Actions\CreateAction::make('create')
+                    ->label(__('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.create.label'))
+                    ->modalHeading(
+                        __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.create.heading')
+                    ),
             ])->columns([
                 Tables\Columns\TextColumn::make('taxClass.name')->label(
                     __('lunarpanel::relationmanagers.tax_rate_amounts.table.tax_class.label')
@@ -58,8 +70,14 @@ class TaxRateAmountRelationManager extends RelationManager
                     __('lunarpanel::relationmanagers.tax_rate_amounts.table.percentage.label')
                 ),
             ])->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.edit.heading')
+                    ),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.delete.heading')
+                    ),
             ]);
     }
 }

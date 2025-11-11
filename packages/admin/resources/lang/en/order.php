@@ -10,6 +10,10 @@ return [
         'manage' => 'Manage',
     ],
 
+    'tabs' => [
+        'all' => 'All',
+    ],
+
     'transactions' => [
         'capture' => 'Captured',
         'intent' => 'Intent',
@@ -80,8 +84,8 @@ return [
             'company_name' => [
                 'label' => 'Company Name',
             ],
-            'vat_number' => [
-                'label' => 'VAT Number',
+            'tax_identifier' => [
+                'label' => 'Tax Identifier',
             ],
             'contact_phone' => [
                 'label' => 'Phone',
@@ -250,6 +254,12 @@ return [
             'additional_email_recipient' => [
                 'label' => 'Additional email recipient',
                 'placeholder' => 'optional',
+            ],
+            'mailers' => [
+                'label' => 'Mailers',
+            ],
+            'email_addresses' => [
+                'label' => 'Email addresses',
             ],
         ],
         'download_order_pdf' => [

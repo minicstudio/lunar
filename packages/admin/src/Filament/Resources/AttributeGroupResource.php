@@ -14,14 +14,14 @@ use Lunar\Admin\Filament\Resources\AttributeGroupResource\RelationManagers;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
 use Lunar\Facades\AttributeManifest;
-use Lunar\Models\Contracts\AttributeGroup;
+use Lunar\Models\Contracts\AttributeGroup as AttributeGroupContract;
 use Lunar\Models\Language;
 
 class AttributeGroupResource extends BaseResource
 {
     protected static ?string $permission = 'settings:manage-attributes';
 
-    protected static ?string $model = AttributeGroup::class;
+    protected static ?string $model = AttributeGroupContract::class;
 
     protected static ?int $navigationSort = 1;
 
@@ -72,7 +72,7 @@ class AttributeGroupResource extends BaseResource
             ->options(function () {
                 return AttributeManifest::getTypes()->mapWithKeys(
                     fn ($type) => [
-                        \Lunar\Facades\ModelManifest::getMorphMapKey($type) => class_basename($type),
+                        \Lunar\Facades\ModelManifest::getMorphMapKey($type) => __(class_basename($type)),
                     ]
                 );
             })

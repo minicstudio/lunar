@@ -11,6 +11,7 @@ use Lunar\Admin\Filament\Resources\BrandResource;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
 use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
 use Lunar\Models\Collection;
+use Lunar\Models\Contracts\Collection as CollectionContract;
 
 class ManageBrandCollections extends BaseManageRelatedRecords
 {
@@ -44,9 +45,11 @@ class ManageBrandCollections extends BaseManageRelatedRecords
                 ->limit(50)
                 ->label(__('lunarpanel::product.table.name.label')),
         ])->actions([
-            DetachAction::make(),
+            DetachAction::make()
+                ->modalHeading(__('lunarpanel::brand.pages.collections.actions.detach.modal.heading'))
         ])->headerActions([
             Tables\Actions\AttachAction::make()
+                ->modalHeading(__('lunarpanel::brand.pages.collections.actions.attach.modal.heading'))
                 ->recordSelect(
                     function (Forms\Components\Select $select) {
                         return $select->placeholder(
@@ -55,7 +58,7 @@ class ManageBrandCollections extends BaseManageRelatedRecords
                             ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
                                 return Collection::search($search)
                                     ->get()
-                                    ->mapWithKeys(fn (Collection $record): array => [$record->getKey() => $record->breadcrumb->push($record->translateAttribute('name'))->join(' > ')])
+                                    ->mapWithKeys(fn (CollectionContract $record): array => [$record->getKey() => $record->breadcrumb->push($record->translateAttribute('name'))->join(' > ')])
                                     ->all();
                             });
                     }

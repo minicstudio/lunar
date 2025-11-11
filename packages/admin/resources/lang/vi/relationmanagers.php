@@ -2,9 +2,15 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Nhóm khách hàng',
         'actions' => [
             'attach' => [
                 'label' => 'Gắn nhóm khách hàng',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Chỉnh sửa nhóm khách hàng',
+                ],
             ],
         ],
         'form' => [
@@ -50,9 +56,15 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Kênh',
         'actions' => [
             'attach' => [
                 'label' => 'Lên lịch kênh khác',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Chỉnh sửa kênh',
+                ],
             ],
         ],
         'form' => [
@@ -128,6 +140,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Tạo đường dẫn',
+                'modal' => [
+                    'heading' => 'Tạo đường dẫn',
+                ],
             ],
         ],
         'filters' => [
@@ -256,6 +271,17 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Loại thuế',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Giá trị',
+        'table' => [
+            'name' => [
+                'label' => 'Tên',
+            ],
+            'position' => [
+                'label' => 'Vị trí',
             ],
         ],
     ],

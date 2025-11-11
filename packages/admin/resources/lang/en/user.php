@@ -16,6 +16,9 @@ return [
     ],
 
     'form' => [
+        'edit' => [
+            'heading' => 'Edit User',
+        ],
         'email' => [
             'label' => 'Email',
         ],

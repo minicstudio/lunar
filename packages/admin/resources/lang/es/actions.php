@@ -4,15 +4,31 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Crear colección raíz',
+            'form' => [
+                'name' => [
+                    'label' => 'Nombre',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Crear colección secundaria',
+            'form' => [
+                'name' => [
+                    'label' => 'Nombre',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Mover colección',
         ],
         'delete' => [
             'label' => 'Eliminar',
+            'notifications' => [
+                'cannot_delete' => [
+                    'title' => 'No se puede eliminar',
+                    'body' => 'Esta colección tiene colecciones secundarias y no se puede eliminar.',
+                ],
+            ],
         ],
     ],
     'orders' => [

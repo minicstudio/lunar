@@ -2,6 +2,7 @@
 
 namespace Lunar\Admin\Filament\Widgets\Dashboard\Orders;
 
+use Carbon\CarbonInterface;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Lunar\Facades\DB;
@@ -24,9 +25,10 @@ class OrdersSalesChart extends ApexChartWidget
         return __('lunarpanel::widgets.dashboard.orders.order_sales_chart.heading');
     }
 
-    protected function getOrderQuery(?\DateTime $from = null, ?\DateTime $to = null)
+    protected function getOrderQuery(\DateTime|CarbonInterface|null $from = null, \DateTime|CarbonInterface|null $to = null)
     {
         return Order::whereNotNull('placed_at')
+            ->with(['currency'])
             ->whereBetween('placed_at', [
                 $from,
                 $to,
@@ -44,6 +46,7 @@ class OrdersSalesChart extends ApexChartWidget
 
         $orders = $this->getOrderQuery($from, $date)
             ->select(
+                DB::RAW('MAX(currency_code) as currency_code'),
                 DB::RAW('SUM(total) as total'),
                 DB::RAW('COUNT(*) as count'),
                 DB::RAW('SUM(shipping_total) as shipping_total'),
@@ -62,7 +65,7 @@ class OrdersSalesChart extends ApexChartWidget
         $salesData = [];
 
         foreach ($orders as $order) {
-            $labels[] = $order->date;
+            $labels[] = \Carbon\Carbon::parse($order->date)->locale(app()->getLocale())->isoFormat('MMMM YYYY');
             $ordersData[] = $order->count;
             $salesData[] = $order->sub_total->decimal;
         }

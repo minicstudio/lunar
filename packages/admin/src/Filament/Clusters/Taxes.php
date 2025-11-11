@@ -14,8 +14,18 @@ class Taxes extends Cluster
         return __('lunarpanel::global.sections.settings');
     }
 
+    public static function getNavigationLabel(): string
+    {
+        return __('lunarpanel::tax.plural_label');
+    }
+
     public static function getNavigationIcon(): ?string
     {
         return FilamentIcon::resolve('lunar::tax');
+    }
+
+    public static function getClusterBreadcrumb(): string
+    {
+        return __('lunarpanel::tax.plural_label');
     }
 }

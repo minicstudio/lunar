@@ -4,15 +4,31 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Tạo bộ sưu tập gốc',
+            'form' => [
+                'name' => [
+                    'label' => 'Tên',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Tạo bộ sưu tập con',
+            'form' => [
+                'name' => [
+                    'label' => 'Tên',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Di chuyển bộ sưu tập',
         ],
         'delete' => [
             'label' => 'Xóa',
+            'notifications' => [
+                'cannot_delete' => [
+                    'title' => 'Không thể xóa',
+                    'body' => 'Bộ sưu tập này có chứa các bộ sưu tập con và không thể xóa được.',
+                ],
+            ],
         ],
     ],
     'orders' => [

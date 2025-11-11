@@ -6,6 +6,7 @@ use Filament;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Events\ModelChannelsUpdated;
 
 class ChannelRelationManager extends BaseRelationManager
@@ -24,6 +25,11 @@ class ChannelRelationManager extends BaseRelationManager
         return $form->schema(
             static::getFormInputs()
         );
+    }
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::channel.plural_label');
     }
 
     protected static function getFormInputs(): array
@@ -62,7 +68,9 @@ class ChannelRelationManager extends BaseRelationManager
                     ...static::getFormInputs(),
                 ])->recordTitle(function ($record) {
                     return $record->name;
-                })->after(
+                })
+                ->modalHeading(__('lunarpanel::relationmanagers.channels.actions.attach.label'))
+                ->after(
                     fn () => sync_with_search(
                         $this->getOwnerRecord()
                     )
@@ -96,7 +104,8 @@ class ChannelRelationManager extends BaseRelationManager
                     fn () => ModelChannelsUpdated::dispatch(
                         $this->getOwnerRecord()
                     )
-                ),
+                )
+                ->modalHeading(__('lunarpanel::relationmanagers.channels.actions.edit.modal.heading')),
             ]);
     }
 }

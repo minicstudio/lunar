@@ -12,6 +12,16 @@ return [
             'create' => [
                 'label' => 'Créer un tarif d\'expédition',
             ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Supprimer le tarif d\'expédition',
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Modifier le tarif d\'expédition',
+                ],
+            ],
         ],
         'notices' => [
             'prices_incl_tax' => 'Tous les prix incluent la taxe, qui sera prise en compte lors du calcul du montant minimum.',
@@ -34,8 +44,11 @@ return [
                     'currency_id' => [
                         'label' => 'Devise',
                     ],
-                    'min_quantity' => [
-                        'label' => 'Dépense min.',
+                    'min_spend' => [
+                        'label' => 'Dép. Min.',
+                    ],
+                    'min_weight' => [
+                        'label' => 'Poids Min.',
                     ],
                     'price' => [
                         'label' => 'Prix',
@@ -65,12 +78,36 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Ajouter une liste d\'exclusion d\'expédition',
+                'modal' => [
+                    'heading' => 'Ajouter une exclusion d\'expédition',
+                ],
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Supprimer l\'exclusion de livraison',
+                ],
+                'bulk' => [
+                    'modal' => [
+                        'heading' => 'Supprimer les exclusions de livraison sélectionnées',
+                    ],
+                ],
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Modifier l\'exclusion de livraison',
+                ],
             ],
             'attach' => [
                 'label' => 'Ajouter une liste d\'exclusion',
+                'modal' => [
+                    'heading' => 'Joindre la liste d\'exclusion',
+                ],
             ],
             'detach' => [
                 'label' => 'Supprimer',
+                'modal' => [
+                    'heading' => 'Détacher la liste d\'exclusion',
+                ],
             ],
         ],
     ],

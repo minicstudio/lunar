@@ -29,11 +29,17 @@ return [
         ],
     ],
     'pages' => [
+        'edit' => [
+            'title' => 'Basic Information',
+        ],
         'products' => [
             'label' => 'Products',
             'actions' => [
                 'attach' => [
                     'label' => 'Associate a product',
+                    'modal' => [
+                        'heading' => 'Associate a product',
+                    ],
                     'form' => [
                         'record_id' => [
                             'label' => 'Product',
@@ -46,6 +52,9 @@ return [
                 'detach' => [
                     'notification' => [
                         'success' => 'Product detached.',
+                    ],
+                    'modal' => [
+                        'heading' => 'Detach product',
                     ],
                 ],
             ],
@@ -64,8 +73,19 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Associate a collection',
+                    'modal' => [
+                        'heading' => 'Associate collection',
+                    ],
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Detach collection',
+                    ],
                 ],
             ],
+        ],
+        'edit' => [
+            'navigation_label' => 'Edit Brand',
         ],
     ],
 

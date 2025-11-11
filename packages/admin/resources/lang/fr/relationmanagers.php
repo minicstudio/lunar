@@ -2,9 +2,15 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Groupes de clients',
         'actions' => [
             'attach' => [
                 'label' => 'Associer un groupe de clients',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Modifier le groupe de clients',
+                ],
             ],
         ],
         'form' => [
@@ -50,9 +56,15 @@ return [
         ],
     ],
     'channels' => [
+        'title' => 'Canaux',
         'actions' => [
             'attach' => [
                 'label' => 'Planifier un autre canal',
+            ],
+            'edit' => [
+                'modal' => [
+                    'heading' => 'Modifier la chaîne',
+                ],
             ],
         ],
         'form' => [
@@ -128,6 +140,9 @@ return [
         'actions' => [
             'create' => [
                 'label' => 'Créer une URL',
+                'modal' => [
+                    'heading' => 'Créer une URL',
+                ],
             ],
         ],
         'filters' => [
@@ -256,6 +271,17 @@ return [
             ],
             'tax_class' => [
                 'label' => 'Classe de taxe',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Valeurs',
+        'table' => [
+            'name' => [
+                'label' => 'Nom',
+            ],
+            'position' => [
+                'label' => 'Position',
             ],
         ],
     ],

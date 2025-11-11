@@ -10,6 +10,8 @@ use Filament\Tables\Table;
 use Lunar\Admin\Events\ProductAssociationsUpdated;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
+use Lunar\Models\Contracts\Product as ProductContract;
+use Lunar\Models\Contracts\ProductAssociation as ProductAssociationContract;
 use Lunar\Models\Product;
 use Lunar\Models\ProductAssociation;
 
@@ -39,21 +41,22 @@ class ManageProductAssociations extends BaseManageRelatedRecords
         return $form
             ->schema([
                 Forms\Components\Select::make('product_target_id')
-                    ->label('Product')
+                    ->label(__('lunarpanel::product.pages.associations.form.target.label'))
                     ->required()
                     ->searchable(true)
                     ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
-                        return get_search_builder(Product::class, $search)
+                        return get_search_builder(Product::modelClass(), $search)
                             ->get()
-                            ->mapWithKeys(fn (Product $record): array => [$record->getKey() => $record->translateAttribute('name')])
+                            ->mapWithKeys(fn (ProductContract $record): array => [$record->getKey() => $record->translateAttribute('name')])
                             ->all();
                     }),
                 Forms\Components\Select::make('type')
+                    ->label(__('lunarpanel::product.pages.associations.form.type.label'))
                     ->required()
                     ->options([
-                        ProductAssociation::ALTERNATE => 'Alternate',
-                        ProductAssociation::CROSS_SELL => 'Cross-Sell',
-                        ProductAssociation::UP_SELL => 'Upsell',
+                        ProductAssociation::ALTERNATE => __('lunarpanel::product.pages.associations.form.type.options.alternate'),
+                        ProductAssociation::CROSS_SELL => __('lunarpanel::product.pages.associations.form.type.options.cross-sell'),
+                        ProductAssociation::UP_SELL => __('lunarpanel::product.pages.associations.form.type.options.up-sell'),
                     ]),
             ]);
     }
@@ -65,9 +68,9 @@ class ManageProductAssociations extends BaseManageRelatedRecords
             ->inverseRelationship('parent')
             ->columns([
                 Tables\Columns\TextColumn::make('target')
-                    ->formatStateUsing(fn (ProductAssociation $record): string => $record->target->translateAttribute('name'))
+                    ->formatStateUsing(fn (ProductAssociationContract $record): string => $record->target->translateAttribute('name'))
                     ->limit(50)
-                    ->tooltip(function (Tables\Columns\TextColumn $column, ProductAssociation $record): ?string {
+                    ->tooltip(function (Tables\Columns\TextColumn $column, ProductAssociationContract $record): ?string {
                         $state = $column->getState();
 
                         if (strlen($record->target->translateAttribute('name')) <= $column->getCharacterLimit()) {
@@ -79,8 +82,10 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                     })
                     ->label(__('lunarpanel::product.table.name.label')),
                 Tables\Columns\TextColumn::make('target.variants.sku')
-                    ->label('SKU'),
-                Tables\Columns\TextColumn::make('type'),
+                    ->label(__('lunarpanel::product.table.sku.label')),
+                Tables\Columns\TextColumn::make('type')
+                    ->label(__('lunarpanel::product.pages.associations.form.type.label'))
+                    ->formatStateUsing(fn ($state) => __('lunarpanel::product.pages.associations.form.type.options.' . $state)),
             ])
             ->filters([
                 //
@@ -90,14 +95,17 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                     fn () => ProductAssociationsUpdated::dispatch(
                         $this->getOwnerRecord()
                     )
-                ),
+                )
+                ->label(__('lunarpanel::product.pages.associations.actions.create.label'))
+                ->modalHeading(__('lunarpanel::product.pages.associations.actions.create.heading')),
             ])
             ->actions([
                 Tables\Actions\DeleteAction::make()->after(
                     fn () => ProductAssociationsUpdated::dispatch(
                         $this->getOwnerRecord()
                     )
-                ),
+                )
+                ->modalHeading(__('lunarpanel::product.pages.associations.actions.delete.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -105,7 +113,8 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                         fn () => ProductAssociationsUpdated::dispatch(
                             $this->getOwnerRecord()
                         )
-                    ),
+                    )
+                    ->modalHeading(__('lunarpanel::product.pages.associations.actions.delete.bulk.heading')),
                 ]),
             ]);
     }

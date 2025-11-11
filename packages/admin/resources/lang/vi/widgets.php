@@ -81,10 +81,19 @@ return [
                 'series_two' => [
                     'label' => 'Khách hàng quay lại',
                 ],
+                'yaxis' => [
+                    'label' => '# Khách hàng',
+                ],
             ],
             'popular_products' => [
                 'heading' => 'Sản phẩm bán chạy (12 tháng qua)',
                 'description' => 'Số liệu này dựa trên số lần sản phẩm xuất hiện trong đơn hàng, không phải số lượng đã đặt.',
+                'table' => [
+                    'description' => 'Mô tả',
+                    'identifier' => 'Mã định danh',
+                    'quantity' => 'Số lượng',
+                    'sub_total' => 'Tổng phụ',
+                ],
             ],
             'latest_orders' => [
                 'heading' => 'Đơn hàng mới nhất',

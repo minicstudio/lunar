@@ -8,6 +8,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Product;
 
 class ShippingExclusionRelationManager extends RelationManager
@@ -27,15 +28,16 @@ class ShippingExclusionRelationManager extends RelationManager
             ->schema([
                 Forms\Components\MorphToSelect::make('purchasable')
                     ->types([
-                        Forms\Components\MorphToSelect\Type::make(Product::class)
+                        Forms\Components\MorphToSelect\Type::make(Product::modelClass())
+                            ->label(__('lunarpanel.shipping::relationmanagers.exclusions.form.purchasable.label'))
                             ->titleAttribute('name')
                             ->getOptionLabelUsing(
                                 fn (Model $record) => $record->purchasable->attr('name')
                             )
                             ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
-                                return get_search_builder(Product::class, $search)
+                                return get_search_builder(Product::modelClass(), $search)
                                     ->get()
-                                    ->mapWithKeys(fn (Product $record): array => [$record->getKey() => $record->translateAttribute('name')])
+                                    ->mapWithKeys(fn (ProductContract $record): array => [$record->getKey() => $record->translateAttribute('name')])
                                     ->all();
                             }),
                     ])
@@ -88,16 +90,21 @@ class ShippingExclusionRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()->mutateFormDataUsing(function (array $data, RelationManager $livewire) {
-                    return $data;
-                }),
+                        return $data;
+                    })
+                    ->label(__('lunarpanel.shipping::relationmanagers.exclusions.actions.create.modal.heading'))
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.create.modal.heading')),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.edit.modal.heading')),
+                Tables\Actions\DeleteAction::make()
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.modal.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.bulk.modal.heading')),
                 ]),
             ]);
     }

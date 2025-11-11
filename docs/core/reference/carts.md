@@ -178,7 +178,7 @@ $shippingAddress = [
     'first_name' => null,
     'last_name' => null,
     'company_name' => null,
-    'vat_number' => null,
+    'tax_identifier' => null,
     'line_one' => null,
     'line_two' => null,
     'line_three' => null,
@@ -334,7 +334,7 @@ CartSession::updateLines(collect([
 ### Remove a line
 
 ```php
-CartSession::removeLine($cartLineId);
+CartSession::remove($cartLineId);
 ```
 
 ### Clear a cart
@@ -461,7 +461,7 @@ depending on your `auth_policy` merge or override the basket on their account.
 ## Determining cart changes
 
 Carts by nature are dynamic, which means anything can change at any moment. This means it can be quite challenging to
-determine whether a card has changed from the one currently loaded, for example, if the user goes to check out and
+determine whether a cart has changed from the one currently loaded, for example, if the user goes to check out and
 changes their cart on another tab, how does the checkout know there has been a change?
 
 To help this, a cart will have a fingerprint generated which you can check to determine whether there has been

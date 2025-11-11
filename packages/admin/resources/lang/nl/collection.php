@@ -18,6 +18,9 @@ return [
             'actions' => [
                 'create_child' => [
                     'label' => 'Maak Subcollectie',
+                    'name' => [
+                        'label' => 'Naam',
+                    ],
                 ],
             ],
             'table' => [
@@ -31,15 +34,29 @@ return [
         ],
         'edit' => [
             'label' => 'Basisinformatie',
+            'actions' => [
+                'delete' => [
+                    'select' => 'Doelcollectie',
+                    'helper_text' => 'Kies naar welke collectie de onderliggende items van deze collectie moeten worden overgezet.'
+                ],
+            ]
         ],
         'products' => [
             'label' => 'Producten',
             'actions' => [
                 'attach' => [
                     'label' => 'Product Toevoegen',
+                    'select' => 'Product',
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Product losmaken',
+                    ]
                 ],
             ],
         ],
     ],
-
+    'nested_set_item' => [
+        'more_actions' => 'Meer acties',
+    ],
 ];

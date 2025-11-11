@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Filament\Resources\BrandResource;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
+use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Product;
 
 class ManageBrandProducts extends BaseManageRelatedRecords
@@ -57,11 +58,17 @@ class ManageBrandProducts extends BaseManageRelatedRecords
                         ->success()
                         ->body(__('lunarpanel::brand.pages.products.actions.detach.notification.success'))
                         ->send();
-                }),
+                })
+                ->modalHeading(
+                    __('lunarpanel::brand.pages.products.actions.detach.modal.heading')
+                )
         ])->headerActions([
             AttachAction::make()
                 ->label(
                     __('lunarpanel::brand.pages.products.actions.attach.label')
+                )
+                ->modalHeading(
+                    __('lunarpanel::brand.pages.products.actions.attach.modal.heading')
                 )
                 ->form([
                     Forms\Components\Select::make('recordId')
@@ -73,7 +80,7 @@ class ManageBrandProducts extends BaseManageRelatedRecords
                         ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search): array {
                             return Product::search($search)
                                 ->get()
-                                ->mapWithKeys(fn (Product $record): array => [$record->getKey() => $record->translateAttribute('name')])
+                                ->mapWithKeys(fn (ProductContract $record): array => [$record->getKey() => $record->translateAttribute('name')])
                                 ->all();
                         }),
                 ])

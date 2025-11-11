@@ -18,6 +18,9 @@ return [
             'actions' => [
                 'create_child' => [
                     'label' => 'Dodaj podkolekcję',
+                    'name' => [
+                        'label' => 'Nazwa',
+                    ],
                 ],
             ],
             'table' => [
@@ -31,6 +34,12 @@ return [
         ],
         'edit' => [
             'label' => 'Podstawowe informacje',
+            'actions' => [
+                'delete' => [
+                    'select' => 'Kolekcja docelowa',
+                    'helper_text' => 'Wybierz kolekcję, do której mają zostać przeniesione elementy podrzędne tej kolekcji.'
+                ],
+            ]
         ],
         'media' => [
             'label' => 'Media',
@@ -40,9 +49,17 @@ return [
             'actions' => [
                 'attach' => [
                     'label' => 'Dołącz produkt',
+                    'select' => 'Produkt',
+                ],
+                'detach' => [
+                    'modal' => [
+                        'heading' => 'Odłącz produkt',
+                    ]
                 ],
             ],
         ],
     ],
-
+    'nested_set_item' => [
+        'more_actions' => 'Więcej akcji',
+    ],
 ];

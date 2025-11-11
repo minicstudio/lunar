@@ -72,6 +72,14 @@ return [
                     ],
                 ],
             ],
+            'make_root' => [
+                'label' => 'Hacer raíz',
+            ],
+            'delete' => [
+                'modal' => [
+                    'heading' => 'Eliminar colección',
+                ],
+            ],
         ],
         'notifications' => [
             'collections-reordered' => [

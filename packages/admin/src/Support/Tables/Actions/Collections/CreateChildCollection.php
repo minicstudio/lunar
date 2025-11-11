@@ -25,7 +25,9 @@ class CreateChildCollection extends CreateAction
         });
 
         $this->form([
-            TranslatedText::make('name')->required(),
+            TranslatedText::make('name')
+            ->required()
+            ->label(__('lunarpanel::collection.pages.children.actions.create_child.name.label')),
         ]);
 
         $this->createAnother(false);

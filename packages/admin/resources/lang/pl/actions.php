@@ -4,15 +4,33 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Utwórz główną kolekcję',
+            'form' => [
+                'name' => [
+                    'label' => 'Nazwa',
+                ],
+            ],
+
         ],
         'create_child' => [
             'label' => 'Utwórz podkolekcję',
+            'form' => [
+                'name' => [
+                    'label' => 'Nazwa',
+                ],
+            ],
+
         ],
         'move' => [
             'label' => 'Przenieś kolekcję',
         ],
         'delete' => [
             'label' => 'Usuń',
+            'notifications' => [
+                'cannot_delete' => [
+                    'title' => 'Nie można usunąć',
+                    'body' => 'Ta kolekcja zawiera kolekcje podrzędne i nie może zostać usunięta.',
+                ],
+            ],
         ],
     ],
     'orders' => [

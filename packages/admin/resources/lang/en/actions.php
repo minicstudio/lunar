@@ -4,15 +4,31 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Create Root Collection',
+            'form' => [
+                'name' => [
+                    'label' => 'Name',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Create Child Collection',
+            'form' => [
+                'name' => [
+                    'label' => 'Name',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Move Collection',
         ],
         'delete' => [
             'label' => 'Delete',
+            'notifications' => [
+                'cannot_delete' => [
+                    'title' => 'Cannot Delete',
+                    'body' => 'This collection has child collections and cannot be deleted.',
+                ],
+            ],
         ],
     ],
     'orders' => [

@@ -4,15 +4,31 @@ return [
     'collections' => [
         'create_root' => [
             'label' => 'Créer une collection racine',
+            'form' => [
+                'name' => [
+                    'label' => 'Nom',
+                ],
+            ],
         ],
         'create_child' => [
             'label' => 'Créer une collection enfant',
+            'form' => [
+                'name' => [
+                    'label' => 'Nom',
+                ],
+            ],
         ],
         'move' => [
             'label' => 'Déplacer la collection',
         ],
         'delete' => [
             'label' => 'Supprimer',
+            'notifications' => [
+                'cannot_delete' => [
+                    'title' => 'Suppression impossible',
+                    'body' => 'Cette collection contient des sous-collections et ne peut pas être supprimée.',
+                ],
+            ],
         ],
     ],
     'orders' => [

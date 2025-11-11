@@ -4,6 +4,9 @@ namespace Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers;
 
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\DiscountLimitationAttached;
+use Lunar\Admin\Events\DiscountLimitationDetached;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 
 class CustomerLimitationRelationManager extends BaseRelationManager
@@ -11,6 +14,11 @@ class CustomerLimitationRelationManager extends BaseRelationManager
     protected static bool $isLazy = false;
 
     protected static string $relationship = 'customers';
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::customer.plural_label');
+    }
 
     public function isReadOnly(): bool
     {
@@ -21,6 +29,9 @@ class CustomerLimitationRelationManager extends BaseRelationManager
     {
 
         return $table
+            ->heading(
+                __('lunarpanel::discount.relationmanagers.customers.title')
+            )
             ->description(
                 __('lunarpanel::discount.relationmanagers.customers.description')
             )
@@ -33,14 +44,26 @@ class CustomerLimitationRelationManager extends BaseRelationManager
                 })->preloadRecordSelect()
                     ->label(
                         __('lunarpanel::discount.relationmanagers.customers.actions.attach.label')
-                    ),
+                    )
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.customers.actions.attach.label')
+                    )
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\TextColumn::make('full_name')
                     ->label(
                         __('lunarpanel::discount.relationmanagers.customers.table.name.label')
                     ),
             ])->actions([
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.customers.actions.detach.label')
+                    )
+                    ->after(function () {
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                    }),
             ]);
     }
 }

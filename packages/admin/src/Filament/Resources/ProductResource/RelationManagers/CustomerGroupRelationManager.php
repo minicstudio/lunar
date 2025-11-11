@@ -6,6 +6,7 @@ use Filament;
 use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Lunar\Admin\Events\ProductCustomerGroupsUpdated;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
@@ -21,6 +22,11 @@ class CustomerGroupRelationManager extends BaseRelationManager
     public function isReadOnly(): bool
     {
         return false;
+    }
+
+    public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('lunarpanel::customergroup.plural_label');
     }
 
     protected function getPivotColumns(): array
@@ -97,7 +103,9 @@ class CustomerGroupRelationManager extends BaseRelationManager
                     ...static::getFormInputs(),
                 ])->recordTitle(function ($record) {
                     return $record->name;
-                })->preloadRecordSelect()
+                })
+                ->modalHeading(__('lunarpanel::relationmanagers.customer_groups.actions.attach.label'))
+                ->preloadRecordSelect()
                     ->label(
                         __('lunarpanel::relationmanagers.customer_groups.actions.attach.label')
                     )->after(
@@ -123,7 +131,8 @@ class CustomerGroupRelationManager extends BaseRelationManager
                     fn () => ProductCustomerGroupsUpdated::dispatch(
                         $this->getOwnerRecord()
                     )
-                ),
+                )
+                ->modalHeading(__('lunarpanel::relationmanagers.customer_groups.actions.edit.modal.heading')),
             ]);
     }
 }

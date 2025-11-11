@@ -34,6 +34,9 @@ class UserRelationManager extends BaseRelationManager
                 ->label(__('lunarpanel::user.table.email.label')),
         ])->actions([
             Tables\Actions\EditAction::make('edit')
+                ->modalHeading(
+                    __('lunarpanel::user.form.edit.heading')
+                )
                 ->after(
                     fn (Model $record) => CustomerUserEdited::dispatch($record)
                 )

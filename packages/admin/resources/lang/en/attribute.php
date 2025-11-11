@@ -19,6 +19,21 @@ return [
         'type' => [
             'label' => 'Type',
         ],
+        'actions' => [
+            'create' => [
+                'label' => 'New attribute',
+                'heading' => 'Create attribute',
+            ],
+            'edit' => [
+                'heading' => 'Edit attribute',
+            ],
+            'delete' => [
+                'heading' => 'Delete attribute',
+                'bulk' => [
+                    'heading' => 'Delete selected attributes',
+                ],  
+            ],
+        ],
     ],
 
     'form' => [
