@@ -111,6 +111,7 @@ return [
             ],
             'order_values_by_status' => [
                 'heading' => 'Valori comenzi pe status',
+                'description' => 'Valorile afișate reprezintă valoarea totală a comenzii după reduceri și fără costuri de transport.',
                 'yaxis' => [
                     'label' => 'Valoare comandă',
                 ],

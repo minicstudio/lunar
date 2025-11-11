@@ -111,6 +111,7 @@ return [
             ],
             'order_values_by_status' => [
                 'heading' => 'Rendelési értékek státusz szerint',
+                'description' => 'A megjelenített értékek a kedvezmények utáni teljes rendelési értékek, szállítási költségek nélkül.',
                 'yaxis' => [
                     'label' => 'Rendelési érték',
                 ],

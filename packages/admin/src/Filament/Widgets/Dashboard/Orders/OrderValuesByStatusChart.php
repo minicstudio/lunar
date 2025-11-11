@@ -26,6 +26,11 @@ class OrderValuesByStatusChart extends ApexChartWidget
         return __('lunarpanel::widgets.dashboard.orders.order_values_by_status.heading');
     }
 
+    protected function getSubheading(): ?string
+    {
+        return __('lunarpanel::widgets.dashboard.orders.order_values_by_status.description');
+    }
+
     protected function getOrderQuery(\DateTime|CarbonInterface|null $from = null, \DateTime|CarbonInterface|null $to = null)
     {
         return Order::whereNotNull('placed_at')
@@ -50,11 +55,14 @@ class OrderValuesByStatusChart extends ApexChartWidget
 
         $period = CarbonPeriod::create($from, '1 month', $to);
 
-        // Get all orders grouped by month and status - following OrderTotalsChart pattern exactly
+        // Get all orders grouped by month and status
+        // Select total and shipping_total separately so Lunar can cast them to Money objects
+        // Then calculate total - shipping_total in PHP to get order value without shipping costs
         $results = $this->getOrderQuery($from, $to)
             ->select(
                 DB::RAW('MAX(currency_code) as currency_code'),
-                DB::RAW('SUM(sub_total) as sub_total'),
+                DB::RAW('SUM(total) as total'),
+                DB::RAW('SUM(shipping_total) as shipping_total'),
                 'status',
                 DB::RAW(db_date('placed_at', '%M', 'month')),
                 DB::RAW(db_date('placed_at', '%Y', 'year')),
@@ -105,15 +113,18 @@ class OrderValuesByStatusChart extends ApexChartWidget
                 $status = $result->status;
                 
                 if (isset($seriesValue[$status])) {
-                    // Extract decimal value following OrderTotalsChart pattern exactly: $report?->sub_total->decimal ?: 0
+                    // Calculate order value: total - shipping_total (order value without shipping)
                     // Lunar automatically casts SUM results to Money objects when currency_code is present
                     // Since we group by status and month, there should be only one result per status per month
-                    // Use the exact same pattern as OrdersSalesChart which works: $order->sub_total->decimal
                     try {
-                        $value = $result->sub_total && is_object($result->sub_total) && method_exists($result->sub_total, 'decimal')
-                            ? (float) $result->sub_total->decimal
+                        $totalValue = $result->total && is_object($result->total) && method_exists($result->total, 'decimal')
+                            ? (float) $result->total->decimal
                             : 0;
-                        $seriesValue[$status]['data'][$monthIndex] = $value;
+                        $shippingValue = $result->shipping_total && is_object($result->shipping_total) && method_exists($result->shipping_total, 'decimal')
+                            ? (float) $result->shipping_total->decimal
+                            : 0;
+                        // Round to whole number to avoid floating point precision issues
+                        $seriesValue[$status]['data'][$monthIndex] = round($totalValue - $shippingValue);
                     } catch (\Exception $e) {
                         // Fallback if Money object access fails
                         $seriesValue[$status]['data'][$monthIndex] = 0;

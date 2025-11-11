@@ -111,6 +111,7 @@ return [
             ],
             'order_values_by_status' => [
                 'heading' => 'Order Values by Status',
+                'description' => 'Values shown are the total order value after discounts and without shipping costs.',
                 'yaxis' => [
                     'label' => 'Order Value',
                 ],
