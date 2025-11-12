@@ -98,6 +98,24 @@ return [
             'latest_orders' => [
                 'heading' => 'Legfrissebb rendelések',
             ],
+            'orders_by_status' => [
+                'heading' => 'Rendelések státusz szerint',
+                'yaxis' => [
+                    'count' => [
+                        'label' => 'Rendelések száma',
+                    ],
+                ],
+                'tooltip' => [
+                    'orders' => 'rendelés',
+                ],
+            ],
+            'order_values_by_status' => [
+                'heading' => 'Rendelési értékek státusz szerint',
+                'description' => 'A megjelenített értékek a kedvezmények utáni teljes rendelési értékek, szállítási költségek nélkül.',
+                'yaxis' => [
+                    'label' => 'Rendelési érték',
+                ],
+            ],
         ],
     ],
     'customer' => [

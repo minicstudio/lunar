@@ -6,6 +6,8 @@ use Filament\Support\Facades\FilamentIcon;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\AverageOrderValueChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\NewVsReturningCustomersChart;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderValuesByStatusChart;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersByStatusChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersSalesChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderTotalsChart;
@@ -47,6 +49,8 @@ class Dashboard extends BaseDashboard
             OrdersSalesChart::class,
             AverageOrderValueChart::class,
             NewVsReturningCustomersChart::class,
+            OrdersByStatusChart::class,
+            OrderValuesByStatusChart::class,
         ]);
     }
 
