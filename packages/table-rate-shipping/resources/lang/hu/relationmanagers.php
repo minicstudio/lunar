@@ -44,8 +44,12 @@ return [
                     'currency_id' => [
                         'label' => 'Pénznem',
                     ],
-                    'min_quantity' => [
+                    'min_spend' => [
                         'label' => 'Min. vásárlás',
+                    ],
+                    'min_weight' => [
+                        'label' => 'Min. súly',
+                        'helper_text' => 'Adja meg grammban',
                     ],
                     'price' => [
                         'label' => 'Ár',
