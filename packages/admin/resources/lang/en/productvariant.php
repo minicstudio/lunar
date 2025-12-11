@@ -100,6 +100,7 @@ return [
         ],
         'weight_unit' => [
             'label' => 'Weight Unit',
+            'helper_text' => 'Enter in grams',
         ],
     ],
 ];

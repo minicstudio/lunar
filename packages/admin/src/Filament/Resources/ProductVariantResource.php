@@ -6,6 +6,7 @@ use Cartalyst\Converter\Laravel\Facades\Converter;
 use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Component;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Pages\SubNavigationPosition;
 use Filament\Tables\Table;
@@ -263,22 +264,15 @@ class ProductVariantResource extends BaseResource
             );
     }
 
-    public static function getWeightFormComponent(): TextInputSelectAffix
+    public static function getWeightFormComponent(): TextInput
     {
-        return TextInputSelectAffix::make('weight_value')
+        return TextInput::make('weight_value')
             ->label(
                 __('lunarpanel::productvariant.form.weight_value.label')
             )
             ->numeric()
-            ->select(
-                fn () => Forms\Components\Select::make('weight_unit')
-                    ->options(
-                        static::getMeasurements('weight')
-                    )
-                    ->label(
-                        __('lunarpanel::productvariant.form.weight_unit.label')
-                    )->selectablePlaceholder(false)
-            );
+            ->helperText(__('lunarpanel::productvariant.form.weight_unit.helper_text'))
+            ->suffix('g');
     }
 
     public static function getVariantSwitcherWidget(Model $record): Action
