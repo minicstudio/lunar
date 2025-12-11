@@ -130,7 +130,7 @@ class ManageShippingRates extends ManageRelatedRecords
                         ->suffix(
                             function (Get $get) {
                                 if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
-                                    return 'g';
+                                    return 'kg';
                                 }
 
                                 return null;

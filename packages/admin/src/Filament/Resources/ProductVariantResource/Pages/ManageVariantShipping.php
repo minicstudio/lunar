@@ -79,8 +79,6 @@ class ManageVariantShipping extends BaseEditRecord
             ]
         );
 
-        $data['weight_unit'] = 'g';
-        
         $record->update([
             ...$data,
             ...[

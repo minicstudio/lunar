@@ -5,7 +5,6 @@ namespace Lunar\Admin\Filament\Resources\ProductResource\Pages;
 use Cartalyst\Converter\Laravel\Facades\Converter;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Support\Facades\FilamentIcon;
@@ -31,7 +30,7 @@ class ManageProductShipping extends BaseEditRecord
         'height_value' => 0,
         'height_unit' => 'mm',
         'weight_value' => 0,
-        'weight_unit' => 'g',
+        'weight_unit' => 'kg',
     ];
 
     public function getTitle(): string|Htmlable
@@ -101,7 +100,6 @@ class ManageProductShipping extends BaseEditRecord
                 ),
             ],
             ...$this->dimensions,
-            'weight_unit' => 'g',
         ]);
 
         return $record;
@@ -177,13 +175,18 @@ class ManageProductShipping extends BaseEditRecord
                                 __('lunarpanel::productvariant.form.height_unit.label')
                             )->selectablePlaceholder(false)
                     ),
-                TextInput::make('dimensions.weight_value')
+                TextInputSelectAffix::make('dimensions.weight_value')
                     ->label(
                         __('lunarpanel::productvariant.form.weight_value.label')
                     )
                     ->numeric()
-                    ->helperText(__('lunarpanel::productvariant.form.weight_unit.helper_text'))
-                    ->suffix('g'),
+                    ->select(
+                        fn () => Select::make('weight_unit')
+                            ->options($weights)
+                            ->label(
+                                __('lunarpanel::productvariant.form.weight_unit.label')
+                            )->selectablePlaceholder(false)
+                    ),
             ])->columns([
                 'sm' => 1,
                 'xl' => 2,

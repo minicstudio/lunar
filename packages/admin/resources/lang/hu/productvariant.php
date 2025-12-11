@@ -100,7 +100,6 @@ return [
         ],
         'weight_unit' => [
             'label' => 'Súly egység',
-            'helper_text' => 'Adja meg grammban',
         ],
     ],
 ];

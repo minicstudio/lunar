@@ -49,7 +49,7 @@ return [
                     ],
                     'min_weight' => [
                         'label' => 'Min. súly',
-                        'helper_text' => 'Adja meg grammban',
+                        'helper_text' => 'Adja meg kg-ban',
                     ],
                     'price' => [
                         'label' => 'Ár',
