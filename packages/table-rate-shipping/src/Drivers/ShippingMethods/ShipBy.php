@@ -46,7 +46,13 @@ class ShipBy implements ShippingRateInterface
             $customerGroups = $user->customers->pluck('customerGroups')->flatten();
         }
 
-        $subTotal = $cart->lines->sum('subTotal.value');
+        // Use discounted subtotal instead of base subtotal for shipping calculations
+        // This ensures free shipping thresholds use discounted prices (excluding coupon codes)
+        $subTotal = $cart->lines->sum(function ($line) {
+            // Use subTotalDiscounted if available (includes automatic discounts)
+            // Fall back to subTotal if subTotalDiscounted is not set
+            return $line->subTotalDiscountedWithoutCoupon?->value ?? $line->subTotal?->value;
+        });
 
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
