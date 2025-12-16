@@ -118,6 +118,24 @@ class ManageShippingRates extends ManageRelatedRecords
                                 return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.min_spend.label');
                             }
                         )
+                        ->helperText(
+                            function (Get $get) {
+                                if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
+                                    return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.min_weight.helper_text');
+                                }
+
+                                return null;
+                            }
+                        )
+                        ->suffix(
+                            function (Get $get) {
+                                if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
+                                    return 'kg';
+                                }
+
+                                return null;
+                            }
+                        )
                         ->numeric()
                         ->required(),
                 ])->afterStateHydrated(
@@ -134,7 +152,7 @@ class ManageShippingRates extends ManageRelatedRecords
                                         'customer_group_id' => $price->customer_group_id,
                                         'price' => $price->price->decimal,
                                         'currency_id' => $price->currency_id,
-                                        'min_quantity' => $chargeBy == 'cart_total' ? $price->min_quantity / $currency->factor : $price->min_quantity / 100,
+                                        'min_quantity' => $chargeBy == 'cart_total' ? $price->min_quantity / $currency->factor : $price->min_quantity,
                                     ];
                                 })->toArray()
                             );
@@ -224,7 +242,7 @@ class ManageShippingRates extends ManageRelatedRecords
                 if ($chargeBy == 'cart_total') {
                     $price['min_quantity'] = (int) ($price['min_quantity'] * $currency->factor);
                 } else {
-                    $price['min_quantity'] = (int) ($price['min_quantity'] * 100);
+                    $price['min_quantity'] = (int) $price['min_quantity'];
                 }
 
                 $price['price'] = (int) ($price['price'] * $currency->factor);

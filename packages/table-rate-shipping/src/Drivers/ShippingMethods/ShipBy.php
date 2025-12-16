@@ -2,6 +2,7 @@
 
 namespace Lunar\Shipping\Drivers\ShippingMethods;
 
+use Cartalyst\Converter\Laravel\Facades\Converter;
 use Lunar\DataTypes\ShippingOption;
 use Lunar\Facades\Pricing;
 use Lunar\Models\Product;
@@ -45,7 +46,13 @@ class ShipBy implements ShippingRateInterface
             $customerGroups = $user->customers->pluck('customerGroups')->flatten();
         }
 
-        $subTotal = $cart->lines->sum('subTotal.value');
+        // Use discounted subtotal instead of base subtotal for shipping calculations
+        // This ensures free shipping thresholds use discounted prices (excluding coupon codes)
+        $subTotal = $cart->lines->sum(function ($line) {
+            // Use subTotalDiscounted if available (includes automatic discounts)
+            // Fall back to subTotal if subTotalDiscounted is not set
+            return $line->subTotalDiscountedWithoutCoupon?->value ?? $line->subTotal?->value;
+        });
 
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
@@ -71,7 +78,15 @@ class ShipBy implements ShippingRateInterface
 
         if ($chargeBy == 'weight') {
             $tier = $cart->lines->sum(function ($line) {
-                return $line->purchasable->weight_value * $line->quantity;
+                $weightUnit = $line->purchasable->weight_unit ?: 'kg';
+
+                $unitWeightKg = Converter::from("weight.{$weightUnit}")
+                    ->to('weight.kg')
+                    ->value($line->purchasable->weight_value)
+                    ->convert()
+                    ->getValue();
+
+                return $unitWeightKg * $line->quantity;
             });
         }
 
