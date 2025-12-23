@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\File;
 use Lunar\Admin\Models\Staff;
 use Lunar\Facades\DB;
 use Lunar\FieldTypes\TranslatedText;
+use Lunar\Models\AddressCustomerType;
 use Lunar\Models\Attribute;
 use Lunar\Models\AttributeGroup;
 use Lunar\Models\Channel;
@@ -116,6 +117,19 @@ class InstallLunar extends Command
                     'name' => 'Retail',
                     'handle' => 'retail',
                     'default' => true,
+                ]);
+            }
+
+            if (! AddressCustomerType::count()) {
+                $this->components->info('Adding default customer types.');
+
+                AddressCustomerType::create([
+                    'name' => 'physical',
+                    'label' => 'Physical Person',
+                ]);
+                AddressCustomerType::create([
+                    'name' => 'legal',
+                    'label' => 'Legal Person',
                 ]);
             }
 

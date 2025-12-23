@@ -97,4 +97,12 @@ class OrderAddress extends BaseModel implements Addressable, Contracts\OrderAddr
     {
         return $this->belongsTo(Country::modelClass());
     }
+
+    /**
+     * Get the customer type for the order address.
+     */
+    public function addressCustomerType()
+    {
+        return $this->belongsTo(AddressCustomerType::modelClass());
+    }
 }

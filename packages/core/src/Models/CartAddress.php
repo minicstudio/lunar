@@ -137,4 +137,12 @@ class CartAddress extends BaseModel implements Addressable, Contracts\CartAddres
     {
         return $this->belongsTo(Country::modelClass());
     }
+
+    /**
+     * Get the customer type for the cart address.
+     */
+    public function addressCustomerType()
+    {
+        return $this->belongsTo(AddressCustomerType::class);
+    }
 }
