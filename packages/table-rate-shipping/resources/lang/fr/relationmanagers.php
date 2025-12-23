@@ -50,6 +50,9 @@ return [
                     'min_weight' => [
                         'label' => 'Poids Min.',
                     ],
+                    'max_weight' => [
+                        'label' => 'Poids Max.',
+                    ],
                     'price' => [
                         'label' => 'Prix',
                     ],

@@ -51,6 +51,10 @@ return [
                         'label' => 'Min. Weight',
                         'helper_text' => 'Enter in kg',
                     ],
+                    'max_weight' => [
+                        'label' => 'Max. Weight',
+                        'helper_text' => 'Enter in kg',
+                    ],
                     'price' => [
                         'label' => 'Price',
                     ],

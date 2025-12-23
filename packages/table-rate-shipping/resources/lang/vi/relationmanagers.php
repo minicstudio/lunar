@@ -50,6 +50,9 @@ return [
                     'min_weight' => [
                         'label' => 'K.lượng T.thiểu',
                     ],
+                    'max_weight' => [
+                        'label' => 'K.lượng Tối đa',
+                    ],
                     'price' => [
                         'label' => 'Giá',
                     ],

@@ -138,6 +138,27 @@ class ManageShippingRates extends ManageRelatedRecords
                         )
                         ->numeric()
                         ->required(),
+                    Forms\Components\TextInput::make('max_quantity')
+                        ->label(function (Get $get) {
+                            if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
+                                return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_weight.label');
+                            }
+                            return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_spend.label');
+                        })
+                        ->helperText(function (Get $get) {
+                            if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
+                                return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_weight.helper_text');
+                            }
+                            return null;
+                        })
+                        ->suffix(function (Get $get) {
+                            if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
+                                return 'kg';
+                            }
+                            return null;
+                        })
+                        ->numeric()
+                        ->nullable(),
                 ])->afterStateHydrated(
                     static function (Forms\Components\Repeater $component, ?Model $record = null): void {
                         if ($record) {
@@ -147,12 +168,12 @@ class ManageShippingRates extends ManageRelatedRecords
                             $component->state(
                                 $record->priceBreaks->map(function ($price) use ($chargeBy, $currencies) {
                                     $currency = $currencies->first(fn ($currency) => $currency->id == $price->currency_id);
-
                                     return [
                                         'customer_group_id' => $price->customer_group_id,
                                         'price' => $price->price->decimal,
                                         'currency_id' => $price->currency_id,
                                         'min_quantity' => $chargeBy == 'cart_total' ? $price->min_quantity / $currency->factor : $price->min_quantity,
+                                        'max_quantity' => isset($price->max_quantity) ? ($chargeBy == 'cart_total' ? $price->max_quantity / $currency->factor : $price->max_quantity) : null,
                                     ];
                                 })->toArray()
                             );
@@ -238,13 +259,17 @@ class ManageShippingRates extends ManageRelatedRecords
         $tiers = collect($data['prices'] ?? [])->map(
             function ($price) use ($chargeBy, $currencies) {
                 $currency = $currencies->first(fn ($currency) => $currency->id == $price['currency_id']);
-
                 if ($chargeBy == 'cart_total') {
                     $price['min_quantity'] = (int) ($price['min_quantity'] * $currency->factor);
+                    if (!empty($price['max_quantity'])) {
+                        $price['max_quantity'] = (int) ($price['max_quantity'] * $currency->factor);
+                    }
                 } else {
                     $price['min_quantity'] = (int) $price['min_quantity'];
+                    if (!empty($price['max_quantity'])) {
+                        $price['max_quantity'] = (int) $price['max_quantity'];
+                    }
                 }
-
                 $price['price'] = (int) ($price['price'] * $currency->factor);
 
                 return $price;

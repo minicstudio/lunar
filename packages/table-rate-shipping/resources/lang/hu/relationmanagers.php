@@ -51,6 +51,10 @@ return [
                         'label' => 'Min. súly',
                         'helper_text' => 'Adja meg kg-ban',
                     ],
+                    'max_weight' => [
+                        'label' => 'Max. súly',
+                        'helper_text' => 'Adja meg kg-ban',
+                    ],
                     'price' => [
                         'label' => 'Ár',
                     ],

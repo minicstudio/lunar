@@ -101,8 +101,25 @@ class ShipBy implements ShippingRateInterface
         }
 
         $matched = $prices->filter(function ($price) use ($tier) {
-            return $tier >= $price->min_quantity;
-        })->sortByDesc('min_quantity')->first() ?: $pricing->base;
+            $min = $price->min_quantity;
+            $max = $price->max_quantity;
+            if ($max) {
+                return $tier >= $min && $tier < $max;
+            }
+            return $tier >= $min;
+        })->sortByDesc('min_quantity')->first();
+
+        // if there is no matched price, check if the tier exceeds the last break's max_quantity
+        // if not, fall back to base price
+        if (! $matched) {
+            $lastBreak = $prices->sortByDesc('min_quantity')->first();
+
+            if ($lastBreak && $lastBreak->max_quantity && $tier >= $lastBreak->max_quantity) {
+                return null;
+            }
+
+            $matched = $pricing->base;
+        }
 
         if (! $matched) {
             return null;
