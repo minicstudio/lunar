@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Facades\ModelManifest;
+use Lunar\Models\AddressCustomerType;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
@@ -61,6 +62,17 @@ class ShippingServiceProvider extends ServiceProvider
             return $customerGroup->belongsToMany(
                 ShippingMethod::class,
                 "{$prefix}customer_group_shipping_method"
+            )->withTimestamps();
+        });
+
+        AddressCustomerType::resolveRelationUsing('shippingMethods', function ($customerType) {
+            $prefix = config('lunar.database.table_prefix');
+
+            return $customerType->belongsToMany(
+                ShippingMethod::class,
+                "{$prefix}address_customer_type_shipping_method",
+                // 'address_customer_type_id',
+                // 'shipping_method_id'
             )->withTimestamps();
         });
 

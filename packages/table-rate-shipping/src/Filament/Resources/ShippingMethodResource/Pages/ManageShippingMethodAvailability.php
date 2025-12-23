@@ -7,6 +7,7 @@ use Filament\Support\Facades\FilamentIcon;
 use Lunar\Admin\Filament\Resources\ProductResource\RelationManagers\CustomerGroupRelationManager;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
 use Lunar\Shipping\Filament\Resources\ShippingMethodResource;
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers\CustomerTypeRelationManager;
 
 class ManageShippingMethodAvailability extends BaseManageRelatedRecords
 {
@@ -36,6 +37,9 @@ class ManageShippingMethodAvailability extends BaseManageRelatedRecords
             RelationGroup::make('Availability', [
                 CustomerGroupRelationManager::make([
                     'description' => __('lunarpanel.shipping::relationmanagers.shipping_methods.customer_groups.description'),
+                ]),
+                CustomerTypeRelationManager::make([
+                    'description' => 'Attach customer types (physical/legal) for this shipping method.',
                 ]),
             ]),
         ];
