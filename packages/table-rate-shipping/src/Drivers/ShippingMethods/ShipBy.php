@@ -99,6 +99,11 @@ class ShipBy implements ShippingRateInterface
             });
         }
 
+        // if locker then max weight check: max 20 kg
+        if (! empty($cart->meta['shippingType'] && $cart->meta['shippingType'] === 'locker' && $tier > 20)) {
+            return null;
+        }
+
         // Do we have a suitable tier price?
         $pricing = Pricing::for($shippingRate)->customerGroups($customerGroups)->qty($tier)->get();
 
