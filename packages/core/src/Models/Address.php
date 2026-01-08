@@ -81,4 +81,12 @@ class Address extends BaseModel implements Addressable, Contracts\Address
     {
         return $this->belongsTo(Customer::class);
     }
+
+    /**
+     * Get the customer type for the address.
+     */
+    public function addressCustomerType()
+    {
+        return $this->belongsTo(AddressCustomerType::class);
+    }
 }

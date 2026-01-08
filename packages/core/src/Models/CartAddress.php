@@ -103,6 +103,7 @@ class CartAddress extends BaseModel implements Addressable, Contracts\CartAddres
         'title',
         'first_name',
         'last_name',
+        'address_customer_type_id',
         'company_name',
         'tax_identifier',
         'line_one',
@@ -136,5 +137,13 @@ class CartAddress extends BaseModel implements Addressable, Contracts\CartAddres
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::modelClass());
+    }
+
+    /**
+     * Get the customer type for the cart address.
+     */
+    public function addressCustomerType()
+    {
+        return $this->belongsTo(AddressCustomerType::class);
     }
 }

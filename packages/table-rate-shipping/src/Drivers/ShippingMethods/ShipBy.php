@@ -54,6 +54,15 @@ class ShipBy implements ShippingRateInterface
             return $line->subTotalDiscountedWithoutCoupon?->value ?? $line->subTotal?->value;
         });
 
+        // Check allowed customer types for this shipping method
+        $address = $cart->shippingAddress ?? $cart->address ?? null;
+        if ($address && method_exists($shippingMethod, 'customerTypes')) {
+            $customerTypeId = $address->address_customer_type_id ?? null;
+            if ($customerTypeId && !$shippingMethod->customerTypes->pluck('id')->contains($customerTypeId)) {
+                return null;
+            }
+        }
+
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
         $productIds = $cart->lines->load('purchasable')->pluck('purchasable.product_id');
@@ -90,6 +99,11 @@ class ShipBy implements ShippingRateInterface
             });
         }
 
+        // if locker then max weight check: max 20 kg
+        if (! empty($cart->meta['shippingType'] && $cart->meta['shippingType'] === 'locker' && $tier > 20)) {
+            return null;
+        }
+
         // Do we have a suitable tier price?
         $pricing = Pricing::for($shippingRate)->customerGroups($customerGroups)->qty($tier)->get();
 
@@ -101,8 +115,25 @@ class ShipBy implements ShippingRateInterface
         }
 
         $matched = $prices->filter(function ($price) use ($tier) {
-            return $tier >= $price->min_quantity;
-        })->sortByDesc('min_quantity')->first() ?: $pricing->base;
+            $min = $price->min_quantity;
+            $max = $price->max_quantity;
+            if ($max) {
+                return $tier >= $min && $tier < $max;
+            }
+            return $tier >= $min;
+        })->sortByDesc('min_quantity')->first();
+
+        // if there is no matched price, check if the tier exceeds the last break's max_quantity
+        // if not, fall back to base price
+        if (! $matched) {
+            $lastBreak = $prices->sortByDesc('min_quantity')->first();
+
+            if ($lastBreak && $lastBreak->max_quantity && $tier >= $lastBreak->max_quantity) {
+                return null;
+            }
+
+            $matched = $pricing->base;
+        }
 
         if (! $matched) {
             return null;

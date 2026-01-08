@@ -5,6 +5,11 @@ return [
         'customer_groups' => [
             'description' => "Associez des groupes de clients à cette méthode d'expédition pour déterminer sa disponibilité.",
         ],
+        'customer_types' => [
+            'heading' => 'Associer le type de client',
+            'title' => 'Type de client',
+            'description' => 'Associez des types de clients (physique/juridique) à cette méthode d\'expédition.',
+        ],
     ],
     'shipping_rates' => [
         'title_plural' => 'Tarifs d\'expédition',
@@ -49,6 +54,9 @@ return [
                     ],
                     'min_weight' => [
                         'label' => 'Poids Min.',
+                    ],
+                    'max_weight' => [
+                        'label' => 'Poids Max.',
                     ],
                     'price' => [
                         'label' => 'Prix',

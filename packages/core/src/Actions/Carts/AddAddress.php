@@ -16,6 +16,7 @@ class AddAddress extends AbstractAction
         'first_name',
         'last_name',
         'company_name',
+        'address_customer_type_id',
         'tax_identifier',
         'line_one',
         'line_two',

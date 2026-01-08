@@ -184,7 +184,7 @@ class ShippingMethodResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            //
+            \Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers\CustomerTypeRelationManager::class,
         ];
     }
 

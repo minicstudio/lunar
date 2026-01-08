@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Traits\HasCustomerGroups;
 use Lunar\Base\Traits\LogsActivity;
+use Lunar\Models\AddressCustomerType;
 use Lunar\Models\CustomerGroup;
 use Lunar\Shipping\Database\Factories\ShippingMethodFactory;
 use Lunar\Shipping\Facades\Shipping;
@@ -76,6 +77,21 @@ class ShippingMethod extends BaseModel implements Contracts\ShippingMethod
             'enabled',
             'starts_at',
             'ends_at',
+        ])->withTimestamps();
+    }
+
+    /**
+     * Return the customer types relationship.
+     */
+    public function customerTypes(): BelongsToMany
+    {
+        $prefix = config('lunar.database.table_prefix');
+
+        return $this->belongsToMany(
+            AddressCustomerType::modelClass(),
+            "{$prefix}address_customer_type_shipping_method"
+        )->withPivot([
+            'enabled',
         ])->withTimestamps();
     }
 }
