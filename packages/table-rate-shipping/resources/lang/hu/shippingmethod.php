@@ -33,6 +33,9 @@ return [
         'stock_available' => [
             'label' => 'A kosárban lévő összes terméknek raktáron kell lennie',
         ],
+        'limitations' => [
+            'label' => 'Korlátozások',
+        ],
     ],
     'table' => [
         'name' => [

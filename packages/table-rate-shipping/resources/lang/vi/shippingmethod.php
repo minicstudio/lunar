@@ -33,6 +33,9 @@ return [
         'stock_available' => [
             'label' => 'Tất cả sản phẩm trong giỏ hàng phải có sẵn hàng',
         ],
+        'limitations' => [
+            'label' => 'Giới hạn',
+        ],
     ],
     'table' => [
         'name' => [

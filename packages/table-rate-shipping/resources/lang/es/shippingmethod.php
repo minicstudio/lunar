@@ -33,6 +33,9 @@ return [
         'stock_available' => [
             'label' => 'El stock de todos los artículos del carrito debe estar disponible',
         ],
+        'limitations' => [
+            'label' => 'Limitaciones',
+        ],
     ],
     'table' => [
         'name' => [

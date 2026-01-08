@@ -2,6 +2,7 @@
 
 namespace Lunar\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Lunar\Base\BaseModel;
 
@@ -18,4 +19,12 @@ class AddressCustomerType extends BaseModel
         'name',
         'label',
     ];
+
+    /**
+     * Scope a query to only include legal customer types.
+     */
+    public function scopeLegal(Builder $query): Builder
+    {
+        return $query->where('name', 'legal');
+    }
 }
