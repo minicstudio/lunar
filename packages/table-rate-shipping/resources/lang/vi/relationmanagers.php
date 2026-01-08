@@ -5,6 +5,11 @@ return [
         'customer_groups' => [
             'description' => 'Liên kết nhóm khách hàng với phương thức vận chuyển này để xác định tính khả dụng của nó.',
         ],
+        'customer_types' => [
+            'heading' => 'Đính kèm Loại Khách Hàng',
+            'title' => 'Loại Khách Hàng',
+            'description' => 'Đính kèm loại khách hàng (cá nhân/pháp nhân) cho phương thức vận chuyển này.',
+        ],
     ],
     'shipping_rates' => [
         'title_plural' => 'Phí vận chuyển',

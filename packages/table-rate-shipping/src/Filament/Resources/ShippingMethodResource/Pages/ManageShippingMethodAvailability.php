@@ -39,7 +39,7 @@ class ManageShippingMethodAvailability extends BaseManageRelatedRecords
                     'description' => __('lunarpanel.shipping::relationmanagers.shipping_methods.customer_groups.description'),
                 ]),
                 CustomerTypeRelationManager::make([
-                    'description' => 'Attach customer types (physical/legal) for this shipping method.',
+                    'description' => __('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.description'),
                 ]),
             ]),
         ];

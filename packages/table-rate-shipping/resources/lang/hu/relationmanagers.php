@@ -5,6 +5,11 @@ return [
         'customer_groups' => [
             'description' => 'Rendelje hozzá az ügyfélcsoportokat ehhez a szállítási módhoz, hogy meghatározza annak elérhetőségét.',
         ],
+        'customer_types' => [
+            'heading' => 'Ügyféltípus csatolása',
+            'title' => 'Ügyféltípus',
+            'description' => 'Csatolja az ügyféltípusokat (magán/jogi személy) ehhez a szállítási módhoz.',
+        ],
     ],
     'shipping_rates' => [
         'title_plural' => 'Szállítási díjak',

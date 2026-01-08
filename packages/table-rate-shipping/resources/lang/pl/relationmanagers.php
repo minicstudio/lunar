@@ -5,6 +5,11 @@ return [
         'customer_groups' => [
             'description' => 'Przypisz grupy klientów do tej metody dostawy, aby określić jej dostępność.',
         ],
+        'customer_types' => [
+            'heading' => 'Przypisz typ klienta',
+            'title' => 'Typ klienta',
+            'description' => 'Przypisz typy klientów (fizyczny/prawny) do tej metody dostawy.',
+        ],
     ],
     'shipping_rates' => [
         'title_plural' => 'Stawki dostawy',

@@ -5,6 +5,11 @@ return [
         'customer_groups' => [
             'description' => "Associate customer groups to this shipping method to determine it's availability.",
         ],
+        'customer_types' => [
+            'heading' => 'Attach Customer Type',
+            'title' => 'Customer Type',
+            'description' => 'Attach customer types (physical/legal) for this shipping method.',
+        ],
     ],
     'shipping_rates' => [
         'title_plural' => 'Shipping Rates',

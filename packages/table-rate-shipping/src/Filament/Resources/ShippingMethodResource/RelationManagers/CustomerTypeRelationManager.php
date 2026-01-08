@@ -16,12 +16,12 @@ class CustomerTypeRelationManager extends BaseRelationManager
             ->headerActions([
                 Tables\Actions\AttachAction::make()
                     ->recordTitle(fn ($record) => $record->label)
-                    ->modalHeading('Attach Customer Type')
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.heading'))
                     ->preloadRecordSelect()
-                    ->label('Attach Customer Type'),
+                    ->label(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.heading')),
             ])
             ->columns([
-                Tables\Columns\TextColumn::make('label')->label('Customer Type'),
+                Tables\Columns\TextColumn::make('label')->label(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.title')),
             ])
             ->actions([
                 Tables\Actions\DetachAction::make(),
