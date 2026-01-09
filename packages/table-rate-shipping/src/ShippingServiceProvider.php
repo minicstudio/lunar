@@ -71,8 +71,6 @@ class ShippingServiceProvider extends ServiceProvider
             return $customerType->belongsToMany(
                 ShippingMethod::class,
                 "{$prefix}address_customer_type_shipping_method",
-                // 'address_customer_type_id',
-                // 'shipping_method_id'
             )->withTimestamps();
         });
 

@@ -57,5 +57,8 @@ return [
         'edit' => [
             'navigation_label' => 'Edit Shipping Method',
         ],
+        'limitations' => [
+            'label' => 'Limitations',
+        ],
     ],
 ];

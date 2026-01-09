@@ -48,6 +48,7 @@ class ShippingMethodResource extends BaseResource
         return [
             Pages\EditShippingMethod::class,
             Pages\ManageShippingMethodAvailability::class,
+            Pages\ManageShippingMethodLimitations::class, // Add Limitations tab
         ];
     }
 
@@ -194,6 +195,7 @@ class ShippingMethodResource extends BaseResource
             'index' => Pages\ListShippingMethod::route('/'),
             'edit' => Pages\EditShippingMethod::route('/{record}/edit'),
             'availability' => Pages\ManageShippingMethodAvailability::route('/{record}/availability'),
+            'limitations' => Pages\ManageShippingMethodLimitations::route('/{record}/limitations'), // Add Limitations route
         ];
     }
 }
