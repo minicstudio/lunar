@@ -26,4 +26,11 @@ class EditShippingMethod extends BaseEditRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
+    public function getRelationManagers(): array
+    {
+        // Return only the relation managers you want to show under the edit form.
+        // If you want none, return an empty array.
+        return [];
+    }
 }
