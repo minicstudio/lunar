@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Lunar\Admin\Events\ModelMediaUpdated;
+use Lunar\Admin\Rules\SecureMediaUploadRule;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaRelationManager extends BaseRelationManager
@@ -49,7 +50,12 @@ class MediaRelationManager extends BaseRelationManager
                         '4:3',
                         '1:1',
                     ])
-                    ->acceptedFileTypes(config('lunar.media.accepted_file_types', [])),
+                    ->acceptedFileTypes(config('lunar.media.accepted_file_types', []))
+                    ->rules([
+                        'file',
+                        'max:' . (config('lunar.media.max_file_size', 10240) ?: 10240), // 10MB default
+                        new SecureMediaUploadRule(),
+                    ]),
             ]);
     }
 
