@@ -48,7 +48,8 @@ class MediaRelationManager extends BaseRelationManager
                         '16:9',
                         '4:3',
                         '1:1',
-                    ]),
+                    ])
+                    ->acceptedFileTypes(config('lunar.media.accepted_file_types', [])),
             ]);
     }
 
