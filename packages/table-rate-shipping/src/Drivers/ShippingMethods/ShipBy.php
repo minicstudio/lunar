@@ -83,24 +83,27 @@ class ShipBy implements ShippingRateInterface
             $chargeBy = 'cart_total';
         }
 
+        // Calculate total weight for all cart lines
+        $totalWeight = $cart->lines->sum(function ($line) {
+            $weightUnit = $line->purchasable->weight_unit ?: 'kg';
+
+            $unitWeightKg = Converter::from("weight.{$weightUnit}")
+                ->to('weight.kg')
+                ->value($line->purchasable->weight_value)
+                ->convert()
+                ->getValue();
+
+            return $unitWeightKg * $line->quantity;
+        });
+
         $tier = $subTotal;
 
         if ($chargeBy == 'weight') {
-            $tier = $cart->lines->sum(function ($line) {
-                $weightUnit = $line->purchasable->weight_unit ?: 'kg';
-
-                $unitWeightKg = Converter::from("weight.{$weightUnit}")
-                    ->to('weight.kg')
-                    ->value($line->purchasable->weight_value)
-                    ->convert()
-                    ->getValue();
-
-                return $unitWeightKg * $line->quantity;
-            });
+            $tier = $totalWeight;
         }
 
         // if locker then max weight check: max 20 kg
-        if (! empty($cart->meta['shippingType'] && $cart->meta['shippingType'] === 'locker' && $tier > 20)) {
+        if (! empty($cart->meta['shippingType']) && $cart->meta['shippingType'] === 'locker' && $totalWeight > 20) {
             return null;
         }
 
