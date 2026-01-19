@@ -98,7 +98,7 @@ class ShipBy implements ShippingRateInterface
 
         $tier = $subTotal;
 
-        if ($chargeBy == 'weight') {
+        if ($chargeBy === 'weight') {
             $tier = $totalWeight;
         }
 
