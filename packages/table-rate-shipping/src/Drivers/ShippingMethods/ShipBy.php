@@ -7,6 +7,7 @@ use Lunar\DataTypes\ShippingOption;
 use Lunar\Facades\Pricing;
 use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
+use Lunar\Shipping\Exceptions\InvalidWeightUnitException;
 use Lunar\Shipping\Interfaces\ShippingRateInterface;
 use Lunar\Shipping\Models\ShippingRate;
 
@@ -90,7 +91,9 @@ class ShipBy implements ShippingRateInterface
             $validWeightUnits = array_keys(Converter::getMeasurements()['weight']);
 
             if (! in_array($weightUnit, $validWeightUnits)) {
-                $weightUnit = 'kg';
+                throw new InvalidWeightUnitException(
+                    "Invalid weight unit '{$weightUnit}' for product {$line->purchasable->product_id}. Valid units are: " . implode(', ', $validWeightUnits)
+                );
             }
 
             $unitWeightKg = Converter::from("weight.{$weightUnit}")
