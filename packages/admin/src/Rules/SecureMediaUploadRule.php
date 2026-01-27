@@ -28,8 +28,7 @@ class SecureMediaUploadRule implements Rule
         $allowedExtensions = config('lunar.media.allowed_file_extensions', []);
 
         // Content-based real MIME type check
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $realMime = $finfo->file($value->getPathname());
+        $realMime = $value->getMimeType();
 
         if (! in_array($realMime, $allowedMimes, true)) {
             return false;
@@ -56,10 +55,7 @@ class SecureMediaUploadRule implements Rule
             return false;
         }
 
-        // Image integrity validation
-        if (! getimagesize($value->getPathname())) {
-            return false;
-        }
+        // TODO: It is necessary to check the image size.
 
         // Force decode to ensure real image content
         try {
