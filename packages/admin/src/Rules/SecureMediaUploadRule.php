@@ -28,7 +28,8 @@ class SecureMediaUploadRule implements Rule
         $allowedExtensions = config('lunar.media.allowed_file_extensions', []);
 
         // Content-based real MIME type check
-        $realMime = $value->getMimeType();
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $realMime = $finfo->file($value->getPathname());
 
         if (! in_array($realMime, $allowedMimes, true)) {
             return false;
