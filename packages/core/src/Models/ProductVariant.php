@@ -181,7 +181,7 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
      */
     public function getIdentifier(): string
     {
-        return $this->sku;
+        return $this->sku ?? '';
     }
 
     public function images(): BelongsToMany
