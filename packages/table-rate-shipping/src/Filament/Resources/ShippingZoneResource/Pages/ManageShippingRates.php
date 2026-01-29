@@ -2,6 +2,8 @@
 
 namespace Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages;
 
+use Awcodes\FilamentBadgeableColumn\Components\Badge;
+use Awcodes\FilamentBadgeableColumn\Components\BadgeableColumn;
 use Awcodes\Shout\Components\Shout;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -186,10 +188,15 @@ class ManageShippingRates extends ManageRelatedRecords
     public function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('shippingMethod.name')
-                ->label(
-                    __('lunarpanel.shipping::relationmanagers.shipping_rates.table.shipping_method.label')
-                ),
+            BadgeableColumn::make('shippingMethod.name')
+                ->separator('')
+                ->suffixBadges([
+                    Badge::make('default')
+                        ->label(__('lunarpanel.shipping::relationmanagers.shipping_rates.table.shipping_method.disabled'))
+                        ->color('warning')
+                        ->visible(fn (Model $record) => ! $record->enabled),
+                ])
+                ->label(__('lunarpanel.shipping::relationmanagers.shipping_rates.table.shipping_method.label')),
             TextColumn::make('basePrices.0')->formatStateUsing(
                 fn ($state = null) => $state->price->formatted
             )->label(
@@ -222,6 +229,21 @@ class ManageShippingRates extends ManageRelatedRecords
             Tables\Actions\DeleteAction::make()
                 ->requiresConfirmation()
                 ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.delete.modal.heading')),
+            Tables\Actions\Action::make('disable')->color('warning')->action(function (ShippingRate $shippingRate) {
+                $shippingRate->updateQuietly([
+                    'enabled' => false,
+                ]);
+            })->hidden(
+                fn (ShippingRate $shippingRate) => ! $shippingRate->enabled
+            ),
+            Tables\Actions\Action::make('enable')->color('success')->action(function (ShippingRate $shippingRate) {
+                $shippingRate->updateQuietly([
+                    'enabled' => true,
+                ]);
+            })->hidden(
+                fn (ShippingRate $shippingRate) => (bool) $shippingRate->enabled
+            ),
+
         ]);
     }
 

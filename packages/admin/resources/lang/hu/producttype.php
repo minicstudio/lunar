@@ -37,14 +37,14 @@ return [
     ],
 
     'attributes' => [
-        'no_groups' => 'Nincsenek elérhető attribútum csoportok.',
+        'no_groups' => 'Nincsenek elérhető attribútumcsoportok.',
         'no_attributes' => 'Nincsenek elérhető attribútumok.',
     ],
 
     'action' => [
         'delete' => [
             'notification' => [
-                'error_protected' => 'Ezt a terméktípust nem lehet törölni, mert vannak hozzá kapcsolódó termékek.',
+                'error_protected' => 'A terméktípus nem törölhető, mert vannak hozzá rendelve termékek.',
             ],
         ],
     ],

@@ -14,12 +14,12 @@ return [
             'label' => 'Kód',
         ],
         'cutoff' => [
-            'label' => 'Leadási határidő',
+            'label' => 'Határidő',
         ],
         'charge_by' => [
-            'label' => 'Díjszabás alapja',
+            'label' => 'Számlázás',
             'options' => [
-                'cart_total' => 'Kosár értéke',
+                'cart_total' => 'Kosár végösszeg',
                 'weight' => 'Súly',
             ],
         ],

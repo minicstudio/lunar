@@ -3,7 +3,7 @@
 return [
     'shipping_methods' => [
         'customer_groups' => [
-            'description' => 'Rendelje hozzá az ügyfélcsoportokat ehhez a szállítási módhoz, hogy meghatározza annak elérhetőségét.',
+            'description' => 'Rendelje hozzá a vásárlói csoportokat ehhez a szállítási módhoz az elérhetőség meghatározásához.',
         ],
         'customer_types' => [
             'heading' => 'Ügyféltípus csatolása',
@@ -40,11 +40,11 @@ return [
                 'label' => 'Ár',
             ],
             'prices' => [
-                'label' => 'Árkategóriák',
+                'label' => 'Árlépcsők',
                 'repeater' => [
                     'customer_group_id' => [
-                        'label' => 'Ügyfélcsoport',
-                        'placeholder' => 'Bármelyik',
+                        'label' => 'Vásárlói csoport',
+                        'placeholder' => 'Bármely',
                     ],
                     'currency_id' => [
                         'label' => 'Pénznem',
@@ -74,7 +74,7 @@ return [
                 'label' => 'Ár',
             ],
             'price_breaks_count' => [
-                'label' => 'Árkategóriák',
+                'label' => 'Árlépcsők',
             ],
         ],
     ],

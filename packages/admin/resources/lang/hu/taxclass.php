@@ -23,5 +23,10 @@ return [
             'label' => 'Alapértelmezett',
         ],
     ],
-
+    'delete' => [
+        'error' => [
+            'title' => 'Nem törölhető az adóosztály',
+            'body' => 'Ennek az adóosztálynak vannak hozzá rendelt termékváltozatai, ezért nem törölhető.',
+        ],
+    ],
 ];

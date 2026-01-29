@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'label' => 'Szállítási kizárási lista',
-    'label_plural' => 'Szállítási kizárási listák',
+    'label' => 'Szállítási kizáró lista',
+    'label_plural' => 'Szállítási kizáró listák',
     'form' => [
         'name' => [
             'label' => 'Név',

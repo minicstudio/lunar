@@ -90,6 +90,9 @@ return [
                         'no_shared_components' => [
                             'label' => 'Nincsenek elérhető megosztott opciók.',
                         ],
+                        'preselect' => [
+                            'label' => 'Minden érték előzetes kiválasztása alapértelmezés szerint.',
+                        ],
                     ],
                     'modal' => [
                         'heading' => 'Megosztott opció hozzáadása',
@@ -101,8 +104,8 @@ return [
             ],
             'options-list' => [
                 'empty' => [
-                    'heading' => 'Nincsenek beállított termékopciók',
-                    'description' => 'Adj hozzá megosztott vagy korlátozott termékopciót a változatok létrehozásához.',
+                    'heading' => 'Nincsenek konfigurált termékopciók',
+                    'description' => 'Adjon hozzá egy megosztott vagy korlátozott termékopciót a változatok létrehozásához.',
                 ],
             ],
             'options-table' => [
@@ -123,7 +126,7 @@ return [
                 'title' => 'Termékváltozatok',
                 'actions' => [
                     'create' => [
-                        'label' => 'Változat létrehozása',
+                        'label' => 'Termékváltozat létrehozása',
                     ],
                     'edit' => [
                         'label' => 'Szerkesztés',
@@ -133,11 +136,11 @@ return [
                     ],
                 ],
                 'empty' => [
-                    'heading' => 'Nincsenek beállított változatok',
+                    'heading' => 'Nincsenek konfigurált változatok',
                 ],
                 'table' => [
                     'new' => [
-                        'label' => 'ÚJ',
+                        'label' => 'Új',
                     ],
                     'option' => [
                         'label' => 'Opció',

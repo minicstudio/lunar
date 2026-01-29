@@ -30,9 +30,8 @@ return [
     'action' => [
         'delete' => [
             'notification' => [
-                'error_protected' => 'Ez a gyűjteménycsoport nem törölhető, mert vannak hozzá kapcsolódó gyűjtemények.',
+                'error_protected' => 'Ez a gyűjteménycsoport nem törölhető, mert gyűjtemények kapcsolódnak hozzá.',
             ],
         ],
     ],
-
 ];

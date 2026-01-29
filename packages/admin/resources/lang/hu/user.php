@@ -11,7 +11,7 @@ return [
             'label' => 'Név',
         ],
         'email' => [
-            'label' => 'Email',
+            'label' => 'E-mail',
         ],
     ],
 
@@ -20,7 +20,7 @@ return [
             'heading' => 'Felhasználó szerkesztése',
         ],
         'email' => [
-            'label' => 'Email',
+            'label' => 'E-mail',
         ],
         'password' => [
             'label' => 'Új jelszó',

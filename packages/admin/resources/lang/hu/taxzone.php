@@ -41,8 +41,8 @@ return [
         'price_display' => [
             'label' => 'Ár megjelenítése',
             'options' => [
-                'include_tax' => 'Adóval együtt',
-                'exclude_tax' => 'Adó nélkül',
+                'include_tax' => 'Adót is tartalmaz',
+                'exclude_tax' => 'Adót nem tartalmaz',
             ],
         ],
         'active' => [
@@ -66,7 +66,7 @@ return [
 
         'zone_postcodes' => [
             'label' => 'Irányítószámok',
-            'helper' => 'Minden irányítószámot új sorba írj. Helyettesítő karakterek is használhatók, pl. NW*',
+            'helper' => 'Listázd az egyes irányítószámokat új sorban. Támogatja a helyettesítő karaktereket, mint például NW*',
         ],
 
     ],

@@ -1,7 +1,9 @@
 <?php
 
 return [
-    'label' => 'Impôts',
 
-    'plural_label' => 'Impôts',
+    'label' => 'Taxe',
+
+    'plural_label' => 'Taxes',
+
 ];

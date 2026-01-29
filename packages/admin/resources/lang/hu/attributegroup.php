@@ -39,7 +39,7 @@ return [
     'action' => [
         'delete' => [
             'notification' => [
-                'error_protected' => 'Ez az attribútumcsoport nem törölhető, mivel hozzárendelt attribútumok vannak.',
+                'error_protected' => 'Ez az attribútumcsoport nem törölhető, mivel vannak hozzá kapcsolódó attribútumok.',
             ],
         ],
     ],

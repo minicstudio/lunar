@@ -22,6 +22,9 @@ return [
         'enabled' => [
             'label' => 'Engedélyezve',
         ],
+        'sync_prices' => [
+            'label' => 'Árak szinkronizálása',
+        ],
         'default' => [
             'label' => 'Alapértelmezett',
         ],
@@ -45,6 +48,10 @@ return [
         ],
         'default' => [
             'label' => 'Alapértelmezett',
+        ],
+        'sync_prices' => [
+            'label' => 'Árak szinkronizálása',
+            'helper_text' => 'Tartsa ennek a pénznemnek az árait szinkronban az alapértelmezett pénznem áraival.',
         ],
     ],
 

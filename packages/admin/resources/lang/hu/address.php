@@ -8,7 +8,7 @@ return [
 
     'table' => [
         'title' => [
-            'label' => 'Megszólítás',
+            'label' => 'Cím',
         ],
         'first_name' => [
             'label' => 'Keresztnév',
@@ -38,7 +38,7 @@ return [
             'label' => 'Ország',
         ],
         'state' => [
-            'label' => 'Megye/Tartomány',
+            'label' => 'Megye',
         ],
         'postcode' => [
             'label' => 'Irányítószám',
@@ -59,7 +59,7 @@ return [
             'heading' => 'Cím törlése',
         ],
         'title' => [
-            'label' => 'Megszólítás',
+            'label' => 'Cím',
         ],
         'first_name' => [
             'label' => 'Keresztnév',
@@ -89,7 +89,7 @@ return [
             'label' => 'Ország',
         ],
         'state' => [
-            'label' => 'Megye/Tartomány',
+            'label' => 'Megye',
         ],
         'postcode' => [
             'label' => 'Irányítószám',

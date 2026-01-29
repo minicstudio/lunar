@@ -24,12 +24,14 @@ return [
     'action' => [
         'delete' => [
             'notification' => [
-                'error_protected' => 'Ez a márka nem törölhető, mivel termékek kapcsolódnak hozzá.',
+                'error_protected' => 'A márka nem törölhető, mert termékek vannak hozzárendelve.',
             ],
         ],
     ],
-
     'pages' => [
+        'edit' => [
+            'title' => 'Alapvető információk',
+        ],
         'products' => [
             'label' => 'Termékek',
             'actions' => [
@@ -49,7 +51,7 @@ return [
                 ],
                 'detach' => [
                     'notification' => [
-                        'success' => 'A termék le lett választva.',
+                        'success' => 'Termék leválasztva.',
                     ],
                     'modal' => [
                         'heading' => 'Termék leválasztása',
@@ -70,7 +72,7 @@ return [
             ],
             'actions' => [
                 'attach' => [
-                    'label' => 'Gyűjtemény társítása',
+                    'label' => 'Gyűjtemény hozzárendelése',
                     'modal' => [
                         'heading' => 'Gyűjtemény csatolása',
                     ],

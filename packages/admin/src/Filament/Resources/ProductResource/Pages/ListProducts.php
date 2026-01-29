@@ -83,10 +83,10 @@ class ListProducts extends BaseListRecords
     public function getDefaultTabs(): array
     {
         return [
-            'all' => Tab::make(__('All')),
-            'published' => Tab::make(__('Published'))
+            'all' => Tab::make(__('lunarpanel::product.tabs.all')),
+            'published' => Tab::make(__('lunarpanel::product.tabs.published'))
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'published')),
-            'draft' => Tab::make(__('Draft'))
+            'draft' => Tab::make(__('lunarpanel::product.tabs.draft'))
                 ->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'draft'))
                 ->badge(Product::query()->where('status', 'draft')->count()),
         ];

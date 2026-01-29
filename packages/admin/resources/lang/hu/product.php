@@ -6,9 +6,13 @@ return [
 
     'plural_label' => 'Termékek',
 
+    'tabs' => [
+        'all' => 'Mind',
+    ],
+
     'status' => [
         'unpublished' => [
-            'content' => 'Jelenleg piszkozat státuszban van, ez a termék minden csatornán és vásárlói csoportban rejtve van.',
+            'content' => 'Jelenleg vázlat státuszban van, ez a termék minden csatornán és vásárlói csoportban rejtve van.',
         ],
         'availability' => [
             'customer_groups' => 'Ez a termék jelenleg nem elérhető egyik vásárlói csoport számára sem.',
@@ -21,8 +25,8 @@ return [
             'label' => 'Állapot',
             'states' => [
                 'deleted' => 'Törölve',
-                'draft' => 'Piszkozat',
-                'published' => 'Publikálva',
+                'draft' => 'Vázlat',
+                'published' => 'Közzétéve',
             ],
         ],
         'name' => [
@@ -69,21 +73,22 @@ return [
             'label' => 'Állapot',
             'options' => [
                 'published' => [
-                    'label' => 'Publikálva',
-                    'description' => 'Ez a termék minden engedélyezett vásárlói csoport és csatorna számára elérhető lesz',
+                    'label' => 'Közzétéve',
+                    'description' => 'Ez a termék elérhető lesz minden engedélyezett vásárlói csoportban és csatornán',
                 ],
                 'draft' => [
-                    'label' => 'Piszkozat',
-                    'description' => 'Ez a termék minden csatornán és vásárlói csoportban rejtve lesz',
+                    'label' => 'Vázlat',
+                    'description' => 'Ez a termék rejtett lesz minden csatornán és vásárlói csoportban',
                 ],
             ],
         ],
         'tags' => [
             'label' => 'Címkék',
-            'helper_text' => 'A címkék elválasztásához használj Entert, Tabot vagy vesszőt (,)',
+            'helper_text' => 'A címkék elválasztásához használjon Entert, Tabot vagy vesszőt (,)',
         ],
         'collections' => [
             'label' => 'Gyűjtemények',
+            'select_collection' => 'Válasszon gyűjteményt',
         ],
     ],
 
@@ -106,8 +111,8 @@ return [
                     'label' => 'Adóosztály',
                 ],
                 'tax_ref' => [
-                    'label' => 'Adó referencia',
-                    'helper_text' => 'Opcionális, harmadik fél rendszerekkel való integrációhoz.',
+                    'label' => 'Adóreferencia',
+                    'helper_text' => 'Opcionális, külső rendszerekkel való integrációhoz.',
                 ],
             ],
         ],
@@ -135,6 +140,7 @@ return [
                     ],
                 ],
             ],
+            'select_collection' => 'Válasszon gyűjteményt',
         ],
         'associations' => [
             'label' => 'Termék asszociációk',

@@ -7,44 +7,44 @@ return [
     'plural_label' => 'Munkatársak',
 
     'table' => [
-        'firstname' => [
+        'first_name' => [
             'label' => 'Keresztnév',
         ],
-        'lastname' => [
+        'last_name' => [
             'label' => 'Vezetéknév',
         ],
         'email' => [
-            'label' => 'Email',
+            'label' => 'E-mail',
         ],
         'admin' => [
-            'badge' => 'Szuper Admin',
+            'badge' => 'Főadminisztrátor',
         ],
     ],
 
     'form' => [
-        'firstname' => [
+        'first_name' => [
             'label' => 'Keresztnév',
         ],
-        'lastname' => [
+        'last_name' => [
             'label' => 'Vezetéknév',
         ],
         'email' => [
-            'label' => 'Email',
+            'label' => 'E-mail',
         ],
         'password' => [
             'label' => 'Jelszó',
             'hint' => 'Jelszó visszaállítása',
         ],
         'admin' => [
-            'label' => 'Szuper Admin',
-            'helper' => 'A szuper admin szerepkörök nem módosíthatók a hubban.',
+            'label' => 'Főadminisztrátor',
+            'helper' => 'A főadminisztrátor szerepkörök nem változtathatók a hubban.',
         ],
         'roles' => [
             'label' => 'Szerepkörök',
             'helper' => ':roles teljes hozzáféréssel rendelkeznek',
         ],
         'permissions' => [
-            'label' => 'Engedélyek',
+            'label' => 'Jogosultságok',
         ],
         'role' => [
             'label' => 'Szerepkör neve',
@@ -67,14 +67,14 @@ return [
     'acl' => [
         'title' => 'Hozzáférés-vezérlés',
         'tooltip' => [
-            'roles-included' => 'Az engedély a következő szerepkörökben szerepel',
+            'roles-included' => 'A jogosultság a következő szerepkörökben szerepel',
         ],
         'notification' => [
             'updated' => 'Frissítve',
             'error' => 'Hiba',
-            'no-role' => 'Szerepkör nincs regisztrálva a Lunar-ban',
-            'no-permission' => 'Engedély nincs regisztrálva a Lunar-ban',
-            'no-role-permission' => 'Szerepkör és engedély nincs regisztrálva a Lunar-ban',
+            'no-role' => 'A szerepkör nincs regisztrálva a Lunarban',
+            'no-permission' => 'A jogosultság nincs regisztrálva a Lunarban',
+            'no-role-permission' => 'Szerepkör és jogosultság nincs regisztrálva a Lunarban',
         ],
     ],
 

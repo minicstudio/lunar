@@ -23,7 +23,7 @@ return [
             'label' => 'Vezetéknév',
         ],
         'title' => [
-            'label' => 'Megszólítás',
+            'label' => 'Cím',
         ],
         'company_name' => [
             'label' => 'Cégnév',
@@ -32,7 +32,7 @@ return [
             'label' => 'Adószám',
         ],
         'account_reference' => [
-            'label' => 'Számlahivatkozás',
+            'label' => 'Ügyfélszám',
         ],
         'new' => [
             'label' => 'Új',
@@ -44,7 +44,7 @@ return [
 
     'form' => [
         'title' => [
-            'label' => 'Megszólítás',
+            'label' => 'Cím',
         ],
         'first_name' => [
             'label' => 'Keresztnév',
@@ -56,7 +56,7 @@ return [
             'label' => 'Cégnév',
         ],
         'account_ref' => [
-            'label' => 'Számlahivatkozás',
+            'label' => 'Ügyfélszám',
         ],
         'tax_identifier' => [
             'label' => 'Adószám',
