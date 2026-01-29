@@ -54,7 +54,7 @@ return [
                 ],
             ],
             'order_sales_chart' => [
-                'heading' => 'Rendelések / Eladások jelentése',
+                'heading' => 'Rendelések / Értékesítési Jelentés',
                 'series_one' => [
                     'label' => 'Rendelések',
                 ],
@@ -66,7 +66,7 @@ return [
                         'label' => 'Rendelések száma',
                     ],
                     'series_two' => [
-                        'label' => 'Teljes érték',
+                        'label' => 'Összérték',
                     ],
                 ],
             ],

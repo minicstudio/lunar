@@ -122,13 +122,11 @@ return [
         ],
         'edit' => [
             'title' => 'Basic Information',
+            'navigation_label' => 'Edit Discount',
         ],
         'limitations' => [
             'label' => 'Limitations',
         ],
-        'edit' => [
-            'navigation_label' => 'Edit Discount',
-        ]
     ],
     'relationmanagers' => [
         'collections' => [
@@ -339,8 +337,8 @@ return [
             ],
         ],
         'conditions' => [
-            'title' => 'Conditions',
-            'description' => 'Select the conditions required for the discount to apply.',
+            'title' => 'Product and Variant Conditions',
+            'description' => 'Select the product or variant conditions required for the discount to apply.',
             'actions' => [
                 'attach' => [
                     'label' => 'Add Condition',
@@ -389,6 +387,20 @@ return [
                             'label' => 'Product',
                         ],
                     ],
+                ],
+            ],
+        ],
+        'collection_conditions' => [
+            'title' => 'Collection Conditions',
+            'description' => 'Select the collection conditions required for the discount to apply.',
+            'actions' => [
+                'attach' => [
+                    'label' => 'Add Condition',
+                ],
+            ],
+            'table' => [
+                'name' => [
+                    'label' => 'Name',
                 ],
             ],
         ],

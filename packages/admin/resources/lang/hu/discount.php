@@ -11,7 +11,7 @@ return [
             'heading' => 'Vásárolj X-et, kapj Y-t',
         ],
         'amount_off' => [
-            'heading' => 'Kedvezmény összege',
+            'heading' => 'Összeg alapú kedvezmény',
         ],
         'name' => [
             'label' => 'Név',
@@ -20,14 +20,14 @@ return [
             'label' => 'Azonosító',
         ],
         'starts_at' => [
-            'label' => 'Kezdési dátum (UTC)',
+            'label' => 'Kezdés dátuma (UTC)',
         ],
         'ends_at' => [
-            'label' => 'Befejezési dátum (UTC)',
+            'label' => 'Befejezés dátuma (UTC)',
         ],
         'priority' => [
             'label' => 'Prioritás',
-            'helper_text' => 'A magasabb prioritású kedvezmények előbb kerülnek alkalmazásra.',
+            'helper_text' => 'A magasabb prioritású kedvezmények kerülnek először alkalmazásra.',
             'options' => [
                 'low' => [
                     'label' => 'Alacsony',
@@ -41,11 +41,11 @@ return [
             ],
         ],
         'stop' => [
-            'label' => 'Más kedvezmények alkalmazásának megállítása ez után',
+            'label' => 'Más kedvezmények alkalmazásának megakadályozása ez után',
         ],
         'coupon' => [
             'label' => 'Kupon',
-            'helper_text' => 'Adja meg a kuponkódot, amely szükséges a kedvezmény érvényesítéséhez. Ha üresen hagyja, automatikusan érvényesül.',
+            'helper_text' => 'Adja meg a kuponkódot, amely szükséges a kedvezmény alkalmazásához. Üresen hagyva automatikusan alkalmazódik.',
         ],
         'max_uses' => [
             'label' => 'Maximális felhasználás',
@@ -59,7 +59,7 @@ return [
             'label' => 'Minimum kosárérték',
         ],
         'min_qty' => [
-            'label' => 'Termékmennyiség',
+            'label' => 'Termék mennyisége',
             'helper_text' => 'Adja meg, hogy hány jogosult termék szükséges a kedvezmény érvényesítéséhez.',
         ],
         'reward_qty' => [
@@ -115,10 +115,16 @@ return [
             'label' => 'Típus',
         ],
         'starts_at' => [
-            'label' => 'Kezdési dátum',
+            'label' => 'Kezdés dátuma',
         ],
         'ends_at' => [
-            'label' => 'Befejezési dátum',
+            'label' => 'Befejezés dátuma',
+        ],
+        'created_at' => [
+            'label' => 'Létrehozva',
+        ],
+        'coupon' => [
+            'label' => 'Kupon',
         ],
     ],
     'pages' => [
@@ -129,13 +135,14 @@ return [
             'label' => 'Korlátozások',
         ],
         'edit' => [
+            'title' => 'Alapinformációk',
             'navigation_label' => 'Kedvezmény szerkesztése',
         ]
     ],
     'relationmanagers' => [
         'collections' => [
             'title' => 'Gyűjtemények',
-            'description' => 'Válassza ki, mely gyűjteményekre vonatkozzon ez a kedvezmény.',
+            'description' => 'Válassza ki, mely gyűjteményekre legyen érvényes ez a kedvezmény.',
             'actions' => [
                 'attach' => [
                     'label' => 'Gyűjtemény csatolása',
@@ -194,7 +201,7 @@ return [
         ],
         'brands' => [
             'title' => 'Márkák',
-            'description' => 'Válassza ki, mely márkákra vonatkozzon ez a kedvezmény.',
+            'description' => 'Válassza ki, mely márkákra legyen érvényes ez a kedvezmény.',
             'actions' => [
                 'attach' => [
                     'label' => 'Márka csatolása',
@@ -236,7 +243,7 @@ return [
         ],
         'products' => [
             'title' => 'Termékek',
-            'description' => 'Válassza ki, mely termékekre vonatkozzon ez a kedvezmény.',
+            'description' => 'Válassza ki, mely termékekre legyen érvényes ez a kedvezmény.',
             'actions' => [
                 'attach' => [
                     'label' => 'Termék hozzáadása',
@@ -288,7 +295,7 @@ return [
         ],
         'rewards' => [
             'title' => 'Termékjutalmak',
-            'description' => 'Válassza ki, mely termékek lesznek kedvezményesek, ha a kosárban vannak és a fenti feltételek teljesülnek.',
+            'description' => 'Válassza ki, mely termékek kapnak kedvezményt, ha a kosárban megtalálhatók és a fenti feltételek teljesülnek.',
             'actions' => [
                 'attach' => [
                     'label' => 'Termék hozzáadása',

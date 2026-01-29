@@ -5,7 +5,7 @@ return [
     'label_plural' => 'Szállítási zónák',
     'form' => [
         'unrestricted' => [
-            'content' => 'Ez a szállítási zóna nem tartalmaz korlátozásokat, és minden vásárló számára elérhető lesz a pénztárnál.',
+            'content' => 'Ehhez a szállítási zónához nincs korlátozás, ezért a pénztárnál minden vásárló számára elérhető lesz.',
         ],
         'name' => [
             'label' => 'Név',
@@ -13,9 +13,9 @@ return [
         'type' => [
             'label' => 'Típus',
             'options' => [
-                'unrestricted' => 'Korlátozás nélküli',
+                'unrestricted' => 'Korlátozás nélkül',
                 'countries' => 'Országokra korlátozva',
-                'states' => 'Államokra / tartományokra korlátozva',
+                'states' => 'Államokra / megyékre korlátozva',
                 'postcodes' => 'Irányítószámokra korlátozva',
             ],
         ],
@@ -23,14 +23,14 @@ return [
             'label' => 'Ország',
         ],
         'states' => [
-            'label' => 'Államok',
+            'label' => 'Megyék',
         ],
         'countries' => [
-            'label' => 'Államok',
+            'label' => 'Országok',
         ],
         'postcodes' => [
             'label' => 'Irányítószámok',
-            'helper' => 'Adj meg minden irányítószámot új sorba. Támogatja a helyettesítő karaktereket, pl.: NW*',
+            'helper' => 'Minden irányítószámot új sorba írjon. Támogatja a helyettesítő karaktereket, például: NW*',
         ],
     ],
     'table' => [
@@ -40,16 +40,11 @@ return [
         'type' => [
             'label' => 'Típus',
             'options' => [
-                'unrestricted' => 'Korlátozás nélküli',
+                'unrestricted' => 'Korlátozás nélkül',
                 'countries' => 'Országokra korlátozva',
-                'states' => 'Államokra / tartományokra korlátozva',
+                'states' => 'Államokra / megyékre korlátozva',
                 'postcodes' => 'Irányítószámokra korlátozva',
             ],
-        ],
-    ],
-    'pages' => [
-        'edit' => [
-            'navigation_label' => 'Szállítási zóna szerkesztése',
         ],
     ],
 ];

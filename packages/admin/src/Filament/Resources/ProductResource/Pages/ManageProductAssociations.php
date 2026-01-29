@@ -53,11 +53,7 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                 Forms\Components\Select::make('type')
                     ->label(__('lunarpanel::product.pages.associations.form.type.label'))
                     ->required()
-                    ->options([
-                        ProductAssociation::ALTERNATE => __('lunarpanel::product.pages.associations.form.type.options.alternate'),
-                        ProductAssociation::CROSS_SELL => __('lunarpanel::product.pages.associations.form.type.options.cross-sell'),
-                        ProductAssociation::UP_SELL => __('lunarpanel::product.pages.associations.form.type.options.up-sell'),
-                    ]),
+                    ->options(ProductAssociation::getTypes()),
             ]);
     }
 
@@ -85,7 +81,11 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                     ->label(__('lunarpanel::product.table.sku.label')),
                 Tables\Columns\TextColumn::make('type')
                     ->label(__('lunarpanel::product.pages.associations.form.type.label'))
-                    ->formatStateUsing(fn ($state) => __('lunarpanel::product.pages.associations.form.type.options.' . $state)),
+                    ->formatStateUsing(function ($state) {
+                        $enum = config('lunar.products.association_types_enum', \Lunar\Base\Enums\ProductAssociation::class);
+
+                        return $enum::tryFrom($state)?->label() ?: $state;
+                    }),
             ])
             ->filters([
                 //

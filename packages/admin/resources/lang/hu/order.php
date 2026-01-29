@@ -10,9 +10,13 @@ return [
         'manage' => 'Kezelés',
     ],
 
+    'tabs' => [
+        'all' => 'Mind',
+    ],
+
     'transactions' => [
-        'capture' => 'Lekötve',
-        'intent' => 'Szándék',
+        'capture' => 'Lekönyvelve',
+        'intent' => 'Fizetési szándék',
         'refund' => 'Visszatérítve',
         'failed' => 'Sikertelen',
     ],
@@ -25,10 +29,10 @@ return [
             'label' => 'Hivatkozás',
         ],
         'customer_reference' => [
-            'label' => 'Vásárlói hivatkozás',
+            'label' => 'Vásárlói azonosító',
         ],
         'customer' => [
-            'label' => 'Vevő',
+            'label' => 'Vásárló',
         ],
         'tags' => [
             'label' => 'Címkék',
@@ -37,26 +41,26 @@ return [
             'label' => 'Irányítószám',
         ],
         'email' => [
-            'label' => 'Email',
-            'copy_message' => 'Email cím másolva',
+            'label' => 'E-mail',
+            'copy_message' => 'E-mail cím másolva',
         ],
         'phone' => [
             'label' => 'Telefon',
         ],
         'total' => [
-            'label' => 'Összesen',
+            'label' => 'Végösszeg',
         ],
         'date' => [
             'label' => 'Dátum',
         ],
         'new_customer' => [
-            'label' => 'Vevő típusa',
+            'label' => 'Vásárló típusa',
         ],
         'placed_after' => [
-            'label' => 'Megrendelve után',
+            'label' => 'Rendelés ideje után',
         ],
         'placed_before' => [
-            'label' => 'Megrendelve előtt',
+            'label' => 'Rendelés ideje előtt',
         ],
     ],
 
@@ -81,19 +85,19 @@ return [
                 'label' => 'Cégnév',
             ],
             'tax_identifier' => [
-                'label' => 'Adószám',
+                'label' => 'Adóazonosító',
             ],
             'contact_phone' => [
                 'label' => 'Telefon',
             ],
             'contact_email' => [
-                'label' => 'Email cím',
+                'label' => 'E-mail cím',
             ],
             'city' => [
                 'label' => 'Város',
             ],
             'state' => [
-                'label' => 'Állam / Megye',
+                'label' => 'Megye',
             ],
             'postcode' => [
                 'label' => 'Irányítószám',
@@ -116,7 +120,7 @@ return [
             'label' => 'Összeg',
 
             'hint' => [
-                'less_than_total' => 'Kevesebb összeget szeretnél lekötni, mint a teljes tranzakció értéke',
+                'less_than_total' => 'Ön kevesebb összeget készül lekönyvelni, mint a teljes tranzakció értéke',
             ],
         ],
 
@@ -129,8 +133,8 @@ return [
             'alert' => 'Megerősítés szükséges',
 
             'hint' => [
-                'capture' => 'Kérjük, erősítsd meg a fizetés lekötését',
-                'refund' => 'Kérjük, erősítsd meg a visszatérítést',
+                'capture' => 'Kérjük, erősítse meg, hogy le akarja könyvelni ezt a fizetést',
+                'refund' => 'Kérjük, erősítse meg, hogy vissza kívánja téríteni ezt az összeget.',
             ],
         ],
     ],
@@ -144,10 +148,10 @@ return [
             'label' => 'Szállítási utasítások',
         ],
         'shipping_total' => [
-            'label' => 'Szállítási összeg',
+            'label' => 'Szállítási díj',
         ],
         'paid' => [
-            'label' => 'Fizetve',
+            'label' => 'Kifizetve',
         ],
         'refund' => [
             'label' => 'Visszatérítés',
@@ -165,13 +169,13 @@ return [
             'label' => 'Kedvezmény összege',
         ],
         'total' => [
-            'label' => 'Összesen',
+            'label' => 'Végösszeg',
         ],
         'current_stock_level' => [
             'message' => 'Jelenlegi készletszint: :count',
         ],
         'purchase_stock_level' => [
-            'message' => 'megrendeléskor: :count',
+            'message' => 'rendelés idején: :count',
         ],
         'status' => [
             'label' => 'Állapot',
@@ -180,7 +184,7 @@ return [
             'label' => 'Hivatkozás',
         ],
         'customer_reference' => [
-            'label' => 'Vásárlói hivatkozás',
+            'label' => 'Vásárlói azonosító',
         ],
         'channel' => [
             'label' => 'Csatorna',
@@ -207,7 +211,7 @@ return [
             'label' => 'Számlázási cím',
         ],
         'address_not_set' => [
-            'label' => 'Nincs beállított cím',
+            'label' => 'Nincs cím megadva',
         ],
         'billing_matches_shipping' => [
             'label' => 'Megegyezik a szállítási címmel',
@@ -229,9 +233,9 @@ return [
             'placeholder' => 'Nincsenek tranzakciók',
         ],
         'alert' => [
-            'requires_capture' => 'Ez a rendelés még fizetés lekötést igényel.',
-            'partially_refunded' => 'Ez a rendelés részben visszatérített.',
-            'refunded' => 'Ez a rendelés visszatérített.',
+            'requires_capture' => 'Ennél a rendelésnél még fizetést kell lekönyvelni.',
+            'partially_refunded' => 'Ennél a rendelésnél részleges visszatérítés történt.',
+            'refunded' => 'Ennél a rendelésnél visszatérítés történt.',
         ],
     ],
 
@@ -245,17 +249,17 @@ return [
                 'label' => 'Új állapot',
             ],
             'additional_content' => [
-                'label' => 'Kiegészítő tartalom',
+                'label' => 'További tartalom',
             ],
             'additional_email_recipient' => [
-                'label' => 'További email címzett',
+                'label' => 'További e-mail címzett',
                 'placeholder' => 'opcionális',
             ],
             'mailers' => [
                 'label' => 'Levélküldők',
             ],
             'email_addresses' => [
-                'label' => 'Email címek',
+                'label' => 'E-mail címek',
             ],
         ],
         'download_order_pdf' => [
@@ -269,11 +273,11 @@ return [
                 'error' => 'Hiba',
 
                 'billing_address' => [
-                    'saved' => 'Számlázási cím elmentve',
+                    'saved' => 'Számlázási cím mentve',
                 ],
 
                 'shipping_address' => [
-                    'saved' => 'Szállítási cím elmentve',
+                    'saved' => 'Szállítási cím mentve',
                 ],
             ],
         ],
@@ -282,16 +286,16 @@ return [
             'form' => [
                 'tags' => [
                     'label' => 'Címkék',
-                    'helper_text' => 'A címkék elválasztásához használj Entert, Tabot vagy vesszőt (,)',
+                    'helper_text' => 'A címkék elválasztásához használjon Entert, Tabot vagy vesszőt (,)',
                 ],
             ],
         ],
         'capture_payment' => [
-            'label' => 'Fizetés lekötése',
+            'label' => 'Fizetés lekönyvelése',
 
             'notification' => [
-                'error' => 'Hiba történt a lekötés során',
-                'success' => 'Lekötés sikeres',
+                'error' => 'Hiba történt a lekönyvelés során',
+                'success' => 'Lekönyvelés sikeres',
             ],
         ],
         'refund_payment' => [

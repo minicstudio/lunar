@@ -3,24 +3,18 @@
 return [
     'tags' => [
         'notification' => [
-
             'updated' => 'Címkék frissítve',
-
         ],
     ],
 
     'activity-log' => [
 
         'input' => [
-
-            'placeholder' => 'Hozzászólás hozzáadása',
-
+            'placeholder' => 'Megjegyzés hozzáadása',
         ],
 
         'action' => [
-
-            'add-comment' => 'Hozzászólás hozzáadása',
-
+            'add-comment' => 'Megjegyzés hozzáadása',
         ],
 
         'system' => 'Rendszer',
@@ -29,13 +23,13 @@ return [
             'orders' => [
                 'order_created' => 'Rendelés létrehozva',
 
-                'status_change' => 'Állapot frissítve',
+                'status_change' => 'Státusz frissítve',
 
-                'capture' => 'Fizetés :amount a :last_four végű kártyáról',
+                'capture' => 'Fizetés: :amount, kártya utolsó négy számjegye: :last_four',
 
-                'authorized' => 'Engedélyezve :amount a :last_four végű kártyáról',
+                'authorized' => 'Engedélyezve: :amount, kártya utolsó négy számjegye: :last_four',
 
-                'refund' => 'Visszatérítés :amount a :last_four végű kártyáról',
+                'refund' => 'Visszatérítés: :amount, kártya utolsó négy számjegye: :last_four',
 
                 'address' => ':type frissítve',
 
@@ -60,14 +54,14 @@ return [
         ],
 
         'notification' => [
-            'comment_added' => 'Hozzászólás hozzáadva',
+            'comment_added' => 'Megjegyzés hozzáadva',
         ],
 
     ],
 
     'forms' => [
         'youtube' => [
-            'helperText' => 'Add meg a YouTube videó azonosítóját, pl. dQw4w9WgXcQ',
+            'helperText' => 'Add meg a YouTube videó azonosítóját. pl.: dQw4w9WgXcQ',
         ],
     ],
 

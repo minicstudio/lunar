@@ -5,20 +5,20 @@ return [
     'plural_label' => 'Termékváltozatok',
     'pages' => [
         'edit' => [
-            'title' => 'Alapvető Információk',
+            'title' => 'Alapinformációk',
         ],
         'media' => [
             'title' => 'Média',
             'form' => [
                 'no_selection' => [
-                    'label' => 'Jelenleg nincs kiválasztott kép ehhez a változathoz.',
+                    'label' => 'Ehhez a változathoz jelenleg nincs kép kiválasztva.',
                 ],
                 'no_media_available' => [
-                    'label' => 'Jelenleg nincs elérhető média ezen a terméken.',
+                    'label' => 'Jelenleg nincs elérhető média ehhez a termékhez.',
                 ],
                 'images' => [
                     'label' => 'Elsődleges kép',
-                    'helper_text' => 'Válassza ki a termékképet, amely ezt a változatot képviseli.',
+                    'helper_text' => 'Válassza ki azt a termékképet, amely ezt a változatot képviseli.',
                 ],
             ],
         ],
@@ -49,27 +49,27 @@ return [
             'label' => 'Készleten',
         ],
         'backorder' => [
-            'label' => 'Előrendelhető',
+            'label' => 'Utánrendelhető',
         ],
         'purchasable' => [
             'label' => 'Vásárolhatóság',
             'options' => [
                 'always' => 'Mindig',
                 'in_stock' => 'Készleten',
-                'in_stock_or_on_backorder' => 'Készleten vagy előrendelhető',
+                'in_stock_or_on_backorder' => 'Készleten vagy utánrendelhető',
             ],
         ],
         'unit_quantity' => [
-            'label' => 'Egység mennyisége',
-            'helper_text' => 'Hány egyedi tétel alkot 1 egységet.',
+            'label' => 'Egység mennyiség',
+            'helper_text' => 'Hány egyedi darabból áll egy egység.',
         ],
         'min_quantity' => [
             'label' => 'Minimális mennyiség',
-            'helper_text' => 'A termékváltozatból egyszerre megvásárolható minimum mennyiség.',
+            'helper_text' => 'A termékváltozat egy vásárlás során megvásárolható minimális mennyisége.',
         ],
         'quantity_increment' => [
-            'label' => 'Mennyiség növelés',
-            'helper_text' => 'A termékváltozatot ennek a mennyiségnek a többszöröseiben kell megvásárolni.',
+            'label' => 'Mennyiség növelése',
+            'helper_text' => 'A termékváltozat csak e mennyiség többszörösében vásárolható meg.',
         ],
         'tax_class_id' => [
             'label' => 'Adóosztály',
@@ -78,10 +78,10 @@ return [
             'label' => 'Szállítható',
         ],
         'length_value' => [
-            'label' => 'Hosszúság',
+            'label' => 'Hossz',
         ],
         'length_unit' => [
-            'label' => 'Hosszúság egység',
+            'label' => 'Hossz egység',
         ],
         'width_value' => [
             'label' => 'Szélesség',

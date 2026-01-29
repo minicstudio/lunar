@@ -2,10 +2,10 @@
 
 return [
     'dropdown' => [
-        'label' => 'Legördülő',
+        'label' => 'Legördülő lista',
         'form' => [
             'lookups' => [
-                'label' => 'Lekérdezések',
+                'label' => 'Értékkészlet',
                 'key_label' => 'Címke',
                 'value_label' => 'Érték',
             ],
@@ -23,7 +23,7 @@ return [
         ],
     ],
     'translatedtext' => [
-        'label' => 'Fordított szöveg',
+        'label' => 'Többnyelvű szöveg',
         'form' => [
             'richtext' => [
                 'label' => 'Formázott szöveg',
@@ -62,10 +62,10 @@ return [
                 'label' => 'Több fájl engedélyezése',
             ],
             'min_files' => [
-                'label' => 'Minimális fájlok',
+                'label' => 'Minimális fájlok száma',
             ],
             'max_files' => [
-                'label' => 'Maximális fájlok',
+                'label' => 'Maximális fájlok száma',
             ],
         ],
     ],

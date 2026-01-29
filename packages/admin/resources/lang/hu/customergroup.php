@@ -33,7 +33,7 @@ return [
     'action' => [
         'delete' => [
             'notification' => [
-                'error_protected' => 'Ezt az ügyfélcsoportot nem lehet törölni, mert hozzá vannak rendelve ügyfelek.',
+                'error_protected' => 'Ez az ügyfélcsoport nem törölhető, mert ügyfelek kapcsolódnak hozzá.',
             ],
         ],
     ],

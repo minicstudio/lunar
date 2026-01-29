@@ -45,7 +45,7 @@ return [
             'label' => 'Termékek',
             'actions' => [
                 'attach' => [
-                    'label' => 'Termék társítása',
+                    'label' => 'Termék csatolása',
                     'select' => 'Termék',
                 ],
                 'detach' => [

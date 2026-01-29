@@ -2,13 +2,14 @@
 
 return [
     'customer_groups' => [
+        'title' => 'Vásárlói csoportok',
         'actions' => [
             'attach' => [
-                'label' => 'Vevőcsoport csatolása',
+                'label' => 'Vásárlói csoport csatolása',
             ],
             'edit' => [
                 'modal' => [
-                    'heading' => 'Vevőcsoport szerkesztése',
+                    'heading' => 'Vásárlói csoport szerkesztése',
                 ],
             ],
         ],
@@ -20,20 +21,20 @@ return [
                 'label' => 'Engedélyezve',
             ],
             'starts_at' => [
-                'label' => 'Kezdő dátum',
+                'label' => 'Kezdés dátuma',
             ],
             'ends_at' => [
-                'label' => 'Lejárati dátum',
+                'label' => 'Befejezés dátuma',
             ],
             'visible' => [
                 'label' => 'Látható',
             ],
             'purchasable' => [
-                'label' => 'Vásárolható',
+                'label' => 'Megvásárolható',
             ],
         ],
         'table' => [
-            'description' => 'Vevőcsoportokat társíthat ehhez a :type típushoz az elérhetőség meghatározásához.',
+            'description' => 'Kapcsoljon vásárlói csoportokat a(z) :type-hoz az elérhetőség meghatározásához.',
             'name' => [
                 'label' => 'Név',
             ],
@@ -41,20 +42,21 @@ return [
                 'label' => 'Engedélyezve',
             ],
             'starts_at' => [
-                'label' => 'Kezdő dátum',
+                'label' => 'Kezdés dátuma',
             ],
             'ends_at' => [
-                'label' => 'Lejárati dátum',
+                'label' => 'Befejezés dátuma',
             ],
             'visible' => [
                 'label' => 'Látható',
             ],
             'purchasable' => [
-                'label' => 'Vásárolható',
+                'label' => 'Megvásárolható',
             ],
         ],
     ],
     'channels' => [
+        'title' => 'Csatornák',
         'actions' => [
             'attach' => [
                 'label' => 'Csatorna ütemezése',
@@ -68,19 +70,19 @@ return [
         'form' => [
             'enabled' => [
                 'label' => 'Engedélyezve',
-                'helper_text_false' => 'Ez a csatorna nem lesz engedélyezve még akkor sem, ha kezdő dátum meg van adva.',
+                'helper_text_false' => 'A csatorna nem lesz engedélyezve, még ha van kezdő dátum sem.',
             ],
             'starts_at' => [
-                'label' => 'Kezdő dátum',
-                'helper_text' => 'Hagyja üresen, hogy bármely dátumtól elérhető legyen.',
+                'label' => 'Kezdés dátuma',
+                'helper_text' => 'Hagyja üresen, ha bármely dátumtól elérhető legyen.',
             ],
             'ends_at' => [
-                'label' => 'Lejárati dátum',
-                'helper_text' => 'Hagyja üresen, hogy korlátlan ideig elérhető legyen.',
+                'label' => 'Befejezés dátuma',
+                'helper_text' => 'Hagyja üresen, ha határozatlan ideig elérhető legyen.',
             ],
         ],
         'table' => [
-            'description' => 'Határozza meg, mely csatornák engedélyezettek és ütemezze elérhetőségüket.',
+            'description' => 'Állítsa be, mely csatornák engedélyezettek és ütemezze elérhetőségüket.',
             'name' => [
                 'label' => 'Név',
             ],
@@ -88,10 +90,10 @@ return [
                 'label' => 'Engedélyezve',
             ],
             'starts_at' => [
-                'label' => 'Kezdő dátum',
+                'label' => 'Kezdés dátuma',
             ],
             'ends_at' => [
-                'label' => 'Lejárati dátum',
+                'label' => 'Befejezés dátuma',
             ],
         ],
     ],
@@ -158,7 +160,7 @@ return [
         ],
         'form' => [
             'slug' => [
-                'label' => 'Slug',
+                'label' => 'URL-azonosító (slug)',
             ],
             'default' => [
                 'label' => 'Alapértelmezett',
@@ -169,7 +171,7 @@ return [
         ],
         'table' => [
             'slug' => [
-                'label' => 'Slug',
+                'label' => 'URL-azonosító (slug)',
             ],
             'default' => [
                 'label' => 'Alapértelmezett',
@@ -180,20 +182,20 @@ return [
         ],
     ],
     'customer_group_pricing' => [
-        'title' => 'Vevőcsoport árképzés',
-        'title_plural' => 'Vevőcsoport árképzés',
+        'title' => 'Vásárlói csoport árképzés',
+        'title_plural' => 'Vásárlói csoport árképzés',
         'table' => [
-            'heading' => 'Vevőcsoport árképzés',
-            'description' => 'Ár társítása vevőcsoportokhoz a termék árának meghatározásához.',
+            'heading' => 'Vásárlói csoport árképzés',
+            'description' => 'Ár társítása vásárlói csoportokhoz a termék árának meghatározásához.',
             'empty_state' => [
-                'label' => 'Nincs vevőcsoport árképzés.',
-                'description' => 'Hozzon létre vevőcsoport árát a kezdéshez.',
+                'label' => 'Nincs vásárlói csoport ár.',
+                'description' => 'Hozzon létre vásárlói csoport árat a kezdéshez.',
             ],
             'actions' => [
                 'create' => [
-                    'label' => 'Vevőcsoport ár hozzáadása',
+                    'label' => 'Vásárlói csoport ár hozzáadása',
                     'modal' => [
-                        'heading' => 'Vevőcsoport ár létrehozása',
+                        'heading' => 'Vásárlói csoport ár létrehozása',
                     ],
                 ],
             ],
@@ -201,28 +203,28 @@ return [
     ],
     'pricing' => [
         'title' => 'Árképzés',
-        'title_plural' => 'Árképzések',
-        'tab_name' => 'Árengedmények',
+        'title_plural' => 'Árképzés',
+        'tab_name' => 'Ár lépcsők',
         'table' => [
-            'heading' => 'Árengedmények',
-            'description' => 'Csökkentse az árat, amikor egy vevő nagyobb mennyiséget vásárol.',
+            'heading' => 'Ár lépcsők',
+            'description' => 'Csökkentse az árat, ha a vásárló nagyobb mennyiséget vásárol.',
             'empty_state' => [
-                'label' => 'Nincsenek árengedmények.',
+                'label' => 'Nincsenek ár lépcsők.',
             ],
             'actions' => [
                 'create' => [
-                    'label' => 'Árengedmény hozzáadása',
+                    'label' => 'Ár lépcső hozzáadása',
                 ],
             ],
             'price' => [
                 'label' => 'Ár',
             ],
             'customer_group' => [
-                'label' => 'Vevőcsoport',
-                'placeholder' => 'Minden vevőcsoport',
+                'label' => 'Vásárlói csoport',
+                'placeholder' => 'Minden vásárlói csoport',
             ],
             'min_quantity' => [
-                'label' => 'Minimális mennyiség',
+                'label' => 'Minimum mennyiség',
             ],
             'currency' => [
                 'label' => 'Pénznem',
@@ -231,18 +233,18 @@ return [
         'form' => [
             'price' => [
                 'label' => 'Ár',
-                'helper_text' => 'Vásárlási ár, kedvezmények előtt.',
+                'helper_text' => 'A vásárlási ár, kedvezmények előtt.',
             ],
             'customer_group_id' => [
-                'label' => 'Vevőcsoport',
-                'placeholder' => 'Minden vevőcsoport',
-                'helper_text' => 'Válassza ki, mely vevőcsoporthoz alkalmazza ezt az árat.',
+                'label' => 'Vásárlói csoport',
+                'placeholder' => 'Minden vásárlói csoport',
+                'helper_text' => 'Válassza ki, melyik vásárlói csoportra alkalmazza ezt az árat.',
             ],
             'min_quantity' => [
-                'label' => 'Minimális mennyiség',
-                'helper_text' => 'Válassza ki a minimális mennyiséget, amire ez az ár érvényes.',
+                'label' => 'Minimum mennyiség',
+                'helper_text' => 'Válassza ki a minimális mennyiséget, amelyre ez az ár érvényes lesz.',
                 'validation' => [
-                    'unique' => 'A vevőcsoport és a minimális mennyiség egyedinek kell lennie.',
+                    'unique' => 'A vásárlói csoport és a minimum mennyiség egyedinek kell lennie.',
                 ],
             ],
             'currency_id' => [
@@ -258,14 +260,15 @@ return [
                 'form' => [
                     'price' => [
                         'label' => 'Ár',
-                        'helper_text' => 'Vásárlási ár, kedvezmények előtt.',
+                        'helper_text' => 'A vásárlási ár, kedvezmények előtt.',
+                        'sync_price' => 'Az ár szinkronizálva van az alapértelmezett pénznemmel.',
                     ],
                     'compare_price' => [
                         'label' => 'Összehasonlító ár',
-                        'helper_text' => 'Az eredeti ár vagy ajánlott kiskereskedelmi ár az összehasonlításhoz.',
+                        'helper_text' => 'Az eredeti ár vagy ajánlott fogyasztói ár, az összehasonlításhoz.',
                     ],
                 ],
-                'tooltip' => 'Automatikusan generált az árfolyamok alapján.',
+                'tooltip' => 'Automatikusan generálva a pénznemek közötti árfolyamok alapján.',
             ],
         ],
     ],
@@ -298,6 +301,17 @@ return [
             ],
             'percentage' => [
                 'label' => 'Százalék',
+            ],
+        ],
+    ],
+    'values' => [
+        'title' => 'Értékek',
+        'table' => [
+            'name' => [
+                'label' => 'Név',
+            ],
+            'position' => [
+                'label' => 'Pozíció',
             ],
         ],
     ],

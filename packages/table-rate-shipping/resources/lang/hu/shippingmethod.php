@@ -14,12 +14,12 @@ return [
             'label' => 'Kód',
         ],
         'cutoff' => [
-            'label' => 'Leadási határidő',
+            'label' => 'Határidő',
         ],
         'charge_by' => [
-            'label' => 'Díjszabás alapja',
+            'label' => 'Számlázás',
             'options' => [
-                'cart_total' => 'Kosár értéke',
+                'cart_total' => 'Kosár végösszeg',
                 'weight' => 'Súly',
             ],
         ],
@@ -57,8 +57,8 @@ return [
             'label' => 'Elérhetőség',
             'customer_groups' => 'Ez a szállítási mód jelenleg egyetlen vásárlói csoport számára sem elérhető.',
         ],
-        'edit' => [
-            'navigation_label' => 'Szállítási mód szerkesztése',
+        'limitations' => [
+            'label' => 'Korlátozások',
         ],
     ],
 ];
