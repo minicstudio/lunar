@@ -8,6 +8,8 @@ return [
 
     'tabs' => [
         'all' => 'Toate',
+        'draft' => 'Ciornă',
+        'published' => 'Publicat',
     ],
 
     'status' => [

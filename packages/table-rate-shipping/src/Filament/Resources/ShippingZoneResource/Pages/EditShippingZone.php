@@ -10,11 +10,6 @@ class EditShippingZone extends BaseEditRecord
 {
     protected static string $resource = ShippingZoneResource::class;
 
-    public static function getNavigationLabel(): string
-    {
-        return __('lunarpanel.shipping::shippingzone.pages.edit.navigation_label');
-    }
-
     protected function getDefaultHeaderActions(): array
     {
         return [

@@ -122,13 +122,11 @@ return [
         ],
         'edit' => [
             'title' => 'Basic Information',
+            'navigation_label' => 'Edit Discount',
         ],
         'limitations' => [
             'label' => 'Limitations',
         ],
-        'edit' => [
-            'navigation_label' => 'Edit Discount',
-        ]
     ],
     'relationmanagers' => [
         'collections' => [

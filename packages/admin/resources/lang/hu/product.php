@@ -8,6 +8,8 @@ return [
 
     'tabs' => [
         'all' => 'Mind',
+        'published' => 'Közzétéve',
+        'draft' => 'Vázlat',
     ],
 
     'status' => [

@@ -54,9 +54,6 @@ return [
             'label' => 'Availability',
             'customer_groups' => 'This shipping method is currently unavailable across all customer groups.',
         ],
-        'edit' => [
-            'navigation_label' => 'Edit Shipping Method',
-        ],
         'limitations' => [
             'label' => 'Limitations',
         ],
