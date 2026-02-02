@@ -46,9 +46,9 @@ class OrderItemsTable extends TableComponent
                     Tables\Columns\Layout\Split::make([
                         Tables\Columns\Layout\Stack::make([
                             Tables\Columns\TextColumn::make('description')
-                                ->url(function (OrderLine $line) {
-                                    if ($line->purchasable && $line->purchasable_type == ProductVariant::morphName()) {
-                                        return EditProduct::getUrl(['record' => $line->purchasable->product_id]);
+                                ->url(function (OrderLine $record) {
+                                    if ($record->purchasable && $record->purchasable_type == ProductVariant::morphName()) {
+                                        return EditProduct::getUrl(['record' => $record->purchasable->product_id]);
                                     }
 
                                     return null;
