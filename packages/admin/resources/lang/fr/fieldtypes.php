@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Texte enrichi',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Désactiver la barre d\'outils',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Fichiers max.',
+            ],
+            'disk' => [
+                'label' => 'Disque de stockage',
+            ],
+            'directory' => [
+                'label' => 'Répertoire',
             ],
         ],
     ],

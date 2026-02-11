@@ -84,6 +84,7 @@ class TranslatedText implements FieldType, JsonSerializable
         return [
             'options' => [
                 'richtext' => 'nullable',
+                'disable_richtext_toolbar' => 'nullable',
                 'options' => [
                     'nullable',
                     function ($attribute, $value, $fail) {

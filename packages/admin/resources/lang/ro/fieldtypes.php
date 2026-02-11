@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Text îmbogățit',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Dezactivează bara de instrumente',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Max. fișiere',
+            ],
+            'disk' => [
+                'label' => 'Disc de stocare',
+            ],
+            'directory' => [
+                'label' => 'Director',
             ],
         ],
     ],
