@@ -184,7 +184,7 @@ class UrlGenerator
         return Url::where(function ($query) use ($slug, $separator) {
             $query->where('slug', $slug)
                 ->orWhere('slug', 'like', $slug.$separator.'%');
-        })->whereLanguageId($this->getLanguage()->id ?? $this->defaultLanguage->id)
+        })->whereLanguageId($this->getLanguage()->id)
             ->select(['element_id', 'slug'])
             ->get()
             ->toBase()
