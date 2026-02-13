@@ -11,6 +11,7 @@ use Lunar\Base\Casts\AsAttributeData;
 use Lunar\Base\Traits\HasChannels;
 use Lunar\Base\Traits\HasTranslations;
 use Lunar\Base\Traits\HasUrls;
+use Lunar\Blog\Traits\HasUrls as BlogHasUrls;
 use Lunar\Blog\Database\Factories\BlogCategoryFactory;
 use Lunar\Models\Language;
 use Lunar\Blog\Traits\ResolvesSlug;
@@ -21,7 +22,10 @@ class BlogCategory extends BaseModel implements Contracts\BlogCategory
         HasFactory,
         HasTranslations,
         HasUrls,
-        ResolvesSlug;
+        ResolvesSlug,
+        BlogHasUrls {
+            BlogHasUrls::bootHasUrls insteadof HasUrls;
+        }
 
     /**
      * Fillable fields

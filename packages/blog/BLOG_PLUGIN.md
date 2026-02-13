@@ -188,29 +188,47 @@ $posts = BlogPost::whereHas('channels', function ($query) {
 
 ### URLs and Slug Management
 
-The Blog plugin automatically generates SEO-friendly slugs and manages URLs per language.
+The Blog plugin automatically generates SEO-friendly slugs and manages URLs per language using a Blog-specific URL generator.
+
+#### Blog-Specific URL Generation
+
+The Blog package includes its own URL generator that differs from the Core URL generator:
+
+**Priority Order:**
+
+1. `title` attribute (if available in translatable attributes)
+2. `name` attribute (if available in translatable attributes)
+
+**Multi-language Support:**
+
+When using translatable attributes (`title` or `name`), URLs are automatically generated for all configured languages:
 
 #### Auto-generated Slugs
 
-Slugs are automatically generated from the post/category title:
+Slugs are automatically generated from the post/category title in all supported languages:
 
 ```
 Title: "Welcome to Our Blog"
 Auto-generated slug: "welcome-to-our-blog"
 
-Translated URL:
-- /en/blog/welcome-to-our-blog
-- /hu/blog/udvozeljunk-blogunkban
-- /ro/blog/bun-venit-in-blogul-nostru
+Translated titles automatically generate translated slugs:
+- "Üdvözöljük Blogunkban" → "udvozeljunk-blogunkban"
+- "Bun venit în Blogul Nostru" → "bun-venit-in-blogul-nostru"
 ```
 
 #### Custom URLs
 
 Configure custom URLs for specific languages in the admin panel's "URLs" tab.
 
-#### URL Generation Configuration
+#### Configuration
 
-Configure URL generation in `config/lunar/generators/url.php`.
+The URL generator is configured in `config/lunar/blog.php`:
+
+```php
+'urlGenerator' => \Lunar\Blog\Generators\UrlGenerator::class,
+```
+
+To use a custom URL generator, replace this with your own class that implements the URL generation logic.
 
 ### Author Management
 
@@ -387,16 +405,26 @@ Run this command after installation to set up the default blog structure.
 ```php
 return [
     'enabled' => env('BLOG_ENABLED', false),
+    
+    /*
+    |--------------------------------------------------------------------------
+    | URL Generator
+    |--------------------------------------------------------------------------
+    |
+    | Here you can specify a class to automatically generate URLs for blog
+    | models which implement the `HasUrls` trait. If left null no generation
+    | will happen. The Blog package provides a custom URL generator that
+    | tries the 'title' attribute first, then falls back to 'name'.
+    |
+    */
+    'urlGenerator' => \Lunar\Blog\Generators\UrlGenerator::class,
 ];
 ```
 
 **Settings:**
 
 - `enabled` - Enable/disable the blog plugin globally
-
-### config/lunar/generators/url.php
-
-Configuration for URL generation (if published).
+- `urlGenerator` - Class to generate URLs for blog posts and categories
 
 ## Events & Listeners
 

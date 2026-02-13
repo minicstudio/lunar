@@ -20,7 +20,6 @@ class BlogServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/blog.php', 'lunar.blog');
-        $this->mergeConfigFrom(__DIR__ . '/../config/generators/url.php', 'lunar.generators.url');
     }
 
     /**

@@ -11,6 +11,7 @@ use Lunar\Base\Casts\AsAttributeData;
 use Lunar\Base\Traits\HasChannels;
 use Lunar\Base\Traits\HasTranslations;
 use Lunar\Base\Traits\HasUrls;
+use Lunar\Blog\Traits\HasUrls as BlogHasUrls;
 use Lunar\Models\Attribute;
 use Lunar\Blog\Database\Factories\BlogPostFactory;
 
@@ -19,7 +20,10 @@ class BlogPost extends BaseModel implements Contracts\BlogPost
     use HasChannels,
         HasFactory,
         HasTranslations,
-        HasUrls;
+        HasUrls,
+        BlogHasUrls {
+            BlogHasUrls::bootHasUrls insteadof HasUrls;
+        }
 
     /**
      * Fillable fields

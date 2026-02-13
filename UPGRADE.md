@@ -36,17 +36,10 @@ This document outlines the key changes and new features in the Admin and Core pa
 Major improvements to the URL generator system:
 
 - **Multi-language Support**: URL generation now supports multiple languages with per-language slug generation
-- **Configurable Attributes**: New configuration file `config/generators/url.php` allows customization of which model attributes are used for URL generation
 - **Language Context**: Added `setLanguage()` and `getLanguage()` methods for language-specific URL handling
 - **Attribute-based Generation**: New `generateUrlsForAttribute()` method generates URLs for all configured languages
-- **Model Type Configuration**: URL generation can be customized per model type via configuration
-
-### Configuration
-
-- **New Config File**: `config/generators/url.php` for URL generator settings
-    - Define priority attributes for URL generation per model type
-    - Fallback to default configuration if model type not specified
-
+- **Simple Property Support**: When a model has a simple `name` property, URL is generated only for the default language
+- **Attribute Support**: When a model has translatable attributes (in `attribute_data`), URLs are generated for all languages using `translateAttribute()`
 ---
 
 **Note**: These changes are backward compatible with existing implementations. No breaking changes introduced.

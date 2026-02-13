@@ -32,7 +32,6 @@ The following configuration files are available:
 
 ```
 config/lunar/blog.php               # Blog feature toggle
-config/lunar/generators/url.php     # URL generation settings
 ```
 
 #### 🌍 Environment Variables
@@ -107,6 +106,7 @@ The following tables are created:
 - Console command structure improved
 - Seeder autoload configuration in composer.json fixed
 - Better separation of concerns with dedicated private methods
+- URL generator configuration consolidated into main blog config
 
 #### 🔧 Changes
 
@@ -131,6 +131,34 @@ The `composer.json` now includes the seeder autoload path:
 "Lunar\\Blog\\Database\\Seeders\\": "database/seeders"
 ```
 
+**URL Generator Configuration:**
+
+The URL generator configuration has been consolidated:
+
+```php
+// config/lunar/blog.php
+return [
+    'enabled' => env('BLOG_ENABLED', false),
+    
+    'urlGenerator' => \Lunar\Blog\Generators\UrlGenerator::class,
+];
+```
+
+**Model Trait Updates:**
+
+BlogPost and BlogCategory now use trait composition with `insteadof`:
+
+```php
+use HasUrls, BlogHasUrls {
+    BlogHasUrls::bootHasUrls insteadof HasUrls;
+}
+```
+
+This allows:
+- Inheriting all URL relationship methods from Core `HasUrls` trait
+- Using Blog-specific `bootHasUrls()` from Blog `HasUrls` trait
+- No code duplication in model definitions
+
 **Console Command:**
 The `RunLunarBlogSeederCommand` now correctly instantiates the seeder class directly.
 
@@ -139,8 +167,17 @@ The `RunLunarBlogSeederCommand` now correctly instantiates the seeder class dire
 After upgrading, run:
 
 ```bash
+# Publish only the main blog config
+php artisan vendor:publish --tag="lunar.blog.config"
+
+# Run migrations
+php artisan migrate
+
+# Seed blog data
 php artisan lunar:seed-blog
 ```
+
+The separate URL configuration publishing is no longer needed as it's part of the main config.
 
 ---
 

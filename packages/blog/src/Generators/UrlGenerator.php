@@ -1,6 +1,6 @@
 <?php
 
-namespace Lunar\Generators;
+namespace Lunar\Blog\Generators;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -70,6 +70,7 @@ class UrlGenerator
 
     /**
      * Handle the URL generation.
+     * Tries to use 'title' first, then falls back to 'name'.
      *
      * @return void
      */
@@ -83,14 +84,16 @@ class UrlGenerator
             return;
         }
 
-        if ($model->name) {
-            $this->createUrl($model->name);
+        if ($model->attr('title')) {
+            $this->generateUrlsForAttribute('title');
 
             return;
         }
 
         if ($model->attr('name')) {
             $this->generateUrlsForAttribute('name');
+
+            return;
         }
     }
 
@@ -131,7 +134,6 @@ class UrlGenerator
             'slug' => $uniqueSlug,
         ]);
     }
-
 
     /**
      * Generates unique slug based on the given slug by adding suffix numbers.
@@ -203,7 +205,7 @@ class UrlGenerator
 
         $max = $slugs->max();
 
-        // starts suffixing from 2, eg: test-product, test-product-2, test-product-3, etc
+        // starts suffixing from 2, eg: test-post, test-post-2, test-post-3, etc
         return (string) ($max === 0 ? 2 : $max + 1);
     }
 }

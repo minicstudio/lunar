@@ -110,7 +110,6 @@ class LunarServiceProvider extends ServiceProvider
         'cart_session',
         'database',
         'discounts',
-        'generators/url',
         'media',
         'orders',
         'payments',
@@ -130,8 +129,7 @@ class LunarServiceProvider extends ServiceProvider
     public function register(): void
     {
         collect($this->configFiles)->each(function ($config) {
-            $configKey = str_replace('/', '.', $config);
-            $this->mergeConfigFrom("{$this->root}/config/$config.php", "lunar.$configKey");
+            $this->mergeConfigFrom("{$this->root}/config/$config.php", "lunar.$config");
         });
 
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunar');
