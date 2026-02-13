@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Tekst sformatowany',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Wyłącz pasek narzędzi',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -53,6 +56,27 @@ return [
     ],
     'file' => [
         'label' => 'Plik',
+        'form' => [
+            'file_types' => [
+                'label' => 'Dozwolone typy plików',
+                'placeholder' => 'Nowy MIME',
+            ],
+            'multiple' => [
+                'label' => 'Zezwalaj na wiele plików',
+            ],
+            'min_files' => [
+                'label' => 'Min. plików',
+            ],
+            'max_files' => [
+                'label' => 'Maks. plików',
+            ],
+            'disk' => [
+                'label' => 'Dysk pamięci',
+            ],
+            'directory' => [
+                'label' => 'Katalog',
+            ],
+        ],
     ],
     'keyvalue' => [
         'label' => 'Klucz - wartość',

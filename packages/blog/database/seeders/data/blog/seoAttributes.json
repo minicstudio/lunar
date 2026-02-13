@@ -1,0 +1,45 @@
+[
+	{
+		"attributable_type": "blog_post",
+		"name": {
+			"en": "SEO",
+			"hu": "SEO"
+		},
+		"handle": "blog_post_seo",
+		"position": 3,
+		"attributes": [
+			{
+				"name": {
+					"en": "Meta keywords",
+					"hu": "Meta kulcsszavak"
+				},
+				"description": {
+					"en": "Meta keywords of the blog post",
+					"hu": "A blog poszt meta kulcsszavai"
+				},
+				"handle": "blog_post-meta-keywords",
+				"section": "main",
+				"type": "Lunar\\FieldTypes\\TranslatedText",
+				"attribute_type": "blog_post",
+				"position": 1,
+				"configuration": {}
+			},
+			{
+				"name": {
+					"en": "Meta description",
+					"hu": "Meta leírás"
+				},
+				"description": {
+					"en": "Meta description of the blog post",
+					"hu": "A blog poszt meta leírása"
+				},
+				"handle": "blog_post-meta-description",
+				"section": "main",
+				"type": "Lunar\\FieldTypes\\TranslatedText",
+				"attribute_type": "blog_post",
+				"position": 2,
+				"configuration": {}
+			}
+		]
+	}
+]

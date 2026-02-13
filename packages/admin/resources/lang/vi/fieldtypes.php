@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Văn bản định dạng',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Tắt thanh công cụ',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Số tệp tối đa',
+            ],
+            'disk' => [
+                'label' => 'Đĩa lưu trữ',
+            ],
+            'directory' => [
+                'label' => 'Thư mục',
             ],
         ],
     ],
