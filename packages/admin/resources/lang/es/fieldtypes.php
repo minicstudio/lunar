@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Texto Enriquecido',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Desactivar barra de herramientas',
+            ], 
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Máx. Archivos',
+            ],
+            'disk' => [
+                'label' => 'Disco de almacenamiento',
+            ],
+            'directory' => [
+                'label' => 'Directorio',
             ],
         ],
     ],

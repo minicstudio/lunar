@@ -1,0 +1,69 @@
+[
+  {
+    "attributable_type": "blog_post",
+    "name": {
+      "en": "Author Information",
+      "hu": "Szerző adatai"
+    },
+    "handle": "blog_post_author_information",
+    "position": 2,
+    "attributes": [
+      {
+        "name": {
+          "en": "First Name",
+          "hu": "Keresztnév"
+        },
+        "description": {
+          "en": "Enter the first name of the author.",
+          "hu": "Adja meg a szerző keresztnevét."
+        },
+        "handle": "author_first_name",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\Text",
+        "attribute_type": "blog_post",
+        "position": 1,
+        "required": true,
+        "configuration": {
+          "richtext": false
+        }
+      },
+      {
+        "name": {
+          "en": "Last Name",
+          "hu": "Vezetéknév"
+        },
+        "description": {
+          "en": "Enter the last name of the author.",
+          "hu": "Adja meg a szerző vezetéknevét."
+        },
+        "handle": "author_last_name",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\Text",
+        "attribute_type": "blog_post",
+        "position": 2,
+        "required": true,
+        "configuration": {
+          "richtext": false
+        }
+      },
+      {
+        "name": {
+          "en": "Display Author Name",
+          "hu": "Szerző nevének megjelenítése"
+        },
+        "description": {
+          "en": "Toggle whether the author's name is visible on the frontend.",
+          "hu": "Beállítja, hogy a szerző neve látható legyen-e a frontendben."
+        },
+        "handle": "display_author_name",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\Toggle",
+        "attribute_type": "blog_post",
+        "position": 3,
+        "required": false,
+        "configuration": {
+        }
+      }
+    ]
+  }
+]

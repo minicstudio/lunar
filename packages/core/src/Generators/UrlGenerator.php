@@ -24,11 +24,48 @@ class UrlGenerator
     protected LanguageContract $defaultLanguage;
 
     /**
+     * The current language for URL generation.
+     */
+    protected ?LanguageContract $language = null;
+
+    /**
+     * Languages for URL generation.
+     * 
+     * @var \Illuminate\Database\Eloquent\Collection
+     */
+    protected Collection $languages;
+
+    /**
      * Construct the class.
      */
     public function __construct()
     {
         $this->defaultLanguage = Language::getDefault();
+        $this->languages = Language::all();
+    }
+
+    /**
+     * Set the language for URL generation.
+     *
+     * @param  \Lunar\Models\Contracts\Language|null  $language
+     * @return $this
+     */
+    public function setLanguage(?LanguageContract $language)
+    {
+        $this->language = $language;
+
+        return $this;
+    }
+
+    /**
+     * Get the language for URL generation.
+     * Returns the currently set language or falls back to default language.
+     *
+     * @return \Lunar\Models\Contracts\Language
+     */
+    protected function getLanguage(): LanguageContract
+    {
+        return $this->language ?? $this->defaultLanguage;
     }
 
     /**
@@ -38,15 +75,44 @@ class UrlGenerator
      */
     public function handle(Model $model)
     {
+        $model->load('urls');
+
         $this->model = $model;
 
-        if (! $model->urls->count() &&
-            $name = $model->name ?: $model->attr('name')
-        ) {
-            $this->createUrl(
-                $name
-            );
+        if ($model->urls->count()) {
+            return;
         }
+
+        if ($model->name) {
+            $this->createUrl($model->name);
+
+            return;
+        }
+
+        if ($model->attr('name')) {
+            $this->generateUrlsForAttribute('name');
+        }
+    }
+
+    /**
+     * Generate URLs for a given attribute across all languages.
+     *
+     * @param  string  $attribute
+     * @return void
+     */
+    protected function generateUrlsForAttribute(string $attribute)
+    {
+        $this->languages->each(function ($lang) use ($attribute) {
+            $this->setLanguage($lang);
+
+            $value = $this->model->translateAttribute($attribute, $lang->code);
+
+            if ($value) {
+                $this->createUrl($value);
+            }
+        });
+
+        $this->setLanguage(null);
     }
 
     /**
@@ -61,10 +127,11 @@ class UrlGenerator
 
         $this->model->urls()->create([
             'default' => true,
-            'language_id' => $this->defaultLanguage->id,
+            'language_id' => $this->getLanguage()->id,
             'slug' => $uniqueSlug,
         ]);
     }
+
 
     /**
      * Generates unique slug based on the given slug by adding suffix numbers.
@@ -73,7 +140,7 @@ class UrlGenerator
      */
     private function getUniqueSlug($slug)
     {
-        $separator = '-'; // can be configurable?
+        $separator = '-';
 
         $slugs = $this->getExistingSlugs($slug, $separator);
 
@@ -107,7 +174,7 @@ class UrlGenerator
         return Url::where(function ($query) use ($slug, $separator) {
             $query->where('slug', $slug)
                 ->orWhere('slug', 'like', $slug.$separator.'%');
-        })->whereLanguageId($this->defaultLanguage->id)
+        })->whereLanguageId($this->getLanguage()->id)
             ->select(['element_id', 'slug'])
             ->get()
             ->toBase()

@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Rich Text',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Disable Rich Text Toolbar',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Max. Files',
+            ],
+            'disk' => [
+                'label' => 'Storage Disk',
+            ],
+            'directory' => [
+                'label' => 'Directory',
             ],
         ],
     ],

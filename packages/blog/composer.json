@@ -1,0 +1,42 @@
+{
+    "name": "lunarphp/blog",
+    "description": "Blog Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "blog"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+        "name": "Levente Antal",
+        "email": "antal.levente@minic.ro",
+        "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Blog\\": "src",
+            "Lunar\\Blog\\Database\\Factories\\": "database/factories",
+            "Lunar\\Blog\\Database\\Seeders\\": "database/seeders"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Blog"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Blog\\BlogServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version"
+    }
+}

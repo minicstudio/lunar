@@ -63,6 +63,9 @@
             "Lunar\\Admin\\": "packages/admin/src/",
             "Lunar\\Admin\\Database\\Factories\\": "packages/admin/database/factories",
             "Lunar\\Admin\\Database\\State\\": "packages/admin/database/state",
+            "Lunar\\Blog\\": "packages/blog/src",
+            "Lunar\\Blog\\Database\\Factories\\": "packages/blog/database/factories",
+            "Lunar\\Blog\\Database\\Seeders\\": "packages/blog/database/seeders",
             "Lunar\\Database\\Factories\\": "packages/core/database/factories",
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
@@ -91,6 +94,7 @@
     "extra": {
         "lunar": {
             "name": [
+                "Blog",
                 "Table Rate Shipping",
                 "Opayo Payments",
                 "Search",
@@ -108,11 +112,13 @@
                 "Lunar\\Admin\\LunarPanelProvider",
                 "Lunar\\Opayo\\OpayoServiceProvider",
                 "Lunar\\Shipping\\ShippingServiceProvider",
+                "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\LunarServiceProvider"
             ]
         }
     },
     "replace": {
+        "lunarphp/blog": "self.version",
         "lunarphp/core": "self.version",
         "lunarphp/lunar": "self.version",
         "lunarphp/meilisearch": "self.version",
