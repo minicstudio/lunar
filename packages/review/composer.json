@@ -1,12 +1,12 @@
 {
-    "name": "lunarphp/blog",
-    "description": "Blog Addon",
+    "name": "lunarphp/review",
+    "description": "Review Addon",
     "keywords": [
         "lunarphp",
         "laravel",
         "ecommerce",
         "e-commerce",
-        "blog"
+        "review"
     ],
     "type": "library",
     "license": "MIT",
@@ -19,18 +19,19 @@
     ],
     "autoload": {
         "psr-4": {
-            "Lunar\\Blog\\": "src",
-            "Lunar\\Blog\\Database\\Factories\\": "database/factories",
-            "Lunar\\Blog\\Database\\Seeders\\": "database/seeders"
+            "Lunar\\Review\\": "src",
+            "Lunar\\Review\\Database\\Factories\\": "database/factories",
+            "Lunar\\Review\\Database\\Seeders\\": "database/seeders",
+            "Lunar\\Review\\Database\\State\\": "database/state"
         }
     },
     "extra": {
         "lunar": {
-            "name": "Blog"
+            "name": "Review"
         },
         "laravel": {
             "providers": [
-                "Lunar\\Blog\\BlogServiceProvider"
+                "Lunar\\Review\\ReviewServiceProvider"
             ]
         }
     },

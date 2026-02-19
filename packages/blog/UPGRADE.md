@@ -31,13 +31,7 @@ Initial release of the Lunar Blog plugin.
 The following configuration files are available:
 
 ```
-config/lunar/blog.php               # Blog feature toggle
-```
-
-#### 🌍 Environment Variables
-
-```
-BLOG_ENABLED=true
+config/lunar/blog.php               # Blog URL generator configuration
 ```
 
 #### 💻 Commands
@@ -138,8 +132,6 @@ The URL generator configuration has been consolidated:
 ```php
 // config/lunar/blog.php
 return [
-    'enabled' => env('BLOG_ENABLED', false),
-    
     'urlGenerator' => \Lunar\Blog\Generators\UrlGenerator::class,
 ];
 ```

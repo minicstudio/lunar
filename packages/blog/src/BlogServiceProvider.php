@@ -27,10 +27,6 @@ class BlogServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (! config('lunar.blog.enabled')) {
-            return;
-        }
-
         $this->registerConsoleCommands();
         $this->registerModelManifest();
         $this->loadPackageAssets();
