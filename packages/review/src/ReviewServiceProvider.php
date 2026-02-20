@@ -13,6 +13,7 @@ use Lunar\Facades\ModelManifest;
 use Lunar\Models\Channel;
 use Lunar\Models\Order;
 use Lunar\Models\ProductVariant;
+use Lunar\Review\Console\ReviewRequestEmailCommand;
 use Lunar\Review\Console\RunReviewSeederCommand;
 use Lunar\Review\Database\State\EnsureReviewPermissions;
 use Lunar\Review\Mixins\ChannelMixin;
@@ -122,7 +123,8 @@ class ReviewServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                RunReviewSeederCommand::class
+                RunReviewSeederCommand::class,
+                ReviewRequestEmailCommand::class,
             ]);
         }
     }

@@ -113,6 +113,16 @@ The following table is created:
 
 ## ⬆️ From 1.0.0 → 1.1.0 (Current)
 
+#### ✨ New Features
+
+**Review Request Email System:**
+
+- Automated review reminder emails for completed orders
+- Configurable email timing (first and second reminder delays)
+- Configurable order status trigger for email dispatch
+- Custom mailer class support for review reminders
+- Smart queuing with staggered email delivery to prevent spam
+
 #### 🐞 Bug Fixes & Improvements
 
 - ServiceProvider refactored for better code organization
@@ -222,6 +232,64 @@ Review::forProductVariant($id)->get(); // Product variant reviews
 Review::forChannel($id)->get(); // Channel reviews
 ```
 
+**Review Request Email Command:**
+
+New console command for sending automated review reminder emails:
+
+```bash
+php artisan review:request-email
+```
+
+This command:
+- Sends review reminder emails to customers with completed orders
+- Supports first and second reminder emails with configurable delays
+- Only sends to orders in the configured status (default: 'completed')
+- Staggers email delivery to prevent spam (3 seconds between emails)
+- Skips second reminder if customer already left a review
+
+Schedule this command in your `app/Console/Kernel.php`:
+
+```php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('review:request-email')->everyMinute();
+}
+```
+
+#### 🌍 New Environment Variables
+
+```env
+# Order status that triggers review reminder emails
+ORDER_STATUS_FOR_REVIEW_REMINDER=completed
+
+# First reminder delay in minutes (default: 15 days = 21600 minutes)
+FIRST_REMINDER_DELAY_MINUTES=21600
+
+# Second reminder delay in minutes (default: 30 days = 43200 minutes)
+SECOND_REMINDER_DELAY_MINUTES=43200
+```
+
+#### ⚙️ New Configuration Options
+
+The following new options are available in `config/lunar/review.php`:
+
+**order_status_for_review_reminder:**
+Defines the order status at which review reminder emails should be sent.
+
+**review_reminder_mailer:**
+The fully qualified class name of your custom mailer for review reminders. The mailer class constructor must accept an Order parameter.
+
+Example:
+```php
+'review_reminder_mailer' => \App\Mail\ReviewReminderMail::class,
+```
+
+**first_reminder_delay_minutes:**
+Number of minutes after the order reaches the configured status before sending the first reminder email.
+
+**second_reminder_delay_minutes:**
+Number of minutes after the order reaches the configured status before sending the second reminder email (only if no review was submitted).
+
 #### 💻 Required Actions
 
 After upgrading, run:
@@ -235,6 +303,53 @@ php artisan migrate
 
 # Seed review attributes
 php artisan lunar:seed-review
+```
+
+**To enable review reminder emails:**
+
+1. Create a custom mailer class that accepts an Order parameter:
+
+```php
+namespace App\Mail;
+
+use Illuminate\Mail\Mailable;
+use Lunar\Models\Order;
+
+class ReviewReminderMail extends Mailable
+{
+    public function __construct(public Order $order)
+    {
+    }
+
+    public function build()
+    {
+        return $this->view('emails.review-reminder')
+            ->subject('How was your order?');
+    }
+}
+```
+
+2. Configure the mailer in `config/lunar/review.php`:
+
+```php
+'review_reminder_mailer' => \App\Mail\ReviewReminderMail::class,
+```
+
+3. Set environment variables for timing:
+
+```env
+ORDER_STATUS_FOR_REVIEW_REMINDER=completed
+FIRST_REMINDER_DELAY_MINUTES=21600  # 15 days
+SECOND_REMINDER_DELAY_MINUTES=43200 # 30 days
+```
+
+4. Schedule the command in `app/Console/Kernel.php`:
+
+```php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('review:request-email')->everyMinute();
+}
 ```
 
 #### ⚠️ Breaking Changes

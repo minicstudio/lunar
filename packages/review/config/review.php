@@ -52,4 +52,39 @@ return [
         \Lunar\Models\ProductVariant::class,
         \Lunar\Models\Channel::class,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Order Status for Email Dispatch
+    |--------------------------------------------------------------------------
+    | This setting defines the order status at which the email dispatching
+    | should be triggered after the configured delay.
+    |
+    */
+    'order_status_for_review_reminder' => env('ORDER_STATUS_FOR_REVIEW_REMINDER', 'completed'),
+
+    /*
+    |---------------------------------------------------------------------------
+    | Review Reminder Mailer
+    |---------------------------------------------------------------------------
+    | This setting defines which mailer class should be used for review
+    | reminders. Set it to a fully qualified class name. The mailer class
+    | constructor must accept an Order parameter.
+    |
+    */
+    'review_reminder_mailer' => null,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Reminder Delays (Minutes)
+    |---------------------------------------------------------------------------
+    | These settings define the delays for sending review reminder emails:
+    | - 'first_reminder_delay_minutes': Number of minutes after the order status is
+    |   updated to the configured status before the first reminder email is sent.
+    | - 'second_reminder_delay_minutes': Number of minutes after the order status is
+    |   updated to the configured status before the second reminder email is sent.
+    |
+    */
+    'first_reminder_delay_minutes' => env('FIRST_REMINDER_DELAY_MINUTES', 15 * 24 * 60),
+    'second_reminder_delay_minutes' => env('SECOND_REMINDER_DELAY_MINUTES', 30 * 24 * 60),
 ];

@@ -60,11 +60,58 @@ php artisan lunar:seed-review
 Set the following environment variables:
 
 ```env
+# Media upload settings
 REVIEW_UPLOAD_DISK=s3
 REVIEW_MAX_FILES=15
+
+# Review reminder email settings
+ORDER_STATUS_FOR_REVIEW_REMINDER=completed
+FIRST_REMINDER_DELAY_MINUTES=21600  # 15 days in minutes
+SECOND_REMINDER_DELAY_MINUTES=43200 # 30 days in minutes
 ```
 
 Or configure them directly in `config/lunar/review.php`.
+
+### 5. Set up review reminder emails (optional)
+
+To automatically send review request emails to customers:
+
+1. Create a custom mailer class:
+
+```php
+namespace App\Mail;
+
+use Illuminate\Mail\Mailable;
+use Lunar\Models\Order;
+
+class ReviewReminderMail extends Mailable
+{
+    public function __construct(public Order $order)
+    {
+    }
+
+    public function build()
+    {
+        return $this->view('emails.review-reminder')
+            ->subject('How was your order?');
+    }
+}
+```
+
+2. Configure the mailer in `config/lunar/review.php`:
+
+```php
+'review_reminder_mailer' => \App\Mail\ReviewReminderMail::class,
+```
+
+3. Schedule the command in `app/Console/Kernel.php`:
+
+```php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('review:request-email')->everyMinute();
+}
+```
 
 ## Features
 
@@ -350,6 +397,80 @@ Seeds the database with default review attribute groups and attributes:
 
 Run this command after installation to set up the default review structure.
 
+### Send Review Request Emails
+
+```bash
+php artisan review:request-email
+```
+
+Sends automated review reminder emails to customers based on configured delays and order status.
+
+**How it works:**
+
+- Finds orders in the configured status (default: 'completed')
+- Sends first reminder after configured delay (default: 15 days)
+- Sends second reminder after configured delay (default: 30 days) only if no review was submitted
+- Staggers email delivery with 3-second intervals to prevent spam
+- Sends to user email or billing address email
+
+**Configuration:**
+
+Before using this command, you must:
+
+1. Create a custom mailer class that implements `Mailable` and accepts an `Order` parameter
+2. Configure the mailer in `config/lunar/review.php`:
+
+```php
+'review_reminder_mailer' => \App\Mail\ReviewReminderMail::class,
+```
+
+3. Set environment variables:
+
+```env
+ORDER_STATUS_FOR_REVIEW_REMINDER=completed
+FIRST_REMINDER_DELAY_MINUTES=21600  # 15 days
+SECOND_REMINDER_DELAY_MINUTES=43200 # 30 days
+```
+
+**Scheduling:**
+
+Add this command to your task scheduler in `app/Console/Kernel.php`:
+
+```php
+protected function schedule(Schedule $schedule)
+{
+    $schedule->command('review:request-email')->everyMinute();
+}
+```
+
+**Example Mailer:**
+
+```php
+namespace App\Mail;
+
+use Illuminate\Mail\Mailable;
+use Lunar\Models\Order;
+
+class ReviewReminderMail extends Mailable
+{
+    public function __construct(public Order $order)
+    {
+    }
+
+    public function build()
+    {
+        return $this->view('emails.review-reminder')
+            ->with([
+                'order' => $this->order,
+                'reviewUrl' => route('orders.review', $this->order),
+            ])
+            ->subject('How was your order?');
+    }
+}
+```
+
+If no mailer is configured, the command will skip execution with an informational message.
+
 ## Configuration
 
 ### config/lunar/review.php
@@ -404,6 +525,41 @@ return [
         \Lunar\Models\ProductVariant::class,
         \Lunar\Models\Channel::class,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Order Status for Email Dispatch
+    |--------------------------------------------------------------------------
+    | This setting defines the order status at which the email dispatching
+    | should be triggered after the configured delay.
+    |
+    */
+    'order_status_for_review_reminder' => env('ORDER_STATUS_FOR_REVIEW_REMINDER', 'completed'),
+
+    /*
+    |---------------------------------------------------------------------------
+    | Review Reminder Mailer
+    |---------------------------------------------------------------------------
+    | This setting defines which mailer class should be used for review
+    | reminders. Set it to a fully qualified class name. The mailer class
+    | constructor must accept an Order parameter.
+    |
+    */
+    'review_reminder_mailer' => null,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Reminder Delays (Minutes)
+    |---------------------------------------------------------------------------
+    | These settings define the delays for sending review reminder emails:
+    | - 'first_reminder_delay_minutes': Number of minutes after the order status is
+    |   updated to the configured status before the first reminder email is sent.
+    | - 'second_reminder_delay_minutes': Number of minutes after the order status is
+    |   updated to the configured status before the second reminder email is sent.
+    |
+    */
+    'first_reminder_delay_minutes' => env('FIRST_REMINDER_DELAY_MINUTES', 15 * 24 * 60),
+    'second_reminder_delay_minutes' => env('SECOND_REMINDER_DELAY_MINUTES', 30 * 24 * 60),
 ];
 ```
 
@@ -414,6 +570,10 @@ return [
 - `upload_disk` - Filesystem disk for storing images (local, s3, etc.)
 - `max_files` - Maximum number of images per review
 - `available_types` - Which model types can be reviewed
+- `order_status_for_review_reminder` - Order status that triggers review reminder emails (default: 'completed')
+- `review_reminder_mailer` - Custom mailer class for review reminders (must accept Order parameter)
+- `first_reminder_delay_minutes` - Delay in minutes before sending first reminder (default: 21600 = 15 days)
+- `second_reminder_delay_minutes` - Delay in minutes before sending second reminder (default: 43200 = 30 days)
 
 ## Events
 
