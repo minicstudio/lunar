@@ -1,18 +1,17 @@
 <?php
 
-namespace Lunar\Blog;
+namespace Lunar\Review;
 
 use Filament\Contracts\Plugin;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
-use Lunar\Blog\Filament\Resources\BlogCategoryResource;
-use Lunar\Blog\Filament\Resources\BlogPostResource;
+use Lunar\Admin\Support\Facades\LunarPanel;
 
-class BlogPlugin implements Plugin
+class ReviewPlugin implements Plugin
 {
     public function getId(): string
     {
-        return 'blog';
+        return 'review';
     }
 
     public function boot(Panel $panel): void
@@ -23,13 +22,16 @@ class BlogPlugin implements Plugin
     public function register(Panel $panel): void
     {
         $panel->navigationGroups([
-            NavigationGroup::make('blog')
+            NavigationGroup::make('review')
                 ->label(
-                    fn () => __('lunarpanel.blog::plugin.navigation.group')
+                    fn() => __('lunarpanel.review::plugin.navigation.group')
                 ),
         ])->resources([
-            BlogCategoryResource::class,
-            BlogPostResource::class,
+            \Lunar\Review\Filament\Resources\ReviewResource::class,
+        ]);
+
+        LunarPanel::extensions([
+            \Lunar\Admin\Filament\Resources\OrderResource::class => \Lunar\Review\Filament\Resources\OrderResource::class,
         ]);
     }
 
@@ -42,5 +44,4 @@ class BlogPlugin implements Plugin
     {
         return $panel;
     }
-
 }

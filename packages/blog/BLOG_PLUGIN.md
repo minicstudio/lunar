@@ -53,22 +53,6 @@ Seed the database with default blog attribute groups and attributes:
 php artisan lunar:seed-blog
 ```
 
-### 4. Enable in configuration
-
-Set the environment variable:
-
-```env
-BLOG_ENABLED=true
-```
-
-Or configure it directly in `config/lunar/blog.php`:
-
-```php
-return [
-    'enabled' => true,
-];
-```
-
 ## Features
 
 ### Blog Posts
@@ -404,8 +388,6 @@ Run this command after installation to set up the default blog structure.
 
 ```php
 return [
-    'enabled' => env('BLOG_ENABLED', false),
-    
     /*
     |--------------------------------------------------------------------------
     | URL Generator
@@ -423,7 +405,6 @@ return [
 
 **Settings:**
 
-- `enabled` - Enable/disable the blog plugin globally
 - `urlGenerator` - Class to generate URLs for blog posts and categories
 
 ## Events & Listeners
@@ -529,7 +510,6 @@ $post->channels()->attach([1, 2, 3]);
 
 ### Blog posts not visible in admin
 
-- Ensure `BLOG_ENABLED=true` in `.env`
 - Verify BlogPlugin is registered in your Filament panel configuration
 - Run migrations: `php artisan migrate`
 
