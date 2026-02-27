@@ -29,7 +29,9 @@ class OrderObserver
             return;
         }
 
-        if ($order->isDirty('status') && $order->status === 'prepare-shipment' && ! isset($order->meta['awb'])) {
+        $awbGenerationStatus = config('lunar.shipping.generate_awb_on_status');
+
+        if ($order->isDirty('status') && $order->status === $awbGenerationStatus && ! isset($order->meta['awb'])) {
             $this->generateAWBForOrder($order);
         }
     }

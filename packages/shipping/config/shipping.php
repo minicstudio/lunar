@@ -46,4 +46,16 @@ return [
         'pickup',
         'inhouse',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AWB Generation Status
+    |--------------------------------------------------------------------------
+    |
+    | The order status that triggers automatic AWB generation.
+    | When an order transitions to this status, the system will automatically
+    | generate an AWB if one doesn't already exist.
+    |
+    */
+    'generate_awb_on_status' => env('SHIPPING_AWB_GENERATION_STATUS', 'prepare-shipment'),
 ];
