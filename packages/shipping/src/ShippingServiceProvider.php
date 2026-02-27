@@ -9,8 +9,10 @@ use Lunar\Addons\Shipping\Console\SyncShippingCitiesCommand;
 use Lunar\Addons\Shipping\Console\SyncShippingCountiesCommand;
 use Lunar\Addons\Shipping\Console\SyncShippingLockersCommand;
 use Lunar\Addons\Shipping\Exceptions\ShippingInitializationException;
+use Lunar\Addons\Shipping\Filament\Extensions\ShippingExtension;
+use Lunar\Addons\Shipping\Observers\OrderObserver;
 use Lunar\Facades\ModelManifest;
-use Minic\LunarFrontend\Domains\Order\Filament\Extensions\ShippingExtension;
+use Lunar\Models\Order;
 
 class ShippingServiceProvider extends ServiceProvider
 {
@@ -32,6 +34,7 @@ class ShippingServiceProvider extends ServiceProvider
         $this->loadPackageAssets();
         $this->publishAssets();
         $this->registerShippingProviders();
+        $this->registerObservers();
         $this->registerSchedule();
         $this->extendAdminPanel();
     }
@@ -41,8 +44,6 @@ class ShippingServiceProvider extends ServiceProvider
      */
     protected function loadPackageAssets(): void
     {
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'lunarpanel.shipping');
-
         if (! config('lunar.database.disable_migrations', false)) {
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }
@@ -145,6 +146,14 @@ class ShippingServiceProvider extends ServiceProvider
                 return config('lunar.shipping.locker_enabled');
             });
         });
+    }
+
+    /**
+     * Register observers for models.
+     */
+    protected function registerObservers()
+    {
+        Order::observe(OrderObserver::class);
     }
 
     /**

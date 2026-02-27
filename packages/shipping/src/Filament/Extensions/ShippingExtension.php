@@ -1,6 +1,6 @@
 <?php
 
-namespace Minic\LunarFrontend\Domains\Order\Filament\Extensions;
+namespace Lunar\Addons\Shipping\Filament\Extensions;
 
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;

@@ -1,12 +1,12 @@
 {
-    "name": "lunarphp/shipping",
-    "description": "Shipping Addon",
+    "name": "lunarphp/erp",
+    "description": "ERP Addon",
     "keywords": [
         "lunarphp",
         "laravel",
         "ecommerce",
         "e-commerce",
-        "shipping"
+        "erp"
     ],
     "type": "library",
     "license": "MIT",
@@ -19,16 +19,16 @@
     ],
     "autoload": {
         "psr-4": {
-            "Lunar\\Addons\\Shipping\\": "src"
+            "Lunar\\ERP\\": "src"
         }
     },
     "extra": {
         "lunar": {
-            "name": "Shipping"
+            "name": "ERP"
         },
         "laravel": {
             "providers": [
-                "Lunar\\Addons\\Shipping\\ShippingServiceProvider"
+                "Lunar\\ERP\\ErpServiceProvider"
             ]
         }
     },
@@ -36,7 +36,6 @@
         "php": "^8.2",
         "lunarphp/core": "self.version",
         "lunarphp/lunar": "self.version",
-        "lunarphp/table-rate-shipping": "self.version",
         "saloonphp/saloon": "^3.11"
     }
 }

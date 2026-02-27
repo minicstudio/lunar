@@ -69,6 +69,7 @@
             "Lunar\\Database\\Factories\\": "packages/core/database/factories",
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
+            "Lunar\\ERP\\": "packages/ERP/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
             "Lunar\\Paypal\\": "packages/paypal/src/",
@@ -100,6 +101,7 @@
         "lunar": {
             "name": [
                 "Blog",
+                "ERP",
                 "Review",
                 "Table Rate Shipping",
                 "Shipping",
@@ -120,6 +122,7 @@
                 "Lunar\\Opayo\\OpayoServiceProvider",
                 "Lunar\\Addons\\Shipping\\ShippingServiceProvider",
                 "Lunar\\Shipping\\ShippingServiceProvider",
+                "Lunar\\ERP\\ErpServiceProvider",
                 "Lunar\\Review\\ReviewServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\LunarServiceProvider"
@@ -136,6 +139,7 @@
         "lunarphp/review": "self.version",
         "lunarphp/search": "self.version",
         "lunarphp/shipping": "self.version",
+        "lunarphp/erp": "self.version",
         "lunarphp/stripe": "self.version",
         "lunarphp/table-rate-shipping": "self.version"
     },
