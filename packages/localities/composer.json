@@ -1,12 +1,12 @@
 {
-    "name": "lunarphp/erp",
-    "description": "ERP Addon",
+    "name": "lunarphp/localities",
+    "description": "Localities Addon",
     "keywords": [
         "lunarphp",
         "laravel",
         "ecommerce",
         "e-commerce",
-        "erp"
+        "localities"
     ],
     "type": "library",
     "license": "MIT",
@@ -19,24 +19,21 @@
     ],
     "autoload": {
         "psr-4": {
-            "Lunar\\ERP\\": "src"
+            "Lunar\\Localities\\": "src"
         }
     },
     "extra": {
         "lunar": {
-            "name": "ERP"
+            "name": "Localities"
         },
         "laravel": {
             "providers": [
-                "Lunar\\ERP\\ErpServiceProvider"
+                "Lunar\\Localities\\LocalitiesServiceProvider"
             ]
         }
     },
     "require": {
         "php": "^8.2",
-        "lunarphp/core": "self.version",
-        "lunarphp/lunar": "self.version",
-        "lunarphp/localities": "self.version",
-        "saloonphp/saloon": "^3.11"
+        "lunarphp/core": "self.version"
     }
 }

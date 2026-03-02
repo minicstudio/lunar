@@ -5,9 +5,9 @@ namespace Lunar\ERP\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Lunar\ERP\Enums\ErpProviderEnum;
-use Lunar\ERP\Models\County;
-use Lunar\ERP\Models\Locality;
 use Lunar\ERP\Services\ErpService;
+use Lunar\Localities\Models\County;
+use Lunar\Localities\Models\Locality;
 use Lunar\Models\Country;
 
 class SyncLocalitiesCommand extends Command

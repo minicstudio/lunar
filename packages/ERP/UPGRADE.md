@@ -87,6 +87,11 @@ php artisan vendor:publish --tag="lunar.erp.migrations"
 - `counties`
 - `localities`
 
+### Dependencies
+
+- `Lunar\Localities` package provides the `County` and `Locality` models.
+  - Models available at: `Lunar\\Localities\\Models\\County`, `Lunar\\Localities\\Models\\Locality`
+
 ### Required Actions
 
 After upgrading, run:

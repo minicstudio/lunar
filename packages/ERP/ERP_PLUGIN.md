@@ -208,4 +208,5 @@ The package creates the following tables and columns:
 - Providers are registered only when `ERP_ENABLED=true` and they are listed in `lunar.erp.providers`.
 - Each listed provider must have a published config file and `enabled=true` in that config.
 - Localities sync expects Romania (`countries.iso2 = RO`) to exist in the database.
+- County and Locality models are provided by `lunarphp/localities` (`Lunar\\Localities\\Models\\County`, `Lunar\\Localities\\Models\\Locality`).
 - Attributes sync creates product options and option values using the `ro` locale.

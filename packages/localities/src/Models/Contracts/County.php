@@ -1,11 +1,11 @@
 <?php
 
-namespace Lunar\ERP\Models\Contracts;
+namespace Lunar\Localities\Models\Contracts;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-interface County 
+interface County
 {
     /**
      * Get the country that this county belongs to.

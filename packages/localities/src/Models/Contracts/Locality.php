@@ -1,10 +1,10 @@
 <?php
 
-namespace Lunar\ERP\Models\Contracts;
+namespace Lunar\Localities\Models\Contracts;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-interface Locality 
+interface Locality
 {
     /**
      * Get the county that this locality belongs to.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Lunar\ERP\Models;
+namespace Lunar\Localities\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
