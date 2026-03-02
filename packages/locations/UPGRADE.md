@@ -2,12 +2,12 @@
 
 ## From 0.1.0 to 1.0.0
 
-Initial release of the Lunar Localities plugin.
+Initial release of the Lunar Locations plugin.
 
 ### Included Models
 
-- `Lunar\\Localities\\Models\\County`
-- `Lunar\\Localities\\Models\\Locality`
+- `Lunar\\Locations\\Models\\County`
+- `Lunar\\Locations\\Models\\Locality`
 
 ### Notes
 

@@ -36,7 +36,7 @@
         "php": "^8.2",
         "lunarphp/core": "self.version",
         "lunarphp/lunar": "self.version",
-        "lunarphp/localities": "self.version",
+        "lunarphp/locations": "self.version",
         "saloonphp/saloon": "^3.11"
     }
 }

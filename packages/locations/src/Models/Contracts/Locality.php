@@ -1,6 +1,6 @@
 <?php
 
-namespace Lunar\Localities\Models\Contracts;
+namespace Lunar\Locations\Models\Contracts;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

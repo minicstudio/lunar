@@ -1,11 +1,11 @@
 <?php
 
-namespace Lunar\Localities;
+namespace Lunar\Locations;
 
 use Illuminate\Support\ServiceProvider;
 use Lunar\Facades\ModelManifest;
 
-class LocalitiesServiceProvider extends ServiceProvider
+class LocationsServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.

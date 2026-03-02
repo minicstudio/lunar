@@ -1,12 +1,12 @@
 {
-    "name": "lunarphp/localities",
-    "description": "Localities Addon",
+    "name": "lunarphp/locations",
+    "description": "Locations Addon",
     "keywords": [
         "lunarphp",
         "laravel",
         "ecommerce",
         "e-commerce",
-        "localities"
+        "locations"
     ],
     "type": "library",
     "license": "MIT",
@@ -19,16 +19,16 @@
     ],
     "autoload": {
         "psr-4": {
-            "Lunar\\Localities\\": "src"
+            "Lunar\\Locations\\": "src"
         }
     },
     "extra": {
         "lunar": {
-            "name": "Localities"
+            "name": "Locations"
         },
         "laravel": {
             "providers": [
-                "Lunar\\Localities\\LocalitiesServiceProvider"
+                "Lunar\\Locations\\LocationsServiceProvider"
             ]
         }
     },
