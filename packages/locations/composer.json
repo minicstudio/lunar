@@ -1,0 +1,39 @@
+{
+    "name": "lunarphp/locations",
+    "description": "Locations Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "locations"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Levente Antal",
+            "email": "antal.levente@minic.ro",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Locations\\": "src"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Locations"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Locations\\LocationsServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version"
+    }
+}

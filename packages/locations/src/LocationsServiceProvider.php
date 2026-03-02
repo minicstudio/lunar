@@ -1,0 +1,25 @@
+<?php
+
+namespace Lunar\Locations;
+
+use Illuminate\Support\ServiceProvider;
+use Lunar\Facades\ModelManifest;
+
+class LocationsServiceProvider extends ServiceProvider
+{
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        $this->registerModelManifest();
+    }
+
+    /**
+     * Register model manifest directory.
+     */
+    protected function registerModelManifest(): void
+    {
+        ModelManifest::addDirectory(__DIR__ . '/Models');
+    }
+}

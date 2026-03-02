@@ -69,6 +69,7 @@
             "Lunar\\Database\\Factories\\": "packages/core/database/factories",
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
+            "Lunar\\ERP\\": "packages/ERP/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
             "Lunar\\Paypal\\": "packages/paypal/src/",
@@ -76,7 +77,9 @@
             "Lunar\\Review\\Database\\Factories\\": "packages/review/database/factories",
             "Lunar\\Review\\Database\\Seeders\\": "packages/review/database/seeders",
             "Lunar\\Review\\Database\\State\\": "packages/review/database/state",
+            "Lunar\\Locations\\": "packages/locations/src/",
             "Lunar\\Search\\": "packages/search/src/",
+            "Lunar\\Addons\\Shipping\\": "packages/shipping/src",
             "Lunar\\Shipping\\": "packages/table-rate-shipping/src",
             "Lunar\\Shipping\\Database\\Factories\\": "packages/table-rate-shipping/database/factories",
             "Lunar\\Stripe\\": "packages/stripe/src/"
@@ -99,8 +102,11 @@
         "lunar": {
             "name": [
                 "Blog",
+                "ERP",
+                "Locations",
                 "Review",
                 "Table Rate Shipping",
+                "Shipping",
                 "Opayo Payments",
                 "Search",
                 "Meilisearch",
@@ -116,7 +122,10 @@
                 "Lunar\\Search\\SearchServiceProvider",
                 "Lunar\\Admin\\LunarPanelProvider",
                 "Lunar\\Opayo\\OpayoServiceProvider",
+                "Lunar\\Addons\\Shipping\\ShippingServiceProvider",
                 "Lunar\\Shipping\\ShippingServiceProvider",
+                "Lunar\\Locations\\LocationsServiceProvider",
+                "Lunar\\ERP\\ErpServiceProvider",
                 "Lunar\\Review\\ReviewServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\LunarServiceProvider"
@@ -132,6 +141,9 @@
         "lunarphp/paypal": "self.version",
         "lunarphp/review": "self.version",
         "lunarphp/search": "self.version",
+        "lunarphp/shipping": "self.version",
+        "lunarphp/erp": "self.version",
+        "lunarphp/locations": "self.version",
         "lunarphp/stripe": "self.version",
         "lunarphp/table-rate-shipping": "self.version"
     },

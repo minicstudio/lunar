@@ -136,7 +136,7 @@ class ReviewResource extends BaseResource
             ->label(__('lunarpanel.review::plugin.form.upload_images'))
             ->multiple()
             ->collection('reviews')
-            ->maxFiles(config('lunar-frontend.review.max_files'))
+            ->maxFiles(config('lunar.review.max_files'))
             ->image()
             ->imageEditor();
     }
@@ -225,7 +225,7 @@ class ReviewResource extends BaseResource
     {
         return SelectFilter::make('reviewable_type')
             ->options(function () {
-                $availableTypes = config('lunar-frontend.review.available_types', []);
+                $availableTypes = config('lunar.review.available_types', []);
 
                 return collect($availableTypes)
                     ->mapWithKeys(fn($class) => [$class::morphName() => Str::headline($class::morphName())])
