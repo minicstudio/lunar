@@ -21,6 +21,7 @@ use Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers\ProductLimi
 use Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers\ProductRewardRelationManager;
 use Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers\ProductVariantLimitationRelationManager;
 use Lunar\Admin\Support\Resources\BaseResource;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Facades\Discounts;
@@ -95,6 +96,15 @@ class DiscountResource extends BaseResource
                 )
                 ->visible(
                     fn (Forms\Get $get) => $get('type') == AmountOff::class
+                )->schema(
+                    static::getAmountOffFormComponents()
+                ),
+            Forms\Components\Section::make('advanced_amount_off')
+                ->heading(
+                    __('lunarpanel::discount.form.advanced_amount_off.heading')
+                )
+                ->visible(
+                    fn (Forms\Get $get) => $get('type') == AdvancedAmountOff::class
                 )->schema(
                     static::getAmountOffFormComponents()
                 ),

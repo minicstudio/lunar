@@ -29,9 +29,6 @@ use Lunar\Base\Purchasable;
 use Lunar\Base\Traits\CachesProperties;
 use Lunar\Base\Traits\HasMacros;
 use Lunar\Base\Traits\LogsActivity;
-use Lunar\Base\ValueObjects\Cart\DiscountBreakdown;
-use Lunar\Base\ValueObjects\Cart\FreeItem;
-use Lunar\Base\ValueObjects\Cart\Promotion;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Database\Factories\CartFactory;
@@ -125,6 +122,36 @@ class Cart extends BaseModel implements Contracts\Cart
      * Sum of all cart line discounts and cart-level discounts.
      */
     public ?Price $discountTotal = null;
+
+    /**
+     * Subtotal discounted including tax without coupon applied
+     */
+    public ?Price $subTotalDiscountedWithoutCouponIncTax = null;
+
+    /**
+     * Sum of coupon discounts (only one can be applied at the moment)
+     */
+    public ?Price $couponTotal = null;
+
+    /**
+     * Sum of coupon discounts including tax (only one can be applied at the moment)
+     */
+    public ?Price $couponTotalIncTax = null;
+
+    /**
+     * Sum of percentage discounts without coupon applied
+     */
+    public ?Price $discountTotalWithoutCoupon = null;
+
+    /**
+     * Sum of percentage discounts including tax without coupon applied
+     */
+    public ?Price $discountTotalWithoutCouponIncTax = null;
+
+    /**
+     * Cart total including tax (lines + shipping).
+     */
+    public ?Price $totalIncTax = null;
 
     /**
      * All the discount breakdowns for the cart.
@@ -256,9 +283,13 @@ class Cart extends BaseModel implements Contracts\Cart
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereDoesntHave('orders')->orWhereHas('orders', function ($query) {
-            return $query->whereNull('placed_at');
-        });
+        return $query->whereNull('merged_id')
+            ->where(function (Builder $query) {
+                $query->whereDoesntHave('orders')
+                    ->orWhereHas('orders', function (Builder $query) {
+                        $query->whereNull('placed_at');
+                    });
+            });
     }
 
     /**
@@ -616,5 +647,21 @@ class Cart extends BaseModel implements Contracts\Cart
         }
 
         return $option;
+    }
+
+    /**
+     * Remove all cart lines that are not purchasable.
+     */
+    public function clearNonPurchasableLines(): self
+    {
+        $this->loadMissing('lines.purchasable');
+
+        $this->lines
+            ->filter(fn ($line) => ! ($line->purchasable instanceof Purchasable))
+            ->each->delete();
+
+        $this->refresh()->recalculate();
+
+        return $this;
     }
 }

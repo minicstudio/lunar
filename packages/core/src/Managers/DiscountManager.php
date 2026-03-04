@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use Lunar\Base\DataTransferObjects\CartDiscount;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\Validation\CouponValidator;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Cart;
@@ -16,6 +17,8 @@ use Lunar\Models\Contracts\Channel as ChannelContract;
 use Lunar\Models\Contracts\CustomerGroup as CustomerGroupContract;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
+use Lunar\Models\Product;
+use Lunar\Models\ProductVariant;
 
 class DiscountManager implements DiscountManagerInterface
 {
@@ -46,6 +49,7 @@ class DiscountManager implements DiscountManagerInterface
     protected $types = [
         AmountOff::class,
         BuyXGetY::class,
+        AdvancedAmountOff::class,
     ];
 
     /**
@@ -121,6 +125,11 @@ class DiscountManager implements DiscountManagerInterface
      */
     public function getDiscounts(?Cart $cart = null): Collection
     {
+        // Return the discounts if they are already set, because we use a singleton instance
+        if ($this->discounts && $this->discounts->isNotEmpty()) {
+            return $this->discounts;
+        }
+
         if ($this->channels->isEmpty() && $defaultChannel = Channel::getDefault()) {
             $this->channel($defaultChannel);
         }
@@ -156,31 +165,24 @@ class DiscountManager implements DiscountManagerInterface
                             )
                             )
                             ->orWhere(fn ($query) => $query->collections(
-                                $value->lines->map(fn ($line) => $line->purchasable?->product?->collections?->pluck('id'))->flatten()->filter()->values(),
-                                ['condition']
-                            )
-                            )
-                            ->orWhere(fn ($query) => $query->brands(
-                                $value->lines->map(fn ($line) => $line->purchasable?->product?->brand_id)->flatten()->filter()->values(),
+                                $value->lines->map(fn ($line) => $line->purchasable->product->collections->pluck('id'))->flatten()->filter()->values(),
                                 ['condition']
                             )
                             );
                     });
                 }
-            )
-            ->when(
-                $cart?->coupon_code,
-                function ($query, $value) {
-                    return $query->where(function ($query) use ($value) {
-                        $query->where('coupon', $value)
-                            ->orWhereNull('coupon')
-                            ->orWhere('coupon', '');
-                    });
-                },
-                fn ($query, $value) => $query->whereNull('coupon')->orWhere('coupon', '')
             )->orderBy('priority', 'desc')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->filter(function ($discount) {
+                // IMPORTANT: Skip discounts which has no data or data is empty
+                // can be a case after creation until the user updates the discount
+                if (! $discount->data || empty($discount->data)) {
+                    return false;
+                }
+
+                return true;
+            });
     }
 
     /**
@@ -223,8 +225,25 @@ class DiscountManager implements DiscountManagerInterface
             $this->discounts = $this->getDiscounts($cart);
         }
 
-        foreach ($this->discounts as $discount) {
-            $cart = $discount->getType()->apply($cart);
+        // Apply automatically applied discounts
+        foreach ($cart->lines as $line) {
+            // Get the best discount for the line and push it, if it isn't already in the collection
+            $discount = $this->filterDiscountsByPriority($this->discounts, $line->purchasable)->first();
+
+            if (! $discount) {
+                continue;
+            }
+
+            $discount->getType()->applyPercentageForLine($cart, $line);
+        }
+
+        // Apply manually applied coupon discount
+        if ($cart->coupon_code) {
+            $discount = $this->discounts->firstWhere('coupon', $cart->coupon_code);
+
+            if ($discount) {
+                $discount->getType()->applyCouponForCart($cart);
+            }
         }
 
         return $cart;
@@ -242,5 +261,149 @@ class DiscountManager implements DiscountManagerInterface
         return app(
             config('lunar.discounts.coupon_validator', CouponValidator::class)
         )->validate($coupon);
+    }
+
+    /**
+     * Filter discounts based on priority: variant, product, collection, anything left, exclude coupons
+     * Returns the discount with the highest value within each priority level
+     */
+    public function filterDiscountsByPriority($availableDiscounts, null|Product|ProductVariant $purchasable = null): Collection
+    {
+        $productVariantDiscounts = collect();
+        $productDiscounts = collect();
+        $collectionDiscounts = collect();
+        $otherDiscounts = collect();
+
+        // Categorize discounts by priority
+        foreach ($availableDiscounts as $discount) {
+            // Skip coupon discounts
+            if (! empty($discount->coupon)) {
+                continue;
+            }
+
+            // Priority 1: Check if discount applies to this specific product/variant
+            if ($this->discountAppliesToProductVariant($discount, $purchasable)) {
+                $productVariantDiscounts->push($discount);
+            }
+            // Priority 2: Check if discount applies to this specific product
+            elseif ($this->discountAppliesToProduct($discount, $purchasable)) {
+                $productDiscounts->push($discount);
+            }
+            // Priority 3: Check if discount applies to collections containing this product
+            elseif ($this->discountAppliesToCollection($discount, $purchasable)) {
+                $collectionDiscounts->push($discount);
+            }
+            // Priority 4: Any other applicable discounts which has no discountables or collections attached
+            elseif (! $discount->discountables->count() && ! $discount->collections->count()) {
+                $otherDiscounts->push($discount);
+            }
+        }
+
+        // Return the highest value discount from the highest priority category
+        if ($productVariantDiscounts->isNotEmpty()) {
+            return collect([$this->getHighestValueDiscount($productVariantDiscounts)]);
+        }
+
+        if ($productDiscounts->isNotEmpty()) {
+            return collect([$this->getHighestValueDiscount($productDiscounts)]);
+        }
+
+        if ($collectionDiscounts->isNotEmpty()) {
+            return collect([$this->getHighestValueDiscount($collectionDiscounts)]);
+        }
+
+        if ($otherDiscounts->isNotEmpty()) {
+            return collect([$this->getHighestValueDiscount($otherDiscounts)]);
+        }
+
+        // No discounts found
+        return collect();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getDiscountForPurchasable(null|Product|ProductVariant $purchasable = null): ?Discount
+    {
+        $discounts = $this->getDiscounts(null);
+
+        if ($discounts->isEmpty()) {
+            return null;
+        }
+
+        return $this->filterDiscountsByPriority($discounts, $purchasable)->first();
+    }
+
+    /**
+     * Get the discount with the highest value from a collection
+     */
+    protected function getHighestValueDiscount($discounts)
+    {
+        $bestDiscount = null;
+        $highestDiscountValue = 0;
+
+        foreach ($discounts as $discount) {
+            $data = $discount->data;
+
+            if ($data['percentage'] && $data['percentage'] > $highestDiscountValue) {
+                $highestDiscountValue = $data['percentage'];
+                $bestDiscount = $discount;
+            }
+        }
+
+        return $bestDiscount;
+    }
+
+    /**
+     * Check if discount can be applied directly to this product
+     */
+    protected function discountAppliesToProduct($discount, null|Product|ProductVariant $purchasable = null): bool
+    {
+
+        $discountables = $discount->discountables ?? collect();
+
+        foreach ($discountables as $discountable) {
+            // Check if discount applies to this specific product
+            if ($purchasable && $discountable->discountable_type === Product::morphName() &&
+                $discountable->discountable_id === $purchasable->product->id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if discount can be applied to this product variant
+     */
+    protected function discountAppliesToProductVariant($discount, null|Product|ProductVariant $purchasable = null): bool
+    {
+        $discountables = $discount->discountables ?? collect();
+
+        foreach ($discountables as $discountable) {
+            if ($purchasable && $discountable->discountable_type === ProductVariant::morphName() &&
+                $discountable->discountable_id === $purchasable->id) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if discount has a collection limitation and if it applies to the product or variant
+     */
+    protected function discountAppliesToCollection($discount, null|Product|ProductVariant $purchasable = null): bool
+    {
+        // Get product collections safely
+        $productCollections = collect();
+        if ($purchasable && $purchasable instanceof Product) {
+            $productCollections = $purchasable->collections->pluck('id');
+        } elseif ($purchasable && $purchasable instanceof ProductVariant) {
+            $productCollections = $purchasable->product->collections->pluck('id');
+        }
+
+        // Check if the product collections intersect with the discount collections and return true if it does
+        return $productCollections->intersect($discount->collections->pluck('id'))->count() > 0;
     }
 }

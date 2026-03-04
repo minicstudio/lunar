@@ -59,9 +59,43 @@ class ShippingService
     {
         $shippingProvider = $this->getShippingProviderOfOrder($order);
 
-        $awbNumber = $order->meta['awb'];
+        $awbNumber = $this->getAwb($order);
 
         return $shippingProvider->downloadAWBPDF($awbNumber);
+    }
+
+    /**
+     * Get the AWB (tracking number) from order meta.
+     */
+    public function getAwb(Order $order): ?string
+    {
+        return $order->meta['awb'] ?? null;
+    }
+
+    /**
+     * Get the tracking URL for the order.
+     */
+    public function getTrackingUrl(Order $order): ?string
+    {
+        $shippingItem = $order->shipping_breakdown?->items?->first();
+        $identifier = $shippingItem?->identifier;
+        $awb = $this->getAwb($order);
+
+        if ($identifier && $awb) {
+            $trackingBaseUrl = config("lunar.shipping.{$identifier}.provider_page_url");
+
+            return $trackingBaseUrl ? $trackingBaseUrl.urlencode($awb) : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the shipping provider name.
+     */
+    public function getShippingProviderName(Order $order): ?string
+    {
+        return $order->shipping_breakdown?->items?->first()?->name ?? null;
     }
 
     /**

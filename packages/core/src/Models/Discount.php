@@ -2,6 +2,7 @@
 
 namespace Lunar\Models;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -15,6 +16,7 @@ use Lunar\Base\Traits\HasTranslations;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Database\Factories\DiscountFactory;
 use Lunar\DiscountTypes\AbstractDiscountType;
+use Lunar\Events\DiscountUpdatedEvent;
 
 /**
  * @property int $id
@@ -59,6 +61,15 @@ class Discount extends BaseModel implements Contracts\Discount
         'ends_at' => 'datetime',
         'data' => 'array',
         'coupon' => CouponString::class,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'updated' => DiscountUpdatedEvent::class,
     ];
 
     /**
@@ -273,5 +284,32 @@ class Discount extends BaseModel implements Contracts\Discount
             $subQuery->whereRaw('uses < max_uses')
                 ->orWhereNull('max_uses');
         });
+    }
+
+    /**
+     * Scope a query to discounts the authenticated user can still use.
+     *
+     * Counts how many times the current user has applied each discount (uses_by_user_count),
+     * and includes only those where max_uses_per_user is NULL or the count is less than the limit.
+     *
+     * @param  Builder  $query  The Eloquent query builder instance.
+     * @param  Authenticatable|null  $user  The authenticated user instance.
+     * @return Builder That filters out discounts exceeding per-user usage.
+     */
+    public function scopeUsableByUser(Builder $query, ?Authenticatable $user): Builder
+    {
+        if (! $user) {
+            return $query
+                ->whereNull('max_uses_per_user')
+                ->orWhere('max_uses_per_user', '');
+        }
+
+        return $query
+            ->withCount([
+                'users as uses_by_user_count' => function (Builder $subquery) use ($user) {
+                    $subquery->where('user_id', $user->id);
+                },
+            ])
+            ->havingRaw('max_uses_per_user IS NULL OR uses_by_user_count < max_uses_per_user');
     }
 }

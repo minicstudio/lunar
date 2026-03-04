@@ -52,6 +52,9 @@ return [
                     'min_spend' => [
                         'label' => 'Min. Spend',
                     ],
+                    'max_spend' => [
+                        'label' => 'Max. Spend',
+                    ],
                     'min_weight' => [
                         'label' => 'Min. Weight',
                         'helper_text' => 'Enter in kg',

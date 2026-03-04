@@ -46,6 +46,12 @@ return [
         'producttype' => [
             'label' => 'Terméktípus',
         ],
+        'price_inc_tax' => [
+            'label' => 'Ár (ÁFÁ-val)',
+        ],
+        'price_ex_tax' => [
+            'label' => 'Ár (ÁFA nélkül)',
+        ],
     ],
 
     'actions' => [

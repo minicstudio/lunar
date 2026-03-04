@@ -5,6 +5,7 @@ namespace Lunar\Base\Casts;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Lunar\DataTypes\Price;
 use Lunar\Models\Currency;
+use Lunar\Models\Discount;
 use Lunar\Models\OrderLine;
 
 class DiscountBreakdown implements CastsAttributes
@@ -59,6 +60,8 @@ class DiscountBreakdown implements CastsAttributes
                         ];
                     })->values(),
                     'total' => $discountLine->total->value,
+
+                    'discount' => Discount::find($discountLine->discount_id),
                 ];
             })->toJson(),
         ];

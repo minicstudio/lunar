@@ -12,11 +12,13 @@ use Lunar\Facades\AttributeManifest;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Channel;
 use Lunar\Models\Order;
+use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 use Lunar\Review\Console\ReviewRequestEmailCommand;
 use Lunar\Review\Console\RunReviewSeederCommand;
 use Lunar\Review\Database\State\EnsureReviewPermissions;
 use Lunar\Review\Mixins\ChannelMixin;
+use Lunar\Review\Mixins\ProductMixin;
 use Lunar\Review\Mixins\ProductVariantMixin;
 use Lunar\Review\Models\Review;
 
@@ -135,6 +137,7 @@ class ReviewServiceProvider extends ServiceProvider
     protected function registerModelMixins(): void
     {
         Channel::mixin(new ChannelMixin());
+        Product::mixin(new ProductMixin());
         ProductVariant::mixin(new ProductVariantMixin());
     }
 

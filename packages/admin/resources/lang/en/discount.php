@@ -13,6 +13,23 @@ return [
         'amount_off' => [
             'heading' => 'Amount Off',
         ],
+        'advanced_amount_off' => [
+            'heading' => 'Advanced Amount Off',
+        ],
+        'type' => [
+            'label' => 'Type',
+            'options' => [
+                'buy_x_get_y' => [
+                    'label' => 'Buy X Get Y',
+                ],
+                'amount_off' => [
+                    'label' => 'Amount Off',
+                ],
+                'advanced_amount_off' => [
+                    'label' => 'Advanced Amount Off',
+                ],
+            ],
+        ],
         'name' => [
             'label' => 'Name',
         ],

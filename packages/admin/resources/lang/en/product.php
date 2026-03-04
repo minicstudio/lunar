@@ -46,6 +46,12 @@ return [
         'producttype' => [
             'label' => 'Product Type',
         ],
+        'price_inc_tax' => [
+            'label' => 'Price (Inc Tax)',
+        ],
+        'price_ex_tax' => [
+            'label' => 'Price (Ex Tax)',
+        ],
     ],
 
     'actions' => [
