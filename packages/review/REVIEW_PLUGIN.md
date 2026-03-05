@@ -42,6 +42,7 @@ public function register(Panel $panel): Panel
 ```bash
 # Publish config files
 php artisan vendor:publish --tag="lunar.review.config"
+php artisan vendor:publish --tag="lunar.review.migrations" # not required, migrations are auto-discovered
 
 # Run migrations
 php artisan migrate
@@ -126,7 +127,9 @@ Reviews are the main content items in your review system. Each review includes:
 - **Reviewable** - The entity being reviewed (Product Variant or Channel)
 - **Rating** - Star rating (stored in attributes)
 - **Title** - Review title (stored in attributes)
-- **Content** - Review text content (stored in attributes)
+- **Anonym** - Support for guest reviews without user association
+- **Full Name** - Full name of the reviewer (stored in attributes)
+- **Comment** - Review text content (stored in attributes)
 - **Images** - Multiple image uploads (up to 15 by default)
 - **Approved At** - Timestamp when review was approved (null = pending)
 - **Soft Deletes** - Reviews are soft deleted for data retention
@@ -156,8 +159,9 @@ Reviews support custom attributes through the flexible attribute system:
 
 - `rating` - Star rating (number, 1-5)
 - `title` - Review headline (text)
-- `content` - Full review text (textarea)
-- `name` - Reviewer name (text, for guest reviews)
+- `comment` - Full review text (textarea)
+- `full_name` - Reviewer name (text, for guest reviews)
+- `anonym` - Support for guest reviews without user association
 
 You can extend the attribute system by creating custom attributes in the admin panel.
 
@@ -165,7 +169,7 @@ You can extend the attribute system by creating custom attributes in the admin p
 
 In the Filament admin panel, navigate to **Sales > Reviews** to:
 
-- View all submitted reviews in a centralized list
+- View all reviews in a centralized list
 - Filter by approval status (approved/pending)
 - Filter by reviewable type (Product Variant / Channel)
 - Filter by rating (1-5 stars)
@@ -199,7 +203,7 @@ $review->fill([
             'hu' => 'Nagyszerű Termék!',
             'ro' => 'Produs Excelent!',
         ],
-        'content' => [
+        'comment' => [
             'en' => 'I love this product...',
             'hu' => 'Imádom ezt a terméket...',
             'ro' => 'Îmi place acest produs...',
@@ -303,47 +307,16 @@ if ($user->orders()->where('id', $orderId)->exists()) {
 - user_id (foreign key, nullable) - References users.id
 - reviewable_id (unsigned big integer, nullable) - Polymorphic relation
 - reviewable_type (string, nullable) - Polymorphic type
-- attribute_data (JSON) - Stores all review content and attributes
+- attribute_data (JSON) - Stores all review attributes
 - approved_at (timestamp, nullable) - Approval timestamp
 - created_at
 - updated_at
 - deleted_at (soft deletes)
 ```
 
-## Models & APIs
+## Models
 
 ### Review Model
-
-The main model for reviews with full Lunar trait integration:
-
-```php
-use Lunar\Review\Models\Review;
-
-// Create a review
-$review = Review::create([
-    'user_id' => 1,
-    'order_id' => 5,
-    'reviewable_type' => ProductVariant::morphName(),
-    'reviewable_id' => 10,
-    'attribute_data' => [
-        'rating' => 5,
-        'title' => ['en' => 'Amazing!', 'hu' => 'Csodálatos!'],
-        'content' => ['en' => 'Best purchase ever', 'hu' => 'Legjobb vásárlás'],
-    ],
-]);
-
-// Access relationships
-$review->user; // Get user who wrote the review
-$review->order; // Get associated order
-$review->reviewable; // Get the reviewed entity (ProductVariant or Channel)
-
-// Access attributes
-$review->attr('rating'); // Get rating
-$review->attr('title'); // Get translatable title
-
-// Add images
-$review->addMedia($file)->toMediaCollection('reviews');
-```
 
 **Available Methods:**
 
@@ -391,8 +364,8 @@ php artisan lunar:seed-review
 
 Seeds the database with default review attribute groups and attributes:
 
-- Review details attributes (rating, title, content)
-- Guest reviewer information (name)
+- Review details attributes (rating, title, comment)
+- Guest reviewer information (full_name)
 - Any custom attributes defined in seed data
 
 Run this command after installation to set up the default review structure.
@@ -443,125 +416,9 @@ protected function schedule(Schedule $schedule)
 }
 ```
 
-**Example Mailer:**
-
-```php
-namespace App\Mail;
-
-use Illuminate\Mail\Mailable;
-use Lunar\Models\Order;
-
-class ReviewReminderMail extends Mailable
-{
-    public function __construct(public Order $order)
-    {
-    }
-
-    public function build()
-    {
-        return $this->view('emails.review-reminder')
-            ->with([
-                'order' => $this->order,
-                'reviewUrl' => route('orders.review', $this->order),
-            ])
-            ->subject('How was your order?');
-    }
-}
-```
-
 If no mailer is configured, the command will skip execution with an informational message.
 
 ## Configuration
-
-### config/lunar/review.php
-
-```php
-return [
-    /*
-    |--------------------------------------------------------------------------
-    | Review Media Definitions
-    |--------------------------------------------------------------------------
-    | This setting defines the media definitions class for review images.
-    |
-    */
-    'media_definitions' => ReviewMediaDefinitions::class,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Review Path Generator
-    |--------------------------------------------------------------------------
-    | This setting defines the path generator class for organizing review media files.
-    |
-    */
-    'path_generator' => ReviewPathGenerator::class,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Review Upload Disk
-    |--------------------------------------------------------------------------
-    | This setting defines the filesystem disk to be used for storing review images.
-    | Set this to the desired disk (e.g. "public", "s3", etc.).
-    |
-    */
-    'upload_disk' => env('REVIEW_UPLOAD_DISK', 's3'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Maximum File Uploads
-    |--------------------------------------------------------------------------
-    | This setting defines the maximum number of files a user can upload for a review.
-    |
-    */
-    'max_files' => env('REVIEW_MAX_FILES', 15),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Available Reviewable Types for Reviews
-    |--------------------------------------------------------------------------
-    | This array defines the available reviewable model types that can be enabled.
-    |
-    */
-    'available_types' => [
-        \Lunar\Models\ProductVariant::class,
-        \Lunar\Models\Channel::class,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Order Status for Email Dispatch
-    |--------------------------------------------------------------------------
-    | This setting defines the order status at which the email dispatching
-    | should be triggered after the configured delay.
-    |
-    */
-    'order_status_for_review_reminder' => env('ORDER_STATUS_FOR_REVIEW_REMINDER', 'completed'),
-
-    /*
-    |---------------------------------------------------------------------------
-    | Review Reminder Mailer
-    |---------------------------------------------------------------------------
-    | This setting defines which mailer class should be used for review
-    | reminders. Set it to a fully qualified class name. The mailer class
-    | constructor must accept an Order parameter.
-    |
-    */
-    'review_reminder_mailer' => null,
-
-    /*
-    |---------------------------------------------------------------------------
-    | Reminder Delays (Minutes)
-    |---------------------------------------------------------------------------
-    | These settings define the delays for sending review reminder emails:
-    | - 'first_reminder_delay_minutes': Number of minutes after the order status is
-    |   updated to the configured status before the first reminder email is sent.
-    | - 'second_reminder_delay_minutes': Number of minutes after the order status is
-    |   updated to the configured status before the second reminder email is sent.
-    |
-    */
-    'first_reminder_delay_minutes' => env('FIRST_REMINDER_DELAY_MINUTES', 15 * 24 * 60),
-    'second_reminder_delay_minutes' => env('SECOND_REMINDER_DELAY_MINUTES', 30 * 24 * 60),
-];
-```
 
 **Settings:**
 
@@ -591,18 +448,6 @@ The Review plugin dispatches events for key actions:
 - Fired when a review is deleted (soft or hard delete)
 - Contains the Review model
 
-```php
-use Lunar\Review\Events\ReviewCreatedEvent;
-
-Event::listen(ReviewCreatedEvent::class, function ($event) {
-    $review = $event->review;
-    
-    // Send notification to staff
-    // Update product rating cache
-    // etc.
-});
-```
-
 ## Policies
 
 The plugin includes a comprehensive policy for review management:
@@ -618,202 +463,6 @@ The plugin includes a comprehensive policy for review management:
 - `forceDelete()` - Control who can permanently delete reviews
 
 Required permission: `sales:reviews:manage`
-
-## Example Usage
-
-### Display Product Reviews
-
-```php
-use Lunar\Review\Models\Review;
-use Lunar\Models\ProductVariant;
-
-// Get approved reviews for a product variant
-$variant = ProductVariant::find($id);
-
-$reviews = $variant->reviews()
-    ->approved()
-    ->with('user', 'media')
-    ->latest()
-    ->paginate(10);
-
-// Get rating stats
-$averageRating = $variant->getRatingAverage();
-$totalReviews = $variant->getTotalReviews();
-```
-
-### Display Channel Reviews
-
-```php
-use Lunar\Models\Channel;
-
-// Get approved reviews for a channel
-$channel = Channel::find($id);
-
-$reviews = $channel->reviews()
-    ->approved()
-    ->latest()
-    ->get();
-
-$averageRating = $channel->getRatingAverage();
-```
-
-### Create Review Programmatically
-
-```php
-use Lunar\Review\Models\Review;
-use Lunar\Models\ProductVariant;
-
-$review = Review::create([
-    'user_id' => auth()->id(),
-    'order_id' => $orderId, // Optional
-    'reviewable_type' => ProductVariant::morphName(),
-    'reviewable_id' => $variantId,
-    'attribute_data' => [
-        'rating' => 5,
-        'title' => [
-            'en' => 'Excellent Product',
-            'hu' => 'Kiváló Termék',
-        ],
-        'content' => [
-            'en' => 'I am very satisfied with my purchase...',
-            'hu' => 'Nagyon elégedett vagyok a vásárlásommal...',
-        ],
-    ],
-]);
-
-// Add images
-foreach ($uploadedImages as $image) {
-    $review->addMedia($image)->toMediaCollection('reviews');
-}
-
-// Approve immediately (if you trust the user)
-$review->update(['approved_at' => now()]);
-```
-
-### Filter Reviews
-
-```php
-// Get reviews by rating
-$fiveStarReviews = Review::approved()
-    ->whereJsonContains('attribute_data->rating', 5)
-    ->get();
-
-// Get reviews with images
-$reviewsWithImages = Review::approved()
-    ->has('media')
-    ->get();
-
-// Get product variant reviews only
-$productReviews = Review::forProductVariant()->approved()->get();
-
-// Get channel reviews only
-$channelReviews = Review::forChannel()->approved()->get();
-```
-
-### Calculate Rating Distribution
-
-```php
-use Lunar\Review\Models\Review;
-
-$variant = ProductVariant::find($id);
-
-$distribution = Review::forProductVariant($variant->id)
-    ->approved()
-    ->get()
-    ->groupBy(fn($review) => $review->attr('rating'))
-    ->map(fn($group) => $group->count())
-    ->sortKeysDesc();
-
-// Result: [5 => 45, 4 => 23, 3 => 8, 2 => 3, 1 => 1]
-```
-
-## Extending the Plugin
-
-### Add Custom Reviewable Types
-
-To make your custom model reviewable:
-
-```php
-use Lunar\Review\Traits\HasReviews;
-
-class CustomProduct extends Model
-{
-    use HasReviews;
-    
-    // Implement getName() if needed
-    public function getName(): string
-    {
-        return $this->title;
-    }
-}
-
-// Add to config/lunar/review.php
-'available_types' => [
-    \Lunar\Models\ProductVariant::class,
-    \Lunar\Models\Channel::class,
-    \App\Models\CustomProduct::class, // Your custom model
-],
-```
-
-### Custom Media Definitions
-
-Create a custom media definitions class:
-
-```php
-namespace App\Review;
-
-use Lunar\Review\Support\ReviewMediaDefinitions as BaseDefinitions;
-
-class CustomMediaDefinitions extends BaseDefinitions
-{
-    public function registerMediaConversions(): void
-    {
-        $this->addMediaConversion('thumb')
-            ->width(150)
-            ->height(150)
-            ->sharpen(10);
-            
-        $this->addMediaConversion('large')
-            ->width(1200)
-            ->height(1200)
-            ->quality(90);
-    }
-}
-
-// Update config/lunar/review.php
-'media_definitions' => \App\Review\CustomMediaDefinitions::class,
-```
-
-### Custom Path Generator
-
-Organize review images differently:
-
-```php
-namespace App\Review;
-
-use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
-
-class CustomPathGenerator implements PathGenerator
-{
-    public function getPath(Media $media): string
-    {
-        return 'reviews/' . $media->model_id . '/';
-    }
-    
-    public function getPathForConversions(Media $media): string
-    {
-        return $this->getPath($media) . 'conversions/';
-    }
-    
-    public function getPathForResponsiveImages(Media $media): string
-    {
-        return $this->getPath($media) . 'responsive/';
-    }
-}
-
-// Update config/lunar/review.php
-'path_generator' => \App\Review\CustomPathGenerator::class,
-```
 
 ## Troubleshooting
 

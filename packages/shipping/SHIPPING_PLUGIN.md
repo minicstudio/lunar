@@ -18,7 +18,7 @@ The Shipping plugin extends your application with shipping provider integrations
 
 ```bash
 php artisan vendor:publish --tag="lunar.shipping.config"
-php artisan vendor:publish --tag="lunar.shipping.migrations"
+php artisan vendor:publish --tag="lunar.shipping.migrations" # not required, migrations are auto-discovered
 ```
 
 ### 2. Run migrations
@@ -166,10 +166,10 @@ $lockers = $service->getLockers(ShippingProviderEnum::sameday, $countyId, $cityI
 
 The package creates the following tables:
 
-- `shipping_provider_credentials` - Provider tokens and expiry
-- `shipping_counties` - Provider county list (soft deletes)
-- `shipping_cities` - Provider city list (soft deletes)
-- `shipping_lockers` - Provider locker list (soft deletes)
+- `lunar_shipping_provider_credentials` - Provider tokens and expiry
+- `lunar_shipping_counties` - Provider county list
+- `lunar_shipping_cities` - Provider city list
+- `lunar_shipping_lockers` - Provider locker list
 
 ## Configuration
 
