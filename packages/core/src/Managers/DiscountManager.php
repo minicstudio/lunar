@@ -8,8 +8,6 @@ use Lunar\Base\DataTransferObjects\CartDiscount;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\Validation\CouponValidator;
 use Lunar\DiscountTypes\AdvancedAmountOff;
-use Lunar\DiscountTypes\AmountOff;
-use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Contracts\Cart as CartContract;
@@ -47,8 +45,9 @@ class DiscountManager implements DiscountManagerInterface
      * @var array
      */
     protected $types = [
-        AmountOff::class,
-        BuyXGetY::class,
+        // Disabled for security: only AdvancedAmountOff is supported right now.
+        // AmountOff::class,
+        // BuyXGetY::class,
         AdvancedAmountOff::class,
     ];
 

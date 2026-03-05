@@ -240,7 +240,6 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
 
     /**
      * Decrease the stock.
-     * TODO: move this into the right domain
      */
     public function decreaseStock(int $quantity = 1): self
     {
@@ -257,7 +256,6 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
 
     /**
      * Increase the stock.
-     * TODO: move this into the right domain
      */
     public function increaseStock(int $quantity = 1): self
     {
