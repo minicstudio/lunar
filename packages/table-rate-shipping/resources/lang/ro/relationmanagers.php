@@ -37,6 +37,9 @@ return [
                     'min_spend' => [
                         'label' => 'Cheltuială min.',
                     ],
+                    'max_spend' => [
+                        'label' => 'Cheltuială max.',
+                    ],
                     'min_weight' => [
                         'label' => 'Greutate min.',
                     ],

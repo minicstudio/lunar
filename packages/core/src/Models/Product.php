@@ -16,9 +16,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\AsAttributeData;
 use Lunar\Base\Enums\Concerns\ProvidesProductAssociationType;
+use Lunar\Base\HasCustomerGroupAvailability;
 use Lunar\Base\HasThumbnailImage;
 use Lunar\Base\Traits\HasChannels;
 use Lunar\Base\Traits\HasCustomerGroups;
+use Lunar\Base\Traits\HasDiscount;
 use Lunar\Base\Traits\HasMacros;
 use Lunar\Base\Traits\HasMedia;
 use Lunar\Base\Traits\HasTags;
@@ -27,8 +29,13 @@ use Lunar\Base\Traits\HasUrls;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Base\Traits\Searchable;
 use Lunar\Database\Factories\ProductFactory;
+use Lunar\Events\ProductCreatedEvent;
+use Lunar\Events\ProductDeletedEvent;
+use Lunar\Events\ProductUpdatedEvent;
+use Lunar\Facades\StorefrontSession;
 use Lunar\Jobs\Products\Associations\Associate;
 use Lunar\Jobs\Products\Associations\Dissociate;
+use Lunar\Models\Collection as CollectionModel;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
 /**
@@ -41,7 +48,7 @@ use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
  * @property ?\Illuminate\Support\Carbon $updated_at
  * @property ?\Illuminate\Support\Carbon $deleted_at
  */
-class Product extends BaseModel implements Contracts\Product, HasThumbnailImage, SpatieHasMedia
+class Product extends BaseModel implements Contracts\Product, HasThumbnailImage, SpatieHasMedia, HasCustomerGroupAvailability
 {
     use HasChannels;
     use HasCustomerGroups;
@@ -54,6 +61,7 @@ class Product extends BaseModel implements Contracts\Product, HasThumbnailImage,
     use LogsActivity;
     use Searchable;
     use SoftDeletes;
+    use HasDiscount;
 
     /**
      * Return a new factory instance for the model.
@@ -83,6 +91,17 @@ class Product extends BaseModel implements Contracts\Product, HasThumbnailImage,
      */
     protected $casts = [
         'attribute_data' => AsAttributeData::class,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => ProductCreatedEvent::class,
+        'updated' => ProductUpdatedEvent::class,
+        'deleted' => ProductDeletedEvent::class,
     ];
 
     /**
@@ -217,5 +236,138 @@ class Product extends BaseModel implements Contracts\Product, HasThumbnailImage,
     public function getThumbnailImage(): string
     {
         return $this->thumbnail?->getUrl('small') ?? '';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function scopeAvailableCustomerGroups($query): Builder
+    {
+        // TODO: Add as a subquery
+        $customerGroupIds = StorefrontSession::getCustomerGroups()->pluck('id');
+
+        return $query->whereHas('customerGroups', function ($query) use ($customerGroupIds) {
+            $query->whereIn('lunar_customer_groups.id', $customerGroupIds)
+                ->where('visible', true)
+                ->where('enabled', true)
+                ->where(function ($query) {
+                    $query->whereNull('starts_at')
+                        ->orWhere('starts_at', '<=', now());
+                })->where(function ($query) {
+                    $query->whereNull('ends_at')
+                        ->orWhere('ends_at', '>=', now());
+                });
+        });
+    }
+
+    /**
+     * Scope to only include customer groups that are allowed to purchase the product.
+     *
+     * This scope filters customer groups based on their purchasability by checking that the 'purchasable'
+     * flag is true and that the group is currently active. It applies time constraints using `starts_at`
+     * and `ends_at` to ensure only customer groups valid at the current moment are included.
+     */
+    public function scopePurchasableCustomerGroups(Builder $query): Builder
+    {
+        $customerGroupIds = StorefrontSession::getCustomerGroups()->pluck('id');
+
+        return $query->whereHas('customerGroups', function ($query) use ($customerGroupIds) {
+            $query->whereIn('lunar_customer_groups.id', $customerGroupIds)
+                ->where('purchasable', true)
+                ->where(function ($query) {
+                    $query->whereNull('starts_at')
+                        ->orWhere('starts_at', '<=', now());
+                })
+                ->where(function ($query) {
+                    $query->whereNull('ends_at')
+                        ->orWhere('ends_at', '>=', now());
+                });
+        });
+    }
+
+    /**
+     * Determines if the specified product can be purchased by the customer's groups.
+     *
+     * @return bool True if the product is purchasable by the customer's groups, false otherwise.
+     */
+    public function canPurchaseProduct(): bool
+    {
+        return self::query()
+            ->where('id', $this->id)
+            ->purchasableCustomerGroups()
+            ->exists();
+    }
+
+    /**
+     * Scope a query to only include available products.
+     */
+    public function scopeAvailable(Builder $query): Builder
+    {
+        return $query->availableCustomerGroups()
+            ->status('published')
+            ->channel(StorefrontSession::getChannel());
+    }
+
+    /**
+     * Scope a query to only include unavailable products.
+     */
+    public function scopeUnavailable(Builder $query): Builder
+    {
+        return $query->where(function ($query) {
+            $query->where('status', '!=', 'published')
+                ->orWhereDoesntHave('customerGroups', function ($q) {
+                    $customerGroupIds = StorefrontSession::getCustomerGroups()->pluck('id');
+
+                    $q->whereIn('lunar_customer_groups.id', $customerGroupIds)
+                        ->where('visible', true)
+                        ->where('enabled', true)
+                        ->where(function ($q) {
+                            $q->whereNull('starts_at')
+                                ->orWhere('starts_at', '<=', now());
+                        })->where(function ($q) {
+                            $q->whereNull('ends_at')
+                                ->orWhere('ends_at', '>=', now());
+                        });
+                });
+        });
+    }
+
+    /**
+     * Scope a query to only include products from the specified collection.
+     *
+     * @param  int  $collectionId  The ID of the collection to filter by.
+     * @param  Currency  $currency  The currency to filter by.
+     */
+    public function scopeAvailableByCollection(Builder $query, $collectionId, $currency)
+    {
+        $collectionIds = CollectionModel::where('parent_id', $collectionId)
+            ->orWhere('id', $collectionId) // get the current collection as well
+            ->pluck('id');
+
+        return $query->with([
+            'prices' => function ($query) use ($currency) {
+                $query->where('currency_id', $currency->id)
+                    ->with('currency');
+            },
+            'urls',
+            'media',
+        ])
+            ->available()
+            ->whereHas('collections', function ($query) use ($collectionIds) {
+                $query->whereIn('collection_id', $collectionIds);
+            });
+    }
+
+    /**
+     * Check if a product is available for purchase.
+     *
+     * @param  int  $productId  The ID of the product to check.
+     * @return bool True if the product is available, false otherwise.
+     */
+    public function isAvailable(): bool
+    {
+        return self::available()
+            ->where('id', $this->id)
+            ->exists();
     }
 }

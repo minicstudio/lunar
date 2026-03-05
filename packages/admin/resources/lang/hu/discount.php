@@ -13,6 +13,23 @@ return [
         'amount_off' => [
             'heading' => 'Összeg alapú kedvezmény',
         ],
+        'advanced_amount_off' => [
+            'heading' => 'Fejlett összeg alapú kedvezmény',
+        ],
+        'type' => [
+            'label' => 'Típus',
+            'options' => [
+                'buy_x_get_y' => [
+                    'label' => 'Vásárolj X-et, kapj Y-t',
+                ],
+                'amount_off' => [
+                    'label' => 'Összeg alapú kedvezmény',
+                ],
+                'advanced_amount_off' => [
+                    'label' => 'Fejlett összeg alapú kedvezmény',
+                ],
+            ],
+        ],
         'name' => [
             'label' => 'Név',
         ],

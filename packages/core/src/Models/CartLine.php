@@ -84,6 +84,31 @@ class CartLine extends BaseModel implements Contracts\CartLine
     public ?Price $total = null;
 
     /**
+     * Unit price without coupon applied
+     */
+    public ?Price $unitPriceWithoutCoupon = null;
+
+    /**
+     * Unit price including tax without coupon applied
+     */
+    public ?Price $unitPriceWithoutCouponIncTax = null;
+
+    /**
+     * Sum of percentage discounts without coupon applied
+     */
+    public ?Price $discountTotalWithoutCoupon = null;
+
+    /**
+     * Sum of percentage discounts including tax without coupon applied
+     */
+    public ?Price $discountTotalWithoutCouponIncTax = null;
+
+    /**
+     * Subtotal discounted including tax without coupon applied
+     */
+    public ?Price $subTotalDiscountedWithoutCouponIncTax = null;
+
+    /**
      * The promotion description.
      */
     public string $promotionDescription = '';

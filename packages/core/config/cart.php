@@ -132,6 +132,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Stock check
+    |--------------------------------------------------------------------------
+    |
+    | If you enable this, it will check the stock levels
+    | of the purchasable and throw an exception if it's out of stock or if the
+    | quantity is insufficient.
+    |
+    */
+    'stock_check' => [
+        'enabled' => env('STOCK_CHECK_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Prune carts
     |--------------------------------------------------------------------------
     |

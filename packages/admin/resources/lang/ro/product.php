@@ -46,6 +46,12 @@ return [
         'producttype' => [
             'label' => 'Tip produs',
         ],
+        'price_inc_tax' => [
+            'label' => 'Preț (cu TVA)',
+        ],
+        'price_ex_tax' => [
+            'label' => 'Preț (fără TVA)',
+        ],
     ],
 
     'actions' => [

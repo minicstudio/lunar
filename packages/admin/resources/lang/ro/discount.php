@@ -13,6 +13,23 @@ return [
         'amount_off' => [
             'heading' => 'Reducere sumă',
         ],
+        'advanced_amount_off' => [
+            'heading' => 'Reducere avansată sumă',
+        ],
+        'type' => [
+            'label' => 'Tip',
+            'options' => [
+                'buy_x_get_y' => [
+                    'label' => 'Cumperi X, primești Y',
+                ],
+                'amount_off' => [
+                    'label' => 'Reducere sumă',
+                ],
+                'advanced_amount_off' => [
+                    'label' => 'Reducere avansată sumă',
+                ],
+            ],
+        ],
         'name' => [
             'label' => 'Nume',
         ],

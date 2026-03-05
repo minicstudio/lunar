@@ -51,7 +51,7 @@ class ShipBy implements ShippingRateInterface
         $subTotal = $cart->lines->sum(function ($line) {
             // Use subTotalDiscounted if available (includes automatic discounts)
             // Fall back to subTotal if subTotalDiscounted is not set
-            return $line->subTotalDiscountedWithoutCoupon?->value ?? $line->subTotal?->value;
+            return $line->subTotalDiscountedWithoutCouponIncTax?->value ?? $line->subTotal?->value;
         });
 
         // Check allowed customer types for this shipping method
