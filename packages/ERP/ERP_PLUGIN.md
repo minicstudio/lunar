@@ -19,7 +19,7 @@ The ERP plugin extends your application with ERP integrations:
 
 ```bash
 php artisan vendor:publish --tag="lunar.erp.config"
-php artisan vendor:publish --tag="lunar.erp.migrations"
+php artisan vendor:publish --tag="lunar.erp.migrations" # not required, migrations are auto-discovered
 ```
 
 ### 2. Run migrations
@@ -174,7 +174,7 @@ php artisan erp:sync-attributes
 
 Each command prompts you to pick a provider from those enabled and allowed for that feature.
 
-## Services and APIs
+## Services
 
 The primary integration surface is `Lunar\ERP\Services\ErpService`:
 
@@ -197,11 +197,11 @@ $service->downloadInvoicePDF(ErpProviderEnum::smartbill, $order);
 
 The package creates the following tables and columns:
 
-- `erp_sync_logs` - Sync job logs and status
-- `erp_sync_temp` - Temporary ERP product data
-- `product_variants.erp_id` - ERP product identifier
-- `counties` - ERP localities counties
-- `localities` - ERP localities cities
+- `lunar_erp_sync_logs` - Sync job logs and status
+- `lunar_erp_sync_temp` - Temporary ERP product data
+- `lunar_product_variants.erp_id` - ERP product identifier
+- `lunar_counties` - ERP localities counties
+- `lunar_localities` - ERP localities cities
 
 ## Notes
 

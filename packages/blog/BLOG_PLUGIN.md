@@ -40,6 +40,7 @@ public function register(Panel $panel): Panel
 ```bash
 # Publish config files
 php artisan vendor:publish --tag="lunar.blog.config"
+php artisan vendor:publish --tag="lunar.blog.migrations" # not required, migrations are auto-discovered
 
 # Run migrations
 php artisan migrate
@@ -77,7 +78,7 @@ Blog posts support custom attributes through the flexible attribute system:
 **Default Attributes:**
 
 - `title` - Post title (text)
-- `short_description` - Brief excerpt (text)
+- `excerpt` - Brief excerpt (text)
 - `content` - Full post content (textarea)
 - `thumbnail` - Featured image (file)
 
@@ -89,7 +90,8 @@ Blog posts support custom attributes through the flexible attribute system:
 
 **Author Information:**
 
-- `author_name` - Author display name
+- `first_name` - Author first name
+- `last_name` - Author last name
 
 You can extend the attribute system by creating custom attributes in the admin panel.
 
@@ -291,44 +293,11 @@ if ($post->status === 'published') {
 - blog_post_id (foreign key)
 ```
 
-#### `channelables` (polymorphic)
-
-```
-- id (primary key)
-- channelable_type (string) - "blog_post" or "blog_category"
-- channelable_id (foreign key)
-- channel_id (foreign key)
-```
-
 ## Models & APIs
 
 ### BlogPost Model
 
 The main model for blog posts with full Lunar trait integration:
-
-```php
-use Lunar\Blog\Models\BlogPost;
-
-// Create a blog post
-$post = BlogPost::create([
-    'status' => 'published',
-    'author_id' => 1,
-    'attribute_data' => [
-        'title' => ['en' => 'Post Title', 'hu' => 'Poszt Címe'],
-        'content' => ['en' => 'Post content...', 'hu' => 'Poszt tartalma...'],
-        'thumbnail' => ['en' => 'path/to/thumbnail.jpg'],
-    ],
-]);
-
-// Access relationships
-$post->author; // Get author
-$post->blogCategories; // Get categories
-$post->channels; // Get channels
-
-// Access attributes
-$post->translateAttribute('title'); // Get translatable title
-$post->getThumbnail(); // Get thumbnail path
-```
 
 **Available Methods:**
 
@@ -336,30 +305,11 @@ $post->getThumbnail(); // Get thumbnail path
 - `blogCategories()` - BelongsToMany relationship with BlogCategory
 - `getThumbnail()` - Get the first thumbnail path
 - `thumbnailDisk()` - Get the configured disk for thumbnails
-- `translateAttribute($attribute)` - Get translatable attributes
+- `getAuthorFullNameAttribute()` - Accessor for author's full name
 
 ### BlogCategory Model
 
 The category model for organizing blog posts:
-
-```php
-use Lunar\Blog\Models\BlogCategory;
-
-// Create a category
-$category = BlogCategory::create([
-    'status' => 'published',
-    'attribute_data' => [
-        'name' => ['en' => 'Technology', 'hu' => 'Technológia'],
-    ],
-]);
-
-// Access relationships
-$category->blogPosts; // Get posts in this category
-$category->channels; // Get channels
-
-// Generate slug
-$slug = $category->getBlogCategorySlug($language);
-```
 
 **Available Methods:**
 
@@ -385,23 +335,6 @@ Run this command after installation to set up the default blog structure.
 ## Configuration
 
 ### config/lunar/blog.php
-
-```php
-return [
-    /*
-    |--------------------------------------------------------------------------
-    | URL Generator
-    |--------------------------------------------------------------------------
-    |
-    | Here you can specify a class to automatically generate URLs for blog
-    | models which implement the `HasUrls` trait. If left null no generation
-    | will happen. The Blog package provides a custom URL generator that
-    | tries the 'title' attribute first, then falls back to 'name'.
-    |
-    */
-    'urlGenerator' => \Lunar\Blog\Generators\UrlGenerator::class,
-];
-```
 
 **Settings:**
 
@@ -438,73 +371,6 @@ The Blog plugin includes an observer for automatic thumbnail cleanup:
 1. **Eager Loading** - Use `with('author', 'channels', 'blogCategories')` when querying multiple posts
 2. **Status Filtering** - Filter by status to avoid displaying draft content
 3. **Channel Scoping** - Query by channel to reduce result sets
-
-## Example Usage
-
-### Display Blog Posts
-
-```php
-use Lunar\Blog\Models\BlogPost;
-use Lunar\Models\Language;
-
-// Get published posts for current channel
-$language = Language::current();
-$channel = Channel::current();
-
-$posts = BlogPost::where('status', 'published')
-    ->whereHas('channels', function ($query) use ($channel) {
-        $query->where('channel_id', $channel->id);
-    })
-    ->with('author', 'blogCategories')
-    ->latest()
-    ->paginate(10);
-```
-
-### Display Blog Post Categories
-
-```php
-// Get published categories
-$categories = BlogCategory::where('status', 'published')
-    ->with('blogPosts')
-    ->get();
-```
-
-### Filter Posts by Category
-
-```php
-// Get posts in a specific category
-$category = BlogCategory::where('slug', 'technology')->first();
-$posts = $category->blogPosts()->where('status', 'published')->get();
-```
-
-### Create Blog Post Programmatically
-
-```php
-$post = BlogPost::create([
-    'status' => 'draft',
-    'author_id' => auth()->user()->id, // Current staff member
-    'attribute_data' => [
-        'title' => [
-            'en' => 'Getting Started with Lunar',
-            'hu' => 'Kezdő Lépések a Lunar-ral',
-        ],
-        'short_description' => [
-            'en' => 'A quick guide to get started...',
-            'hu' => 'Rövid útmutató az első...',
-        ],
-        'content' => [
-            'en' => '# Welcome\n\nContent here...',
-            'hu' => '# Üdvözöljük\n\nTartalom itt...',
-        ],
-    ],
-]);
-
-// Assign categories
-$post->blogCategories()->attach([1, 2]);
-
-// Assign to channels
-$post->channels()->attach([1, 2, 3]);
-```
 
 ## Troubleshooting
 

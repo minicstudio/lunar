@@ -1,8 +1,17 @@
 # Upgrade Guide
 
-This document outlines the key changes and new features in the Admin and Core packages.
+This document outlines the key changes and new features in the Admin, Core, Blog, Review, Shipping and ERP packages.
 
-## Unreleased (2026-03-04)
+## ⬆️ From 1.15.1 → 2.0.0
+
+### 📋 Summing up what to do at upgrade
+
+1. Update published config files for Core/Admin and plugin packages.
+2. Add new environment variables where needed (Review reminders, Shipping, ERP providers).
+3. Run migrations.
+4. Seed plugin attributes/data where applicable.
+5. Review scheduler entries for Review and ERP sync commands.
+6. Re-check published views/config overrides for compatibility.
 
 ### Highlights
 
@@ -56,11 +65,137 @@ This document outlines the key changes and new features in the Admin and Core pa
 - New product mixin for average rating and total review count across variants.
 - Product variant mixin adds name helper and reviewable-variants lookup for orders.
 
-### Table-rate Shipping Package
+### Blog Package
 
-- Translation updates for relation manager labels (EN/HU/RO).
+#### ✨ New main features
 
-### File Changes (from git)
+- Blog post management with multi-language support.
+- Blog categories with hierarchical structure and channel assignments.
+- Staff author association for blog posts.
+- Attribute-driven blog content (thumbnail, title, content, SEO fields).
+- Filament admin integration for blog management.
+
+#### ⚙️ New/modified configs
+
+- `config/lunar/blog.php`
+
+#### 💻 Commands
+
+- `php artisan lunar:seed-blog`
+
+#### 📦 Published assets
+
+- `php artisan vendor:publish --tag="lunar.blog.config"`
+- `php artisan vendor:publish --tag="lunar.blog.migrations"`
+
+### Review Plugin Package
+
+#### ✨ New main features
+
+- Customer reviews with ratings, images, moderation workflow and multi-language support.
+- Review support for product variants and channels.
+- Review request email system with first/second reminder delays.
+- Model mixins on product variants/channels for review stats.
+- Review lifecycle events (`created`, `updated`, `deleted`) and policy integration.
+
+#### 🌍 Environment variables
+
+- `REVIEW_UPLOAD_DISK`
+- `REVIEW_MAX_FILES`
+- `ORDER_STATUS_FOR_REVIEW_REMINDER`
+- `FIRST_REMINDER_DELAY_MINUTES`
+- `SECOND_REMINDER_DELAY_MINUTES`
+
+#### ⚙️ New/modified configs
+
+- `config/lunar/review.php`
+
+#### 💻 Commands
+
+- `php artisan lunar:seed-review`
+- `php artisan review:request-email`
+
+#### 📦 Published assets
+
+- `php artisan vendor:publish --tag="lunar.review.config"`
+- `php artisan vendor:publish --tag="lunar.review.migrations"`
+
+### Shipping Package
+
+#### ✨ New main features
+
+- Multi-provider shipping integration (Sameday, DPD, Pickup, In-house).
+- AWB generation and AWB document handling.
+- Locker support with county/city/locker synchronization.
+- Admin order integration for AWB visibility/download.
+
+#### 🌍 Environment variables
+
+- `SHIPPING_ENABLED`
+- `SHIPPING_LOCKER_ENABLED`
+- `SHIPPING_CONTACT_EMAIL`
+- `SHIPPING_AWB_GENERATION_STATUS`
+- Provider-specific variables for Sameday/DPD/Pickup/In-house.
+
+#### ⚙️ New/modified configs
+
+- `config/lunar/shipping.php`
+- `config/lunar/shipping/sameday.php`
+- `config/lunar/shipping/dpd.php`
+- `config/lunar/shipping/pickup.php`
+- `config/lunar/shipping/inhouse.php`
+
+#### 💻 Commands
+
+- `php artisan migrate`
+- `php artisan lunar:sync-shipping-counties`
+- `php artisan lunar:sync-shipping-cities`
+- `php artisan lunar:sync-shipping-lockers`
+
+#### 📦 Published assets
+
+- `php artisan vendor:publish --tag="lunar.shipping.config"`
+- `php artisan vendor:publish --tag="lunar.shipping.migrations"`
+
+### ERP Package
+
+#### ✨ New main features
+
+- Multi-provider ERP integration (Magister, Smartbill).
+- Product/order status/stock/locality/attribute synchronization.
+- ERP order sending and invoice/billing support.
+- Scheduled sync commands via configurable cron expressions.
+
+#### 🌍 Environment variables
+
+- `ERP_ENABLED`
+- `ERP_SYNC_PRODUCTS_SCHEDULE`
+- `ERP_SYNC_ORDERS_SCHEDULE`
+- `ERP_SYNC_STOCK_SCHEDULE`
+- `ERP_SYNC_LOCALITIES_SCHEDULE`
+- `ERP_SYNC_ATTRIBUTES_SCHEDULE`
+- Provider-specific variables for Magister/Smartbill.
+
+#### ⚙️ New/modified configs
+
+- `config/lunar/erp.php`
+- `config/lunar/erp/magister.php`
+- `config/lunar/erp/smartbill.php`
+
+#### 💻 Commands
+
+- `php artisan erp:sync-products`
+- `php artisan erp:sync-order-statuses`
+- `php artisan erp:sync-stock`
+- `php artisan erp:sync-localities`
+- `php artisan erp:sync-attributes`
+
+#### 📦 Published assets
+
+- `php artisan vendor:publish --tag="lunar.erp.config"`
+- `php artisan vendor:publish --tag="lunar.erp.migrations"`
+
+### File Changes
 
 #### Added
 
@@ -154,7 +289,3 @@ Major improvements to the URL generator system:
 - **Attribute-based Generation**: New `generateUrlsForAttribute()` method generates URLs for all configured languages
 - **Simple Property Support**: When a model has a simple `name` property, URL is generated only for the default language
 - **Attribute Support**: When a model has translatable attributes (in `attribute_data`), URLs are generated for all languages using `translateAttribute()`
-
----
-
-**Note**: These changes are backward compatible with existing implementations. No breaking changes introduced.
