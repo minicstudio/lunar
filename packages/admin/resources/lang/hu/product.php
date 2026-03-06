@@ -154,7 +154,7 @@ return [
             'label' => 'Termék asszociációk',
             'actions' => [
                 'create' => [
-                    'label' => 'Új termék asszociáció',     
+                    'label' => 'Új termék asszociáció',
                     'heading' => 'Termék asszociáció létrehozása',
                 ],
                 'delete' => [

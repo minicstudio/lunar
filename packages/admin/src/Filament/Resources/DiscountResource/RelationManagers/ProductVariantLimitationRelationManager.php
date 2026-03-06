@@ -67,17 +67,17 @@ class ProductVariantLimitationRelationManager extends BaseRelationManager
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.productvariants.actions.attach.label')
                 )
-                ->modalHeading(
-                    __('lunarpanel::discount.relationmanagers.productvariants.actions.attach.modal.heading')
-                )
-                ->mutateFormDataUsing(function (array $data) {
-                    $data['type'] = 'limitation';
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.productvariants.actions.attach.modal.heading')
+                    )
+                    ->mutateFormDataUsing(function (array $data) {
+                        $data['type'] = 'limitation';
 
-                    return $data;
-                })
-                ->after(function ($record) {
-                    DiscountLimitationAttached::dispatch($this->getOwnerRecord());
-                }),
+                        return $data;
+                    })
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\TextColumn::make('discountable')
                     ->formatStateUsing(

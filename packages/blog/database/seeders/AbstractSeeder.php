@@ -15,7 +15,7 @@ abstract class AbstractSeeder extends Seeder
      */
     protected function getSeedData($file): Collection
     {
-        $path = __DIR__ . "/data/{$file}.json";
+        $path = __DIR__."/data/{$file}.json";
 
         return collect(json_decode(File::get($path)));
     }

@@ -3,9 +3,6 @@
 namespace Lunar\Addons\Shipping\Providers\Sameday;
 
 use Illuminate\Support\Collection;
-use Lunar\Models\Country;
-use Lunar\Models\Order;
-use Lunar\Shipping\Models\ShippingMethod;
 use Lunar\Addons\Shipping\Contracts\AWBRequestBodyInterface;
 use Lunar\Addons\Shipping\Contracts\ShippingProviderInterface;
 use Lunar\Addons\Shipping\Contracts\TokenAwareShippingApiClient;
@@ -18,6 +15,9 @@ use Lunar\Addons\Shipping\Models\ShippingLocker;
 use Lunar\Addons\Shipping\Providers\Sameday\DTOs\SamedayAWBRecipient;
 use Lunar\Addons\Shipping\Providers\Sameday\DTOs\SamedayAWBRequestBody;
 use Lunar\Addons\Shipping\Providers\Sameday\DTOs\SamedayParcel;
+use Lunar\Models\Country;
+use Lunar\Models\Order;
+use Lunar\Shipping\Models\ShippingMethod;
 use Saloon\Http\Response;
 
 class SamedayShippingProvider implements ShippingProviderInterface
@@ -73,7 +73,7 @@ class SamedayShippingProvider implements ShippingProviderInterface
         try {
             $response = $this->client->generateAWB($requestBody);
         } catch (\Throwable $e) {
-            throw new FailedAWBGenerationException('AWB generation failed: ' . $e->getMessage());
+            throw new FailedAWBGenerationException('AWB generation failed: '.$e->getMessage());
         }
 
         if (! isset($response['awbNumber'])) {
@@ -111,14 +111,14 @@ class SamedayShippingProvider implements ShippingProviderInterface
             packageNumber: 1,
             clientInternalReference: $order->reference,
             awbRecipient: new SamedayAWBRecipient(
-                name: $order->shippingAddress->first_name . ' ' . $order->shippingAddress->last_name,
+                name: $order->shippingAddress->first_name.' '.$order->shippingAddress->last_name,
                 phoneNumber: $order->shippingAddress->contact_phone,
                 personType: $order->shippingAddress->company_name ? 1 : 0, // 0 for individual, 1 for company
                 companyName: $order->shippingAddress->company_name,
                 postalCode: $order->shippingAddress->postcode,
                 countyString: $order->shippingAddress->state,
                 cityString: $order->shippingAddress->city,
-                address: $order->shippingAddress->line_one . ' ' . $order->shippingAddress->line_two . ' ' . $order->shippingAddress->line_three,
+                address: $order->shippingAddress->line_one.' '.$order->shippingAddress->line_two.' '.$order->shippingAddress->line_three,
                 email: $order->shippingAddress->contact_email,
             ),
             parcels: [new SamedayParcel(
@@ -139,7 +139,7 @@ class SamedayShippingProvider implements ShippingProviderInterface
             ->where('city_id', $cityId)
             ->whereNull('deleted_at')
             ->get()
-            ->map(fn($locker) => new LockerDTO(
+            ->map(fn ($locker) => new LockerDTO(
                 id: $locker->provider_locker_id,
                 name: $locker->name,
                 address: $locker->address,

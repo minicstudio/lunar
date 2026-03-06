@@ -109,7 +109,7 @@ it('getLocalities throws ErpSyncException when client fails', function () {
     $api->withMockClient($mock);
     $prov = new MagisterErpProvider($api);
 
-    expect(fn() => $prov->getLocalities())->toThrow(ErpSyncException::class);
+    expect(fn () => $prov->getLocalities())->toThrow(ErpSyncException::class);
 });
 
 it('getAttributes returns empty array on empty or missing dataset', function () {
@@ -152,5 +152,5 @@ it('getAttributes throws ErpSyncException when client fails', function () {
     $api->withMockClient($mock);
     $prov = new MagisterErpProvider($api);
 
-    expect(fn() => $prov->getAttributes())->toThrow(ErpSyncException::class);
+    expect(fn () => $prov->getAttributes())->toThrow(ErpSyncException::class);
 });

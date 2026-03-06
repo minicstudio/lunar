@@ -40,7 +40,7 @@ class OrdersByStatusChart extends ApexChartWidget
     {
         $currency = Currency::getDefault();
         $statuses = config('lunar.orders.statuses', []);
-        
+
         $date = now()->settings([
             'monthOverflow' => false,
         ]);
@@ -99,7 +99,7 @@ class OrdersByStatusChart extends ApexChartWidget
         $monthIndex = 0;
         foreach ($period as $periodDate) {
             $monthstamp = $periodDate->format('Ym');
-            
+
             // Get all results for this month
             $monthResults = $results->filter(function ($result) use ($monthstamp) {
                 return $result->monthstamp == $monthstamp;
@@ -107,16 +107,16 @@ class OrdersByStatusChart extends ApexChartWidget
 
             foreach ($monthResults as $result) {
                 $status = $result->status;
-                
+
                 if (isset($seriesCount[$status])) {
                     // Order count
                     $seriesCount[$status]['data'][$monthIndex] = (int) $result->order_count;
-                    
+
                     // Order value (sub_total) - stored for potential future use
                     // Currently showing count only
                 }
             }
-            
+
             $monthIndex++;
         }
 
@@ -124,7 +124,7 @@ class OrdersByStatusChart extends ApexChartWidget
         $seriesCount = array_filter($seriesCount, function ($series) {
             return array_sum($series['data']) > 0;
         });
-        
+
         $seriesValue = array_filter($seriesValue, function ($series) {
             return array_sum($series['data']) > 0;
         });
@@ -165,7 +165,7 @@ class OrdersByStatusChart extends ApexChartWidget
             ],
             'tooltip' => [
                 'y' => [
-                    'formatter' => "function(val) { return val + ' ' + '" . __('lunarpanel::widgets.dashboard.orders.orders_by_status.tooltip.orders') . "'; }",
+                    'formatter' => "function(val) { return val + ' ' + '".__('lunarpanel::widgets.dashboard.orders.orders_by_status.tooltip.orders')."'; }",
                 ],
             ],
             'plotOptions' => [
@@ -188,4 +188,3 @@ class OrdersByStatusChart extends ApexChartWidget
         ];
     }
 }
-

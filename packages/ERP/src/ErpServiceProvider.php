@@ -22,7 +22,7 @@ class ErpServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/erp.php', 'lunar.erp');
+        $this->mergeConfigFrom(__DIR__.'/../config/erp.php', 'lunar.erp');
     }
 
     /**
@@ -61,7 +61,7 @@ class ErpServiceProvider extends ServiceProvider
      */
     protected function registerModelManifest(): void
     {
-        ModelManifest::addDirectory(__DIR__ . '/Models');
+        ModelManifest::addDirectory(__DIR__.'/Models');
     }
 
     /**
@@ -70,7 +70,7 @@ class ErpServiceProvider extends ServiceProvider
     protected function loadPackageAssets(): void
     {
         if (! config('lunar.database.disable_migrations', false)) {
-            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
     }
 
@@ -80,19 +80,19 @@ class ErpServiceProvider extends ServiceProvider
     protected function publishAssets(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/erp.php' => config_path('lunar/erp.php'),
+            __DIR__.'/../config/erp.php' => config_path('lunar/erp.php'),
         ], 'lunar.erp.config');
 
         // loop through the ERP providers and publish their configs
         $erpProviders = config('lunar.erp.providers', []);
         foreach ($erpProviders as $provider) {
             $this->publishes([
-                __DIR__ . "/Providers/{$provider}/config.php" => config_path("lunar/erp/{$provider}.php"),
+                __DIR__."/Providers/{$provider}/config.php" => config_path("lunar/erp/{$provider}.php"),
             ], 'lunar.erp.config');
         }
 
         $this->publishesMigrations([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'lunar.erp.migrations');
     }
 

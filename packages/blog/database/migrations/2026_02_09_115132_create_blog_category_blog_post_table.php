@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create($this->prefix."blog_category_blog_post", function (Blueprint $table) {
+        Schema::create($this->prefix.'blog_category_blog_post', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('blog_post_id')->constrained($this->prefix."blog_posts")->cascadeOnDelete();
-            $table->foreignId('blog_category_id')->constrained($this->prefix."blog_categories")->cascadeOnDelete();
+            $table->foreignId('blog_post_id')->constrained($this->prefix.'blog_posts')->cascadeOnDelete();
+            $table->foreignId('blog_category_id')->constrained($this->prefix.'blog_categories')->cascadeOnDelete();
             $table->timestamps();
         });
     }
@@ -24,7 +24,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists($this->prefix."blog_category_blog_post");
+        Schema::dropIfExists($this->prefix.'blog_category_blog_post');
     }
 
     /**
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function shouldRun(): bool
     {
-        return ! Schema::hasTable($this->prefix."blog_category_blog_post");
+        return ! Schema::hasTable($this->prefix.'blog_category_blog_post');
     }
 };

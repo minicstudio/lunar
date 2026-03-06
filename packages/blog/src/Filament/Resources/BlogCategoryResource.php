@@ -183,10 +183,10 @@ class BlogCategoryResource extends BaseResource
         return TextColumn::make('status')
             ->label(__('lunarpanel.blog::category.table.status.label'))
             ->badge()
-            ->getStateUsing(fn(Model $record) => $record->status)
-            ->formatStateUsing(fn($state) => __('lunarpanel.blog::category.table.status.states.' . $state))
+            ->getStateUsing(fn (Model $record) => $record->status)
+            ->formatStateUsing(fn ($state) => __('lunarpanel.blog::category.table.status.states.'.$state))
             ->color(
-                fn(string $state): string => match ($state) {
+                fn (string $state): string => match ($state) {
                     'draft' => 'warning',
                     'published' => 'success',
                 }

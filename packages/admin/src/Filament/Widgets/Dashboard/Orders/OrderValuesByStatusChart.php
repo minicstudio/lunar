@@ -45,7 +45,7 @@ class OrderValuesByStatusChart extends ApexChartWidget
     {
         $currency = Currency::getDefault();
         $statuses = config('lunar.orders.statuses', []);
-        
+
         $date = now()->settings([
             'monthOverflow' => false,
         ]);
@@ -103,7 +103,7 @@ class OrderValuesByStatusChart extends ApexChartWidget
         $monthIndex = 0;
         foreach ($period as $periodDate) {
             $monthstamp = $periodDate->format('Ym');
-            
+
             // Get all results for this month
             $monthResults = $results->filter(function ($result) use ($monthstamp) {
                 return $result->monthstamp == $monthstamp;
@@ -111,7 +111,7 @@ class OrderValuesByStatusChart extends ApexChartWidget
 
             foreach ($monthResults as $result) {
                 $status = $result->status;
-                
+
                 if (isset($seriesValue[$status])) {
                     // Calculate order value: total - shipping_total (order value without shipping)
                     // Lunar automatically casts SUM results to Money objects when currency_code is present
@@ -131,7 +131,7 @@ class OrderValuesByStatusChart extends ApexChartWidget
                     }
                 }
             }
-            
+
             $monthIndex++;
         }
 
@@ -143,13 +143,13 @@ class OrderValuesByStatusChart extends ApexChartWidget
         // Build colors array matching the series order and ensure data is properly formatted
         $colors = [];
         $seriesArray = [];
-        
+
         foreach ($seriesValue as $statusKey => $series) {
             // Ensure all data values are numeric
             $series['data'] = array_map(function ($value) {
                 return is_numeric($value) ? (float) $value : 0.0;
             }, $series['data']);
-            
+
             $seriesArray[] = $series;
             $colors[] = $statusColors[$statusKey] ?? '#848a8c';
         }
@@ -184,7 +184,7 @@ class OrderValuesByStatusChart extends ApexChartWidget
             ],
             'tooltip' => [
                 'y' => [
-                    'formatter' => "function(val) { return '" . $currency->code . " ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }",
+                    'formatter' => "function(val) { return '".$currency->code." ' + val.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }",
                 ],
             ],
             'plotOptions' => [
@@ -207,4 +207,3 @@ class OrderValuesByStatusChart extends ApexChartWidget
         ];
     }
 }
-

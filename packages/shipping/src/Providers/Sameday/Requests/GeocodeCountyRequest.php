@@ -32,7 +32,7 @@ class GeocodeCountyRequest extends Request
     {
         return [
             'format' => 'json',
-            'q' => $this->countyName . ', ' . $this->country,
+            'q' => $this->countyName.', '.$this->country,
         ];
     }
 }

@@ -37,9 +37,9 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Célgyűjtemény',
-                    'helper_text' => 'Válassza ki, hogy a gyűjtemény gyermekei melyik gyűjteménybe legyenek áthelyezve.'
+                    'helper_text' => 'Válassza ki, hogy a gyűjtemény gyermekei melyik gyűjteménybe legyenek áthelyezve.',
                 ],
-            ]
+            ],
         ],
         'products' => [
             'label' => 'Termékek',
@@ -51,7 +51,7 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Termék leválasztása',
-                    ]
+                    ],
                 ],
             ],
         ],

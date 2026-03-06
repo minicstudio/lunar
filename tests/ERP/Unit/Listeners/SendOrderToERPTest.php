@@ -54,7 +54,7 @@ it('sends the order to each enabled provider', function () {
     foreach ($providers as $provider) {
         $service->shouldReceive('sendOrder')
             ->once()
-            ->with($provider, \Mockery::on(fn($o) => $o->is($order)))
+            ->with($provider, \Mockery::on(fn ($o) => $o->is($order)))
             ->andReturnTrue();
     }
     app()->instance(ErpService::class, $service);

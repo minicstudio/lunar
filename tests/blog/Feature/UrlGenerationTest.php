@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
+use Lunar\Blog\Generators\UrlGenerator;
+use Lunar\Blog\Models\BlogPost;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Language;
-use Lunar\Blog\Models\BlogPost;
-use Lunar\Blog\Generators\UrlGenerator;
 
 beforeEach(function () {
     $this->createLanguages();

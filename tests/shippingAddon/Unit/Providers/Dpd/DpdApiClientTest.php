@@ -68,6 +68,6 @@ it('downloadAWBPDF throws when response is not successful', function () {
     $client = new DpdApiClient;
     $client->withMockClient($mock);
 
-    expect(fn() => $client->downloadAWBPDF('AWB_FAIL'))
+    expect(fn () => $client->downloadAWBPDF('AWB_FAIL'))
         ->toThrow(FailedAWBGenerationException::class);
 });

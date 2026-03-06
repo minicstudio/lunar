@@ -94,7 +94,7 @@ test('creates attributes and reports counts', function () {
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting attribute sync from ERP...')
         ->expectsOutput('Fetching attributes from ERP...')
-        ->expectsOutput('Found ' . count($payload) . ' attributes to process.')
+        ->expectsOutput('Found '.count($payload).' attributes to process.')
         ->expectsOutput('Attribute sync completed successfully!')
         ->expectsOutput('Created 2 new attributes as product options.')
         ->assertExitCode(0);

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create($this->prefix."blog_posts", function (Blueprint $table) {
+        Schema::create($this->prefix.'blog_posts', function (Blueprint $table) {
             $table->id();
             $table->json('attribute_data');
             $table->string('status');
@@ -27,7 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists($this->prefix."blog_posts");
+        Schema::dropIfExists($this->prefix.'blog_posts');
     }
 
     /**
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function shouldRun(): bool
     {
-        return ! Schema::hasTable($this->prefix."blog_posts");
+        return ! Schema::hasTable($this->prefix.'blog_posts');
     }
 };

@@ -46,7 +46,7 @@ class SecureMediaUploadRule implements Rule
 
         // Double extensions (e.g. image.jpg.php)
         $dangerousExtensions = collect(config('lunar.media.dangerous_file_extensions', []));
-        if ($dangerousExtensions->some(fn($dangerousExt) => Str::contains($filename, '.' . $dangerousExt . '.'))) {
+        if ($dangerousExtensions->some(fn ($dangerousExt) => Str::contains($filename, '.'.$dangerousExt.'.'))) {
             return false;
         }
 
@@ -59,7 +59,7 @@ class SecureMediaUploadRule implements Rule
 
         // Force decode to ensure real image content
         try {
-            
+
             imagecreatefromstring($value->get());
         } catch (\Throwable $e) {
             return false;
@@ -75,6 +75,6 @@ class SecureMediaUploadRule implements Rule
      */
     public function message(): string
     {
-        return 'The :attribute field must be a file of type:' . implode(', ', config('lunar.media.accepted_file_types', [])) . '.';
+        return 'The :attribute field must be a file of type:'.implode(', ', config('lunar.media.accepted_file_types', [])).'.';
     }
 }

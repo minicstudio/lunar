@@ -74,7 +74,7 @@ return [
                 'modal' => [
                     'heading' => 'Supprimer la collection',
                 ],
-            ]
+            ],
         ],
         'notifications' => [
             'collections-reordered' => [

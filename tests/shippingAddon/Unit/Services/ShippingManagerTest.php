@@ -23,7 +23,7 @@ beforeEach(function () {
 
 it('returns provider instance when enabled', function () {
     $mockClient = \Mockery::mock(ShippingApiClient::class);
-    app()->singleton(DpdShippingProvider::class, fn() => new DpdShippingProvider($mockClient));
+    app()->singleton(DpdShippingProvider::class, fn () => new DpdShippingProvider($mockClient));
 
     $manager = new ShippingManager(['dpd']);
     $provider = $manager->getProvider(ShippingProviderEnum::dpd);

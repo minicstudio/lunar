@@ -68,7 +68,7 @@ class ProductVariantReviewRelationManager extends BaseRelationManager
     public function getDefaultTable(Table $table): Table
     {
         return $table->query(
-            fn() => $this->getRelationship()->getQuery()->forProductVariant()
+            fn () => $this->getRelationship()->getQuery()->forProductVariant()
         )
             ->columns(
                 static::getRelationManagerTableColumns()
@@ -166,7 +166,7 @@ class ProductVariantReviewRelationManager extends BaseRelationManager
                 $variant = ProductVariant::find($get('reviewable_id'));
 
                 if ($variant) {
-                    return collect([$variant->id => $variant->translateAttribute('name') . ' - ' . $variant->getOption()]);
+                    return collect([$variant->id => $variant->translateAttribute('name').' - '.$variant->getOption()]);
                 }
 
                 return collect();
@@ -185,8 +185,8 @@ class ProductVariantReviewRelationManager extends BaseRelationManager
                 $fullNameField = new Text;
 
                 $fullNameValue = trim(
-                    ($user?->first_name ?? '') .
-                        ' ' .
+                    ($user?->first_name ?? '').
+                        ' '.
                         ($user?->last_name ?? '')
                 );
 

@@ -60,14 +60,14 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
 {
     use HasAttributes;
     use HasDimensions;
+    use HasDiscount;
     use HasFactory;
     use HasMacros;
     use HasPrices;
     use HasTranslations;
     use LogsActivity;
-    use SoftDeletes;
     use Searchable;
-    use HasDiscount;
+    use SoftDeletes;
 
     /**
      * Define the guarded attributes.

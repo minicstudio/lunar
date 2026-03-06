@@ -119,7 +119,7 @@ test('sets default discount values on cart lines', function () {
         'quantity' => 2,
     ]);
 
-    $result = app(CalculateLines::class)->handle($cart, fn($cart) => $cart);
+    $result = app(CalculateLines::class)->handle($cart, fn ($cart) => $cart);
 
     $line = $result->lines->first();
 
@@ -162,7 +162,7 @@ test('returns original prices when pricing is inclusive of tax', function () {
         'quantity' => 1,
     ]);
 
-    $result = app(CalculateLines::class)->handle($cart, fn($cart) => $cart);
+    $result = app(CalculateLines::class)->handle($cart, fn ($cart) => $cart);
 
     $line = $result->lines->first();
 
@@ -199,7 +199,7 @@ test('uses zero tax rate when purchasable has no tax rate', function () {
         'quantity' => 1,
     ]);
 
-    $result = app(CalculateLines::class)->handle($cart, fn($cart) => $cart);
+    $result = app(CalculateLines::class)->handle($cart, fn ($cart) => $cart);
 
     $line = $result->lines->first();
 
@@ -282,7 +282,7 @@ test('processes multiple cart lines correctly', function () {
         'quantity' => 1,
     ]);
 
-    $result = app(CalculateLines::class)->handle($cart, fn($cart) => $cart);
+    $result = app(CalculateLines::class)->handle($cart, fn ($cart) => $cart);
 
     expect($result->lines)->toHaveCount(2);
 

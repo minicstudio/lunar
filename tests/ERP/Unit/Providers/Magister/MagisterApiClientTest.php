@@ -87,7 +87,7 @@ it('getProductList throws on failure', function () {
     $api = new MagisterApiClient;
     $api->withMockClient($mock);
 
-    expect(fn() => $api->getProductList())
+    expect(fn () => $api->getProductList())
         ->toThrow(InvalidErpResponseException::class);
 });
 
@@ -108,7 +108,7 @@ it('confirmReceivingData throws on failure', function () {
     $api = new MagisterApiClient;
     $api->withMockClient($mock);
 
-    expect(fn() => $api->confirmReceivingData(101, 9))
+    expect(fn () => $api->confirmReceivingData(101, 9))
         ->toThrow(InvalidErpResponseException::class);
 });
 
@@ -129,7 +129,7 @@ it('getStock throws on failure', function () {
     $api = new MagisterApiClient;
     $api->withMockClient($mock);
 
-    expect(fn() => $api->getStock())
+    expect(fn () => $api->getStock())
         ->toThrow(InvalidErpResponseException::class);
 });
 
@@ -152,7 +152,7 @@ it('sendOrder throws on failure', function () {
     $api->withMockClient($mock);
     $order = makeOrderForMagisterApi();
 
-    expect(fn() => $api->sendOrder($order))
+    expect(fn () => $api->sendOrder($order))
         ->toThrow(InvalidErpResponseException::class);
 });
 
@@ -239,7 +239,7 @@ it('getModifiedOrders throws on failure', function () {
     $api = new MagisterApiClient;
     $api->withMockClient($mock);
 
-    expect(fn() => $api->getModifiedOrders())
+    expect(fn () => $api->getModifiedOrders())
         ->toThrow(InvalidErpResponseException::class);
 });
 
@@ -260,7 +260,7 @@ it('getLocalities throws on failure', function () {
     ]);
     $api = new MagisterApiClient;
     $api->withMockClient($mock);
-    expect(fn() => $api->getLocalities())
+    expect(fn () => $api->getLocalities())
         ->toThrow(InvalidErpResponseException::class);
 });
 
@@ -270,7 +270,7 @@ it('getAttributes throws on failure', function () {
     ]);
     $api = new MagisterApiClient;
     $api->withMockClient($mock);
-    expect(fn() => $api->getAttributes())
+    expect(fn () => $api->getAttributes())
         ->toThrow(InvalidErpResponseException::class);
 });
 

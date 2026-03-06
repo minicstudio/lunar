@@ -4,11 +4,11 @@ namespace Lunar\Addons\Shipping\Filament\Extensions;
 
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
-use Lunar\Admin\Support\Extending\ViewPageExtension;
 use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
 use Lunar\Addons\Shipping\Exceptions\InvalidShippingProviderException;
 use Lunar\Addons\Shipping\Filament\Actions\DownloadAwbPdfAction;
 use Lunar\Addons\Shipping\Services\ShippingService;
+use Lunar\Admin\Support\Extending\ViewPageExtension;
 use Lunar\Models\Order;
 
 class ShippingExtension extends ViewPageExtension
@@ -22,7 +22,7 @@ class ShippingExtension extends ViewPageExtension
             ...$section->getChildComponents(),
             TextEntry::make('awb_number')
                 ->label('AWB')
-                ->default(fn(Order $record) => $record->meta['awb'] ?? null)
+                ->default(fn (Order $record) => $record->meta['awb'] ?? null)
                 ->alignEnd(),
             TextEntry::make('shipping_method')
                 ->label(__('Shipping method'))
@@ -36,7 +36,7 @@ class ShippingExtension extends ViewPageExtension
                     try {
                         $provider = ShippingProviderEnum::fromIdentifier($identifier);
                     } catch (\ValueError $e) {
-                        throw new InvalidShippingProviderException('Invalid shipping provider: ' . $identifier);
+                        throw new InvalidShippingProviderException('Invalid shipping provider: '.$identifier);
                     }
 
                     return app(ShippingService::class)->getName($provider);

@@ -34,7 +34,7 @@ class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->loadLaravelMigrations();
-        $this->loadMigrationsFrom(__DIR__ . '/../../packages/locations/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/locations/database/migrations');
 
         activity()->disableLogging();
 
@@ -68,8 +68,6 @@ class TestCase extends BaseTestCase
 
     /**
      * Create default and non-default languages if they do not exist.
-     *
-     * @return void
      */
     protected function createLanguages(): void
     {
@@ -133,8 +131,6 @@ class TestCase extends BaseTestCase
 
     /**
      * Create a user for testing purposes.
-     *
-     * @return User
      */
     protected function createUser(): User
     {

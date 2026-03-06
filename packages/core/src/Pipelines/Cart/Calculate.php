@@ -54,7 +54,6 @@ class Calculate
         $cart->couponTotalIncTax = new Price($cartTotalsIncTax['couponIncTax'], $cart->currency, 1);
         $cart->discountTotalWithoutCouponIncTax = new Price($cartTotalsIncTax['discountWithoutCouponIncTax'], $cart->currency, 1);
 
-
         $cart->total = new Price($cart->subTotalDiscountedWithoutCouponIncTax?->value + $cart->shippingTotal?->value - $cart->couponTotalIncTax?->value, $cart->currency);
 
         return $next($cart);

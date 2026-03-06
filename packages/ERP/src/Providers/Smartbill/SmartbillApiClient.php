@@ -33,7 +33,7 @@ class SmartbillApiClient extends Connector implements ErpApiClientInterface
         $response = $this->send($request);
 
         if (! $response->successful()) {
-            throw new FailedErpInvoiceGenerationException('Failed to generate invoice: ' . $response->body());
+            throw new FailedErpInvoiceGenerationException('Failed to generate invoice: '.$response->body());
         }
 
         return $response->json();
@@ -49,7 +49,7 @@ class SmartbillApiClient extends Connector implements ErpApiClientInterface
         $response = $this->send($request);
 
         if (! $response->successful()) {
-            throw new FailedErpInvoiceGenerationException('Failed to download invoice PDF: ' . $response->body());
+            throw new FailedErpInvoiceGenerationException('Failed to download invoice PDF: '.$response->body());
         }
 
         return $response;

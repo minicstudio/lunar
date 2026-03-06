@@ -3,8 +3,6 @@
 namespace Lunar\Addons\Shipping\Providers\Dpd;
 
 use Illuminate\Support\Collection;
-use Lunar\Models\Order;
-use Lunar\Shipping\Models\ShippingMethod;
 use Lunar\Addons\Shipping\Contracts\AWBRequestBodyInterface;
 use Lunar\Addons\Shipping\Contracts\ShippingApiClient;
 use Lunar\Addons\Shipping\Contracts\ShippingProviderInterface;
@@ -18,6 +16,8 @@ use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdPayment;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdPhoneNumber;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdRecipient;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdService;
+use Lunar\Models\Order;
+use Lunar\Shipping\Models\ShippingMethod;
 use Saloon\Http\Response;
 
 class DpdShippingProvider implements ShippingProviderInterface
@@ -73,7 +73,7 @@ class DpdShippingProvider implements ShippingProviderInterface
         try {
             $response = $this->client->generateAWB($requestBody);
         } catch (\Throwable $e) {
-            throw new FailedAWBGenerationException('AWB generation failed: ' . $e->getMessage());
+            throw new FailedAWBGenerationException('AWB generation failed: '.$e->getMessage());
         }
 
         if (! isset($response['id'])) {
@@ -98,7 +98,7 @@ class DpdShippingProvider implements ShippingProviderInterface
         $package = config('lunar.shipping.dpd.package');
 
         $companyName = $order->shippingAddress->company_name;
-        $fullName = $order->shippingAddress->first_name . ' ' . $order->shippingAddress->last_name;
+        $fullName = $order->shippingAddress->first_name.' '.$order->shippingAddress->last_name;
 
         $clientName = ! empty($companyName) ? $companyName : $fullName;
         $contactName = ! empty($companyName) ? $fullName : null;

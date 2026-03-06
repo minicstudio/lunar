@@ -123,7 +123,7 @@ it('syncProducts returns importer result when allowed', function () {
 
     $mockImporter = \Mockery::mock(ErpDataImporterInterface::class);
     $mockImporter->shouldReceive('syncProducts')->andReturn(['success' => true, 'source' => 'mock']);
-    app()->singleton(ErpDataImporterInterface::class, fn() => $mockImporter);
+    app()->singleton(ErpDataImporterInterface::class, fn () => $mockImporter);
 
     $service = new ErpService;
     $res = $service->syncProducts(ErpProviderEnum::magister);
@@ -154,7 +154,7 @@ it('syncStock returns importer result when allowed', function () {
 
     $mockImporter = \Mockery::mock(ErpDataImporterInterface::class);
     $mockImporter->shouldReceive('syncStock')->andReturn(['success' => true, 'synced' => 5]);
-    app()->singleton(ErpDataImporterInterface::class, fn() => $mockImporter);
+    app()->singleton(ErpDataImporterInterface::class, fn () => $mockImporter);
 
     $service = new ErpService;
     $res = $service->syncStock(ErpProviderEnum::magister, function () {});
@@ -176,7 +176,7 @@ it('syncOrderStatuses returns importer result when allowed', function () {
 
     $mockImporter = \Mockery::mock(ErpDataImporterInterface::class);
     $mockImporter->shouldReceive('syncOrderStatuses')->andReturn(['success' => true, 'updated' => 3]);
-    app()->singleton(ErpDataImporterInterface::class, fn() => $mockImporter);
+    app()->singleton(ErpDataImporterInterface::class, fn () => $mockImporter);
 
     $service = new ErpService;
     $res = $service->syncOrderStatuses(ErpProviderEnum::magister);
@@ -197,7 +197,7 @@ it('sendOrder returns true when enabled', function () {
 
     $mockExporter = \Mockery::mock(ErpDataExporterInterface::class);
     $mockExporter->shouldReceive('sendOrder')->andReturnTrue();
-    app()->singleton(ErpDataExporterInterface::class, fn() => $mockExporter);
+    app()->singleton(ErpDataExporterInterface::class, fn () => $mockExporter);
 
     $order = makeOrderForErp();
     $service = new ErpService;
@@ -261,9 +261,9 @@ it('getLocalities returns parsed results from Magister', function () {
 
     $client = new MagisterApiClient;
     $client->withMockClient($mock);
-    app()->singleton(MagisterApiClient::class, fn() => $client);
+    app()->singleton(MagisterApiClient::class, fn () => $client);
 
-    app()->singleton(MagisterErpProvider::class, fn() => new MagisterErpProvider($client));
+    app()->singleton(MagisterErpProvider::class, fn () => new MagisterErpProvider($client));
 
     $service = new ErpService;
     $localities = $service->getLocalities(ErpProviderEnum::magister);
@@ -291,8 +291,8 @@ it('getAttributes returns parsed results from Magister', function () {
 
     $client = new MagisterApiClient;
     $client->withMockClient($mock);
-    app()->singleton(MagisterApiClient::class, fn() => $client);
-    app()->singleton(MagisterErpProvider::class, fn() => new MagisterErpProvider($client));
+    app()->singleton(MagisterApiClient::class, fn () => $client);
+    app()->singleton(MagisterErpProvider::class, fn () => new MagisterErpProvider($client));
 
     $service = new ErpService;
     $attributes = $service->getAttributes(ErpProviderEnum::magister);
@@ -313,7 +313,7 @@ it('getLocalities returns empty array when provider does not support SupportsLoc
     Config::set('lunar.erp.sync.localities', ['smartbill']);
     Config::set('lunar.erp.smartbill.provider_class', SmartbillErpProvider::class);
 
-    app()->singleton(SmartbillErpProvider::class, fn() => new SmartbillErpProvider(new SmartbillApiClient));
+    app()->singleton(SmartbillErpProvider::class, fn () => new SmartbillErpProvider(new SmartbillApiClient));
 
     $service = new ErpService;
     $localities = $service->getLocalities(ErpProviderEnum::smartbill);
@@ -348,7 +348,7 @@ it('generateInvoice stores series and number on order meta', function () {
 
     $client = new SmartbillApiClient;
     $client->withMockClient($mock);
-    app()->singleton(SmartbillApiClient::class, fn() => $client);
+    app()->singleton(SmartbillApiClient::class, fn () => $client);
 
     $order = makeOrderForErp();
     $service = new ErpService;
@@ -366,7 +366,7 @@ it('downloadInvoicePDF proxies to provider and returns response', function () {
 
     $client = new SmartbillApiClient;
     $client->withMockClient($mock);
-    app()->singleton(SmartbillApiClient::class, fn() => $client);
+    app()->singleton(SmartbillApiClient::class, fn () => $client);
 
     $order = makeOrderForErp();
     $meta = $order->meta ?? [];
@@ -394,7 +394,7 @@ it('getImporter throws when ERP is globally disabled', function () {
     Config::set('lunar.erp.sync.products', ['magister']);
 
     $service = new ErpService;
-    expect(fn() => $service->syncProducts(ErpProviderEnum::magister))
+    expect(fn () => $service->syncProducts(ErpProviderEnum::magister))
         ->toThrow(ErpInitializationException::class, 'ERP is globally disabled.');
 });
 
@@ -403,7 +403,7 @@ it('getImporter throws when provider is not enabled', function () {
     Config::set('lunar.erp.magister.enabled', false);
 
     $service = new ErpService;
-    expect(fn() => $service->syncProducts(ErpProviderEnum::magister))
+    expect(fn () => $service->syncProducts(ErpProviderEnum::magister))
         ->toThrow(ErpInitializationException::class, 'is not enabled');
 });
 
@@ -412,7 +412,7 @@ it('getImporter throws when importer_class is missing', function () {
     Config::set('lunar.erp.magister.importer_class', null);
 
     $service = new ErpService;
-    expect(fn() => $service->syncProducts(ErpProviderEnum::magister))
+    expect(fn () => $service->syncProducts(ErpProviderEnum::magister))
         ->toThrow(ErpInitializationException::class, 'does not have an importer class configured');
 });
 
@@ -422,7 +422,7 @@ it('getExporter throws when ERP is globally disabled', function () {
 
     $order = makeOrderForErp();
     $service = new ErpService;
-    expect(fn() => $service->sendOrder(ErpProviderEnum::magister, $order))
+    expect(fn () => $service->sendOrder(ErpProviderEnum::magister, $order))
         ->toThrow(ErpInitializationException::class, 'ERP is globally disabled.');
 });
 
@@ -432,7 +432,7 @@ it('getExporter throws when provider is not enabled', function () {
 
     $order = makeOrderForErp();
     $service = new ErpService;
-    expect(fn() => $service->sendOrder(ErpProviderEnum::magister, $order))
+    expect(fn () => $service->sendOrder(ErpProviderEnum::magister, $order))
         ->toThrow(ErpInitializationException::class, 'is not enabled');
 });
 
@@ -442,6 +442,6 @@ it('getExporter throws when exporter_class is missing', function () {
 
     $order = makeOrderForErp();
     $service = new ErpService;
-    expect(fn() => $service->sendOrder(ErpProviderEnum::magister, $order))
+    expect(fn () => $service->sendOrder(ErpProviderEnum::magister, $order))
         ->toThrow(ErpInitializationException::class, 'does not have an exporter class configured');
 });

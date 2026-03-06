@@ -4,6 +4,12 @@ uses(\Lunar\Tests\ERP\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Facades\Config;
+use Lunar\ERP\Contracts\ErpApiClientInterface;
+use Lunar\ERP\Exceptions\FailedErpInvoiceGenerationException;
+use Lunar\ERP\Providers\Smartbill\Requests\DownloadInvoicePDFRequest;
+use Lunar\ERP\Providers\Smartbill\Requests\GenerateInvoiceRequest;
+use Lunar\ERP\Providers\Smartbill\SmartbillApiClient;
+use Lunar\ERP\Providers\Smartbill\SmartbillErpExporter;
 use Lunar\Models\Country;
 use Lunar\Models\Customer;
 use Lunar\Models\CustomerGroup;
@@ -13,12 +19,6 @@ use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
-use Lunar\ERP\Contracts\ErpApiClientInterface;
-use Lunar\ERP\Exceptions\FailedErpInvoiceGenerationException;
-use Lunar\ERP\Providers\Smartbill\Requests\DownloadInvoicePDFRequest;
-use Lunar\ERP\Providers\Smartbill\Requests\GenerateInvoiceRequest;
-use Lunar\ERP\Providers\Smartbill\SmartbillApiClient;
-use Lunar\ERP\Providers\Smartbill\SmartbillErpExporter;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 
@@ -116,7 +116,7 @@ it('generateInvoice throws FailedErpInvoiceGenerationException when Smartbill re
     $exporter = new SmartbillErpExporter($client);
     $order = makeOrderForSmartbillExporter();
 
-    expect(fn() => $exporter->generateInvoice($order))
+    expect(fn () => $exporter->generateInvoice($order))
         ->toThrow(FailedErpInvoiceGenerationException::class);
 });
 
@@ -127,7 +127,7 @@ it('generateInvoice rethrows when client throws with a helpful message', functio
     $exporter = new SmartbillErpExporter($client);
     $order = makeOrderForSmartbillExporter();
 
-    expect(fn() => $exporter->generateInvoice($order))
+    expect(fn () => $exporter->generateInvoice($order))
         ->toThrow(FailedErpInvoiceGenerationException::class, 'Invoice generation failed: failed');
 });
 

@@ -13,8 +13,8 @@ use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
-use Lunar\Tests\ERP\Providers\ErpPanelTestServiceProvider;
 use Lunar\Tests\Core\Stubs\User;
+use Lunar\Tests\ERP\Providers\ErpPanelTestServiceProvider;
 use Lunar\Tests\TestCase as BaseTestCase;
 use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\LaravelBlink\BlinkServiceProvider;
@@ -28,7 +28,7 @@ class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->loadLaravelMigrations();
-        $this->loadMigrationsFrom(__DIR__ . '/../../packages/locations/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/locations/database/migrations');
 
         activity()->disableLogging();
 
@@ -63,8 +63,6 @@ class TestCase extends BaseTestCase
 
     /**
      * Create default and non-default languages if they do not exist.
-     *
-     * @return void
      */
     protected function createLanguages(): void
     {
@@ -142,8 +140,6 @@ class TestCase extends BaseTestCase
 
     /**
      * Create a user for testing purposes.
-     *
-     * @return User
      */
     protected function createUser(): User
     {

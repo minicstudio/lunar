@@ -1,6 +1,7 @@
 <?php
 
 namespace Lunar\ERP\Listeners;
+
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Lunar\ERP\Events\OrderPlacedEvent;
 use Lunar\ERP\Services\ErpService;
