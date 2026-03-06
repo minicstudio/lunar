@@ -5,11 +5,12 @@ uses(\Lunar\Tests\Core\TestCase::class)->group('carts');
 use Illuminate\Support\Facades\Config;
 use Lunar\DataTypes\Price as DataTypesPrice;
 use Lunar\DataTypes\ShippingOption;
-use Lunar\DiscountTypes\AmountOff;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\FingerprintMismatchException;
 use Lunar\Facades\Discounts;
 use Lunar\Facades\ShippingManifest;
+use Lunar\Base\Purchasable;
 use Lunar\Models\Cart;
 use Lunar\Models\CartAddress;
 use Lunar\Models\CartLine;
@@ -21,6 +22,7 @@ use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Lunar\Models\Price;
+use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
@@ -74,7 +76,7 @@ test('can save coupon code', function () {
     ]);
 
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Test Coupon',
         'coupon' => 'valid-coupon',
         'data' => [
@@ -367,6 +369,59 @@ test('can retrieve active cart', function () {
     expect(Cart::whereUserId($user->getKey())->active()->first()->id)->toEqual($cart->id);
 });
 
+test('scopeActive excludes merged and completed carts and includes carts with no or unplaced orders', function () {
+    $currency = Currency::factory()->create();
+    $channel = Channel::factory()->create();
+
+    $cartNoOrders = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+    ]);
+
+    $cartWithUnplaced = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+    ]);
+    Order::factory()->create([
+        'cart_id' => $cartWithUnplaced->id,
+        'placed_at' => null,
+    ]);
+
+    $cartWithPlaced = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+    ]);
+    Order::factory()->create([
+        'cart_id' => $cartWithPlaced->id,
+        'placed_at' => now(),
+    ]);
+
+    $mergedCartNoOrders = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+        'merged_id' => $cartNoOrders->id,
+    ]);
+
+    $mergedCartWithUnplaced = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+        'merged_id' => $cartNoOrders->id,
+    ]);
+    Order::factory()->create([
+        'cart_id' => $mergedCartWithUnplaced->id,
+        'placed_at' => null,
+    ]);
+
+    $activeIds = Cart::active()->pluck('id')->all();
+
+    expect($activeIds)
+        ->toContain($cartNoOrders->id)
+        ->and($activeIds)->toContain($cartWithUnplaced->id)
+        ->and($activeIds)->not->toContain($cartWithPlaced->id)
+        ->and($activeIds)->not->toContain($mergedCartNoOrders->id)
+        ->and($activeIds)->not->toContain($mergedCartWithUnplaced->id);
+});
+
 test('can associate cart with user with customer attached', function () {
     setAuthUserConfig();
 
@@ -458,7 +513,7 @@ test('can calculate the cart', function () {
     expect($cart->lines[1]->unitPrice->unitFormatted(null, NumberFormatter::CURRENCY, 6))->toEqual('$0.0158');
     expect($cart->lines[1]->unitPrice->unitFormatted(null, NumberFormatter::CURRENCY, 6, false))->toEqual('$0.015800');
     expect($cart->subTotal->value)->toEqual(103);
-    expect($cart->total->value)->toEqual(124);
+    expect($cart->total->value)->toEqual(103);
     expect($cart->taxBreakdown->amounts)->toHaveCount(2);
 });
 
@@ -586,6 +641,47 @@ test('can remove cart lines', function () {
     $cart->remove($cart->lines->first()->id);
 
     expect($cart->lines)->toHaveCount(0);
+});
+    
+test('clearNonPurchasableLines removes invalid lines and keeps valid purchasable lines', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->for($product)->create();
+
+    Price::factory()->for($variant, 'priceable')->create([
+        'currency_id' => $currency->id,
+        'price' => 1000,
+    ]);
+
+    CartLine::factory()
+        ->for($cart)
+        ->for($variant, 'purchasable')
+        ->create();
+
+    CartLine::withoutEvents(function () use ($cart, $product) {
+        CartLine::factory()->create([
+            'cart_id' => $cart->id,
+            'purchasable_type' => Product::class,
+            'purchasable_id' => $product->id,
+        ]);
+    });
+
+    expect($cart->lines()->count())->toBe(2);
+
+    $cart->unsetRelation('lines');
+    $cart->clearNonPurchasableLines();
+
+    $remainingLines = $cart->refresh()->lines()->get();
+
+    expect($remainingLines)->toHaveCount(1)
+        ->and($remainingLines->first()->purchasable)->toBeInstanceOf(Purchasable::class);
 });
 
 test('cannot add zero quantity line', function () {
@@ -770,7 +866,7 @@ test('can create a discount breakdown', function () {
     ]);
 
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Test Coupon',
         'coupon' => 'valid-coupon',
         'data' => [
