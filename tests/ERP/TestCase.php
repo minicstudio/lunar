@@ -58,6 +58,8 @@ class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app)
     {
+        $app['config']->set('cache.default', 'array');
+
         $this->replaceModelsForTesting();
     }
 

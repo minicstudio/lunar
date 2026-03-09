@@ -1,5 +1,8 @@
 <?php
 
+uses(\Lunar\Tests\Blog\TestCase::class);
+uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Lunar\Blog\Generators\UrlGenerator;

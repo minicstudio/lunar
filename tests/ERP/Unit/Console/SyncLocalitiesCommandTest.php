@@ -4,7 +4,6 @@ uses(\Lunar\Tests\ERP\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Facades\Config;
-use Lunar\ERP\Console\SyncLocalitiesCommand;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Services\ErpService;
 use Lunar\Locations\Models\County;
@@ -14,9 +13,7 @@ use Lunar\Models\Country;
 test('fails when ERP is disabled', function () {
     Config::set('lunar.erp.enabled', false);
 
-    $command = new SyncLocalitiesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-localities')
         ->expectsOutput('ERP sync is disabled in configuration.')
         ->assertExitCode(1);
 });
@@ -26,9 +23,7 @@ test('fails when Romania country is missing', function () {
 
     Country::where('iso2', 'RO')->delete();
 
-    $command = new SyncLocalitiesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-localities')
         ->expectsOutput('Romania country not found. Please ensure countries are seeded.')
         ->assertExitCode(1);
 });
@@ -45,9 +40,7 @@ test('skips when no ERP providers are enabled', function () {
             ->andReturn([]);
     });
 
-    $command = new SyncLocalitiesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-localities')
         ->expectsOutput('No ERP providers are enabled.')
         ->assertExitCode(0);
 });
@@ -69,9 +62,7 @@ test('handles empty localities response', function () {
             ->andReturn([]);
     });
 
-    $command = new SyncLocalitiesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-localities')
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting localities sync from ERP...')
         ->expectsOutput('Fetching localities from ERP...')
@@ -103,9 +94,7 @@ test('creates counties and localities and reports counts', function () {
             ->andReturn($payload);
     });
 
-    $command = new SyncLocalitiesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-localities')
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting localities sync from ERP...')
         ->expectsOutput('Fetching localities from ERP...')
@@ -149,9 +138,7 @@ test('fails when processing throws an exception', function () {
         }
     });
 
-    $command = new SyncLocalitiesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-localities')
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting localities sync from ERP...')
         ->expectsOutput('Fetching localities from ERP...')

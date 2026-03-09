@@ -4,16 +4,13 @@ uses(\Lunar\Tests\ERP\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Facades\Config;
-use Lunar\ERP\Console\SyncErpOrdersCommand;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Services\ErpService;
 
 test('skips when ERP is disabled', function () {
     Config::set('lunar.erp.enabled', false);
 
-    $command = new SyncErpOrdersCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-order-statuses')
         ->expectsOutput('ERP sync is not enabled, skipping sync.')
         ->assertExitCode(0);
 });
@@ -28,9 +25,7 @@ test('skips when no ERP providers are enabled', function () {
             ->andReturn([]);
     });
 
-    $command = new SyncErpOrdersCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-order-statuses')
         ->expectsOutput('No ERP providers are enabled.')
         ->assertExitCode(0);
 });
@@ -53,9 +48,7 @@ test('syncs orders successfully and reports counts', function () {
             ]);
     });
 
-    $command = new SyncErpOrdersCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-order-statuses')
         ->expectsChoice('Which ERP provider would you like to sync order statuses from?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Syncing orders to magister...')
         ->expectsOutput('✓ magister: 3 orders synced successfully')
@@ -81,9 +74,7 @@ test('warns when sync completes with warnings', function () {
             ]);
     });
 
-    $command = new SyncErpOrdersCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-order-statuses')
         ->expectsChoice('Which ERP provider would you like to sync order statuses from?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Syncing orders to magister...')
         ->expectsOutput('⚠ magister: Sync completed with warnings - partial')
@@ -105,9 +96,7 @@ test('handles exception during order sync gracefully', function () {
             ->andThrow(new Exception('not allowed'));
     });
 
-    $command = new SyncErpOrdersCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-order-statuses')
         ->expectsChoice('Which ERP provider would you like to sync order statuses from?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Syncing orders to magister...')
         ->expectsOutput('✗ magister: Order sync failed - not allowed')
@@ -124,9 +113,7 @@ test('fails when an invalid ERP provider is selected', function () {
             ->andReturn([ErpProviderEnum::magister]);
     });
 
-    $command = new SyncErpOrdersCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-order-statuses')
         ->expectsChoice('Which ERP provider would you like to sync order statuses from?', 'invalid', ['magister' => 'Magister'])
         ->expectsOutput('Invalid ERP provider: invalid')
         ->assertExitCode(1);

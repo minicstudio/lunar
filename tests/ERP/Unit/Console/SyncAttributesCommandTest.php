@@ -5,7 +5,6 @@ uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
-use Lunar\ERP\Console\SyncAttributesCommand;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Services\ErpService;
 use Lunar\Models\ProductOption;
@@ -13,9 +12,7 @@ use Lunar\Models\ProductOption;
 test('fails when ERP is disabled', function () {
     Config::set('lunar.erp.enabled', false);
 
-    $command = new SyncAttributesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-attributes')
         ->expectsOutput('ERP sync is disabled in configuration.')
         ->assertExitCode(1);
 });
@@ -30,9 +27,7 @@ test('skips when no ERP providers are enabled', function () {
             ->andReturn([]);
     });
 
-    $command = new SyncAttributesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-attributes')
         ->expectsOutput('No ERP providers are enabled.')
         ->assertExitCode(0);
 });
@@ -52,9 +47,7 @@ test('handles empty attributes response', function () {
             ->andReturn([]);
     });
 
-    $command = new SyncAttributesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-attributes')
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting attribute sync from ERP...')
         ->expectsOutput('Fetching attributes from ERP...')
@@ -88,13 +81,11 @@ test('creates attributes and reports counts', function () {
             ->andReturn($payload);
     });
 
-    $command = new SyncAttributesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-attributes')
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting attribute sync from ERP...')
         ->expectsOutput('Fetching attributes from ERP...')
-        ->expectsOutput('Found '.count($payload).' attributes to process.')
+        ->expectsOutput('Found ' . count($payload) . ' attributes to process.')
         ->expectsOutput('Attribute sync completed successfully!')
         ->expectsOutput('Created 2 new attributes as product options.')
         ->assertExitCode(0);
@@ -138,9 +129,7 @@ test('fails when processing attributes throws an exception', function () {
         }
     });
 
-    $command = new SyncAttributesCommand;
-
-    $this->artisan($command)
+    $this->artisan('erp:sync-attributes')
         ->expectsChoice('Which ERP provider would you like to sync?', 'magister', ['magister' => 'Magister'])
         ->expectsOutput('Starting attribute sync from ERP...')
         ->expectsOutput('Fetching attributes from ERP...')
