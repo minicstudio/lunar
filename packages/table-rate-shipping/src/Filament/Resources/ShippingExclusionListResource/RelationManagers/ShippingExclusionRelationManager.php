@@ -97,14 +97,14 @@ class ShippingExclusionRelationManager extends RelationManager
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
-                ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.edit.modal.heading')),
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.edit.modal.heading')),
                 Tables\Actions\DeleteAction::make()
-                ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.modal.heading')),
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.modal.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                Tables\Actions\DeleteBulkAction::make()
-                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.bulk.modal.heading')),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.bulk.modal.heading')),
                 ]),
             ]);
     }
