@@ -8,14 +8,17 @@ use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Filament\Actions\ActionsServiceProvider;
 use Filament\FilamentServiceProvider;
 use Filament\Forms\FormsServiceProvider;
+use Filament\Infolists\InfolistsServiceProvider;
 use Filament\Notifications\NotificationsServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
+use Filament\Widgets\WidgetsServiceProvider;
 use Kalnoy\Nestedset\NestedSetServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Lunar\Admin\LunarPanelProvider;
 use Lunar\Admin\Models\Staff;
 use Lunar\Blog\BlogServiceProvider;
+use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
 use Lunar\LunarServiceProvider;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
@@ -51,11 +54,14 @@ class TestCase extends BaseTestCase
             ActionsServiceProvider::class,
             BladeHeroiconsServiceProvider::class,
             BladeIconsServiceProvider::class,
+            BladeCaptureDirectiveServiceProvider::class,
             FilamentServiceProvider::class,
             FormsServiceProvider::class,
             NotificationsServiceProvider::class,
             SupportServiceProvider::class,
             TablesServiceProvider::class,
+            WidgetsServiceProvider::class,
+            InfolistsServiceProvider::class,
             BladeLucideIconsServiceProvider::class,
 
             BlogPanelTestServiceProvider::class,
@@ -73,6 +79,8 @@ class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app)
     {
+        $app['config']->set('cache.default', 'array');
+
         $this->replaceModelsForTesting();
     }
 

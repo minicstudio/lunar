@@ -6,11 +6,6 @@ use Lunar\Base\Migration;
 
 return new class extends Migration
 {
-    public function shouldRun(): bool
-    {
-        return Schema::hasColumn($this->prefix.'customers', 'vat_number');
-    }
-
     public function up(): void
     {
         if (! Schema::hasColumn($this->prefix.'customers', 'vat_number')) {
@@ -24,6 +19,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasColumn($this->prefix.'customers', 'tax_identifier')) {
+            return;
+        }
+
         Schema::table($this->prefix.'customers', function (Blueprint $table) {
             $table->renameColumn('tax_identifier', 'vat_number');
         });

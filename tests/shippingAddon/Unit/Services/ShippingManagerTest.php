@@ -1,6 +1,6 @@
 <?php
 
-uses(\Lunar\Tests\ShippingAddon\TestCase::class);
+uses(\Lunar\Tests\shippingAddon\TestCase::class);
 
 use Illuminate\Support\Facades\Config;
 use Lunar\Addons\Shipping\Contracts\ShippingApiClient;

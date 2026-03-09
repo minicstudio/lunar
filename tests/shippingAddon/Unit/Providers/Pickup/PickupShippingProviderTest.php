@@ -1,6 +1,6 @@
 <?php
 
-uses(\Lunar\Tests\ShippingAddon\TestCase::class);
+uses(\Lunar\Tests\shippingAddon\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Collection;
