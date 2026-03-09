@@ -14,3 +14,11 @@ parameters:
         -
             message: '#Unsafe usage of new static\(\).#'
             path: packages/core/src/Base/Traits/HasModelExtending.php
+        -
+            identifier: larastan.noEnvCallsOutsideOfConfig
+            paths:
+                - packages/ERP/src/Providers/*/config.php
+                - packages/shipping/src/Providers/*/config.php
+        -
+            identifier: larastan.relationExistence
+            path: packages/review/src/Console/ReviewRequestEmailCommand.php

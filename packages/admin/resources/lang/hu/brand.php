@@ -31,6 +31,7 @@ return [
     'pages' => [
         'edit' => [
             'title' => 'Alapvető információk',
+            'navigation_label' => 'Márka szerkesztése',
         ],
         'products' => [
             'label' => 'Termékek',
@@ -83,10 +84,7 @@ return [
                     ],
                 ],
             ],
-        ],
-        'edit' => [
-            'navigation_label' => 'Márka szerkesztése',
-        ],
+        ]
     ],
 
 ];

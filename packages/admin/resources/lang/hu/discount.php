@@ -91,17 +91,6 @@ return [
             'label' => 'Jutalmak automatikus hozzáadása',
             'helper_text' => 'Kapcsolja be, hogy a jutalomtermékek automatikusan hozzáadódjanak, ha nem szerepelnek a kosárban.',
         ],
-        'type' => [
-            'label' => 'Típus',
-            'options' => [
-                'buy_x_get_y' => [
-                    'label' => 'Vásárolj X-et, kapj Y-t',
-                ],
-                'amount_off' => [
-                    'label' => 'Kedvezmény összege',
-                ],
-            ],
-        ],
         'fixed_value' => [
             'label' => 'Fix összeg',
         ],
