@@ -26,13 +26,14 @@
             <directory suffix="Test.php">tests/shipping/Unit</directory>
         </testsuite>
         <testsuite name="blog">
+            <directory suffix="Test.php">tests/blog/Feature</directory>
             <directory suffix="Test.php">tests/blog/Unit</directory>
         </testsuite>
         <testsuite name="ERP">
             <directory suffix="Test.php">tests/ERP/Unit</directory>
         </testsuite>
         <testsuite name="review">
-            <directory suffix="Test.php">tests/review/Unit</directory>
+            <directory suffix="Test.php">tests/review/Feature</directory>
         </testsuite>
         <testsuite name="shippingAddon">
             <directory suffix="Test.php">tests/shippingAddon/Unit</directory>
