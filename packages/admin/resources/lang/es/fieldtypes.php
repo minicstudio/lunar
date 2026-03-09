@@ -22,7 +22,7 @@ return [
             ],
             'disable_richtext_toolbar' => [
                 'label' => 'Desactivar barra de herramientas',
-            ], 
+            ],
         ],
     ],
     'translatedtext' => [

@@ -69,12 +69,12 @@ class ChannelRelationManager extends BaseRelationManager
                 ])->recordTitle(function ($record) {
                     return $record->name;
                 })
-                ->modalHeading(__('lunarpanel::relationmanagers.channels.actions.attach.label'))
-                ->after(
-                    fn () => sync_with_search(
-                        $this->getOwnerRecord()
-                    )
-                )->preloadRecordSelect()
+                    ->modalHeading(__('lunarpanel::relationmanagers.channels.actions.attach.label'))
+                    ->after(
+                        fn () => sync_with_search(
+                            $this->getOwnerRecord()
+                        )
+                    )->preloadRecordSelect()
                     ->label(
                         __('lunarpanel::relationmanagers.channels.actions.attach.label')
                     ),
@@ -105,7 +105,7 @@ class ChannelRelationManager extends BaseRelationManager
                         $this->getOwnerRecord()
                     )
                 )
-                ->modalHeading(__('lunarpanel::relationmanagers.channels.actions.edit.modal.heading')),
+                    ->modalHeading(__('lunarpanel::relationmanagers.channels.actions.edit.modal.heading')),
             ]);
     }
 }

@@ -37,9 +37,9 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Bộ sưu tập mục tiêu',
-                    'helper_text' => 'Chọn bộ sưu tập mà các phần tử con của bộ sưu tập này sẽ được chuyển đến.'
+                    'helper_text' => 'Chọn bộ sưu tập mà các phần tử con của bộ sưu tập này sẽ được chuyển đến.',
                 ],
-            ]
+            ],
         ],
         'products' => [
             'label' => 'Sản phẩm',
@@ -51,7 +51,7 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Tách sản phẩm',
-                    ]
+                    ],
                 ],
             ],
         ],

@@ -17,7 +17,7 @@ class DpdPrintRequestBody
             'userName' => $this->userName,
             'password' => $this->password,
             'paperSize' => $this->paperSize,
-            'parcels' => array_map(fn($parcel) => $parcel->toArray(), $this->parcels),
+            'parcels' => array_map(fn ($parcel) => $parcel->toArray(), $this->parcels),
         ];
     }
 }

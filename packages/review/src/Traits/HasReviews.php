@@ -28,7 +28,7 @@ trait HasReviews
             return $this->reviews()
                 ->approved()
                 ->get()
-                ->map(fn(Review $review) => (int) $review->attr('rating'))
+                ->map(fn (Review $review) => (int) $review->attr('rating'))
                 ->avg() ?? 0.0;
         };
     }

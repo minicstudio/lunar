@@ -274,7 +274,7 @@ class DiscountResource extends BaseResource
                     $slug = str($class)->classBasename()->kebab()->replace('-', '_');
 
                     return [
-                        $class => __('lunarpanel::discount.form.type.options.' . $slug . '.label'),
+                        $class => __('lunarpanel::discount.form.type.options.'.$slug.'.label'),
                     ];
                 })
             )
@@ -311,8 +311,8 @@ class DiscountResource extends BaseResource
                     __('lunarpanel::discount.form.fixed_value.label')
                 ),
             Forms\Components\TextInput::make('data.percentage')->visible(
-                    fn (Forms\Get $get) => ! $get('data.fixed_value')
-                )
+                fn (Forms\Get $get) => ! $get('data.fixed_value')
+            )
                 ->numeric()
                 ->label(
                     __('lunarpanel::discount.form.percentage.label')

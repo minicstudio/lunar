@@ -19,7 +19,7 @@ class BlogServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/blog.php', 'lunar.blog');
+        $this->mergeConfigFrom(__DIR__.'/../config/blog.php', 'lunar.blog');
     }
 
     /**
@@ -41,10 +41,10 @@ class BlogServiceProvider extends ServiceProvider
      */
     protected function loadPackageAssets(): void
     {
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'lunarpanel.blog');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunarpanel.blog');
 
         if (! config('lunar.database.disable_migrations', false)) {
-            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
     }
 
@@ -54,11 +54,11 @@ class BlogServiceProvider extends ServiceProvider
     protected function publishAssets(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/blog.php' => config_path('lunar/blog.php'),
+            __DIR__.'/../config/blog.php' => config_path('lunar/blog.php'),
         ], 'lunar.blog.config');
 
         $this->publishesMigrations([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'lunar.blog.migrations');
     }
 
@@ -116,7 +116,7 @@ class BlogServiceProvider extends ServiceProvider
      */
     protected function registerModelManifest(): void
     {
-        ModelManifest::addDirectory(__DIR__ . '/Models');
+        ModelManifest::addDirectory(__DIR__.'/Models');
     }
 
     /**
@@ -126,7 +126,7 @@ class BlogServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                RunLunarBlogSeederCommand::class
+                RunLunarBlogSeederCommand::class,
             ]);
         }
     }

@@ -37,9 +37,9 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Doelcollectie',
-                    'helper_text' => 'Kies naar welke collectie de onderliggende items van deze collectie moeten worden overgezet.'
+                    'helper_text' => 'Kies naar welke collectie de onderliggende items van deze collectie moeten worden overgezet.',
                 ],
-            ]
+            ],
         ],
         'products' => [
             'label' => 'Producten',
@@ -51,7 +51,7 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Product losmaken',
-                    ]
+                    ],
                 ],
             ],
         ],

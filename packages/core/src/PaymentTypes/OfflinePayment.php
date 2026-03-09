@@ -2,7 +2,6 @@
 
 namespace Lunar\PaymentTypes;
 
-use Illuminate\Support\Facades\URL;
 use Lunar\Base\DataTransferObjects\PaymentAuthorize;
 use Lunar\Base\DataTransferObjects\PaymentCapture;
 use Lunar\Base\DataTransferObjects\PaymentRefund;
@@ -67,7 +66,7 @@ class OfflinePayment extends AbstractPayment
     public function initiatePayment()
     {
         return [
-            'redirectUrl' => $this->data['successUrl']
+            'redirectUrl' => $this->data['successUrl'],
         ];
     }
 }

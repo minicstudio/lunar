@@ -20,6 +20,6 @@ class LocationsServiceProvider extends ServiceProvider
      */
     protected function registerModelManifest(): void
     {
-        ModelManifest::addDirectory(__DIR__ . '/Models');
+        ModelManifest::addDirectory(__DIR__.'/Models');
     }
 }

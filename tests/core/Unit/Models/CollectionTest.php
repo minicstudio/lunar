@@ -2,13 +2,13 @@
 
 uses(\Lunar\Tests\Core\TestCase::class);
 
+use Lunar\Facades\StorefrontSession;
 use Lunar\FieldTypes\Text;
+use Lunar\Models\Channel;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
-use Lunar\Models\CustomerGroup;
-use Lunar\Facades\StorefrontSession;
-use Lunar\Models\Channel;
 use Lunar\Models\Currency;
+use Lunar\Models\CustomerGroup;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -22,7 +22,6 @@ test('can make a collection', function () {
 
     expect('Red Products')->toEqual($collection->translateAttribute('name'));
 });
-
 
 test('scopeAvailableCustomerGroups returns collections matching session customer groups and visibility rules', function () {
     $channel = Channel::where('default', true)->first();

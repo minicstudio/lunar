@@ -68,7 +68,7 @@ function createCalculateCartWithLine(int $price, int $quantity = 1, int $taxRate
 
 function runCalculatePipeline(Cart $cart): Cart
 {
-    return app(Calculate::class)->handle($cart, fn($cart) => $cart);
+    return app(Calculate::class)->handle($cart, fn ($cart) => $cart);
 }
 
 test('handle calculates cart totals without discounts', function () {

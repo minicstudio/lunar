@@ -59,7 +59,7 @@ it('generateInvoice throws on non-successful response', function () {
     $client = new SmartbillApiClient;
     $client->withMockClient($mock);
 
-    expect(fn() => $client->generateInvoice(makeSmartbillInvoiceBody()))
+    expect(fn () => $client->generateInvoice(makeSmartbillInvoiceBody()))
         ->toThrow(FailedErpInvoiceGenerationException::class);
 });
 
@@ -71,7 +71,7 @@ it('downloadInvoicePDF throws on non-successful response', function () {
     $client = new SmartbillApiClient;
     $client->withMockClient($mock);
 
-    expect(fn() => $client->downloadInvoicePDF(new SmartbillPrintRequestQuery('S', '1', 'RO123')))
+    expect(fn () => $client->downloadInvoicePDF(new SmartbillPrintRequestQuery('S', '1', 'RO123')))
         ->toThrow(FailedErpInvoiceGenerationException::class);
 });
 

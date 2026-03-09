@@ -4,9 +4,9 @@ namespace Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages;
 
 use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Support\Facades\FilamentIcon;
-use Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers\CustomerTypeRelationManager;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
 use Lunar\Shipping\Filament\Resources\ShippingMethodResource;
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers\CustomerTypeRelationManager;
 
 class ManageShippingMethodLimitations extends BaseManageRelatedRecords
 {

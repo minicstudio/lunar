@@ -223,7 +223,7 @@ it('downloadAWBPDF returns successful response', function () {
 
     // Also bind a mocked token provider to avoid container issues in parallel execution
     $tokenProvider = new SamedayTokenProvider($client);
-    app()->bind(SamedayTokenProvider::class, fn() => $tokenProvider);
+    app()->bind(SamedayTokenProvider::class, fn () => $tokenProvider);
 
     $provider = new SamedayShippingProvider($client);
     $resp = $provider->downloadAWBPDF('AWB123');

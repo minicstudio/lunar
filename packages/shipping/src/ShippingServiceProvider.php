@@ -4,13 +4,13 @@ namespace Lunar\Addons\Shipping;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
-use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Addons\Shipping\Console\SyncShippingCitiesCommand;
 use Lunar\Addons\Shipping\Console\SyncShippingCountiesCommand;
 use Lunar\Addons\Shipping\Console\SyncShippingLockersCommand;
 use Lunar\Addons\Shipping\Exceptions\ShippingInitializationException;
 use Lunar\Addons\Shipping\Filament\Extensions\ShippingExtension;
 use Lunar\Addons\Shipping\Observers\OrderObserver;
+use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Order;
 
@@ -21,7 +21,7 @@ class ShippingServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/shipping.php', 'lunar.shipping');
+        $this->mergeConfigFrom(__DIR__.'/../config/shipping.php', 'lunar.shipping');
     }
 
     /**
@@ -45,7 +45,7 @@ class ShippingServiceProvider extends ServiceProvider
     protected function loadPackageAssets(): void
     {
         if (! config('lunar.database.disable_migrations', false)) {
-            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
     }
 
@@ -55,19 +55,19 @@ class ShippingServiceProvider extends ServiceProvider
     protected function publishAssets(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/shipping.php' => config_path('lunar/shipping.php'),
+            __DIR__.'/../config/shipping.php' => config_path('lunar/shipping.php'),
         ], 'lunar.shipping.config');
 
         // loop through the shipping providers and publish their configs
         $shippingProviders = config('lunar.shipping.providers', []);
         foreach ($shippingProviders as $provider) {
             $this->publishes([
-                __DIR__ . "/Providers/{$provider}/config.php" => config_path("lunar/shipping/{$provider}.php"),
+                __DIR__."/Providers/{$provider}/config.php" => config_path("lunar/shipping/{$provider}.php"),
             ], 'lunar.shipping.config');
         }
 
         $this->publishesMigrations([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'lunar.shipping.migrations');
     }
 
@@ -76,7 +76,7 @@ class ShippingServiceProvider extends ServiceProvider
      */
     protected function registerModelManifest(): void
     {
-        ModelManifest::addDirectory(__DIR__ . '/Models');
+        ModelManifest::addDirectory(__DIR__.'/Models');
     }
 
     /**

@@ -315,7 +315,7 @@ return [
                         'bulk' => [
                             'heading' => 'Delete selected discount purchasables',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [
@@ -369,7 +369,7 @@ return [
                         'bulk' => [
                             'heading' => 'Delete selected discount purchasables',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [
@@ -437,7 +437,7 @@ return [
                         'bulk' => [
                             'heading' => 'Delete selected discount purchasables',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [

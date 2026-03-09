@@ -22,7 +22,7 @@ class NominatimConnector extends Connector
         $contact = collect(config('lunar.shipping.contact_recipients'))->first();
 
         return [
-            'User-Agent' => config('app.name') . ' (' . $contact . ')',
+            'User-Agent' => config('app.name').' ('.$contact.')',
             'Accept-Language' => 'en',
         ];
     }

@@ -99,8 +99,8 @@ class CustomerGroupRelationManager extends BaseRelationManager
                 ])->recordTitle(function ($record) {
                     return $record->name;
                 })
-                ->modalHeading(__('lunarpanel::relationmanagers.customer_groups.actions.attach.label'))
-                ->preloadRecordSelect()
+                    ->modalHeading(__('lunarpanel::relationmanagers.customer_groups.actions.attach.label'))
+                    ->preloadRecordSelect()
                     ->label(
                         __('lunarpanel::relationmanagers.customer_groups.actions.attach.label')
                     )->after(
@@ -127,7 +127,7 @@ class CustomerGroupRelationManager extends BaseRelationManager
                         $this->getOwnerRecord()
                     )
                 )
-                ->modalHeading(__('lunarpanel::relationmanagers.customer_groups.actions.edit.modal.heading')),
+                    ->modalHeading(__('lunarpanel::relationmanagers.customer_groups.actions.edit.modal.heading')),
             ]);
     }
 }

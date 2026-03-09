@@ -31,7 +31,7 @@ return [
                 'heading' => 'Delete attribute',
                 'bulk' => [
                     'heading' => 'Delete selected attributes',
-                ],  
+                ],
             ],
         ],
     ],

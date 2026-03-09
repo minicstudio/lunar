@@ -3,6 +3,7 @@
 uses(\Lunar\Tests\Core\TestCase::class)->group('carts');
 
 use Illuminate\Support\Facades\Config;
+use Lunar\Base\Purchasable;
 use Lunar\DataTypes\Price as DataTypesPrice;
 use Lunar\DataTypes\ShippingOption;
 use Lunar\DiscountTypes\AdvancedAmountOff;
@@ -10,7 +11,6 @@ use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\FingerprintMismatchException;
 use Lunar\Facades\Discounts;
 use Lunar\Facades\ShippingManifest;
-use Lunar\Base\Purchasable;
 use Lunar\Models\Cart;
 use Lunar\Models\CartAddress;
 use Lunar\Models\CartLine;
@@ -642,7 +642,7 @@ test('can remove cart lines', function () {
 
     expect($cart->lines)->toHaveCount(0);
 });
-    
+
 test('clearNonPurchasableLines removes invalid lines and keeps valid purchasable lines', function () {
     $currency = Currency::factory()->create([
         'default' => true,

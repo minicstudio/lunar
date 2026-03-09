@@ -42,5 +42,4 @@ class BlogPlugin implements Plugin
     {
         return $panel;
     }
-
 }

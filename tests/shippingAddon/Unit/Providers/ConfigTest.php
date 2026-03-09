@@ -7,7 +7,7 @@ use Lunar\Addons\Shipping\Providers\Pickup\PickupShippingProvider;
 
 function shippingProviderConfigPath(string $provider): string
 {
-    return __DIR__ . "/../../../../packages/shipping/src/Providers/{$provider}/config.php";
+    return __DIR__."/../../../../packages/shipping/src/Providers/{$provider}/config.php";
 }
 
 test('pickup config enabled defaults to false from env', function () {

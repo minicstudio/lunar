@@ -154,7 +154,7 @@ return [
         'edit' => [
             'title' => 'Alapinformációk',
             'navigation_label' => 'Kedvezmény szerkesztése',
-        ]
+        ],
     ],
     'relationmanagers' => [
         'collections' => [
@@ -326,7 +326,7 @@ return [
                         'bulk' => [
                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [
@@ -380,7 +380,7 @@ return [
                         'bulk' => [
                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [
@@ -429,12 +429,12 @@ return [
                     ],
                 ],
                 'delete' => [
-                     'modal' => [
-                         'heading' => 'Kedvezményes tétel törlése',
-                         'bulk' => [
-                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
-                         ],
-                     ]
+                    'modal' => [
+                        'heading' => 'Kedvezményes tétel törlése',
+                        'bulk' => [
+                            'heading' => 'Kiválasztott kedvezményes tételek törlése',
+                        ],
+                    ],
                 ],
             ],
             'table' => [

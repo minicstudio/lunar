@@ -101,7 +101,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException('Failed to generate AWB: ' . $response->body());
+            throw new FailedAWBGenerationException('Failed to generate AWB: '.$response->body());
         }
 
         return $response->json();
@@ -119,7 +119,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException('Failed to download AWB PDF: ' . $response->body());
+            throw new FailedAWBGenerationException('Failed to download AWB PDF: '.$response->body());
         }
 
         return $response;
@@ -137,7 +137,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedToGetLocationsException('Failed to retrieve counties: ' . $response->body());
+            throw new FailedToGetLocationsException('Failed to retrieve counties: '.$response->body());
         }
 
         return $response->json();
@@ -163,7 +163,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedToGetLocationsException('Failed to retrieve cities: ' . $response->body());
+            throw new FailedToGetLocationsException('Failed to retrieve cities: '.$response->body());
         }
 
         return $response->json();
@@ -184,7 +184,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedToGetLockersException('Failed to retrieve locker locations: ' . $response->body());
+            throw new FailedToGetLockersException('Failed to retrieve locker locations: '.$response->body());
         }
 
         return $response->json();

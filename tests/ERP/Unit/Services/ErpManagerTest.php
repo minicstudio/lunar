@@ -24,7 +24,7 @@ beforeEach(function () {
 
 it('returns provider instance when enabled', function () {
     $mockClient = \Mockery::mock(ErpApiClientInterface::class);
-    app()->singleton(MagisterErpProvider::class, fn() => new MagisterErpProvider($mockClient));
+    app()->singleton(MagisterErpProvider::class, fn () => new MagisterErpProvider($mockClient));
 
     $manager = new ErpManager(['magister']);
     $provider = $manager->getProvider(ErpProviderEnum::magister);

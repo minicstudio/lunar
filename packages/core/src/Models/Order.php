@@ -18,8 +18,8 @@ use Lunar\Base\Traits\HasMacros;
 use Lunar\Base\Traits\HasTags;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Base\Traits\Searchable;
-use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\Database\Factories\OrderFactory;
+use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\Exceptions\UnsupportedWeightUnitException;
 
 /**

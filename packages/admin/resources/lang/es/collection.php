@@ -37,7 +37,7 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Colección Objetivo',
-                    'helper_text' => 'Seleccione a qué colección se transferirán los elementos secundarios de esta colección.'
+                    'helper_text' => 'Seleccione a qué colección se transferirán los elementos secundarios de esta colección.',
                 ],
             ],
         ],
@@ -51,7 +51,7 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Separar producto',
-                    ]
+                    ],
                 ],
             ],
         ],

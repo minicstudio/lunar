@@ -4,6 +4,8 @@ uses(\Lunar\Tests\ERP\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Collection;
+use Lunar\ERP\Models\ErpSyncTemp;
+use Lunar\ERP\Providers\Magister\Jobs\CreateProductsAndVariantsJob;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
 use Lunar\Models\Product;
@@ -12,8 +14,6 @@ use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
-use Lunar\ERP\Models\ErpSyncTemp;
-use Lunar\ERP\Providers\Magister\Jobs\CreateProductsAndVariantsJob;
 
 beforeEach(function () {
     $this->createLanguages();

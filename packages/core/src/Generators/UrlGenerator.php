@@ -30,8 +30,6 @@ class UrlGenerator
 
     /**
      * Languages for URL generation.
-     * 
-     * @var \Illuminate\Database\Eloquent\Collection
      */
     protected Collection $languages;
 
@@ -47,7 +45,6 @@ class UrlGenerator
     /**
      * Set the language for URL generation.
      *
-     * @param  \Lunar\Models\Contracts\Language|null  $language
      * @return $this
      */
     public function setLanguage(?LanguageContract $language)
@@ -60,8 +57,6 @@ class UrlGenerator
     /**
      * Get the language for URL generation.
      * Returns the currently set language or falls back to default language.
-     *
-     * @return \Lunar\Models\Contracts\Language
      */
     protected function getLanguage(): LanguageContract
     {
@@ -97,7 +92,6 @@ class UrlGenerator
     /**
      * Generate URLs for a given attribute across all languages.
      *
-     * @param  string  $attribute
      * @return void
      */
     protected function generateUrlsForAttribute(string $attribute)
@@ -131,7 +125,6 @@ class UrlGenerator
             'slug' => $uniqueSlug,
         ]);
     }
-
 
     /**
      * Generates unique slug based on the given slug by adding suffix numbers.

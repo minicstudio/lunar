@@ -66,7 +66,7 @@ class ChannelReviewRelationManager extends BaseRelationManager
     public function getDefaultTable(Table $table): Table
     {
         return $table->query(
-            fn() => $this->getRelationship()->getQuery()->forChannel()
+            fn () => $this->getRelationship()->getQuery()->forChannel()
         )
             ->columns(
                 static::getRelationManagerTableColumns()
