@@ -13,6 +13,10 @@ return new class extends Migration
 
     public function up(): void
     {
+        if (! Schema::hasColumn($this->prefix.'customers', 'vat_number')) {
+            return;
+        }
+
         Schema::table($this->prefix.'customers', function (Blueprint $table) {
             $table->renameColumn('vat_number', 'tax_identifier');
         });
