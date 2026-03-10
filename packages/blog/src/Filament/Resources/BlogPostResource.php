@@ -52,11 +52,6 @@ class BlogPostResource extends BaseResource
      */
     protected static function hasPermission(): bool
     {
-        // TODO: https://minicstudio.atlassian.net/jira/software/projects/LFP/boards/95/backlog?selectedIssue=LFP-347
-        if (! config('lunar.blog.enabled')) {
-            return false;
-        }
-
         return true;
     }
 
@@ -256,10 +251,10 @@ class BlogPostResource extends BaseResource
         return TextColumn::make('status')
             ->label(__('lunarpanel.blog::post.table.status.label'))
             ->badge()
-            ->getStateUsing(fn(Model $record) => $record->status)
-            ->formatStateUsing(fn($state) => __('lunarpanel.blog::post.table.status.states.' . $state))
+            ->getStateUsing(fn (Model $record) => $record->status)
+            ->formatStateUsing(fn ($state) => __('lunarpanel.blog::post.table.status.states.'.$state))
             ->color(
-                fn(string $state): string => match ($state) {
+                fn (string $state): string => match ($state) {
                     'draft' => 'warning',
                     'published' => 'success',
                 }
@@ -273,7 +268,7 @@ class BlogPostResource extends BaseResource
     {
         return TextColumn::make('author.full_name')
             ->label(__('lunarpanel.blog::post.table.author.label'))
-            ->getStateUsing(fn(Model $record) => $record?->authorFullName);
+            ->getStateUsing(fn (Model $record) => $record?->authorFullName);
     }
 
     /**

@@ -62,7 +62,7 @@ class DpdApiClient extends Connector implements ShippingApiClient
         $response = $this->send($request);
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException('Failed to download AWB PDF: ' . $response->body());
+            throw new FailedAWBGenerationException('Failed to download AWB PDF: '.$response->body());
         }
 
         return $response;

@@ -24,7 +24,7 @@ class EnsureReviewPermissions
         }
 
         $permission = 'sales:reviews:manage';
-        
+
         Permission::firstOrCreate([
             'name' => $permission,
             'guard_name' => $guard,

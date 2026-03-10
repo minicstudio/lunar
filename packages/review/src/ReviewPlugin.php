@@ -24,7 +24,7 @@ class ReviewPlugin implements Plugin
         $panel->navigationGroups([
             NavigationGroup::make('review')
                 ->label(
-                    fn() => __('lunarpanel.review::plugin.navigation.group')
+                    fn () => __('lunarpanel.review::plugin.navigation.group')
                 ),
         ])->resources([
             \Lunar\Review\Filament\Resources\ReviewResource::class,

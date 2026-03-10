@@ -27,7 +27,7 @@ class TranslatedText extends BaseFieldType
     {
         $disableToolbar = (bool) $attribute->configuration->get('disable_richtext_toolbar');
         $richtext = (bool) $attribute->configuration->get('richtext');
-        
+
         return TranslatedTextComponent::make($attribute->handle)
             ->optionRichtext(($disableToolbar === true || $richtext === true))
             ->richtextDisableAllToolbarButtons($disableToolbar)

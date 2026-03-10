@@ -144,7 +144,7 @@ class AttributesRelationManager extends BaseRelationManager
                         return $data;
                     })
                     ->label(__('lunarpanel::attribute.table.actions.create.label'))
-                    ->modalHeading(__('lunarpanel::attribute.table.actions.create.heading'))
+                    ->modalHeading(__('lunarpanel::attribute.table.actions.create.heading')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()

@@ -58,7 +58,7 @@ class ShipBy implements ShippingRateInterface
         $address = $cart->shippingAddress ?? $cart->address ?? null;
         if ($address && method_exists($shippingMethod, 'customerTypes')) {
             $customerTypeId = $address->address_customer_type_id ?? null;
-            if ($customerTypeId && !$shippingMethod->customerTypes->pluck('id')->contains($customerTypeId)) {
+            if ($customerTypeId && ! $shippingMethod->customerTypes->pluck('id')->contains($customerTypeId)) {
                 return null;
             }
         }
@@ -123,6 +123,7 @@ class ShipBy implements ShippingRateInterface
             if ($max) {
                 return $tier >= $min && $tier < $max;
             }
+
             return $tier >= $min;
         })->sortByDesc('min_quantity')->first();
 

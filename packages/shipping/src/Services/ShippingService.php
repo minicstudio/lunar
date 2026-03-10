@@ -3,12 +3,12 @@
 namespace Lunar\Addons\Shipping\Services;
 
 use Illuminate\Support\Collection;
-use Lunar\Models\Order;
 use Lunar\Addons\Shipping\Connectors\NominatimConnector;
 use Lunar\Addons\Shipping\Contracts\ShippingProviderInterface;
 use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
 use Lunar\Addons\Shipping\Exceptions\OrderMissingShippingProviderException;
 use Lunar\Addons\Shipping\Providers\Sameday\Requests\GeocodeCountyRequest;
+use Lunar\Models\Order;
 use Saloon\Http\Response;
 
 class ShippingService

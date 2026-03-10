@@ -145,18 +145,21 @@ class ManageShippingRates extends ManageRelatedRecords
                             if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
                                 return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_weight.label');
                             }
+
                             return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_spend.label');
                         })
                         ->helperText(function (Get $get) {
                             if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
                                 return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_weight.helper_text');
                             }
+
                             return null;
                         })
                         ->suffix(function (Get $get) {
                             if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
                                 return 'kg';
                             }
+
                             return null;
                         })
                         ->numeric()
@@ -170,6 +173,7 @@ class ManageShippingRates extends ManageRelatedRecords
                             $component->state(
                                 $record->priceBreaks->map(function ($price) use ($chargeBy, $currencies) {
                                     $currency = $currencies->first(fn ($currency) => $currency->id == $price->currency_id);
+
                                     return [
                                         'customer_group_id' => $price->customer_group_id,
                                         'price' => $price->price->decimal,
@@ -210,21 +214,21 @@ class ManageShippingRates extends ManageRelatedRecords
             Tables\Actions\CreateAction::make()->label(
                 __('lunarpanel.shipping::relationmanagers.shipping_rates.actions.create.label')
             )
-            ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.create.label'))
-            ->action(function (Table $table, ?ShippingRate $shippingRate = null, array $data = []) {
-                $relationship = $table->getRelationship();
+                ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.create.label'))
+                ->action(function (Table $table, ?ShippingRate $shippingRate = null, array $data = []) {
+                    $relationship = $table->getRelationship();
 
-                $record = new ShippingRate;
-                $record->shipping_method_id = $data['shipping_method_id'];
-                $relationship->save($record);
+                    $record = new ShippingRate;
+                    $record->shipping_method_id = $data['shipping_method_id'];
+                    $relationship->save($record);
 
-                static::saveShippingRate($record, $data);
-            })->slideOver(),
+                    static::saveShippingRate($record, $data);
+                })->slideOver(),
         ])->actions([
 
             Tables\Actions\EditAction::make()->slideOver()->action(function (ShippingRate $shippingRate, array $data) {
-                    static::saveShippingRate($shippingRate, $data);
-                })
+                static::saveShippingRate($shippingRate, $data);
+            })
                 ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_rates.actions.edit.modal.heading')),
             Tables\Actions\DeleteAction::make()
                 ->requiresConfirmation()
@@ -283,12 +287,12 @@ class ManageShippingRates extends ManageRelatedRecords
                 $currency = $currencies->first(fn ($currency) => $currency->id == $price['currency_id']);
                 if ($chargeBy == 'cart_total') {
                     $price['min_quantity'] = (int) ($price['min_quantity'] * $currency->factor);
-                    if (!empty($price['max_quantity'])) {
+                    if (! empty($price['max_quantity'])) {
                         $price['max_quantity'] = (int) ($price['max_quantity'] * $currency->factor);
                     }
                 } else {
                     $price['min_quantity'] = (int) $price['min_quantity'];
-                    if (!empty($price['max_quantity'])) {
+                    if (! empty($price['max_quantity'])) {
                         $price['max_quantity'] = (int) $price['max_quantity'];
                     }
                 }

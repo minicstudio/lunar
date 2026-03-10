@@ -77,14 +77,14 @@ class ProductConditionRelationManager extends BaseRelationManager
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.conditions.actions.attach.label')
                 )
-                ->modalHeading(
-                    __('lunarpanel::discount.relationmanagers.conditions.actions.attach.modal.heading')
-                )
-                ->mutateFormDataUsing(function (array $data) {
-                    $data['type'] = 'condition';
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.conditions.actions.attach.modal.heading')
+                    )
+                    ->mutateFormDataUsing(function (array $data) {
+                        $data['type'] = 'condition';
 
-                    return $data;
-                }),
+                        return $data;
+                    }),
             ])->columns([
                 ThumbnailImageColumn::make('discountable_id')
                     ->resolveThumbnailUrlUsing(fn (?Model $record) => $record?->discountable?->getThumbnailImage())
@@ -107,7 +107,7 @@ class ProductConditionRelationManager extends BaseRelationManager
                     ),
             ])->actions([
                 Tables\Actions\DeleteAction::make()
-                    ->modalHeading(__('lunarpanel::discount.relationmanagers.conditions.actions.delete.modal.heading'))
+                    ->modalHeading(__('lunarpanel::discount.relationmanagers.conditions.actions.delete.modal.heading')),
             ])->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()
                     ->modalHeading(__('lunarpanel::discount.relationmanagers.conditions.actions.delete.modal.bulk.heading')),

@@ -86,7 +86,7 @@ class MagisterErpProvider implements ErpProviderInterface, SupportsLocalities
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new ErpSyncException('Failed to sync localities from Magister ERP: ' . $e->getMessage());
+            throw new ErpSyncException('Failed to sync localities from Magister ERP: '.$e->getMessage());
         }
     }
 
@@ -127,7 +127,7 @@ class MagisterErpProvider implements ErpProviderInterface, SupportsLocalities
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            throw new ErpSyncException('Failed to sync attributes from Magister ERP: ' . $e->getMessage());
+            throw new ErpSyncException('Failed to sync attributes from Magister ERP: '.$e->getMessage());
         }
     }
 }

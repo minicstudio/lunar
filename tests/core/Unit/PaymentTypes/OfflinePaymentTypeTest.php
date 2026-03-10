@@ -1,6 +1,7 @@
 <?php
 
 uses(\Lunar\Tests\Core\TestCase::class);
+
 use Illuminate\Support\Facades\Config;
 use Lunar\Base\DataTransferObjects\PaymentAuthorize;
 use Lunar\Facades\Payments;
@@ -8,6 +9,7 @@ use Lunar\Models\Cart;
 use Lunar\Models\CartAddress;
 use Lunar\Models\Country;
 use Lunar\Models\Order;
+use Lunar\PaymentTypes\OfflinePayment;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -120,4 +122,42 @@ test('can set additional meta', function () {
     $meta = (array) $order->meta;
 
     expect($meta['foo'])->toEqual('bar');
+});
+
+test('initiatePayment returns signed redirect URL', function () {
+    $cart = Cart::factory()->create();
+
+    CartAddress::factory()->create([
+        'cart_id' => $cart->id,
+        'type' => 'billing',
+        'country_id' => Country::factory(),
+        'first_name' => 'Santa',
+        'line_one' => '123 Elf Road',
+        'city' => 'Lapland',
+        'postcode' => 'BILL',
+    ]);
+
+    CartAddress::factory()->create([
+        'cart_id' => $cart->id,
+        'type' => 'shipping',
+        'country_id' => Country::factory(),
+        'first_name' => 'Santa',
+        'line_one' => '123 Elf Road',
+        'city' => 'Lapland',
+        'postcode' => 'SHIPP',
+    ]);
+
+    $successUrl = 'https://example.com/payment/success';
+
+    $paymentType = (new OfflinePayment)
+        ->cart($cart->refresh())
+        ->withData([
+            'successUrl' => $successUrl,
+        ]);
+
+    $result = $paymentType->initiatePayment();
+
+    expect($result)->toBeArray()
+        ->and($result)->toHaveKey('redirectUrl')
+        ->and($result['redirectUrl'])->toBe($successUrl);
 });

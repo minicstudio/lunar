@@ -17,7 +17,7 @@ use Lunar\Models\ProductVariant;
 use Lunar\Review\Database\Factories\ReviewFactory;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
-class Review extends BaseModel implements SpatieHasMedia, Contracts\Review
+class Review extends BaseModel implements Contracts\Review, SpatieHasMedia
 {
     use HasFactory, HasMedia, HasTranslations, SoftDeletes;
 

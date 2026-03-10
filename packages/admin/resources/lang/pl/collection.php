@@ -37,9 +37,9 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Kolekcja docelowa',
-                    'helper_text' => 'Wybierz kolekcję, do której mają zostać przeniesione elementy podrzędne tej kolekcji.'
+                    'helper_text' => 'Wybierz kolekcję, do której mają zostać przeniesione elementy podrzędne tej kolekcji.',
                 ],
-            ]
+            ],
         ],
         'media' => [
             'label' => 'Media',
@@ -54,7 +54,7 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Odłącz produkt',
-                    ]
+                    ],
                 ],
             ],
         ],

@@ -158,8 +158,8 @@ class ReviewResource extends BaseResource
                 Action::make('manageOrder')
                     ->label(__('lunarpanel.review::plugin.actions.manage_order.label'))
                     ->icon('heroicon-o-arrow-right')
-                    ->visible(fn(Model $record): bool => (bool) $record->order)
-                    ->url(fn(Model $record) => ManageOrder::getUrl(['record' => $record->order?->id])),
+                    ->visible(fn (Model $record): bool => (bool) $record->order)
+                    ->url(fn (Model $record) => ManageOrder::getUrl(['record' => $record->order?->id])),
             ])
             ->recordUrl(function (Model $record): ?string {
                 return $record->order ? ManageOrder::getUrl(['record' => $record->order->id]) : null;
@@ -180,8 +180,8 @@ class ReviewResource extends BaseResource
             ->trueLabel(__('lunarpanel.review::plugin.filters.status.options.approved'))
             ->falseLabel(__('lunarpanel.review::plugin.filters.status.options.not_approved'))
             ->queries(
-                true: fn(Builder $query) => $query->whereNotNull('approved_at'),
-                false: fn(Builder $query) => $query->whereNull('approved_at'),
+                true: fn (Builder $query) => $query->whereNotNull('approved_at'),
+                false: fn (Builder $query) => $query->whereNull('approved_at'),
             );
     }
 
@@ -228,7 +228,7 @@ class ReviewResource extends BaseResource
                 $availableTypes = config('lunar.review.available_types', []);
 
                 return collect($availableTypes)
-                    ->mapWithKeys(fn($class) => [$class::morphName() => Str::headline($class::morphName())])
+                    ->mapWithKeys(fn ($class) => [$class::morphName() => Str::headline($class::morphName())])
                     ->all();
             })
             ->attribute('reviewable_type')
@@ -256,7 +256,7 @@ class ReviewResource extends BaseResource
     {
         return TextColumn::make('order.reference')
             ->label(__('lunarpanel.review::plugin.table.order_reference.label'))
-            ->getStateUsing(fn(Model $record) => $record->order?->reference)
+            ->getStateUsing(fn (Model $record) => $record->order?->reference)
             ->searchable();
     }
 
@@ -303,7 +303,7 @@ class ReviewResource extends BaseResource
     {
         return TextColumn::make('attribute_data.rating')
             ->label(__('lunarpanel.review::plugin.table.rating.label'))
-            ->getStateUsing(fn(Model $record) => $record->translateAttribute('rating'))
+            ->getStateUsing(fn (Model $record) => $record->translateAttribute('rating'))
             ->searchable();
     }
 
@@ -315,10 +315,10 @@ class ReviewResource extends BaseResource
         return TextColumn::make('approved_at')
             ->label(__('lunarpanel.review::plugin.table.approved_at.label'))
             ->badge()
-            ->getStateUsing(fn(Model $record) => $record->approved_at ? 'approved' : 'not_approved')
-            ->formatStateUsing(fn(string $state) => __('lunarpanel.review::plugin.table.approved_at.states.' . $state))
+            ->getStateUsing(fn (Model $record) => $record->approved_at ? 'approved' : 'not_approved')
+            ->formatStateUsing(fn (string $state) => __('lunarpanel.review::plugin.table.approved_at.states.'.$state))
             ->color(
-                fn(string $state): string => match ($state) {
+                fn (string $state): string => match ($state) {
                     'approved' => 'success',
                     'not_approved' => 'warning',
                 }

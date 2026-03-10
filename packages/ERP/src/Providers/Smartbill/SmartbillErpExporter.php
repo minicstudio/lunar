@@ -55,7 +55,7 @@ class SmartbillErpExporter implements ErpDataExporterInterface
         try {
             $response = $this->client->generateInvoice($requestBody);
         } catch (\Throwable $e) {
-            throw new FailedErpInvoiceGenerationException('Invoice generation failed: ' . $e->getMessage());
+            throw new FailedErpInvoiceGenerationException('Invoice generation failed: '.$e->getMessage());
         }
 
         if (! isset($response['series']) || ! isset($response['number'])) {
@@ -78,7 +78,7 @@ class SmartbillErpExporter implements ErpDataExporterInterface
         $taxNames = config('lunar.erp.smartbill.tax_names');
 
         $billingAddress = $order->billingAddress;
-        $fullName = $billingAddress->first_name . ' ' . $billingAddress->last_name;
+        $fullName = $billingAddress->first_name.' '.$billingAddress->last_name;
         $name = $billingAddress->company_name ? $billingAddress->company_name : $fullName;
         $defaultLocale = Language::where('default', true)->first()?->code;
 
@@ -92,8 +92,8 @@ class SmartbillErpExporter implements ErpDataExporterInterface
             ) {
                 $variant = $productLine->purchasable;
                 $productName = $variant->product->translateAttribute('name', $defaultLocale);
-                $options = $variant->values->map(fn($value) => $value->translate('name', $defaultLocale))->join(', ');
-                $displayName = $options ? $productName . ' - ' . $options : $productName;
+                $options = $variant->values->map(fn ($value) => $value->translate('name', $defaultLocale))->join(', ');
+                $displayName = $options ? $productName.' - '.$options : $productName;
 
                 return new SmartbillProduct(
                     name: $displayName,
@@ -137,7 +137,7 @@ class SmartbillErpExporter implements ErpDataExporterInterface
         $appliedCoupon = $order->appliedCoupon;
         if ($appliedCoupon) {
             $products[] = new SmartbillProduct(
-                name: 'Cupon de reducere' . ($appliedCoupon?->coupon ? ' - ' . $appliedCoupon?->coupon : ''),
+                name: 'Cupon de reducere'.($appliedCoupon?->coupon ? ' - '.$appliedCoupon?->coupon : ''),
                 code: 'CUPON',
                 measuringUnitName: 'buc',
                 currency: $order->currency_code,
@@ -181,7 +181,7 @@ class SmartbillErpExporter implements ErpDataExporterInterface
             ->whereIn('tax_rate_id', $taxZone->taxRates->pluck('id'))
             ->with('taxRate')
             ->get()
-            ->sortBy(fn($item) => $item->taxRate->priority)
+            ->sortBy(fn ($item) => $item->taxRate->priority)
             ->first();
     }
 

@@ -29,7 +29,7 @@ class ReviewServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/review.php', 'lunar.review');
+        $this->mergeConfigFrom(__DIR__.'/../config/review.php', 'lunar.review');
     }
 
     /**
@@ -55,10 +55,10 @@ class ReviewServiceProvider extends ServiceProvider
      */
     protected function loadPackageAssets(): void
     {
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'lunarpanel.review');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunarpanel.review');
 
         if (! config('lunar.database.disable_migrations', false)) {
-            $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
     }
 
@@ -68,11 +68,11 @@ class ReviewServiceProvider extends ServiceProvider
     protected function publishAssets(): void
     {
         $this->publishes([
-            __DIR__ . '/../config/review.php' => config_path('lunar/review.php'),
+            __DIR__.'/../config/review.php' => config_path('lunar/review.php'),
         ], 'lunar.review.config');
 
         $this->publishesMigrations([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'lunar.review.migrations');
     }
 
@@ -98,7 +98,7 @@ class ReviewServiceProvider extends ServiceProvider
     protected function registerMorphMap(): void
     {
         Relation::morphMap([
-            'review' => Review::modelClass()
+            'review' => Review::modelClass(),
         ]);
     }
 
@@ -107,7 +107,7 @@ class ReviewServiceProvider extends ServiceProvider
      */
     protected function registerModelManifest(): void
     {
-        ModelManifest::addDirectory(__DIR__ . '/Models');
+        ModelManifest::addDirectory(__DIR__.'/Models');
     }
 
     /**
@@ -136,14 +136,14 @@ class ReviewServiceProvider extends ServiceProvider
      */
     protected function registerModelMixins(): void
     {
-        Channel::mixin(new ChannelMixin());
-        Product::mixin(new ProductMixin());
-        ProductVariant::mixin(new ProductVariantMixin());
+        Channel::mixin(new ChannelMixin);
+        Product::mixin(new ProductMixin);
+        ProductVariant::mixin(new ProductVariantMixin);
     }
 
     /**
      * Register media definitions for the Review model.
-     * 
+     *
      * Only sets the definition if not already configured by the user.
      */
     protected function registerMediaDefinitions(): void
@@ -182,7 +182,7 @@ class ReviewServiceProvider extends ServiceProvider
 
     /**
      * Register path generators for the Review model.
-     * 
+     *
      * Merges Review path generators with existing media-library config.
      * User-configured generators take precedence.
      */
@@ -191,7 +191,7 @@ class ReviewServiceProvider extends ServiceProvider
         $existingGenerators = config('media-library.custom_path_generators', []);
         $reviewPathGenerator = config('lunar.review.path_generator');
 
-        if ($reviewPathGenerator && !isset($existingGenerators[Review::class])) {
+        if ($reviewPathGenerator && ! isset($existingGenerators[Review::class])) {
             $existingGenerators[Review::class] = $reviewPathGenerator;
         }
 

@@ -17,7 +17,7 @@ class ShippingExtension extends ViewPageExtension
 
         if ($this->hasInvoice($order)) {
             $actions[] = DownloadInvoicePdfAction::make();
-            
+
         }
 
         return $actions;

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create($this->prefix."shipping_provider_credentials", function (Blueprint $table) {
+        Schema::create($this->prefix.'shipping_provider_credentials', function (Blueprint $table) {
             $table->id();
             $table->string('provider'); // e.g. 'sameday', 'dpd'
             $table->string('token');
@@ -27,7 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists($this->prefix."shipping_provider_credentials");
+        Schema::dropIfExists($this->prefix.'shipping_provider_credentials');
     }
 
     /**
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function shouldRun(): bool
     {
-        return ! Schema::hasTable($this->prefix."shipping_provider_credentials");
+        return ! Schema::hasTable($this->prefix.'shipping_provider_credentials');
     }
 };

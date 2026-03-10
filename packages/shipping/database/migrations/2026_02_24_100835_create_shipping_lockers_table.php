@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create($this->prefix."shipping_lockers", function (Blueprint $table) {
+        Schema::create($this->prefix.'shipping_lockers', function (Blueprint $table) {
             $table->id();
             $table->string('provider'); // e.g. 'sameday', 'fan_courier'
             $table->unsignedInteger('provider_locker_id');
@@ -19,12 +19,12 @@ return new class extends Migration
             $table->unsignedTinyInteger('locker_type')->nullable(); // e.g. box (locker) - 0, pickup point (store) - 1
             $table->string('county')->nullable();
             $table->foreignId('county_id')
-                ->constrained($this->prefix."shipping_counties")
+                ->constrained($this->prefix.'shipping_counties')
                 ->cascadeOnDelete();
             $table->unsignedInteger('provider_county_id')->nullable();
             $table->string('city')->nullable();
             $table->foreignId('city_id')
-                ->constrained($this->prefix."shipping_cities")
+                ->constrained($this->prefix.'shipping_cities')
                 ->cascadeOnDelete();
             $table->unsignedInteger('provider_city_id')->nullable();
             $table->string('postal_code')->nullable();
@@ -43,7 +43,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists($this->prefix."shipping_lockers");
+        Schema::dropIfExists($this->prefix.'shipping_lockers');
     }
 
     /**
@@ -51,6 +51,6 @@ return new class extends Migration
      */
     public function shouldRun(): bool
     {
-        return ! Schema::hasTable($this->prefix."shipping_lockers");
+        return ! Schema::hasTable($this->prefix.'shipping_lockers');
     }
 };

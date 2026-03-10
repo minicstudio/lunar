@@ -72,7 +72,7 @@ return [
                 'modal' => [
                     'heading' => 'Xóa bộ sưu tập',
                 ],
-            ]
+            ],
         ],
         'notifications' => [
             'collections-reordered' => [

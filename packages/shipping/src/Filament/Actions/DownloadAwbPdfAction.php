@@ -5,8 +5,8 @@ namespace Lunar\Addons\Shipping\Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Response;
-use Lunar\Models\Order;
 use Lunar\Addons\Shipping\Services\ShippingService;
+use Lunar\Models\Order;
 
 class DownloadAwbPdfAction extends Action
 {
@@ -17,7 +17,7 @@ class DownloadAwbPdfAction extends Action
     {
         return parent::make($name)
             ->label(__('Download AWB PDF'))
-            ->action(fn($livewire) => static::handle($livewire->record));
+            ->action(fn ($livewire) => static::handle($livewire->record));
     }
 
     /**

@@ -3,13 +3,15 @@
 uses(\Lunar\Tests\Core\TestCase::class)
     ->group('validation.cart_line');
 
-use Lunar\Exceptions\Carts\CartException;
+use Lunar\Exceptions\OutOfStockException;
 use Lunar\Models\Cart;
 use Lunar\Models\Currency;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 test('can validate available stock', function (int $stock, int $backorder, int $quantity, string $purchasable, bool $shouldValidate = true) {
+    config()->set('lunar.cart.stock_check.enabled', true);
+
     $currency = Currency::factory()->create();
 
     $cart = Cart::factory()->create([
@@ -35,7 +37,7 @@ test('can validate available stock', function (int $stock, int $backorder, int $
         $expectation = $expectation->not;
     }
 
-    $expectation->toThrow(CartException::class);
+    $expectation->toThrow(OutOfStockException::class);
 })->with([
     [
         100,

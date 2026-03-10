@@ -87,7 +87,7 @@ return [
                 'modal' => [
                     'heading' => 'Usuń kolekcję',
                 ],
-            ]
+            ],
         ],
         'notifications' => [
             'collections-reordered' => [

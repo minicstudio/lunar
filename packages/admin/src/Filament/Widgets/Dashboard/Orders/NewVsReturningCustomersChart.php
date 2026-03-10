@@ -109,7 +109,7 @@ class NewVsReturningCustomersChart extends ApexChartWidget
             ],
             'yaxis' => [
                 'title' => [
-                    'text' => __('lunarpanel::widgets.dashboard.orders.new_returning_customers.yaxis.label')
+                    'text' => __('lunarpanel::widgets.dashboard.orders.new_returning_customers.yaxis.label'),
                 ],
             ],
             'tooltip' => [

@@ -8,9 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-       Schema::create($this->prefix.'address_customer_type_shipping_method', function (Blueprint $table) {
+        Schema::create($this->prefix.'address_customer_type_shipping_method', function (Blueprint $table) {
             $table->id();
-            
+
             $table->foreignId('address_customer_type_id')
                 ->constrained($this->prefix.'address_customer_types')
                 ->name('act_sm_address_customer_type_id_foreign')

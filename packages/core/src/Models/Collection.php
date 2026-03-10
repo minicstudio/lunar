@@ -37,7 +37,7 @@ use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
  * @property ?\Illuminate\Support\Carbon $updated_at
  * @property ?\Illuminate\Support\Carbon $deleted_at
  */
-class Collection extends BaseModel implements Contracts\Collection, HasThumbnailImage, SpatieHasMedia, HasCustomerGroupAvailability
+class Collection extends BaseModel implements Contracts\Collection, HasCustomerGroupAvailability, HasThumbnailImage, SpatieHasMedia
 {
     use HasChannels,
         HasCustomerGroups,

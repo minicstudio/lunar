@@ -2,9 +2,8 @@
 
 namespace Lunar\ERP\Models\Contracts;
 
-interface ErpSyncLog 
+interface ErpSyncLog
 {
-
     public function scopeByProvider($query, string $provider);
 
     public function scopeByType($query, string $type);

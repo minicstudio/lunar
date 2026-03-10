@@ -2,7 +2,7 @@
 
 uses(\Lunar\Tests\Core\TestCase::class);
 
-use Lunar\DiscountTypes\AmountOff;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
@@ -49,7 +49,7 @@ test('can map discount with same purchasable with different meta', function () {
     ]);
 
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Test Coupon',
         'coupon' => '10OFF',
         'data' => [

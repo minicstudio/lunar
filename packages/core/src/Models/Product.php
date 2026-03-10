@@ -48,10 +48,11 @@ use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
  * @property ?\Illuminate\Support\Carbon $updated_at
  * @property ?\Illuminate\Support\Carbon $deleted_at
  */
-class Product extends BaseModel implements Contracts\Product, HasThumbnailImage, SpatieHasMedia, HasCustomerGroupAvailability
+class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAvailability, HasThumbnailImage, SpatieHasMedia
 {
     use HasChannels;
     use HasCustomerGroups;
+    use HasDiscount;
     use HasFactory;
     use HasMacros;
     use HasMedia;
@@ -61,7 +62,6 @@ class Product extends BaseModel implements Contracts\Product, HasThumbnailImage,
     use LogsActivity;
     use Searchable;
     use SoftDeletes;
-    use HasDiscount;
 
     /**
      * Return a new factory instance for the model.

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create($this->prefix."shipping_counties", function (Blueprint $table) {
+        Schema::create($this->prefix.'shipping_counties', function (Blueprint $table) {
             $table->id();
             $table->string('provider'); // e.g. 'sameday', 'fan_courier'
             $table->unsignedInteger('provider_county_id');
@@ -29,7 +29,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists($this->prefix."shipping_counties");
+        Schema::dropIfExists($this->prefix.'shipping_counties');
     }
 
     /**
@@ -37,6 +37,6 @@ return new class extends Migration
      */
     public function shouldRun(): bool
     {
-        return ! Schema::hasTable($this->prefix."shipping_counties");
+        return ! Schema::hasTable($this->prefix.'shipping_counties');
     }
 };

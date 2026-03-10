@@ -38,7 +38,7 @@ class SamedayAWBRequestBody implements AWBRequestBodyInterface
             'insuredValue' => $this->insuredValue,
             'thirdPartyPickup' => $this->thirdPartyPickup,
             'awbRecipient' => $this->awbRecipient->toArray(),
-            'parcels' => array_map(fn($parcel) => $parcel->toArray(), $this->parcels),
+            'parcels' => array_map(fn ($parcel) => $parcel->toArray(), $this->parcels),
             'contactPerson' => $this->contactPerson,
             'packageNumber' => $this->packageNumber,
             'clientInternalReference' => $this->clientInternalReference,
