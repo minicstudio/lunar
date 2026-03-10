@@ -90,8 +90,8 @@ class ShippingExclusionRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()->mutateFormDataUsing(function (array $data, RelationManager $livewire) {
-                        return $data;
-                    })
+                    return $data;
+                })
                     ->label(__('lunarpanel.shipping::relationmanagers.exclusions.actions.create.modal.heading'))
                     ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.create.modal.heading')),
             ])

@@ -53,7 +53,7 @@ class PopularProductsTable extends TableWidget
                 TextColumn::make('identifier')
                     ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.identifier')),
                 TextColumn::make('quantity')
-                    ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.quantity')),                
+                    ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.quantity')),
                 TextColumn::make('sub_total')
                     ->label(__('lunarpanel::widgets.dashboard.orders.popular_products.table.sub_total')),
             ]);

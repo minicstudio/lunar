@@ -52,6 +52,9 @@ return [
                     'min_spend' => [
                         'label' => 'Min. vásárlás',
                     ],
+                    'max_spend' => [
+                        'label' => 'Max. vásárlás',
+                    ],
                     'min_weight' => [
                         'label' => 'Min. súly',
                         'helper_text' => 'Adja meg kg-ban',

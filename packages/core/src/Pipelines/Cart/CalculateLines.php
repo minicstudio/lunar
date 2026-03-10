@@ -38,8 +38,35 @@ class CalculateLines
             $cartLine->total = new Price($subTotal, $cart->currency, 1);
             $cartLine->subTotalDiscounted = new Price($subTotal, $cart->currency, 1);
             $cartLine->discountTotal = new Price(0, $cart->currency, 1);
+
+            // Set the default values. These will be overridden by the discount during application.
+            $taxRate = $line?->purchasable?->getTaxRate() ?? 0.0;
+
+            $cartLine->unitPriceWithoutCoupon = new Price($cartLine->unitPrice->value, $cart->currency, 1);
+            $cartLine->unitPriceWithoutCouponIncTax = $this->addTax($cartLine->unitPriceWithoutCoupon, $taxRate);
+
+            $cartLine->discountTotalWithoutCoupon = new Price(0, $cart->currency, 1);
+            $cartLine->discountTotalWithoutCouponIncTax = $this->addTax($cartLine->discountTotalWithoutCoupon, $taxRate);
+
+            $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->addTax(new Price($cartLine->subTotalDiscounted->value, $cart->currency, 1), $taxRate);
         }
 
         return $next($cart);
+    }
+
+    /**
+     * Add tax to a price.
+     */
+    protected function addTax(Price $price, float $taxRate): Price
+    {
+        if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
+            return $price;
+        }
+
+        return new Price(
+            (int) ($price->value * (1 + $taxRate)),
+            $price->currency,
+            $price->unitQty
+        );
     }
 }

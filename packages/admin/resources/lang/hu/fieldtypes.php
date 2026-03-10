@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Formázott szöveg',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Szerkesztő eszköztár letiltása',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Maximális fájlok száma',
+            ],
+            'disk' => [
+                'label' => 'Tároló lemez',
+            ],
+            'directory' => [
+                'label' => 'Könyvtár',
             ],
         ],
     ],

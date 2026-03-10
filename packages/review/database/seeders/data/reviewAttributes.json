@@ -1,0 +1,125 @@
+[
+  {
+    "attributable_type": "review",
+    "name": {
+      "en": "User Details",
+      "hu": "Felhasználói adatok"
+    },
+    "handle": "review_user_details",
+    "position": 1,
+    "attributes": [
+      {
+        "name": {
+          "en": "Full Name",
+          "hu": "Teljes név"
+        },
+        "description": {
+          "en": "Enter the full name of the user.",
+          "hu": "Adja meg a felhasználó teljes nevét."
+        },
+        "handle": "full_name",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\Text",
+        "attribute_type": "review",
+        "position": 1,
+        "required": false,
+        "configuration": {
+          "richtext": false
+        }
+      },
+      {
+        "name": {
+          "en": "Anonym",
+          "hu": "Névtelen"
+        },
+        "description": {
+          "en": "Toggle whether the user posts their review anonymously.",
+          "hu": "Kapcsolja be, hogy a felhasználó névtelenül tegye-e közzé értékelését."
+        },
+        "handle": "anonym",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\Toggle",
+        "attribute_type": "review",
+        "position": 2,
+        "required": false,
+        "configuration": {
+        }
+      }
+    ]
+  },
+  {
+    "attributable_type": "review",
+    "name": {
+      "en": "Details",
+      "hu": "Részletek"
+    },
+    "handle": "review_details",
+    "position": 2,
+    "attributes": [
+      {
+        "name": {
+          "en": "Rating",
+          "hu": "Értékelés"
+        },
+        "description": {
+          "en": "Select a rating for the review from 1 to 5.",
+          "hu": "Válassza ki az értékelést 1 és 5 között."
+        },
+        "handle": "rating",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\Dropdown",
+        "attribute_type": "review",
+        "position": 1,
+        "required": true,
+        "configuration": {
+          "lookups": [
+            { "label": 1, "value": "1" },
+            { "label": 2, "value": "2" },
+            { "label": 3, "value": "3" },
+            { "label": 4, "value": "4" },
+            { "label": 5, "value": "5" }
+          ]
+        }
+      },
+      {
+        "name": {
+          "en": "Title",
+          "hu": "Cím"
+        },
+        "description": {
+          "en": "Enter the title of the review.",
+          "hu": "Adja meg a vélemény címét."
+        },
+        "handle": "title",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\TranslatedText",
+        "attribute_type": "review",
+        "position": 2,
+        "required": true,
+        "configuration": {
+          "richtext": false
+        }
+      },
+      {
+        "name": {
+          "en": "Comment",
+          "hu": "Megjegyzés"
+        },
+        "description": {
+          "en": "Enter a comment or feedback for the review.",
+          "hu": "Adjon meg egy megjegyzést vagy visszajelzést a véleményhez."
+        },
+        "handle": "comment",
+        "section": "main",
+        "type": "Lunar\\FieldTypes\\TranslatedText",
+        "attribute_type": "review",
+        "position": 3,
+        "required": true,
+        "configuration": {
+          "richtext": false,
+          "disable_richtext_toolbar": true
+        }
+      }
+    ]
+  }
+]

@@ -3,6 +3,7 @@
 namespace Lunar\Models;
 
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
@@ -13,6 +14,7 @@ use Lunar\Base\Casts\TaxBreakdown;
 use Lunar\Base\Traits\HasMacros;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Database\Factories\OrderLineFactory;
+use Lunar\DataTypes\Price as PriceDataType;
 
 /**
  * @property int $id
@@ -94,6 +96,84 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
             'code',
             'order_id',
             'currency_code'
+        );
+    }
+
+    /**
+     * Get the unit price excluding tax before coupon discount.
+     */
+    protected function unitPriceWithoutCoupon(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $breakdown = $this->order->discount_breakdown->whereNotNull('discount.coupon')->first();
+
+                $taxTotal = 0;
+
+                if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                    $taxTotal = $this->tax_total->value;
+                }
+
+                // If no coupon then return the original unit price
+                if (! $breakdown) {
+                    return new PriceDataType((int) (($this->total->value - $taxTotal) / $this->quantity), $this->order->currency, 1);
+                }
+
+                $percentage = $breakdown->discount->data->percentage;
+
+                // We need to calculate the original price without the percentage discount applied.
+                $value = ($this->total->value - $taxTotal) / (1 - ($percentage / 100)) / $this->quantity;
+
+                return new PriceDataType((int) $value, $this->order->currency);
+            },
+        );
+    }
+
+    /**
+     * Get the unit price including tax before coupon discount.
+     */
+    protected function unitPriceWithoutCouponIncTax(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                    return $this->unit_price_without_coupon;
+                }
+
+                $unitPriceExcTax = $this->unit_price_without_coupon->value;
+                $unitPriceIncTax = $unitPriceExcTax * (1 + $this->tax_rate);
+
+                return new PriceDataType((int) $unitPriceIncTax, $this->order->currency);
+            },
+        );
+    }
+
+    /**
+     * Get the unit price including tax before coupon discount.
+     */
+    protected function priceWithoutCouponIncTax(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $priceExcTax = $this->unit_price_without_coupon->value * $this->quantity;
+
+                if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                    return new PriceDataType((int) ($priceExcTax), $this->order->currency);
+                }
+
+                $priceIncTax = $priceExcTax * (1 + $this->tax_rate);
+
+                return new PriceDataType((int) $priceIncTax, $this->order->currency);
+            },
+        );
+    }
+
+    protected function taxRate(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                return $this->tax_breakdown?->amounts?->first()?->percentage / 100 ?? 0;
+            }
         );
     }
 }

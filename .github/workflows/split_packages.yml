@@ -17,6 +17,10 @@ jobs:
           - "paypal"
           - "table-rate-shipping"
           - "stripe"
+          - "blog"
+          - "review"
+          - "shipping"
+          - "ERP"
           - "search"
     steps:
       - uses: actions/checkout@v4

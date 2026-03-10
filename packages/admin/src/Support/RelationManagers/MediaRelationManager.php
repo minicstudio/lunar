@@ -53,8 +53,8 @@ class MediaRelationManager extends BaseRelationManager
                     ->acceptedFileTypes(config('lunar.media.accepted_file_types', []))
                     ->rules([
                         'file',
-                        'max:' . (config('lunar.media.max_file_size', 10240) ?: 10240), // 10MB default
-                        new SecureMediaUploadRule(),
+                        'max:'.(config('lunar.media.max_file_size', 10240) ?: 10240), // 10MB default
+                        new SecureMediaUploadRule,
                     ]),
             ]);
     }

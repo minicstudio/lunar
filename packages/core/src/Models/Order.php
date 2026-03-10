@@ -3,10 +3,12 @@
 namespace Lunar\Models;
 
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Casts\Attribute as EloquentAttribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Collection;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\DiscountBreakdown;
 use Lunar\Base\Casts\Price;
@@ -17,6 +19,8 @@ use Lunar\Base\Traits\HasTags;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Base\Traits\Searchable;
 use Lunar\Database\Factories\OrderFactory;
+use Lunar\DataTypes\Price as PriceDataType;
+use Lunar\Exceptions\UnsupportedWeightUnitException;
 
 /**
  * @property int $id
@@ -187,5 +191,131 @@ class Order extends BaseModel implements Contracts\Order
         return [
             'status',
         ];
+    }
+
+    /**
+     * Sum of coupon discounts.
+     */
+    protected function couponTotal(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: function () {
+                $total = 0;
+
+                $couponBreakdowns = $this->discount_breakdown->filter(function ($breakdown) {
+                    return $breakdown->discount->coupon !== null;
+                });
+
+                foreach ($couponBreakdowns as $breakdown) {
+                    $percentage = $breakdown->discount->data->percentage;
+
+                    foreach ($breakdown->lines as $lineData) {
+                        $orderLine = $lineData->line;
+
+                        if ($orderLine) {
+                            $unitPriceExcTax = $orderLine->unit_price_without_coupon->value;
+
+                            $discountAmount = ($unitPriceExcTax * $lineData->quantity) * ($percentage / 100);
+
+                            $discountAmountIncTax = $discountAmount;
+
+                            if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                                $discountAmountIncTax = $discountAmount * (1 + $orderLine->tax_rate);
+                            }
+
+                            $total += (int) $discountAmountIncTax;
+                        }
+                    }
+                }
+
+                return new PriceDataType((int) $total, $this->currency, 1);
+            },
+        );
+    }
+
+    /**
+     * Sum of percentage discounts without coupons
+     */
+    protected function discountTotalWithoutCoupon(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: function () {
+                $total = $this->discount_breakdown->filter(function ($breakdown) {
+                    return $breakdown->discount->coupon === null;
+                })->sum('total.value');
+
+                return new PriceDataType($total, $this->currency, 1);
+            },
+        );
+    }
+
+    /**
+     * Get the subtotal discounted without coupon including tax.
+     */
+    protected function subTotalDiscountedWithoutCouponIncTax(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: function () {
+                if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                    return new PriceDataType($this->sub_total->value - $this->discount_total_without_coupon->value, $this->currency, 1);
+                }
+
+                $total = $this->productLines->sum(function ($line) {
+                    return $line->price_without_coupon_inc_tax->value;
+                });
+
+                return new PriceDataType((int) $total, $this->currency, 1);
+            },
+        );
+    }
+
+    /**
+     * Get the total weight in kg of the package based on order items.
+     */
+    public function getPackageWeightAttribute(): float
+    {
+        return $this->productLines->sum(function ($item) {
+            // in case of weight in grams, convert to kg and if nor g nor kg then throw exception
+            switch ($item->purchasable->weight_unit) {
+                case 'kg':
+                    return $item->quantity * $item->purchasable->weight_value;
+                case 'g':
+                    // convert grams to kg
+                    return ($item->quantity * $item->purchasable->weight_value) / 1000;
+                case 'lbs':
+                    // convert pounds to kg (1 lb = 0.453592 kg)
+                    return ($item->quantity * $item->purchasable->weight_value) * 0.453592;
+                default:
+                    // if the weight unit is not recognized, throw an exception
+                    throw new UnsupportedWeightUnitException('Unsupported weight unit: '.$item->purchasable->weight_unit.'. Please change the weight unit of the product to kg, g, or lbs.');
+            }
+        });
+    }
+
+    /**
+     * Get the applied coupon.
+     */
+    public function getAppliedCouponAttribute(): ?Discount
+    {
+        return Discount::whereIn(
+            'id',
+            collect($this->discount_breakdown)
+                ->pluck('discount_id')
+                ->unique()
+        )
+            ->whereNotNull('coupon')
+            ->first();
+    }
+
+    /**
+     * Get the status history activities for the order.
+     */
+    public function getActivitiesByStatuses(array|Collection $statuses): Collection
+    {
+        return $this->activities()
+            ->where('description', 'status-update')
+            ->whereIn('properties->new', $statuses)
+            ->latest('created_at')
+            ->get();
     }
 }

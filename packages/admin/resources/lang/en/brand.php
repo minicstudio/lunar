@@ -31,6 +31,7 @@ return [
     'pages' => [
         'edit' => [
             'title' => 'Basic Information',
+            'navigation_label' => 'Edit Brand',
         ],
         'products' => [
             'label' => 'Products',
@@ -83,9 +84,6 @@ return [
                     ],
                 ],
             ],
-        ],
-        'edit' => [
-            'navigation_label' => 'Edit Brand',
         ],
     ],
 

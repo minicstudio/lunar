@@ -46,6 +46,12 @@ return [
         'producttype' => [
             'label' => 'Terméktípus',
         ],
+        'price_inc_tax' => [
+            'label' => 'Ár (ÁFÁ-val)',
+        ],
+        'price_ex_tax' => [
+            'label' => 'Ár (ÁFA nélkül)',
+        ],
     ],
 
     'actions' => [
@@ -148,7 +154,7 @@ return [
             'label' => 'Termék asszociációk',
             'actions' => [
                 'create' => [
-                    'label' => 'Új termék asszociáció',     
+                    'label' => 'Új termék asszociáció',
                     'heading' => 'Termék asszociáció létrehozása',
                 ],
                 'delete' => [

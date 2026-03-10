@@ -13,6 +13,23 @@ return [
         'amount_off' => [
             'heading' => 'Összeg alapú kedvezmény',
         ],
+        'advanced_amount_off' => [
+            'heading' => 'Fejlett összeg alapú kedvezmény',
+        ],
+        'type' => [
+            'label' => 'Típus',
+            'options' => [
+                'buy_x_get_y' => [
+                    'label' => 'Vásárolj X-et, kapj Y-t',
+                ],
+                'amount_off' => [
+                    'label' => 'Összeg alapú kedvezmény',
+                ],
+                'advanced_amount_off' => [
+                    'label' => 'Fejlett összeg alapú kedvezmény',
+                ],
+            ],
+        ],
         'name' => [
             'label' => 'Név',
         ],
@@ -74,17 +91,6 @@ return [
             'label' => 'Jutalmak automatikus hozzáadása',
             'helper_text' => 'Kapcsolja be, hogy a jutalomtermékek automatikusan hozzáadódjanak, ha nem szerepelnek a kosárban.',
         ],
-        'type' => [
-            'label' => 'Típus',
-            'options' => [
-                'buy_x_get_y' => [
-                    'label' => 'Vásárolj X-et, kapj Y-t',
-                ],
-                'amount_off' => [
-                    'label' => 'Kedvezmény összege',
-                ],
-            ],
-        ],
         'fixed_value' => [
             'label' => 'Fix összeg',
         ],
@@ -137,7 +143,7 @@ return [
         'edit' => [
             'title' => 'Alapinformációk',
             'navigation_label' => 'Kedvezmény szerkesztése',
-        ]
+        ],
     ],
     'relationmanagers' => [
         'collections' => [
@@ -309,7 +315,7 @@ return [
                         'bulk' => [
                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [
@@ -363,7 +369,7 @@ return [
                         'bulk' => [
                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
                         ],
-                    ]
+                    ],
                 ],
             ],
             'table' => [
@@ -412,12 +418,12 @@ return [
                     ],
                 ],
                 'delete' => [
-                     'modal' => [
-                         'heading' => 'Kedvezményes tétel törlése',
-                         'bulk' => [
-                             'heading' => 'Kiválasztott kedvezményes tételek törlése',
-                         ],
-                     ]
+                    'modal' => [
+                        'heading' => 'Kedvezményes tétel törlése',
+                        'bulk' => [
+                            'heading' => 'Kiválasztott kedvezményes tételek törlése',
+                        ],
+                    ],
                 ],
             ],
             'table' => [

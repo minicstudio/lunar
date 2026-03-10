@@ -51,14 +51,14 @@ class ShipBy implements ShippingRateInterface
         $subTotal = $cart->lines->sum(function ($line) {
             // Use subTotalDiscounted if available (includes automatic discounts)
             // Fall back to subTotal if subTotalDiscounted is not set
-            return $line->subTotalDiscountedWithoutCoupon?->value ?? $line->subTotal?->value;
+            return $line->subTotalDiscountedWithoutCouponIncTax?->value ?? $line->subTotal?->value;
         });
 
         // Check allowed customer types for this shipping method
         $address = $cart->shippingAddress ?? $cart->address ?? null;
         if ($address && method_exists($shippingMethod, 'customerTypes')) {
             $customerTypeId = $address->address_customer_type_id ?? null;
-            if ($customerTypeId && !$shippingMethod->customerTypes->pluck('id')->contains($customerTypeId)) {
+            if ($customerTypeId && ! $shippingMethod->customerTypes->pluck('id')->contains($customerTypeId)) {
                 return null;
             }
         }
@@ -123,6 +123,7 @@ class ShipBy implements ShippingRateInterface
             if ($max) {
                 return $tier >= $min && $tier < $max;
             }
+
             return $tier >= $min;
         })->sortByDesc('min_quantity')->first();
 

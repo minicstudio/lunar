@@ -52,7 +52,7 @@ class ValuesRelationManager extends BaseRelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label(__('lunarpanel::productoption.values.table.actions.create.label'))
-                    ->modalHeading(__('lunarpanel::productoption.values.table.actions.create.heading'))
+                    ->modalHeading(__('lunarpanel::productoption.values.table.actions.create.heading')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
@@ -61,7 +61,7 @@ class ValuesRelationManager extends BaseRelationManager
                         ProductOptionValueUpdated::dispatch($record);
                     }),
                 Tables\Actions\DeleteAction::make()
-                    ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.heading'))
+                    ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

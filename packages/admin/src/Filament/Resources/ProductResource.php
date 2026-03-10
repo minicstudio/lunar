@@ -29,6 +29,7 @@ use Lunar\Admin\Support\RelationManagers\MediaRelationManager;
 use Lunar\Admin\Support\RelationManagers\PriceRelationManager;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
+use Lunar\Facades\StorefrontSession;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Attribute;
@@ -286,8 +287,36 @@ class ProductResource extends BaseResource
             static::getNameTableColumn(),
             Tables\Columns\TextColumn::make('brand.name')
                 ->label(__('lunarpanel::product.table.brand.label'))
-                ->toggleable()
+                ->toggleable(isToggledHiddenByDefault: true)
                 ->searchable(),
+            Tables\Columns\TextColumn::make('price_inc_tax')
+                ->label(__('lunarpanel::product.table.price_inc_tax.label'))
+                ->getStateUsing(function ($record) {
+                    $variant = $record->variants->first();
+
+                    if (! $variant) {
+                        return '-';
+                    }
+
+                    $price = $variant->getCurrentPricesIncTax()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
+
+                    return $price ? $price->formatted() : '-';
+                })
+                ->toggleable(),
+            Tables\Columns\TextColumn::make('price_ex_tax')
+                ->label(__('lunarpanel::product.table.price_ex_tax.label'))
+                ->getStateUsing(function ($record) {
+                    $variant = $record->variants->first();
+
+                    if (! $variant) {
+                        return '-';
+                    }
+
+                    $price = $variant->getCurrentPrices()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
+
+                    return $price ? $price->formatted() : '-';
+                })
+                ->toggleable(),
             static::getSkuTableColumn(),
             Tables\Columns\TextColumn::make('variants_sum_stock')
                 ->label(__('lunarpanel::product.table.stock.label'))
@@ -305,7 +334,7 @@ class ProductResource extends BaseResource
                     // Only render the tooltip if the column contents exceeds the length limit.
                     return $state;
                 })
-                ->toggleable(),
+                ->toggleable(isToggledHiddenByDefault: true),
         ];
     }
 

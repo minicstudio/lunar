@@ -5,6 +5,7 @@ uses(\Lunar\Tests\Core\TestCase::class);
 use Illuminate\Support\Collection;
 use Lunar\Base\DataTransferObjects\CartDiscount;
 use Lunar\Base\DiscountManagerInterface;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\DiscountTypes\AmountOff;
 use Lunar\Facades\Discounts;
 use Lunar\Managers\DiscountManager;
@@ -83,7 +84,13 @@ test('can restrict discounts to channel', function () {
         'default' => true,
     ]);
 
-    $discount = Discount::factory()->create();
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => 10,
+        ],
+    ]);
 
     $discount->customerGroups()->sync([
         $customerGroup->id => [
@@ -173,7 +180,13 @@ test('can restrict discounts to customer group', function () {
         'default' => false,
     ]);
 
-    $discount = Discount::factory()->create();
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => 10,
+        ],
+    ]);
 
     $discount->channels()->sync([
         $channel->id => [
@@ -329,7 +342,7 @@ test('can get discount with coupon', function () {
     ]);
 
     $discountA = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Test Discount A',
         'coupon' => null,
         'starts_at' => now(),
@@ -356,7 +369,7 @@ test('can get discount with coupon', function () {
     ]);
 
     $discountB = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Test Discount B',
         'coupon' => null,
         'starts_at' => now(),
@@ -396,5 +409,5 @@ test('can get discount with coupon', function () {
         'coupon_code' => 'ABCDEF',
     ]);
 
-    expect(Discounts::getDiscounts($cart->refresh()))->toHaveCount(1);
+    expect(Discounts::getDiscounts($cart->refresh()))->toHaveCount(2);
 });

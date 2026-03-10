@@ -4,6 +4,7 @@
 /.nova
 /.phpunit.cache
 /.vscode
+/.cursor
 /node_modules
 /vendor
 .phpunit.result.cache

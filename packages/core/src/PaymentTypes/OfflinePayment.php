@@ -59,4 +59,14 @@ class OfflinePayment extends AbstractPayment
     {
         return new PaymentCapture(true);
     }
+
+    /**
+     * Initiate the payment
+     */
+    public function initiatePayment()
+    {
+        return [
+            'redirectUrl' => $this->data['successUrl'],
+        ];
+    }
 }

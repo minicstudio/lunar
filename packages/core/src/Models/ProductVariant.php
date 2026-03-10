@@ -5,19 +5,23 @@ namespace Lunar\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Laravel\Scout\Searchable;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\AsAttributeData;
 use Lunar\Base\HasThumbnailImage;
 use Lunar\Base\Purchasable;
 use Lunar\Base\Traits\HasAttributes;
 use Lunar\Base\Traits\HasDimensions;
+use Lunar\Base\Traits\HasDiscount;
 use Lunar\Base\Traits\HasMacros;
 use Lunar\Base\Traits\HasPrices;
 use Lunar\Base\Traits\HasTranslations;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Database\Factories\ProductVariantFactory;
+use Lunar\Models\Collection as CollectionModel;
 use Spatie\LaravelBlink\BlinkFacade as Blink;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -56,11 +60,13 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
 {
     use HasAttributes;
     use HasDimensions;
+    use HasDiscount;
     use HasFactory;
     use HasMacros;
     use HasPrices;
     use HasTranslations;
     use LogsActivity;
+    use Searchable;
     use SoftDeletes;
 
     /**
@@ -222,5 +228,47 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     public function getThumbnailImage(): string
     {
         return $this->getThumbnail()?->getUrl('small') ?? '';
+    }
+
+    /**
+     * Get the collections that the product variant belongs to.
+     */
+    public function collections(): HasManyThrough
+    {
+        return $this->hasManyThrough(CollectionModel::class, Product::class);
+    }
+
+    /**
+     * Decrease the stock.
+     */
+    public function decreaseStock(int $quantity = 1): self
+    {
+        $this->stock -= $quantity;
+
+        if ($this->stock < 0 && $this->purchasable !== 'in_stock') {
+            // stock is negative, so add to backorder
+            $this->backorder += $this->stock;
+            $this->stock = 0;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Increase the stock.
+     */
+    public function increaseStock(int $quantity = 1): self
+    {
+        if ($this->backorder < 0 && $this->purchasable !== 'in_stock') {
+            $backorderToReduce = min($quantity, abs($this->backorder));
+            $this->backorder += $backorderToReduce;
+            $quantity -= $backorderToReduce;
+        }
+
+        if ($quantity > 0) {
+            $this->stock += $quantity;
+        }
+
+        return $this;
     }
 }

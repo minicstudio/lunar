@@ -81,7 +81,7 @@ return [
                 'modal' => [
                     'heading' => 'Gyűjtemény törlése',
                 ],
-            ]
+            ],
         ],
         'notifications' => [
             'collections-reordered' => [

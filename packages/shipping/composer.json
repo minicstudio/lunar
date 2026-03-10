@@ -1,0 +1,42 @@
+{
+    "name": "lunarphp/shipping",
+    "description": "Shipping Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "shipping"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Levente Antal",
+            "email": "antal.levente@minic.ro",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Addons\\Shipping\\": "src"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Shipping"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Addons\\Shipping\\ShippingServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/lunar": "self.version",
+        "lunarphp/table-rate-shipping": "self.version",
+        "saloonphp/saloon": "^3.11"
+    }
+}

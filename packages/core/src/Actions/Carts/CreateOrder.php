@@ -45,10 +45,6 @@ final class CreateOrder extends AbstractAction
                     return $order;
                 });
 
-            $cart->discounts?->each(function ($discount) use ($cart) {
-                $discount->markAsUsed($cart)->discount->save();
-            });
-
             $cart->save();
 
             MarkAsNewCustomer::dispatch($order->id);

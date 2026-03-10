@@ -1,0 +1,13 @@
+<?php
+
+namespace Lunar\Locations\Models\Contracts;
+
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+interface Locality
+{
+    /**
+     * Get the county that this locality belongs to.
+     */
+    public function county(): BelongsTo;
+}

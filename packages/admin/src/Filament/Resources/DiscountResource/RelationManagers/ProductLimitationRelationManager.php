@@ -60,17 +60,17 @@ class ProductLimitationRelationManager extends BaseRelationManager
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.products.actions.attach.label')
                 )
-                ->modalHeading(
-                    __('lunarpanel::discount.relationmanagers.products.actions.attach.modal.heading')
-                )
-                ->mutateFormDataUsing(function (array $data) {
-                    $data['type'] = 'limitation';
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.products.actions.attach.modal.heading')
+                    )
+                    ->mutateFormDataUsing(function (array $data) {
+                        $data['type'] = 'limitation';
 
-                    return $data;
-                })
-                ->after(function ($record) {
-                    DiscountLimitationAttached::dispatch($this->getOwnerRecord());
-                }),
+                        return $data;
+                    })
+                    ->after(function ($record) {
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    }),
             ])->columns([
                 Tables\Columns\SpatieMediaLibraryImageColumn::make('discountable.thumbnail')
                     ->collection(config('lunar.media.collection'))

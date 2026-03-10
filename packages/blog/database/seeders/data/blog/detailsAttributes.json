@@ -1,0 +1,120 @@
+[
+    {
+      "attributable_type": "blog_category",
+      "name": {
+        "en": "Details",
+        "hu": "Részletek"
+      },
+      "handle": "blog_category_details",
+      "position": 1,
+      "attributes": [
+        {
+          "name": {
+            "en": "Name",
+            "hu": "Név"
+          },
+          "description": {
+            "en": "The name of the blog category.",
+            "hu": "A blog kategória neve."
+          },
+          "handle": "name",
+          "section": "main",
+          "type": "Lunar\\FieldTypes\\TranslatedText",
+          "attribute_type": "blog_category",
+          "position": 1,
+          "required": true,
+          "configuration": {}
+        }
+      ]
+    },
+    {
+        "attributable_type": "blog_post",
+        "name": {
+          "en": "Details",
+          "hu": "Részletek"
+        },
+        "handle": "blog_post_details",
+        "position": 1,
+        "attributes": [
+          {
+            "name": {
+              "en": "Title",
+              "hu": "Cím"
+            },
+            "description": {
+              "en": "The title of the blog post.",
+              "hu": "A blogbejegyzés címe."
+            },
+            "handle": "title",
+            "section": "main",
+            "type": "Lunar\\FieldTypes\\TranslatedText",
+            "attribute_type": "blog_post",
+            "position": 1,
+            "required": true,
+            "configuration": {}
+          },
+          {
+            "name": {
+              "en": "Content",
+              "hu": "Tartalom"
+            },
+            "description": {
+              "en": "The main content of the blog post.",
+              "hu": "A blogbejegyzés fő tartalma."
+            },
+            "handle": "content",
+            "section": "main",
+            "type": "Lunar\\FieldTypes\\TranslatedText",
+            "attribute_type": "blog_post",
+            "position": 2,
+            "configuration": {
+              "richtext": true
+            }
+          },
+          {
+            "name": {
+              "en": "Excerpt",
+              "hu": "Kivonat"
+            },
+            "description": {
+              "en": "This field will appear on the cards displayed on the list page. The text is limited to 3 lines, so it should be concise and to the point.",
+              "hu": "Ez a mező a listaoldalon található kártyákon jelenik meg. A szöveg maximum 3 sorban látszik, ezért legyen rövid és lényegretörő."
+            },
+            "handle": "excerpt",
+            "section": "main",
+            "type": "Lunar\\FieldTypes\\TranslatedText",
+            "attribute_type": "blog_post",
+            "position": 3,
+            "configuration": {
+              "richtext": false,
+              "disable_richtext_toolbar": true
+            }
+          },
+          {
+            "name": {
+              "en": "Thumbnail",
+              "hu": "Indexkép"
+            },
+            "description": {
+              "en": "The index image of the blog post that appears on the listing page.",
+              "hu": "A blogbejegyzés indexképe, amely megjelenik a listaoldalon."
+            },
+            "handle": "thumbnail",
+            "section": "main",
+            "type": "Lunar\\FieldTypes\\File",
+            "attribute_type": "blog_post",
+            "position": 4,
+            "required": true,
+            "configuration": {
+              "multiple": false,
+              "disk": "public",
+              "directory": "blog",
+              "max_files": "1",
+              "min_files": "0", 
+              "file_types": ["image/*"]
+            }
+          }
+        ]
+      }
+  ]
+  

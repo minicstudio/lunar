@@ -61,7 +61,7 @@ class ManageBrandProducts extends BaseManageRelatedRecords
                 })
                 ->modalHeading(
                     __('lunarpanel::brand.pages.products.actions.detach.modal.heading')
-                )
+                ),
         ])->headerActions([
             AttachAction::make()
                 ->label(

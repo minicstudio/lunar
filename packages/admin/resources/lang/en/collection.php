@@ -37,9 +37,9 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Target collection',
-                    'helper_text' => 'Choose which collection the children of this collection should be transferred to.'
+                    'helper_text' => 'Choose which collection the children of this collection should be transferred to.',
                 ],
-            ]
+            ],
         ],
         'products' => [
             'label' => 'Products',
@@ -51,12 +51,12 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Detach Product',
-                    ]
+                    ],
                 ],
             ],
         ],
     ],
     'nested_set_item' => [
         'more_actions' => 'More Actions',
-    ]
+    ],
 ];

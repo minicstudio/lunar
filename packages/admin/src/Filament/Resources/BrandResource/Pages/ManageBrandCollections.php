@@ -46,7 +46,7 @@ class ManageBrandCollections extends BaseManageRelatedRecords
                 ->label(__('lunarpanel::product.table.name.label')),
         ])->actions([
             DetachAction::make()
-                ->modalHeading(__('lunarpanel::brand.pages.collections.actions.detach.modal.heading'))
+                ->modalHeading(__('lunarpanel::brand.pages.collections.actions.detach.modal.heading')),
         ])->headerActions([
             Tables\Actions\AttachAction::make()
                 ->modalHeading(__('lunarpanel::brand.pages.collections.actions.attach.modal.heading'))

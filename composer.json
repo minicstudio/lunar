@@ -1,5 +1,5 @@
 {
-    "name": "lunarphp/lunar",
+    "name": "lunarphp/lunar-minic",
     "description": "Custom minic fork of Lunar package",
     "license": "MIT",
     "authors": [
@@ -32,6 +32,7 @@
         "lunarphp/lunar": "self.version",
         "meilisearch/meilisearch-php": "^1.10",
         "php": "^8.2",
+        "saloonphp/saloon": "^3.11",
         "spatie/laravel-activitylog": "^4.10.1",
         "spatie/laravel-blink": "^1.7.1",
         "spatie/laravel-data": "^4.13.1",
@@ -50,7 +51,8 @@
         "orchestra/testbench": "^8.0|^9.0|^10.0",
         "pestphp/pest": "^2.0|^3.0",
         "pestphp/pest-plugin-laravel": "^2.0|^3.0",
-        "symplify/monorepo-builder": "^10.0"
+        "symplify/monorepo-builder": "^10.0",
+        "laravel/boost": "^2.2"
     },
     "autoload": {
         "files": [
@@ -63,13 +65,23 @@
             "Lunar\\Admin\\": "packages/admin/src/",
             "Lunar\\Admin\\Database\\Factories\\": "packages/admin/database/factories",
             "Lunar\\Admin\\Database\\State\\": "packages/admin/database/state",
+            "Lunar\\Blog\\": "packages/blog/src",
+            "Lunar\\Blog\\Database\\Factories\\": "packages/blog/database/factories",
+            "Lunar\\Blog\\Database\\Seeders\\": "packages/blog/database/seeders",
             "Lunar\\Database\\Factories\\": "packages/core/database/factories",
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
+            "Lunar\\ERP\\": "packages/ERP/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
             "Lunar\\Paypal\\": "packages/paypal/src/",
+            "Lunar\\Review\\": "packages/review/src",
+            "Lunar\\Review\\Database\\Factories\\": "packages/review/database/factories",
+            "Lunar\\Review\\Database\\Seeders\\": "packages/review/database/seeders",
+            "Lunar\\Review\\Database\\State\\": "packages/review/database/state",
+            "Lunar\\Locations\\": "packages/locations/src/",
             "Lunar\\Search\\": "packages/search/src/",
+            "Lunar\\Addons\\Shipping\\": "packages/shipping/src",
             "Lunar\\Shipping\\": "packages/table-rate-shipping/src",
             "Lunar\\Shipping\\Database\\Factories\\": "packages/table-rate-shipping/database/factories",
             "Lunar\\Stripe\\": "packages/stripe/src/"
@@ -85,13 +97,22 @@
             "Lunar\\Tests\\Shipping\\": "tests/shipping",
             "Lunar\\Shipping\\Tests\\": "packages/table-rate-shipping/tests",
             "Lunar\\Tests\\Stripe\\": "tests/stripe",
-            "Lunar\\Tests\\Search\\": "tests/search"
+            "Lunar\\Tests\\Search\\": "tests/search",
+            "Lunar\\Tests\\Blog\\": "tests/blog",
+            "Lunar\\Tests\\ERP\\": "tests/ERP",
+            "Lunar\\Tests\\Review\\": "tests/review",
+            "Lunar\\Tests\\ShippingAddon\\": "tests/shipping-addon"
         }
     },
     "extra": {
         "lunar": {
             "name": [
+                "Blog",
+                "ERP",
+                "Locations",
+                "Review",
                 "Table Rate Shipping",
+                "Shipping",
                 "Opayo Payments",
                 "Search",
                 "Meilisearch",
@@ -107,18 +128,28 @@
                 "Lunar\\Search\\SearchServiceProvider",
                 "Lunar\\Admin\\LunarPanelProvider",
                 "Lunar\\Opayo\\OpayoServiceProvider",
+                "Lunar\\Addons\\Shipping\\ShippingServiceProvider",
                 "Lunar\\Shipping\\ShippingServiceProvider",
+                "Lunar\\Locations\\LocationsServiceProvider",
+                "Lunar\\ERP\\ErpServiceProvider",
+                "Lunar\\Review\\ReviewServiceProvider",
+                "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\LunarServiceProvider"
             ]
         }
     },
     "replace": {
+        "lunarphp/blog": "self.version",
         "lunarphp/core": "self.version",
         "lunarphp/lunar": "self.version",
         "lunarphp/meilisearch": "self.version",
         "lunarphp/opayo": "self.version",
         "lunarphp/paypal": "self.version",
+        "lunarphp/review": "self.version",
         "lunarphp/search": "self.version",
+        "lunarphp/shipping": "self.version",
+        "lunarphp/erp": "self.version",
+        "lunarphp/locations": "self.version",
         "lunarphp/stripe": "self.version",
         "lunarphp/table-rate-shipping": "self.version"
     },

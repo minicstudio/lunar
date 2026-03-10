@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Rich Text',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Werkbalk uitschakelen',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Max. Bestanden',
+            ],
+            'disk' => [
+                'label' => 'Opslagschijf',
+            ],
+            'directory' => [
+                'label' => 'Map',
             ],
         ],
     ],

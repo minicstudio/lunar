@@ -1,0 +1,43 @@
+{
+    "name": "lunarphp/review",
+    "description": "Review Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "review"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Levente Antal",
+            "email": "antal.levente@minic.ro",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Review\\": "src",
+            "Lunar\\Review\\Database\\Factories\\": "database/factories",
+            "Lunar\\Review\\Database\\Seeders\\": "database/seeders",
+            "Lunar\\Review\\Database\\State\\": "database/state"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Review"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Review\\ReviewServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version"
+    }
+}

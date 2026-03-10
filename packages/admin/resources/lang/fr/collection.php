@@ -37,9 +37,9 @@ return [
             'actions' => [
                 'delete' => [
                     'select' => 'Collection cible',
-                    'helper_text' => 'Choisissez vers quelle collection les enfants de cette collection doivent être transférés.'
+                    'helper_text' => 'Choisissez vers quelle collection les enfants de cette collection doivent être transférés.',
                 ],
-            ]
+            ],
         ],
         'products' => [
             'label' => 'Produits',
@@ -51,7 +51,7 @@ return [
                 'detach' => [
                     'modal' => [
                         'heading' => 'Détacher le produit',
-                    ]
+                    ],
                 ],
             ],
         ],

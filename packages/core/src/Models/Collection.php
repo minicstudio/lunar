@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Kalnoy\Nestedset\NodeTrait;
 use Kalnoy\Nestedset\QueryBuilder;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\AsAttributeData;
+use Lunar\Base\HasCustomerGroupAvailability;
 use Lunar\Base\HasThumbnailImage;
 use Lunar\Base\Traits\HasChannels;
 use Lunar\Base\Traits\HasCustomerGroups;
@@ -19,6 +21,7 @@ use Lunar\Base\Traits\HasTranslations;
 use Lunar\Base\Traits\HasUrls;
 use Lunar\Base\Traits\Searchable;
 use Lunar\Database\Factories\CollectionFactory;
+use Lunar\Facades\StorefrontSession;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
 /**
@@ -34,7 +37,7 @@ use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
  * @property ?\Illuminate\Support\Carbon $updated_at
  * @property ?\Illuminate\Support\Carbon $deleted_at
  */
-class Collection extends BaseModel implements Contracts\Collection, HasThumbnailImage, SpatieHasMedia
+class Collection extends BaseModel implements Contracts\Collection, HasCustomerGroupAvailability, HasThumbnailImage, SpatieHasMedia
 {
     use HasChannels,
         HasCustomerGroups,
@@ -153,5 +156,51 @@ class Collection extends BaseModel implements Contracts\Collection, HasThumbnail
     public function getThumbnailImage(): string
     {
         return $this->thumbnail?->getUrl('small') ?? '';
+    }
+
+    /**
+     * Get the collection children
+     */
+    public function activeChildren(): HasMany
+    {
+        return $this->hasMany(Collection::class, 'parent_id', 'id')
+            ->whereHas('activeChannels', function ($query) {
+                $query->where('channel_id', StorefrontSession::getChannel()->id);
+            });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function scopeAvailableCustomerGroups($query): QueryBuilder
+    {
+        $customerGroupIds = StorefrontSession::getCustomerGroups()->pluck('id');
+
+        return $query->whereHas('customerGroups', function ($query) use ($customerGroupIds) {
+            $query->whereIn('lunar_customer_groups.id', $customerGroupIds)
+                ->where('visible', true)
+                ->where('enabled', true)
+                ->where(function ($query) {
+                    $query->whereNull('starts_at')
+                        ->orWhere('starts_at', '<=', now());
+                })->where(function ($query) {
+                    $query->whereNull('ends_at')
+                        ->orWhere('ends_at', '>=', now());
+                });
+        });
+    }
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array
+     */
+    public function toSearchableArray()
+    {
+        $array = $this->toArray();
+
+        $array = $this->transform($array);
+
+        return $array;
     }
 }

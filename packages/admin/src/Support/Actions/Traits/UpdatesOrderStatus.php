@@ -92,7 +92,7 @@ trait UpdatesOrderStatus
                 static::getMailers($get('status'))
             );
         })->live()
-        ->label(__('lunarpanel::order.action.update_status.mailers.label'));
+            ->label(__('lunarpanel::order.action.update_status.mailers.label'));
     }
 
     protected function getFormSteps()

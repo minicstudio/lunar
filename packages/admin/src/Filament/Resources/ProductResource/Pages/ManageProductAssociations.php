@@ -96,8 +96,8 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                         $this->getOwnerRecord()
                     )
                 )
-                ->label(__('lunarpanel::product.pages.associations.actions.create.label'))
-                ->modalHeading(__('lunarpanel::product.pages.associations.actions.create.heading')),
+                    ->label(__('lunarpanel::product.pages.associations.actions.create.label'))
+                    ->modalHeading(__('lunarpanel::product.pages.associations.actions.create.heading')),
             ])
             ->actions([
                 Tables\Actions\DeleteAction::make()->after(
@@ -105,7 +105,7 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                         $this->getOwnerRecord()
                     )
                 )
-                ->modalHeading(__('lunarpanel::product.pages.associations.actions.delete.heading')),
+                    ->modalHeading(__('lunarpanel::product.pages.associations.actions.delete.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -114,7 +114,7 @@ class ManageProductAssociations extends BaseManageRelatedRecords
                             $this->getOwnerRecord()
                         )
                     )
-                    ->modalHeading(__('lunarpanel::product.pages.associations.actions.delete.bulk.heading')),
+                        ->modalHeading(__('lunarpanel::product.pages.associations.actions.delete.bulk.heading')),
                 ]),
             ]);
     }

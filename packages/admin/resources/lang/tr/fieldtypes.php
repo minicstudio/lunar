@@ -20,6 +20,9 @@ return [
             'richtext' => [
                 'label' => 'Zengin Metin',
             ],
+            'disable_richtext_toolbar' => [
+                'label' => 'Araç çubuğunu devre dışı bırak',
+            ],
         ],
     ],
     'translatedtext' => [
@@ -66,6 +69,12 @@ return [
             ],
             'max_files' => [
                 'label' => 'Maks. Dosya',
+            ],
+            'disk' => [
+                'label' => 'Depolama Diski',
+            ],
+            'directory' => [
+                'label' => 'Dizin',
             ],
         ],
     ],

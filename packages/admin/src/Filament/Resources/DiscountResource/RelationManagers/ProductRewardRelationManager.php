@@ -76,14 +76,14 @@ class ProductRewardRelationManager extends BaseRelationManager
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.rewards.actions.attach.label')
                 )
-                ->modalHeading(
-                    __('lunarpanel::discount.relationmanagers.rewards.actions.attach.modal.heading')
-                )
-                ->mutateFormDataUsing(function (array $data) {
-                    $data['type'] = 'reward';
+                    ->modalHeading(
+                        __('lunarpanel::discount.relationmanagers.rewards.actions.attach.modal.heading')
+                    )
+                    ->mutateFormDataUsing(function (array $data) {
+                        $data['type'] = 'reward';
 
-                    return $data;
-                }),
+                        return $data;
+                    }),
             ])->columns([
                 ThumbnailImageColumn::make('discountable_id')
                     ->resolveThumbnailUrlUsing(fn (?Model $record) => $record?->discountable?->getThumbnailImage())

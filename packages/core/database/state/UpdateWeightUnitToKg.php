@@ -36,6 +36,6 @@ class UpdateWeightUnitToKg
     {
         $prefix = config('lunar.database.table_prefix');
 
-        return $prefix . 'product_variants';
+        return $prefix.'product_variants';
     }
 }

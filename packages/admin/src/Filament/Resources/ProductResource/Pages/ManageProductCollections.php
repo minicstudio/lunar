@@ -75,7 +75,7 @@ class ManageProductCollections extends BaseManageRelatedRecords
                         $this->getOwnerRecord()
                     )
                 )
-                ->modalHeading(__('lunarpanel::product.pages.collections.actions.detach.heading')),
+                    ->modalHeading(__('lunarpanel::product.pages.collections.actions.detach.heading')),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -84,7 +84,7 @@ class ManageProductCollections extends BaseManageRelatedRecords
                             $this->getOwnerRecord()
                         )
                     )
-                    ->modalHeading(__('lunarpanel::product.pages.collections.actions.detach.bulk.heading')),
+                        ->modalHeading(__('lunarpanel::product.pages.collections.actions.detach.bulk.heading')),
                 ]),
             ]);
     }
