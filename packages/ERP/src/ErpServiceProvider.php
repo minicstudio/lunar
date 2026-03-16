@@ -132,9 +132,7 @@ class ErpServiceProvider extends ServiceProvider
             }
 
             $this->app->bind($providerClass, function ($app) use ($clientClass, $providerClass) {
-                return $app->make($providerClass, [
-                    'client' => $app->make($clientClass),
-                ]);
+                return new $providerClass($app->make($clientClass));
             });
         }
     }
