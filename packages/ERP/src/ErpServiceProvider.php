@@ -131,8 +131,8 @@ class ErpServiceProvider extends ServiceProvider
                 throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP client class [{$clientClass}] not found for provider [{$providerKey}].");
             }
 
-            $this->app->bind($providerClass, function ($app) use ($clientClass, $providerClass) {
-                return new $providerClass($app->make($clientClass));
+            $this->app->bind($providerClass, function () use ($clientClass, $providerClass) {
+                return new $providerClass(new $clientClass);
             });
         }
     }
