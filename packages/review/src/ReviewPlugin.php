@@ -5,7 +5,6 @@ namespace Lunar\Review;
 use Filament\Contracts\Plugin;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
-use Lunar\Admin\Support\Facades\LunarPanel;
 
 class ReviewPlugin implements Plugin
 {
@@ -28,10 +27,6 @@ class ReviewPlugin implements Plugin
                 ),
         ])->resources([
             \Lunar\Review\Filament\Resources\ReviewResource::class,
-        ]);
-
-        LunarPanel::extensions([
-            \Lunar\Admin\Filament\Resources\OrderResource::class => \Lunar\Review\Filament\Resources\OrderResource::class,
         ]);
     }
 

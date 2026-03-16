@@ -4,7 +4,6 @@
 /.nova
 /.phpunit.cache
 /.vscode
-/.cursor
 /node_modules
 /vendor
 .phpunit.result.cache
@@ -14,3 +13,9 @@ phpstan.neon
 .phpunit.cache
 Thumbs.db
 yarn.lock
+
+# Generated MCP and boost files
+mcp.json
+SKILL.md
+AGENTS.md
+boost.json
