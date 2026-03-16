@@ -128,8 +128,10 @@ class ShippingServiceProvider extends ServiceProvider
                 throw new ShippingInitializationException("Shipping client class [{$clientClass}] not found for provider [{$providerKey}].");
             }
 
-            $this->app->singleton($providerClass, function () use ($clientClass, $providerClass) {
-                return new $providerClass(new $clientClass);
+            $this->app->bind($providerClass, function ($app) use ($clientClass, $providerClass) {
+                return $app->make($providerClass, [
+                    'client' => $app->make($clientClass),
+                ]);
             });
         }
     }

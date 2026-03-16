@@ -8,6 +8,7 @@ use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Lunar\Admin\LunarPanelManager;
 use Lunar\Facades\AttributeManifest;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Channel;
@@ -30,6 +31,8 @@ class ReviewServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/review.php', 'lunar.review');
+
+        $this->registerAdminExtensions();
     }
 
     /**
@@ -196,5 +199,17 @@ class ReviewServiceProvider extends ServiceProvider
         }
 
         config(['media-library.custom_path_generators' => $existingGenerators]);
+    }
+
+    /**
+     * Register Lunar admin resource extensions.
+     */
+    protected function registerAdminExtensions(): void
+    {
+        $this->app->resolving('lunar-panel', function (LunarPanelManager $panel): void {
+            $panel->extensions([
+                \Lunar\Admin\Filament\Resources\OrderResource::class => \Lunar\Review\Filament\Resources\OrderResource::class,
+            ]);
+        });
     }
 }
