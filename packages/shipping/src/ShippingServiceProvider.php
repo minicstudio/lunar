@@ -10,7 +10,7 @@ use Lunar\Addons\Shipping\Console\SyncShippingLockersCommand;
 use Lunar\Addons\Shipping\Exceptions\ShippingInitializationException;
 use Lunar\Addons\Shipping\Filament\Extensions\ShippingExtension;
 use Lunar\Addons\Shipping\Observers\OrderObserver;
-use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Admin\LunarPanelManager;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Order;
 
@@ -22,6 +22,8 @@ class ShippingServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/shipping.php', 'lunar.shipping');
+
+        $this->extendAdminPanel();
     }
 
     /**
@@ -36,7 +38,6 @@ class ShippingServiceProvider extends ServiceProvider
         $this->registerShippingProviders();
         $this->registerObservers();
         $this->registerSchedule();
-        $this->extendAdminPanel();
     }
 
     /**
@@ -161,8 +162,10 @@ class ShippingServiceProvider extends ServiceProvider
      */
     protected function extendAdminPanel(): void
     {
-        LunarPanel::extensions([
-            \Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder::class => ShippingExtension::class,
-        ]);
+        $this->app->resolving('lunar-panel', function (LunarPanelManager $panel): void {
+            $panel->extensions([
+                \Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder::class => ShippingExtension::class,
+            ]);
+        });
     }
 }
