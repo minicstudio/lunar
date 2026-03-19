@@ -4,7 +4,7 @@ namespace Lunar\ERP;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
-use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Admin\LunarPanelManager;
 use Lunar\ERP\Console\SyncAttributesCommand;
 use Lunar\ERP\Console\SyncErpOrdersCommand;
 use Lunar\ERP\Console\SyncErpProductsCommand;
@@ -23,6 +23,8 @@ class ErpServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/erp.php', 'lunar.erp');
+
+        $this->extendAdminPanel();
     }
 
     /**
@@ -37,7 +39,6 @@ class ErpServiceProvider extends ServiceProvider
         $this->registerErpProviders();
         $this->registerObservers();
         $this->registerSchedule();
-        $this->extendAdminPanel();
     }
 
     /**
@@ -184,8 +185,10 @@ class ErpServiceProvider extends ServiceProvider
      */
     protected function extendAdminPanel(): void
     {
-        LunarPanel::extensions([
-            \Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder::class => ShippingExtension::class,
-        ]);
+        $this->app->resolving('lunar-panel', function (LunarPanelManager $panel): void {
+            $panel->extensions([
+                \Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder::class => ShippingExtension::class,
+            ]);
+        });
     }
 }
