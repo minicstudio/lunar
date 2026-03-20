@@ -81,8 +81,14 @@ class ShippingService
         $identifier = $shippingItem?->identifier;
         $awb = $this->getAwb($order);
 
-        if ($identifier && $awb) {
-            $trackingBaseUrl = config("lunar.shipping.{$identifier}.provider_page_url");
+        if (! $identifier || ! $awb) {
+            return null;
+        }
+
+        $provider = ShippingProviderEnum::fromIdentifier($identifier);
+
+        if ($provider?->value && $awb) {
+            $trackingBaseUrl = config("lunar.shipping.{$provider?->value}.provider_page_url");
 
             return $trackingBaseUrl ? $trackingBaseUrl.urlencode($awb) : null;
         }
