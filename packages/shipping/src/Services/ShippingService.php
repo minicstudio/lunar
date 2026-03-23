@@ -97,11 +97,17 @@ class ShippingService
     }
 
     /**
-     * Get the shipping provider name.
+     * Get the shipping provider name from the order.
      */
-    public function getShippingProviderName(Order $order): ?string
+    public function getNameFromOrder(Order $order): ?string
     {
-        return $order->shipping_breakdown?->items?->first()?->name ?? null;
+        try {
+            $shippingProvider = $this->getShippingProviderOfOrder($order);
+
+            return $shippingProvider->getName();
+        } catch (OrderMissingShippingProviderException $e) {
+            return null;
+        }
     }
 
     /**
