@@ -38,7 +38,7 @@ beforeEach(function () {
     Config::set('lunar-frontend.mailchimp.server', 'us1');
     Config::set('lunar-frontend.mailchimp.sync_subscribers', true);
 
-    $this->mailchimpService = new MailchimpService();
+    $this->mailchimpService = new MailchimpService;
     $this->subscriberService = new MailchimpSubscriberService($this->mailchimpService);
     $this->ecommerceService = new MailchimpEcommerceService($this->mailchimpService, $this->subscriberService);
 });

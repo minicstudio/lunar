@@ -199,7 +199,7 @@ class MailchimpSubscriberService
             } catch (FailedMailchimpSyncException $e) {
                 $results[$tag] = [
                     'success' => false,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ];
             }
         }
@@ -223,8 +223,9 @@ class MailchimpSubscriberService
                 if (! $mergeField) {
                     $results[$tag] = [
                         'success' => true,
-                        'data' => ['deleted' => false, 'reason' => 'Field does not exist']
+                        'data' => ['deleted' => false, 'reason' => 'Field does not exist'],
                     ];
+
                     continue;
                 }
 
@@ -240,7 +241,7 @@ class MailchimpSubscriberService
             } catch (FailedMailchimpSyncException $e) {
                 $results[$tag] = [
                     'success' => false,
-                    'error' => $e->getMessage()
+                    'error' => $e->getMessage(),
                 ];
             }
         }

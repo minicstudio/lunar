@@ -32,7 +32,7 @@ test('throws exception when list_id is missing', function () {
 });
 
 test('can instantiate service with valid configuration', function () {
-    $service = new MailchimpService();
+    $service = new MailchimpService;
 
     expect($service)
         ->toBeInstanceOf(MailchimpService::class)
@@ -41,7 +41,7 @@ test('can instantiate service with valid configuration', function () {
 });
 
 test('getConnector returns MailchimpConnector instance', function () {
-    $service = new MailchimpService();
+    $service = new MailchimpService;
 
     expect($service->getConnector())
         ->toBeInstanceOf(MailchimpConnector::class);
@@ -59,7 +59,7 @@ test('createStore creates a new Mailchimp store', function () {
         CreateStoreRequest::class => $mockResponse,
     ]);
 
-    $service = new MailchimpService();
+    $service = new MailchimpService;
     $service->getConnector()->withMockClient($mockClient);
 
     $result = $service->createStore(
@@ -86,7 +86,7 @@ test('createStore throws exception on failure', function () {
         CreateStoreRequest::class => $mockResponse,
     ]);
 
-    $service = new MailchimpService();
+    $service = new MailchimpService;
     $service->getConnector()->withMockClient($mockClient);
 
     $service->createStore(
@@ -108,7 +108,7 @@ test('getStore retrieves a Mailchimp store', function () {
         GetStoreRequest::class => $mockResponse,
     ]);
 
-    $service = new MailchimpService();
+    $service = new MailchimpService;
     $service->getConnector()->withMockClient($mockClient);
 
     $result = $service->getStore('test-store');
@@ -119,7 +119,7 @@ test('getStore retrieves a Mailchimp store', function () {
 });
 
 test('getCustomerIdFromEmail generates consistent MD5 hash', function () {
-    $service = new MailchimpService();
+    $service = new MailchimpService;
 
     $customerId1 = $service->getCustomerIdFromEmail('test@example.com');
     $customerId2 = $service->getCustomerIdFromEmail('TEST@EXAMPLE.COM');
@@ -134,13 +134,13 @@ test('getCustomerIdFromEmail generates consistent MD5 hash', function () {
 test('ensureStoreIdIsSet throws exception when store_id is empty', function () {
     Config::set('lunar-frontend.mailchimp.store_id', '');
 
-    $service = new MailchimpService();
+    $service = new MailchimpService;
 
     $service->ensureStoreIdIsSet();
 })->throws(MissingMailchimpConfigurationException::class, 'Store ID is required');
 
 test('ensureStoreIdIsSet does not throw when store_id is set', function () {
-    $service = new MailchimpService();
+    $service = new MailchimpService;
 
     expect(fn () => $service->ensureStoreIdIsSet())->not->toThrow(MissingMailchimpConfigurationException::class);
 });

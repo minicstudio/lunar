@@ -9,9 +9,8 @@ trait TrackRemoveFromCart
 {
     /**
      * Track remove_from_cart event to Mailchimp.
-     * 
-     * @param int $lineId The ID of the cart line being removed.
-     * @return void
+     *
+     * @param  int  $lineId  The ID of the cart line being removed.
      */
     protected function trackMailchimpRemoveFromCartEvent(int $lineId): void
     {

@@ -24,7 +24,7 @@ beforeEach(function () {
     Config::set('lunar-frontend.mailchimp.merge_fields.preferred_category', 'PREFCAT');
     Config::set('lunar-frontend.mailchimp.merge_fields.preferred_subcategory', 'PREFSUBCAT');
 
-    $this->mailchimpService = new MailchimpService();
+    $this->mailchimpService = new MailchimpService;
     $this->subscriberService = new MailchimpSubscriberService($this->mailchimpService);
 });
 

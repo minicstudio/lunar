@@ -46,7 +46,7 @@ class SetupMailchimpMergeFieldsCommand extends Command
                     return [
                         $tag,
                         $result['success'] ? '✓ Success' : '✗ Failed',
-                        $result['success'] 
+                        $result['success']
                             ? ($result['data']['name'] ?? 'Created/Updated')
                             : $result['error'],
                     ];
@@ -57,7 +57,7 @@ class SetupMailchimpMergeFieldsCommand extends Command
             $totalCount = count($results);
 
             $this->newLine();
-            
+
             if ($successCount === $totalCount) {
                 $this->info("✓ All {$totalCount} merge fields created/updated successfully!");
 

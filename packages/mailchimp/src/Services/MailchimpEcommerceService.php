@@ -17,7 +17,6 @@ use Lunar\Models\Cart;
 use Lunar\Models\Currency;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
-use Minic\LunarFrontend\Domains\Core\Facades\LunarFrontend;
 
 class MailchimpEcommerceService
 {
@@ -390,9 +389,8 @@ class MailchimpEcommerceService
 
     /**
      * Sync all products in the order to Mailchimp to ensure they exist before syncing the order.
-     * 
-     * @param Order $order The order whose products need to be synced.
-     * @return void
+     *
+     * @param  Order  $order  The order whose products need to be synced.
      */
     protected function syncOrderProducts(Order $order): void
     {
@@ -427,8 +425,7 @@ class MailchimpEcommerceService
 
     /**
      * Extract preferred category and subcategory from the order's product lines for merge fields.
-     * 
-     * @param Order $order
+     *
      * @return array Associative array with preferred category and subcategory merge field tags and values.
      */
     protected function extractCategoryPreferences(Order $order): array
@@ -457,8 +454,7 @@ class MailchimpEcommerceService
 
     /**
      * Extract custom option preferences from the order's product lines based on configured option fields.
-     * 
-     * @param Order $order
+     *
      * @return array Associative array with custom option merge field tags and the most frequently selected
      */
     protected function extractCustomOptionPreferences(Order $order): array
@@ -482,9 +478,8 @@ class MailchimpEcommerceService
 
     /**
      * Extract address details from the order's shipping or billing address for merge fields.
-     * 
-     * @param Order $order
-     * 
+     *
+     *
      * @return array Associative array with address-related merge field tags and values (phone, address).
      */
     protected function extractAddressDetails(Order $order): array
@@ -519,8 +514,8 @@ class MailchimpEcommerceService
 
     /**
      * Get the most frequently occurring value from an array of values.
-     * 
-     * @param array $values Array of values to analyze.
+     *
+     * @param  array  $values  Array of values to analyze.
      * @return string The most frequently occurring value, or an empty string if the array is
      */
     protected function getMostFrequent(array $values): string

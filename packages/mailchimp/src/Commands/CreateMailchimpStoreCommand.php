@@ -47,19 +47,19 @@ class CreateMailchimpStoreCommand extends Command
             $domain = $this->option('domain') ?? parse_url(config('app.url'), PHP_URL_HOST);
             $emailAddress = $this->option('email') ?? config('mail.from.address');
             $currencyCode = $this->option('currency') ?? $this->getDefaultCurrencyCode();
-            
+
             // Get or generate store ID
             $storeId = $this->option('store-id');
             if (empty($storeId)) {
                 // Auto-generate a store ID based on domain
                 $storeId = $this->generateStoreId($domain);
                 $this->info("Auto-generated Store ID: {$storeId}");
-                
+
                 if (! $this->confirm('Use this Store ID?', true)) {
                     $storeId = $this->ask('Enter your preferred Store ID (alphanumeric, max 50 chars)');
                 }
             }
-            
+
             // Validate store ID format
             if (empty($storeId) || strlen($storeId) > 50 || ! preg_match('/^[a-zA-Z0-9_-]+$/', $storeId)) {
                 $this->error('Invalid Store ID. Must be alphanumeric (with _ or -), max 50 characters.');
@@ -125,19 +125,19 @@ class CreateMailchimpStoreCommand extends Command
             // Setup merge fields
             $this->newLine();
             $this->info('Setting up merge fields...');
-            
+
             $mergeFieldResults = $subscriberService->setupMergeFields();
-            
-            $successCount = count(array_filter($mergeFieldResults, fn($r) => $r['success']));
+
+            $successCount = count(array_filter($mergeFieldResults, fn ($r) => $r['success']));
             $totalCount = count($mergeFieldResults);
-            
+
             if ($successCount === $totalCount) {
                 $this->info("✓ All {$totalCount} merge fields created/updated successfully!");
             } else {
                 $this->warn("⚠ {$successCount}/{$totalCount} merge fields created/updated successfully");
-                
+
                 foreach ($mergeFieldResults as $tag => $result) {
-                    if (!$result['success']) {
+                    if (! $result['success']) {
                         $this->error("  × {$tag}: {$result['error']}");
                     }
                 }
@@ -192,12 +192,12 @@ class CreateMailchimpStoreCommand extends Command
         $id = preg_replace('/^www\./', '', $domain);
         $id = preg_replace('/[^a-zA-Z0-9-]/', '-', $id);
         $id = trim($id, '-');
-        
+
         // Limit to 50 characters
         if (strlen($id) > 50) {
             $id = substr($id, 0, 50);
         }
-        
+
         return strtolower($id);
     }
 }

@@ -92,7 +92,7 @@ class SyncAllUsersToMailchimpCommand extends Command
         $this->newLine(2);
 
         // Display results
-        $this->info("Sync completed!");
+        $this->info('Sync completed!');
         $this->table(
             ['Metric', 'Count'],
             [
@@ -112,7 +112,7 @@ class SyncAllUsersToMailchimpCommand extends Command
             );
 
             if (count($errors) > 10) {
-                $this->info('... and ' . (count($errors) - 10) . ' more errors.');
+                $this->info('... and '.(count($errors) - 10).' more errors.');
             }
 
             return self::FAILURE;
