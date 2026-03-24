@@ -1,0 +1,39 @@
+{
+    "name": "lunarphp/mailchimp",
+    "description": "Mailchimp Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "mailchimp"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Buksa Kinga Orsolya",
+            "email": "buksakinga@minic.ro",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Mailchimp\\": "src"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Mailchimp"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Mailchimp\\MailchimpServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version"
+    }
+}
