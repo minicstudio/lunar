@@ -72,6 +72,7 @@
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
             "Lunar\\ERP\\": "packages/ERP/src/",
+            "Lunar\\Mailchimp\\": "packages/mailchimp/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
             "Lunar\\Paypal\\": "packages/paypal/src/",
@@ -101,7 +102,8 @@
             "Lunar\\Tests\\Blog\\": "tests/blog",
             "Lunar\\Tests\\ERP\\": "tests/ERP",
             "Lunar\\Tests\\Review\\": "tests/review",
-            "Lunar\\Tests\\ShippingAddon\\": "tests/shipping-addon"
+            "Lunar\\Tests\\ShippingAddon\\": "tests/shipping-addon",
+            "Lunar\\Tests\\Mailchimp\\": "tests/mailchimp"
         }
     },
     "extra": {
@@ -109,6 +111,7 @@
             "name": [
                 "Blog",
                 "ERP",
+                "Mailchimp",
                 "Locations",
                 "Review",
                 "Table Rate Shipping",
@@ -134,6 +137,7 @@
                 "Lunar\\ERP\\ErpServiceProvider",
                 "Lunar\\Review\\ReviewServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
+                "Lunar\\Mailchimp\\MailchimpServiceProvider",
                 "Lunar\\LunarServiceProvider"
             ]
         }
@@ -151,7 +155,8 @@
         "lunarphp/erp": "self.version",
         "lunarphp/locations": "self.version",
         "lunarphp/stripe": "self.version",
-        "lunarphp/table-rate-shipping": "self.version"
+        "lunarphp/table-rate-shipping": "self.version",
+        "lunarphp/mailchimp": "self.version"
     },
     "scripts": {
         "pint": "pint",
