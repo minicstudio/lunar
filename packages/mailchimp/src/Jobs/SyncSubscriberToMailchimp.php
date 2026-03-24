@@ -4,13 +4,13 @@ namespace Lunar\Mailchimp\Jobs;
 
 use Exception;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Services\MailchimpSubscriberService;
+use Lunar\Models\Customer;
 
 class SyncSubscriberToMailchimp implements ShouldQueue
 {
@@ -35,7 +35,7 @@ class SyncSubscriberToMailchimp implements ShouldQueue
      * The job's constructor.
      */
     public function __construct(
-        public Authenticatable $user,
+        public Customer $user,
         array $mergeFields = []
     ) {
         $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);

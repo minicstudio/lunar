@@ -3,9 +3,9 @@
 namespace Lunar\Mailchimp\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Services\MailchimpSubscriberService;
+use Lunar\Models\Customer;
 
 class SyncAllUsersToMailchimpCommand extends Command
 {
@@ -38,15 +38,15 @@ class SyncAllUsersToMailchimpCommand extends Command
 
         $chunkSize = (int) $this->option('chunk');
 
-        $totalUsers = Authenticatable::count();
+        $totalCustomers = Customer::count();
 
-        if ($totalUsers === 0) {
+        if ($totalCustomers === 0) {
             $this->info('No users found to sync.');
 
             return self::SUCCESS;
         }
 
-        $this->info("Found {$totalUsers} user(s) to sync.");
+        $this->info("Found {$totalCustomers} user(s) to sync.");
 
         if (! $this->confirm('Do you want to proceed with syncing all users to Mailchimp?', true)) {
             $this->info('Sync cancelled.');
@@ -57,7 +57,7 @@ class SyncAllUsersToMailchimpCommand extends Command
         $this->info('Starting user sync...');
         $this->newLine();
 
-        $progressBar = $this->output->createProgressBar($totalUsers);
+        $progressBar = $this->output->createProgressBar($totalCustomers);
         $progressBar->start();
 
         $successCount = 0;
@@ -65,21 +65,21 @@ class SyncAllUsersToMailchimpCommand extends Command
         $errors = [];
 
         // Process users in chunks to avoid memory issues
-        Authenticatable::chunk($chunkSize, function ($users) use ($subscriberService, &$successCount, &$failureCount, &$errors, $progressBar) {
-            foreach ($users as $user) {
+        Customer::chunk($chunkSize, function ($customers) use ($subscriberService, &$successCount, &$failureCount, &$errors, $progressBar) {
+            foreach ($customers as $customer) {
                 try {
-                    $subscriberService->syncSubscriber($user);
+                    $subscriberService->syncSubscriber($customer);
                     $successCount++;
                 } catch (FailedMailchimpSyncException $e) {
                     $failureCount++;
                     $errors[] = [
-                        'email' => $user->email,
+                        'name' => $customer->first_name.' '.$customer->last_name,
                         'error' => $e->getMessage(),
                     ];
                 } catch (\Exception $e) {
                     $failureCount++;
                     $errors[] = [
-                        'email' => $user->email,
+                        'email' => $customer->first_name.' '.$customer->last_name,
                         'error' => $e->getMessage(),
                     ];
                 }
@@ -96,7 +96,7 @@ class SyncAllUsersToMailchimpCommand extends Command
         $this->table(
             ['Metric', 'Count'],
             [
-                ['Total Users', $totalUsers],
+                ['Total Users', $totalCustomers],
                 ['Successfully Synced', $successCount],
                 ['Failed', $failureCount],
             ]

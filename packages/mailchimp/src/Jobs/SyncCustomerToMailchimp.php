@@ -4,13 +4,13 @@ namespace Lunar\Mailchimp\Jobs;
 
 use Exception;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Services\MailchimpEcommerceService;
+use Lunar\Models\Customer;
 
 class SyncCustomerToMailchimp implements ShouldQueue
 {
@@ -30,7 +30,7 @@ class SyncCustomerToMailchimp implements ShouldQueue
      * The job's constructor.
      */
     public function __construct(
-        public Authenticatable $user
+        public Customer $customer
     ) {
         $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);
         $this->backoff = config('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
@@ -47,9 +47,9 @@ class SyncCustomerToMailchimp implements ShouldQueue
         }
 
         try {
-            $ecommerceService->syncCustomer($this->user);
+            $ecommerceService->syncCustomer($this->customer);
         } catch (Exception $e) {
-            throw new FailedMailchimpSyncException('Mailchimp customer sync error for user '.$this->user->id.'. '.$e->getMessage());
+            throw new FailedMailchimpSyncException('Mailchimp customer sync error for customer id'.$this->customer->id.'. '.$e->getMessage());
         }
     }
 }

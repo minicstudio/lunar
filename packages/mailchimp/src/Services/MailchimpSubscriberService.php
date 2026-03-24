@@ -2,7 +2,6 @@
 
 namespace Lunar\Mailchimp\Services;
 
-use Illuminate\Contracts\Auth\Authenticatable;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Requests\CreateMergeFieldRequest;
 use Lunar\Mailchimp\Requests\DeleteMergeFieldRequest;
@@ -10,6 +9,7 @@ use Lunar\Mailchimp\Requests\ListMergeFieldsRequest;
 use Lunar\Mailchimp\Requests\SyncSubscriberRequest;
 use Lunar\Mailchimp\Requests\TrackEventRequest;
 use Lunar\Mailchimp\Requests\UpdateMergeFieldRequest;
+use Lunar\Models\Customer;
 
 class MailchimpSubscriberService
 {
@@ -65,8 +65,14 @@ class MailchimpSubscriberService
      *
      * @throws FailedMailchimpSyncException
      */
-    public function syncSubscriber(Authenticatable $user, array $mergeFields = []): array
+    public function syncSubscriber(Customer $customer, array $mergeFields = []): array
     {
+        $user = $customer->users()?->first();
+
+        if (! $user) {
+            throw new FailedMailchimpSyncException("Customer {$customer->id} has no associated user account.");
+        }
+
         return $this->syncSubscriberByEmail(
             $user->email,
             $user->first_name ?? '',

@@ -2,7 +2,6 @@
 
 namespace Lunar\Mailchimp\Services;
 
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Log;
 use Lunar\Exceptions\SilentException;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
@@ -15,6 +14,7 @@ use Lunar\Mailchimp\Requests\SyncProductRequest;
 use Lunar\Mailchimp\Requests\UpdateCartRequest;
 use Lunar\Models\Cart;
 use Lunar\Models\Currency;
+use Lunar\Models\Customer;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
 
@@ -116,8 +116,14 @@ class MailchimpEcommerceService
      *
      * @throws FailedMailchimpSyncException
      */
-    public function syncCustomer(Authenticatable $user): array
+    public function syncCustomer(Customer $customer): array
     {
+        $user = $customer->users()?->first();
+
+        if (! $user) {
+            throw new FailedMailchimpSyncException("Customer {$customer->id} has no associated user account.");
+        }
+
         $this->mailchimp->ensureStoreIdIsSet();
 
         $customerId = $this->mailchimp->getCustomerIdFromEmail($user->email);
