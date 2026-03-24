@@ -13,14 +13,14 @@ class SyncOrderOnPlacement implements ShouldQueue
      */
     public function handle(EventsOrderPlacedEvent $event): void
     {
-        if (! config('lunar-frontend.mailchimp.enabled', false)) {
+        if (! config('lunar.mailchimp.enabled', false)) {
             return;
         }
 
         $order = $event->order;
 
         // Sync order to Ecommerce API
-        if (config('lunar-frontend.mailchimp.sync_orders', true)) {
+        if (config('lunar.mailchimp.sync_orders', true)) {
             SyncOrderJob::dispatch($order);
         }
     }

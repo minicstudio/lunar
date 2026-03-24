@@ -34,8 +34,8 @@ class SyncProductToMailchimp implements ShouldQueue
         public Product $product,
         public ProductEventType $eventType = ProductEventType::UPDATE
     ) {
-        $this->tries = config('lunar-frontend.mailchimp.retry.max_attempts', 4);
-        $this->backoff = config('lunar-frontend.mailchimp.retry.backoff', [60, 300, 3600]);
+        $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);
+        $this->backoff = config('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
     }
 
     /**
@@ -43,8 +43,8 @@ class SyncProductToMailchimp implements ShouldQueue
      */
     public function handle(MailchimpEcommerceService $ecommerceService): void
     {
-        if (! config('lunar-frontend.mailchimp.enabled', false) ||
-            ! config('lunar-frontend.mailchimp.sync_products', true)) {
+        if (! config('lunar.mailchimp.enabled', false) ||
+            ! config('lunar.mailchimp.sync_products', true)) {
             return;
         }
 

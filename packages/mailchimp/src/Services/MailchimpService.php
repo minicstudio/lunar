@@ -21,10 +21,10 @@ class MailchimpService
      */
     public function __construct()
     {
-        $apiKey = config('lunar-frontend.mailchimp.api_key');
-        $listId = config('lunar-frontend.mailchimp.list_id');
-        $storeId = config('lunar-frontend.mailchimp.store_id');
-        $server = config('lunar-frontend.mailchimp.server', 'us1');
+        $apiKey = config('lunar.mailchimp.api_key');
+        $listId = config('lunar.mailchimp.list_id');
+        $storeId = config('lunar.mailchimp.store_id');
+        $server = config('lunar.mailchimp.server', 'us1');
 
         if (empty($apiKey) || empty($listId)) {
             throw new MissingMailchimpConfigurationException('Missing Mailchimp configuration. Please set MAILCHIMP_API_KEY and MAILCHIMP_LIST_ID in your environment.');

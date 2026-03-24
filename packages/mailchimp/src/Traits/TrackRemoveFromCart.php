@@ -14,8 +14,8 @@ trait TrackRemoveFromCart
      */
     protected function trackMailchimpRemoveFromCartEvent(int $lineId): void
     {
-        if (! config('lunar-frontend.mailchimp.enabled', false)
-            || ! config('lunar-frontend.mailchimp.track_events', true)) {
+        if (! config('lunar.mailchimp.enabled', false)
+            || ! config('lunar.mailchimp.track_events', true)) {
             return;
         }
 

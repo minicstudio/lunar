@@ -38,8 +38,8 @@ class SyncSubscriberToMailchimp implements ShouldQueue
         public Authenticatable $user,
         array $mergeFields = []
     ) {
-        $this->tries = config('lunar-frontend.mailchimp.retry.max_attempts', 4);
-        $this->backoff = config('lunar-frontend.mailchimp.retry.backoff', [60, 300, 3600]);
+        $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);
+        $this->backoff = config('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
         $this->mergeFields = $mergeFields;
     }
 
@@ -48,7 +48,7 @@ class SyncSubscriberToMailchimp implements ShouldQueue
      */
     public function handle(MailchimpSubscriberService $subscriberService): void
     {
-        if (! config('lunar-frontend.mailchimp.enabled', false)) {
+        if (! config('lunar.mailchimp.enabled', false)) {
             return;
         }
 

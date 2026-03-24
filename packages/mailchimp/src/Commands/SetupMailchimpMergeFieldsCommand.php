@@ -29,7 +29,7 @@ class SetupMailchimpMergeFieldsCommand extends Command
     {
         try {
             // Check if Mailchimp is enabled
-            if (! config('lunar-frontend.mailchimp.enabled', false)) {
+            if (! config('lunar.mailchimp.enabled', false)) {
                 $this->error('Mailchimp integration is not enabled. Set MAILCHIMP_ENABLED=true in your .env file.');
 
                 return self::FAILURE;

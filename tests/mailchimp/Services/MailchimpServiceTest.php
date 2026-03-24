@@ -11,21 +11,21 @@ use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 
 beforeEach(function () {
-    Config::set('lunar-frontend.mailchimp.api_key', 'test-api-key');
-    Config::set('lunar-frontend.mailchimp.list_id', 'test-list-id');
-    Config::set('lunar-frontend.mailchimp.store_id', 'test-store-id');
-    Config::set('lunar-frontend.mailchimp.server', 'us1');
+    Config::set('lunar.mailchimp.api_key', 'test-api-key');
+    Config::set('lunar.mailchimp.list_id', 'test-list-id');
+    Config::set('lunar.mailchimp.store_id', 'test-store-id');
+    Config::set('lunar.mailchimp.server', 'us1');
 });
 
 test('throws exception when api_key is missing', function () {
-    Config::set('lunar-frontend.mailchimp.api_key', '');
+    Config::set('lunar.mailchimp.api_key', '');
 
     expect(fn () => new MailchimpService)
         ->toThrow(MissingMailchimpConfigurationException::class, 'Missing Mailchimp configuration');
 });
 
 test('throws exception when list_id is missing', function () {
-    Config::set('lunar-frontend.mailchimp.list_id', '');
+    Config::set('lunar.mailchimp.list_id', '');
 
     expect(fn () => new MailchimpService)
         ->toThrow(MissingMailchimpConfigurationException::class, 'Missing Mailchimp configuration');
@@ -132,7 +132,7 @@ test('getCustomerIdFromEmail generates consistent MD5 hash', function () {
 });
 
 test('ensureStoreIdIsSet throws exception when store_id is empty', function () {
-    Config::set('lunar-frontend.mailchimp.store_id', '');
+    Config::set('lunar.mailchimp.store_id', '');
 
     $service = new MailchimpService;
 

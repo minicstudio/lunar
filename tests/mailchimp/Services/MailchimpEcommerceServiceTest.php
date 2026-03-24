@@ -32,11 +32,11 @@ beforeEach(function () {
     $this->createCustomerGroup();
     $this->createChannel();
 
-    Config::set('lunar-frontend.mailchimp.api_key', 'test-api-key');
-    Config::set('lunar-frontend.mailchimp.list_id', 'test-list-id');
-    Config::set('lunar-frontend.mailchimp.store_id', 'test-store-id');
-    Config::set('lunar-frontend.mailchimp.server', 'us1');
-    Config::set('lunar-frontend.mailchimp.sync_subscribers', true);
+    Config::set('lunar.mailchimp.api_key', 'test-api-key');
+    Config::set('lunar.mailchimp.list_id', 'test-list-id');
+    Config::set('lunar.mailchimp.store_id', 'test-store-id');
+    Config::set('lunar.mailchimp.server', 'us1');
+    Config::set('lunar.mailchimp.sync_subscribers', true);
 
     $this->mailchimpService = new MailchimpService;
     $this->subscriberService = new MailchimpSubscriberService($this->mailchimpService);

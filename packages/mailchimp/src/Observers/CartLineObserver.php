@@ -40,8 +40,8 @@ class CartLineObserver implements ShouldHandleEventsAfterCommit
      */
     protected function syncCart(CartLine $cartLine): void
     {
-        if (! config('lunar-frontend.mailchimp.enabled', false) ||
-            ! config('lunar-frontend.mailchimp.sync_carts', true)) {
+        if (! config('lunar.mailchimp.enabled', false) ||
+            ! config('lunar.mailchimp.sync_carts', true)) {
             return;
         }
 

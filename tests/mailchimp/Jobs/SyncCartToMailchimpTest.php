@@ -20,14 +20,14 @@ beforeEach(function () {
 
     Queue::fake();
 
-    Config::set('lunar-frontend.mailchimp.enabled', true);
-    Config::set('lunar-frontend.mailchimp.sync_carts', true);
-    Config::set('lunar-frontend.mailchimp.api_key', 'test-api-key');
-    Config::set('lunar-frontend.mailchimp.list_id', 'test-list-id');
-    Config::set('lunar-frontend.mailchimp.store_id', 'test-store-id');
-    Config::set('lunar-frontend.mailchimp.server', 'us1');
-    Config::set('lunar-frontend.mailchimp.retry.max_attempts', 4);
-    Config::set('lunar-frontend.mailchimp.retry.backoff', [60, 300, 3600]);
+    Config::set('lunar.mailchimp.enabled', true);
+    Config::set('lunar.mailchimp.sync_carts', true);
+    Config::set('lunar.mailchimp.api_key', 'test-api-key');
+    Config::set('lunar.mailchimp.list_id', 'test-list-id');
+    Config::set('lunar.mailchimp.store_id', 'test-store-id');
+    Config::set('lunar.mailchimp.server', 'us1');
+    Config::set('lunar.mailchimp.retry.max_attempts', 4);
+    Config::set('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
 });
 
 test('job can be dispatched successfully', function () {
@@ -76,7 +76,7 @@ test('job syncs cart to Mailchimp', function () {
 });
 
 test('job does not run when mailchimp is disabled', function () {
-    Config::set('lunar-frontend.mailchimp.enabled', false);
+    Config::set('lunar.mailchimp.enabled', false);
 
     $cart = Cart::factory()->create();
 
@@ -87,7 +87,7 @@ test('job does not run when mailchimp is disabled', function () {
 });
 
 test('job does not run when sync_carts is disabled', function () {
-    Config::set('lunar-frontend.mailchimp.sync_carts', false);
+    Config::set('lunar.mailchimp.sync_carts', false);
 
     $cart = Cart::factory()->create();
 

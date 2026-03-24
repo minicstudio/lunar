@@ -28,13 +28,13 @@ class SyncAllProductsToMailchimpCommand extends Command
     public function handle(): int
     {
         // Check if Mailchimp is enabled
-        if (! config('lunar-frontend.mailchimp.enabled', false)) {
+        if (! config('lunar.mailchimp.enabled', false)) {
             $this->error('Mailchimp integration is not enabled. Set MAILCHIMP_ENABLED=true in your .env file.');
 
             return self::FAILURE;
         }
 
-        if (! config('lunar-frontend.mailchimp.sync_products', false)) {
+        if (! config('lunar.mailchimp.sync_products', false)) {
             $this->error('Product sync is not enabled. Set MAILCHIMP_SYNC_PRODUCTS=true in your .env file.');
 
             return self::FAILURE;

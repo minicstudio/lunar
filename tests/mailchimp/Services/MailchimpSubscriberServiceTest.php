@@ -14,15 +14,15 @@ use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 
 beforeEach(function () {
-    Config::set('lunar-frontend.mailchimp.api_key', 'test-api-key');
-    Config::set('lunar-frontend.mailchimp.list_id', 'test-list-id');
-    Config::set('lunar-frontend.mailchimp.store_id', 'test-store-id');
-    Config::set('lunar-frontend.mailchimp.server', 'us1');
+    Config::set('lunar.mailchimp.api_key', 'test-api-key');
+    Config::set('lunar.mailchimp.list_id', 'test-list-id');
+    Config::set('lunar.mailchimp.store_id', 'test-store-id');
+    Config::set('lunar.mailchimp.server', 'us1');
 
-    Config::set('lunar-frontend.mailchimp.merge_fields.first_name', 'FNAME');
-    Config::set('lunar-frontend.mailchimp.merge_fields.last_name', 'LNAME');
-    Config::set('lunar-frontend.mailchimp.merge_fields.preferred_category', 'PREFCAT');
-    Config::set('lunar-frontend.mailchimp.merge_fields.preferred_subcategory', 'PREFSUBCAT');
+    Config::set('lunar.mailchimp.merge_fields.first_name', 'FNAME');
+    Config::set('lunar.mailchimp.merge_fields.last_name', 'LNAME');
+    Config::set('lunar.mailchimp.merge_fields.preferred_category', 'PREFCAT');
+    Config::set('lunar.mailchimp.merge_fields.preferred_subcategory', 'PREFSUBCAT');
 
     $this->mailchimpService = new MailchimpService;
     $this->subscriberService = new MailchimpSubscriberService($this->mailchimpService);

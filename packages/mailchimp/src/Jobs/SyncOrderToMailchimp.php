@@ -32,8 +32,8 @@ class SyncOrderToMailchimp implements ShouldQueue
     public function __construct(
         public Order $order
     ) {
-        $this->tries = config('lunar-frontend.mailchimp.retry.max_attempts', 4);
-        $this->backoff = config('lunar-frontend.mailchimp.retry.backoff', [60, 300, 3600]);
+        $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);
+        $this->backoff = config('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
     }
 
     /**
@@ -41,8 +41,8 @@ class SyncOrderToMailchimp implements ShouldQueue
      */
     public function handle(MailchimpEcommerceService $ecommerceService): void
     {
-        if (! config('lunar-frontend.mailchimp.enabled', false) ||
-            ! config('lunar-frontend.mailchimp.sync_orders', true)) {
+        if (! config('lunar.mailchimp.enabled', false) ||
+            ! config('lunar.mailchimp.sync_orders', true)) {
             return;
         }
 

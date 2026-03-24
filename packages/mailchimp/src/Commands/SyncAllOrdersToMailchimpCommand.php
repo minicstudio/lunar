@@ -30,13 +30,13 @@ class SyncAllOrdersToMailchimpCommand extends Command
     public function handle(MailchimpEcommerceService $ecommerceService): int
     {
         // Check if Mailchimp is enabled
-        if (! config('lunar-frontend.mailchimp.enabled', false)) {
+        if (! config('lunar.mailchimp.enabled', false)) {
             $this->error('Mailchimp integration is not enabled. Set MAILCHIMP_ENABLED=true in your .env file.');
 
             return self::FAILURE;
         }
 
-        if (! config('lunar-frontend.mailchimp.sync_orders', false)) {
+        if (! config('lunar.mailchimp.sync_orders', false)) {
             $this->error('Order sync is not enabled. Set MAILCHIMP_SYNC_ORDERS=true in your .env file.');
 
             return self::FAILURE;

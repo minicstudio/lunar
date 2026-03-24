@@ -97,8 +97,8 @@ class MailchimpSubscriberService
             'status_if_new' => 'subscribed',
             'merge_fields' => array_merge(
                 [
-                    config('lunar-frontend.mailchimp.merge_fields.first_name') => $firstName,
-                    config('lunar-frontend.mailchimp.merge_fields.last_name') => $lastName,
+                    config('lunar.mailchimp.merge_fields.first_name') => $firstName,
+                    config('lunar.mailchimp.merge_fields.last_name') => $lastName,
                 ],
                 $cleanedMergeFields
             ),
@@ -168,7 +168,7 @@ class MailchimpSubscriberService
         ];
 
         foreach ($mergeFieldsConfig as $configKey => $fieldConfig) {
-            $tag = config("lunar-frontend.mailchimp.merge_fields.{$configKey}");
+            $tag = config("lunar.mailchimp.merge_fields.{$configKey}");
 
             if (! $tag) {
                 continue;
@@ -182,7 +182,7 @@ class MailchimpSubscriberService
             }
         }
 
-        $optionFields = config('lunar-frontend.mailchimp.option_fields', []);
+        $optionFields = config('lunar.mailchimp.option_fields', []);
         foreach ($optionFields as $tag => $fieldConfig) {
             if (empty($tag) || empty($fieldConfig['name']) || empty($fieldConfig['handle'])) {
                 continue;

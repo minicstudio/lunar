@@ -221,7 +221,7 @@ class MailchimpEcommerceService
 
         $this->syncCustomerByEmail($customerId, $email, $firstName, $lastName);
 
-        if (config('lunar-frontend.mailchimp.sync_subscribers', true)) {
+        if (config('lunar.mailchimp.sync_subscribers', true)) {
             $orderData = $this->calculateOrderData($order);
             $this->subscriberService->syncSubscriberByEmail($email, $firstName, $lastName, $orderData);
         }
@@ -447,8 +447,8 @@ class MailchimpEcommerceService
             ->all();
 
         return [
-            config('lunar-frontend.mailchimp.merge_fields.preferred_category') => $this->getMostFrequent($categories),
-            config('lunar-frontend.mailchimp.merge_fields.preferred_subcategory') => $this->getMostFrequent($subcategories),
+            config('lunar.mailchimp.merge_fields.preferred_category') => $this->getMostFrequent($categories),
+            config('lunar.mailchimp.merge_fields.preferred_subcategory') => $this->getMostFrequent($subcategories),
         ];
     }
 
@@ -459,7 +459,7 @@ class MailchimpEcommerceService
      */
     protected function extractCustomOptionPreferences(Order $order): array
     {
-        $optionFields = config('lunar-frontend.mailchimp.option_fields', []);
+        $optionFields = config('lunar.mailchimp.option_fields', []);
 
         $customOptionValues = collect($order->productLines)
             ->flatMap(fn ($line) => $line->purchasable->values)
@@ -492,11 +492,11 @@ class MailchimpEcommerceService
 
         return collect([
             'phone' => [
-                'tag' => config('lunar-frontend.mailchimp.merge_fields.phone'),
+                'tag' => config('lunar.mailchimp.merge_fields.phone'),
                 'value' => $address->contact_phone,
             ],
             'address' => [
-                'tag' => config('lunar-frontend.mailchimp.merge_fields.address'),
+                'tag' => config('lunar.mailchimp.merge_fields.address'),
                 'value' => ($address->line_one || $address->city || $address->postcode) ? [
                     'addr1' => $address->line_one ?? '',
                     'addr2' => $address->line_two ?? '',
