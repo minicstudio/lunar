@@ -3,7 +3,6 @@
 namespace Lunar\Mailchimp;
 
 use Illuminate\Support\ServiceProvider;
-use Lunar\Facades\ModelManifest;
 use Lunar\Mailchimp\Commands\CreateMailchimpStoreCommand;
 use Lunar\Mailchimp\Commands\SetupMailchimpMergeFieldsCommand;
 use Lunar\Mailchimp\Commands\SyncAllOrdersToMailchimpCommand;
