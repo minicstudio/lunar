@@ -3,7 +3,6 @@
 namespace Lunar\Mailchimp;
 
 use Illuminate\Support\ServiceProvider;
-use Lunar\Facades\ModelManifest;
 use Lunar\Mailchimp\Commands\CreateMailchimpStoreCommand;
 use Lunar\Mailchimp\Commands\SetupMailchimpMergeFieldsCommand;
 use Lunar\Mailchimp\Commands\SyncAllOrdersToMailchimpCommand;
@@ -28,20 +27,8 @@ class MailchimpServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerConsoleCommands();
-        $this->registerModelManifest();
-        $this->loadPackageAssets();
         $this->publishAssets();
         $this->registerObservers();
-    }
-
-    /**
-     * Load package assets like migrations and translations.
-     */
-    protected function loadPackageAssets(): void
-    {
-        if (! config('lunar.database.disable_migrations', false)) {
-            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        }
     }
 
     /**
@@ -52,14 +39,6 @@ class MailchimpServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/mailchimp.php' => config_path('lunar/mailchimp.php'),
         ], 'lunar.mailchimp.config');
-    }
-
-    /**
-     * Register model manifest directory.
-     */
-    protected function registerModelManifest(): void
-    {
-        ModelManifest::addDirectory(__DIR__.'/Models');
     }
 
     /**

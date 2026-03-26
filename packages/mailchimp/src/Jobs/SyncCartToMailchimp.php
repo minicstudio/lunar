@@ -39,12 +39,14 @@ class SyncCartToMailchimp implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(MailchimpEcommerceService $ecommerceService): void
+    public function handle(): void
     {
         if (! config('lunar.mailchimp.enabled', false) ||
             ! config('lunar.mailchimp.sync_carts', true)) {
             return;
         }
+
+        $ecommerceService = app(MailchimpEcommerceService::class);
 
         // Only sync carts with associated users (logged in)
         if (! $this->cart->user_id) {

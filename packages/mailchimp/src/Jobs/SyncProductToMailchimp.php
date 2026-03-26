@@ -41,12 +41,14 @@ class SyncProductToMailchimp implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(MailchimpEcommerceService $ecommerceService): void
+    public function handle(): void
     {
         if (! config('lunar.mailchimp.enabled', false) ||
             ! config('lunar.mailchimp.sync_products', true)) {
             return;
         }
+
+        $ecommerceService = app(MailchimpEcommerceService::class);
 
         try {
             match ($this->eventType) {

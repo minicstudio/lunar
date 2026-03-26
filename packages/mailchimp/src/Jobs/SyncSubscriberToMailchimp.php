@@ -46,11 +46,13 @@ class SyncSubscriberToMailchimp implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(MailchimpSubscriberService $subscriberService): void
+    public function handle(): void
     {
         if (! config('lunar.mailchimp.enabled', false)) {
             return;
         }
+
+        $subscriberService = app(MailchimpSubscriberService::class);
 
         try {
             $subscriberService->syncSubscriber($this->user, $this->mergeFields);
