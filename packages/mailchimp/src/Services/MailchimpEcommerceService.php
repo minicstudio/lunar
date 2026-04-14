@@ -6,12 +6,12 @@ use Illuminate\Support\Facades\Log;
 use Lunar\Exceptions\SilentException;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Requests\CreateCartRequest;
-use Lunar\Mailchimp\Requests\CreateOrderRequest;
 use Lunar\Mailchimp\Requests\DeleteCartRequest;
 use Lunar\Mailchimp\Requests\DeleteProductRequest;
 use Lunar\Mailchimp\Requests\SyncCustomerRequest;
 use Lunar\Mailchimp\Requests\SyncProductRequest;
 use Lunar\Mailchimp\Requests\UpdateCartRequest;
+use Lunar\Mailchimp\Requests\UpdateOrCreateOrderRequest;
 use Lunar\Models\Cart;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
@@ -185,7 +185,7 @@ class MailchimpEcommerceService
             'processed_at_foreign' => $order->placed_at?->toIso8601String() ?? now()->toIso8601String(),
         ];
 
-        $request = new CreateOrderRequest($this->mailchimp->getStoreId(), $data);
+        $request = new UpdateOrCreateOrderRequest($this->mailchimp->getStoreId(), (string) $order->id, $data);
         $response = $this->mailchimp->getConnector()->send($request);
 
         if ($response->status() === 400) {

@@ -4,6 +4,7 @@ namespace Lunar\Mailchimp\Jobs;
 
 use Exception;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -12,7 +13,7 @@ use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Services\MailchimpEcommerceService;
 use Lunar\Models\Order;
 
-class SyncOrderToMailchimp implements ShouldQueue
+class SyncOrderToMailchimp implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -34,6 +35,15 @@ class SyncOrderToMailchimp implements ShouldQueue
     ) {
         $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);
         $this->backoff = config('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
+    }
+
+    /**
+     * Get the unique ID for the job.
+     * Prevents multiple jobs from being queued for the same order.
+     */
+    public function uniqueId(): string
+    {
+        return 'mailchimp-order-sync-'.$this->order->id;
     }
 
     /**
