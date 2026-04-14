@@ -7,17 +7,18 @@ use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Traits\Body\HasJsonBody;
 
-class CreateOrderRequest extends Request implements HasBody
+class UpdateOrCreateOrderRequest extends Request implements HasBody
 {
     use HasJsonBody;
 
-    protected Method $method = Method::POST;
+    protected Method $method = Method::PUT;
 
     /**
      * Create a new request instance.
      */
     public function __construct(
         protected string $storeId,
+        protected string $orderId,
         protected array $data
     ) {}
 
@@ -26,7 +27,7 @@ class CreateOrderRequest extends Request implements HasBody
      */
     public function resolveEndpoint(): string
     {
-        return "/ecommerce/stores/{$this->storeId}/orders";
+        return "/ecommerce/stores/{$this->storeId}/orders/{$this->orderId}";
     }
 
     /**

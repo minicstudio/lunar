@@ -103,12 +103,12 @@ A complete Mailchimp integration has been implemented for the Lunar Frontend web
 ### 4. Order Sync ✅
 - **Triggers**: Successful checkout (OrderPlacedEvent)
 - **Data**: Order ID, customer, currency, totals, line items, processed date
-- **API**: Mailchimp Ecommerce API `/stores/{store_id}/orders`
+- **API**: Mailchimp Ecommerce API `/stores/{store_id}/orders` - PUT
 - **Method**: `MailchimpService::syncOrder()` - Consolidated method handles:
   1. Extract customer data (from User or billing address)
   2. Sync customer to Ecommerce API
   3. Sync subscriber with merge fields (if enabled)
-  4. Create order in Ecommerce API
+  4. Create or update order in Ecommerce API
 - **Job**: `SyncOrderToMailchimp`
 - **Guest Support**: Extracts email from billing address for guest orders
 - **Additional**: Cart deletion handled by Mailchimp automatically
