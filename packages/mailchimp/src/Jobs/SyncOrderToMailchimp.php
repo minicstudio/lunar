@@ -13,7 +13,7 @@ use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Services\MailchimpEcommerceService;
 use Lunar\Models\Order;
 
-class SyncOrderToMailchimp implements ShouldQueue, ShouldBeUnique
+class SyncOrderToMailchimp implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
