@@ -43,6 +43,7 @@ use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
  * @property ?int $brand_id
  * @property int $product_type_id
  * @property string $status
+ * @property ?\Illuminate\Support\Carbon $published_at
  * @property ?\Illuminate\Support\Collection $attribute_data
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
@@ -82,6 +83,7 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         'product_type_id',
         'status',
         'brand_id',
+        'published_at',
     ];
 
     /**
@@ -91,6 +93,7 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
      */
     protected $casts = [
         'attribute_data' => AsAttributeData::class,
+        'published_at' => 'datetime',
     ];
 
     /**

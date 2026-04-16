@@ -56,6 +56,7 @@ return [
             'options' => [
                 'always' => 'Luôn luôn',
                 'in_stock' => 'Còn hàng',
+                'out_of_stock' => 'Hết hàng',
                 'in_stock_or_on_backorder' => 'Còn hàng hoặc đặt trước',
             ],
         ],

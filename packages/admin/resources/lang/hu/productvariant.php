@@ -56,6 +56,7 @@ return [
             'options' => [
                 'always' => 'Mindig',
                 'in_stock' => 'Készleten',
+                'out_of_stock' => 'Nincs készleten',
                 'in_stock_or_on_backorder' => 'Készleten vagy utánrendelhető',
             ],
         ],

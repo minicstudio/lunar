@@ -247,6 +247,31 @@ class ProductResource extends BaseResource
                 Tables\Filters\SelectFilter::make('brand')
                     ->label(__('lunarpanel::product.table.brand.label'))
                     ->relationship('brand', 'name'),
+                Tables\Filters\SelectFilter::make('stock')
+                    ->label(__('lunarpanel::product.table.stock.label'))
+                    ->options([
+                        'in_stock' => __('lunarpanel::productvariant.form.purchasable.options.in_stock'),
+                        'out_of_stock' => __('lunarpanel::productvariant.form.purchasable.options.out_of_stock'),
+                    ])
+                    ->query(function (Builder $query, array $data) {
+                        if (! isset($data['value'])) {
+                            return $query;
+                        }
+
+                        if ($data['value'] === 'in_stock') {
+                            return $query->whereHas('variants', function ($q) {
+                                $q->where('stock', '>', 0);
+                            });
+                        }
+
+                        if ($data['value'] === 'out_of_stock') {
+                            return $query->whereDoesntHave('variants', function ($q) {
+                                $q->where('stock', '>', 0);
+                            });
+                        }
+
+                        return $query;
+                    }),
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
