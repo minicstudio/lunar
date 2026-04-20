@@ -56,6 +56,7 @@ return [
             'options' => [
                 'always' => 'Her Zaman',
                 'in_stock' => 'Stokta',
+                'out_of_stock' => 'Stokta Yok',
                 'in_stock_or_on_backorder' => 'Stokta veya Sipariş Üzerine',
             ],
         ],

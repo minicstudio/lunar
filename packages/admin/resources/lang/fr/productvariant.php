@@ -56,6 +56,7 @@ return [
             'options' => [
                 'always' => 'Toujours',
                 'in_stock' => 'En stock',
+                'out_of_stock' => 'Rupture de stock',
                 'in_stock_or_on_backorder' => 'En stock ou en commande',
             ],
         ],
