@@ -140,6 +140,23 @@ class MailchimpSubscriberService
             new TrackEventRequest($this->mailchimp->getListId(), $subscriberHash, $data)
         );
 
+        // if we get a 404 we need to sync the subscriber first before tracking the event
+        if ($response->status() === 404) {
+            $customer = Customer::with('users')
+                ->whereHas('users', fn ($query) => $query->where('email', $email))
+                ->first();
+
+            if (! $customer) {
+                throw new FailedMailchimpSyncException("No customer found with email {$email} to sync before tracking event.");
+            }
+
+            $this->syncSubscriber($customer);
+
+            $response = $this->mailchimp->getConnector()->send(
+                new TrackEventRequest($this->mailchimp->getListId(), $subscriberHash, $data)
+            );
+        }
+
         if (! $response->successful()) {
             throw new FailedMailchimpSyncException("Failed to track event '{$eventName}': {$response->body()}");
         }
