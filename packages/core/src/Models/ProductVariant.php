@@ -21,6 +21,9 @@ use Lunar\Base\Traits\HasPrices;
 use Lunar\Base\Traits\HasTranslations;
 use Lunar\Base\Traits\LogsActivity;
 use Lunar\Database\Factories\ProductVariantFactory;
+use Lunar\Events\ProductVariantCreatedEvent;
+use Lunar\Events\ProductVariantDeletedEvent;
+use Lunar\Events\ProductVariantUpdatedEvent;
 use Lunar\Models\Collection as CollectionModel;
 use Spatie\LaravelBlink\BlinkFacade as Blink;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -82,6 +85,17 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     protected $casts = [
         'requires_shipping' => 'bool',
         'attribute_data' => AsAttributeData::class,
+    ];
+
+    /**
+     * The event map for the model.
+     *
+     * @var array<string, string>
+     */
+    protected $dispatchesEvents = [
+        'created' => ProductVariantCreatedEvent::class,
+        'updated' => ProductVariantUpdatedEvent::class,
+        'deleted' => ProductVariantDeletedEvent::class,
     ];
 
     /**
