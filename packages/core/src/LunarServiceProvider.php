@@ -54,6 +54,7 @@ use Lunar\Database\State\ConvertTaxbreakdown;
 use Lunar\Database\State\EnsureBrandsAreUpgraded;
 use Lunar\Database\State\EnsureDefaultTaxClassExists;
 use Lunar\Database\State\EnsureMediaCollectionsAreRenamed;
+use Lunar\Database\State\EnsurePublishedAtIsSet;
 use Lunar\Database\State\MigrateCartOrderRelationship;
 use Lunar\Database\State\PopulateProductOptionLabelWithName;
 use Lunar\Database\State\UpdateWeightUnitToKg;
@@ -299,6 +300,7 @@ class LunarServiceProvider extends ServiceProvider
             EnsureDefaultTaxClassExists::class,
             EnsureBrandsAreUpgraded::class,
             EnsureMediaCollectionsAreRenamed::class,
+            EnsurePublishedAtIsSet::class,
             PopulateProductOptionLabelWithName::class,
             MigrateCartOrderRelationship::class,
             ConvertTaxbreakdown::class,
