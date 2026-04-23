@@ -2,6 +2,9 @@
 
 return [
 
+    'yes' => 'Igen',
+    'no' => 'Nem',
+
     'sections' => [
         'catalog' => 'Katalógus',
         'sales' => 'Értékesítés',

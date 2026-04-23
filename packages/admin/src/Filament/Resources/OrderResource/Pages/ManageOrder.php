@@ -156,6 +156,16 @@ class ManageOrder extends BaseViewRecord
                         return Infolists\Components\KeyValueEntry::make('meta_'.$key)->state($value);
                     }
 
+                    // Format boolean values as yes/no
+                    if (is_bool($value) || $value === 0 || $value === 1 || $value === '0' || $value === '1') {
+                        $boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                        $formattedValue = $boolValue ? __('lunarpanel::global.yes') : __('lunarpanel::global.no');
+                        
+                        return Infolists\Components\TextEntry::make('meta_'.$key)
+                            ->state($formattedValue)
+                            ->label(__($key));
+                    }
+
                     return Infolists\Components\TextEntry::make('meta_'.$key)
                         ->state($value)
                         ->label(__($key))

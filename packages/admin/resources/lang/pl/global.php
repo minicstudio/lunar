@@ -2,6 +2,9 @@
 
 return [
 
+    'yes' => 'Tak',
+    'no' => 'Nie',
+
     'sections' => [
         'catalog' => 'Katalog',
         'sales' => 'Sprzedaż',
