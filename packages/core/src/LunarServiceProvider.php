@@ -149,11 +149,11 @@ class LunarServiceProvider extends ServiceProvider
             return new OrderModifiers;
         });
 
-        $this->app->singleton(CartSessionInterface::class, function ($app) {
+        $this->app->scoped(CartSessionInterface::class, function ($app) {
             return $app->make(CartSessionManager::class);
         });
 
-        $this->app->singleton(StorefrontSessionInterface::class, function ($app) {
+        $this->app->scoped(StorefrontSessionInterface::class, function ($app) {
             return $app->make(StorefrontSessionManager::class);
         });
 
@@ -161,7 +161,7 @@ class LunarServiceProvider extends ServiceProvider
             return new ShippingModifiers;
         });
 
-        $this->app->singleton(ShippingManifestInterface::class, function ($app) {
+        $this->app->scoped(ShippingManifestInterface::class, function ($app) {
             return $app->make(ShippingManifest::class);
         });
 
@@ -193,7 +193,7 @@ class LunarServiceProvider extends ServiceProvider
             return $app->make(PaymentManager::class);
         });
 
-        $this->app->singleton(DiscountManagerInterface::class, function ($app) {
+        $this->app->scoped(DiscountManagerInterface::class, function ($app) {
             return $app->make(DiscountManager::class);
         });
 
