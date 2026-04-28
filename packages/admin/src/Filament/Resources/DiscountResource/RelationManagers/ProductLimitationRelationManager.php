@@ -77,7 +77,7 @@ class ProductLimitationRelationManager extends BaseRelationManager
                         BeforeDiscountLimitationAttached::dispatch($this->getOwnerRecord());
                     })
                     ->after(function ($record) {
-                         $this->attachedData = [
+                        $this->attachedData = [
                             'discount_id' => $this->getOwnerRecord()->id,
                             'discountable_id' => $record->discountable->id,
                             'discountable_type' => $record->discountable::class,

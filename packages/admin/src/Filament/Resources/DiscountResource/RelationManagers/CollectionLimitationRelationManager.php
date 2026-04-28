@@ -23,7 +23,6 @@ class CollectionLimitationRelationManager extends BaseRelationManager
 
     protected array $detachedData = [];
 
-
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
         return __('lunarpanel::collection.plural_label');
@@ -76,7 +75,7 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                         BeforeDiscountLimitationAttached::dispatch($this->getOwnerRecord());
                     })
                     ->after(function ($record) {
-                         $this->attachedData = [
+                        $this->attachedData = [
                             'discount_id' => $this->getOwnerRecord()->id,
                             'discountable_id' => $record->id,
                             'discountable_type' => $record::class,
