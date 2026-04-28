@@ -3,11 +3,11 @@
 namespace Lunar\Admin\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Lunar\Models\Discount;
 
-class DiscountLimitationDetached
+class BeforeDiscountLimitationAttached
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -15,7 +15,6 @@ class DiscountLimitationDetached
      * Create a new event instance.
      */
     public function __construct(
-        public Model $discount,
-        public array $data = [],
+        public Discount $discount,
     ) {}
 }

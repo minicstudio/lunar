@@ -15,6 +15,7 @@ class DiscountLimitationAttached
      * Create a new event instance.
      */
     public function __construct(
-        public Model $discount
+        public Model $discount,
+        public array $data = [],
     ) {}
 }

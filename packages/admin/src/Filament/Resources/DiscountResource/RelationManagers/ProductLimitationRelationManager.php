@@ -6,6 +6,7 @@ use Filament\Forms;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\BeforeDiscountLimitationAttached;
 use Lunar\Admin\Events\DiscountLimitationAttached;
 use Lunar\Admin\Events\DiscountLimitationBulkDetached;
 use Lunar\Admin\Events\DiscountLimitationDetached;
@@ -18,6 +19,10 @@ class ProductLimitationRelationManager extends BaseRelationManager
     protected static bool $isLazy = false;
 
     protected static string $relationship = 'discountables';
+
+    protected array $attachedData = [];
+
+    protected array $detachedData = [];
 
     public function isReadOnly(): bool
     {
@@ -68,8 +73,16 @@ class ProductLimitationRelationManager extends BaseRelationManager
 
                         return $data;
                     })
+                    ->before(function ($record) {
+                        BeforeDiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    })
                     ->after(function ($record) {
-                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                        $this->attachedData = [
+                            'discount_id' => $this->getOwnerRecord()->id,
+                            'discountable_id' => $record->discountable->id,
+                            'discountable_type' => $record->discountable::class,
+                        ];
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord(), $this->attachedData);
                     }),
             ])->columns([
                 Tables\Columns\SpatieMediaLibraryImageColumn::make('discountable.thumbnail')
@@ -90,8 +103,15 @@ class ProductLimitationRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.products.actions.delete.heading')
                     )
+                    ->before(function ($record) {
+                        $this->detachedData = [
+                            'discount_id' => $this->getOwnerRecord()->id,
+                            'discountable_id' => $record->discountable->id,
+                            'discountable_type' => $record->discountable::class,
+                        ];
+                    })
                     ->after(function ($record) {
-                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord(), $this->detachedData);
                     }),
             ])->bulkActions([
                 Tables\Actions\DeleteBulkAction::make()

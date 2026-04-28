@@ -6,6 +6,7 @@ use Filament\Forms\Components\Select;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Lunar\Admin\Events\BeforeDiscountLimitationAttached;
 use Lunar\Admin\Events\DiscountLimitationAttached;
 use Lunar\Admin\Events\DiscountLimitationBulkDetached;
 use Lunar\Admin\Events\DiscountLimitationDetached;
@@ -17,6 +18,10 @@ class CollectionLimitationRelationManager extends BaseRelationManager
     protected static bool $isLazy = false;
 
     protected static string $relationship = 'collections';
+
+    protected array $attachedData = [];
+
+    protected array $detachedData = [];
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
     {
@@ -66,8 +71,16 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.collections.actions.attach.label')
                     )
+                    ->before(function ($record) {
+                        BeforeDiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                    })
                     ->after(function ($record) {
-                        DiscountLimitationAttached::dispatch($this->getOwnerRecord());
+                        $this->attachedData = [
+                            'discount_id' => $this->getOwnerRecord()->id,
+                            'discountable_id' => $record->id,
+                            'discountable_type' => $record::class,
+                        ];
+                        DiscountLimitationAttached::dispatch($this->getOwnerRecord(), $this->attachedData);
                     }),
             ])->columns([
                 Tables\Columns\TextColumn::make('attribute_data.name')
@@ -89,8 +102,15 @@ class CollectionLimitationRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.collections.actions.detach.label')
                     )
+                    ->before(function ($record) {
+                        $this->detachedData = [
+                            'discount_id' => $this->getOwnerRecord()->id,
+                            'discountable_id' => $record->id,
+                            'discountable_type' => $record::class,
+                        ];
+                    })
                     ->after(function () {
-                        DiscountLimitationDetached::dispatch($this->getOwnerRecord());
+                        DiscountLimitationDetached::dispatch($this->getOwnerRecord(), $this->detachedData);
                     }),
             ])->bulkActions([
                 Tables\Actions\DetachBulkAction::make()

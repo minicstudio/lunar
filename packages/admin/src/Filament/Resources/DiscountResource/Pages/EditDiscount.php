@@ -5,14 +5,20 @@ namespace Lunar\Admin\Filament\Resources\DiscountResource\Pages;
 use Filament\Actions;
 use Filament\Resources\RelationManagers\RelationGroup;
 use Lunar\Admin\Base\LunarPanelDiscountInterface;
+use Lunar\Admin\Events\DiscountDeleted;
 use Lunar\Admin\Filament\Resources\DiscountResource;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
 use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Currency;
+use Lunar\Models\Discount;
 
 class EditDiscount extends BaseEditRecord
 {
     protected static string $resource = DiscountResource::class;
+
+    protected array $relatedRecords = [];
+
+    protected Discount $deletedRecord;
 
     public static function getNavigationLabel(): string
     {
@@ -27,7 +33,27 @@ class EditDiscount extends BaseEditRecord
     protected function getDefaultHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->before(function ($record) {
+                    $this->relatedRecords['products'] = $record->discountables()->get()->map(function ($discountable) use ($record) {
+                        return [
+                            'discount_id' => $record->id,
+                            'discountable_id' => $discountable->discountable_id,
+                            'discountable_type' => $record::class,
+                        ];
+                    });
+
+                    $this->relatedRecords['collections'] = $record->collections()->get()->map(function ($collection) use ($record) {
+                        return [
+                            'discount_id' => $record->id,
+                            'discountable_id' => $collection->id,
+                            'discountable_type' => $collection::class,
+                        ];
+                    });
+                })
+                ->after(function () {
+                    DiscountDeleted::dispatch($this->relatedRecords);
+                }),
         ];
     }
 
