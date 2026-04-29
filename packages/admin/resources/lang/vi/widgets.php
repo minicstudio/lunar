@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Không thay đổi so với kỳ trước',
                 ],
                 'stat_four' => [
-                    'label' => 'Doanh số hôm nay',
+                    'label' => 'Doanh số hôm nay (excl. vận chuyển)',
                     'increase' => 'Tăng :percentage% so với :total hôm qua',
                     'decrease' => 'Giảm :percentage% so với :total hôm qua',
                     'neutral' => 'Không thay đổi so với hôm qua',

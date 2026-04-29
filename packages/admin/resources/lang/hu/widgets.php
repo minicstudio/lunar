@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Nincs változás az előző időszakhoz képest',
                 ],
                 'stat_four' => [
-                    'label' => 'Eladások ma',
+                    'label' => 'Eladások ma (exkl. szállítás)',
                     'increase' => ':percentage% növekedés a tegnapi :total-hoz képest',
                     'decrease' => ':percentage% csökkenés a tegnapi :total-hoz képest',
                     'neutral' => 'Nincs változás a tegnapihoz képest',

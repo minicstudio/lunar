@@ -23,7 +23,7 @@ return [
                     'neutral' => 'No change compared to last period',
                 ],
                 'stat_four' => [
-                    'label' => 'Sales today',
+                    'label' => 'Sales today (excl. shipping)',
                     'increase' => ':percentage% increase from :total yesterday',
                     'decrease' => ':percentage% decrease from :total yesterday',
                     'neutral' => 'No change compared to yesterday',

@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Geen verandering ten opzichte van vorige periode',
                 ],
                 'stat_four' => [
-                    'label' => 'Verkopen vandaag',
+                    'label' => 'Verkopen vandaag (excl. verzending)',
                     'increase' => ':percentage% toename ten opzichte van :total gisteren',
                     'decrease' => ':percentage% afname ten opzichte van :total gisteren',
                     'neutral' => 'Geen verandering ten opzichte van gisteren',
