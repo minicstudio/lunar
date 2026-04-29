@@ -70,11 +70,6 @@ class OrderStatsOverview extends BaseWidget
 
     protected function getStatTotal($currentDate, $previousDate, $reference): Stat
     {
-        $currentDate->with(['currency'])->select(
-            DB::RAW('MAX(currency_code) as currency_code'),
-            DB::raw('SUM(total - shipping_total) as total') // we need to use total to get the correct discounted total, and then subtract shipping cost
-        )->first();
-
         $currentSubTotal = $currentDate->with(['currency'])->select(
             DB::RAW('MAX(currency_code) as currency_code'),
             DB::raw('SUM(total - shipping_total) as total') // we need to use total to get the correct discounted total, and then subtract shipping cost
