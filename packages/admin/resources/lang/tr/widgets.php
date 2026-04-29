@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Önceki döneme göre değişiklik yok',
                 ],
                 'stat_four' => [
-                    'label' => 'Bugünkü satışlar',
+                    'label' => 'Bugünkü satışlar (excl. gönderim)',
                     'increase' => 'Düne göre %:percentage artış (Dün: :total)',
                     'decrease' => 'Düne göre %:percentage azalış (Dün: :total)',
                     'neutral' => 'Düne göre değişiklik yok',

@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Keine Veränderung im Vergleich zum letzten Zeitraum',
                 ],
                 'stat_four' => [
-                    'label' => 'Umsatz heute',
+                    'label' => 'Umsatz heute (exkl. Versand)',
                     'increase' => ':percentage% Anstieg von :total gestern',
                     'decrease' => ':percentage% Rückgang von :total gestern',
                     'neutral' => 'Keine Veränderung im Vergleich zu gestern',

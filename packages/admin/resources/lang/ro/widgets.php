@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Fără schimbare față de perioada anterioară',
                 ],
                 'stat_four' => [
-                    'label' => 'Vânzări astăzi',
+                    'label' => 'Vânzări astăzi (excl. transport)',
                     'increase' => ':percentage% creștere față de :total ieri',
                     'decrease' => ':percentage% scădere față de :total ieri',
                     'neutral' => 'Fără schimbare față de ieri',

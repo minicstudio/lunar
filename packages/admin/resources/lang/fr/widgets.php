@@ -23,7 +23,7 @@ return [
                     'neutral' => 'Aucun changement par rapport à la période précédente',
                 ],
                 'stat_four' => [
-                    'label' => 'Ventes aujourd\'hui',
+                    'label' => 'Ventes aujourd\'hui (excl. expédition)',
                     'increase' => ':percentage% d\'augmentation par rapport à :total hier',
                     'decrease' => ':percentage% de diminution par rapport à :total hier',
                     'neutral' => 'Aucun changement par rapport à hier',
