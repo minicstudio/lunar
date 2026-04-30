@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => 'Clasa ":class" nu implementează interfața FieldType.',
     'discounts.invalid_type' => 'Colecția trebuie să conțină doar ":expected", s-a găsit ":actual"',
     'disallow_multiple_cart_orders' => 'Un coș poate avea asociată doar o singură comandă.',
+    'order.awb_generation_failed' => 'Generarea AWB a eșuat.',
+    'order.no_awb_returned' => 'Nu a fost returnat un număr AWB.',
+    'order.details' => 'Detalii: :details',
+    'order.failed_to_extract_error_details' => 'Nu s-au putut extrage informații detaliate despre eroare.',
+    'order.failed_to_download_awb_pdf' => 'Nu s-a putut descărca PDF-ul AWB.',
 ];

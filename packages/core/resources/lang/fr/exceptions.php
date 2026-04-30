@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => 'La classe ":class" n\'implémente pas l\'interface FieldType.',
     'discounts.invalid_type' => 'La collection doit contenir uniquement ":expected", trouvé ":actual"',
     'disallow_multiple_cart_orders' => 'Les paniers ne peuvent avoir qu\'une seule commande associée.',
+    'order.awb_generation_failed' => 'La génération de l\'AWB a échoué.',
+    'order.no_awb_returned' => 'Aucun numéro AWB retourné.',
+    'order.details' => 'Détails: :details',
+    'order.failed_to_extract_error_details' => 'Échec de l\'extraction des informations détaillées sur l\'erreur.',
+    'order.failed_to_download_awb_pdf' => 'Échec du téléchargement du PDF de l\'AWB.',
 ];

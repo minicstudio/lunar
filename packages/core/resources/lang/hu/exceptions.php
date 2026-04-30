@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => 'A ":class" osztály nem valósítja meg a FieldType interfészt.',
     'discounts.invalid_type' => 'A gyűjtemény kizárólag ":expected" elemeket tartalmazhat, de ":actual" található.',
     'disallow_multiple_cart_orders' => 'Egy kosárhoz csak egy rendelés társítható.',
+    'order.awb_generation_failed' => 'AWB generálása sikertelen.',
+    'order.no_awb_returned' => 'Nem érkezett AWB a válaszban.',
+    'order.details' => 'Részletek: :details',
+    'order.failed_to_extract_error_details' => 'Nem sikerült részletes hiba információt kinyerni.',
+    'order.failed_to_download_awb_pdf' => 'Nem sikerült letölteni az AWB PDF-et.',
 ];

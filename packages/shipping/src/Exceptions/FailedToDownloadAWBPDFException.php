@@ -4,7 +4,7 @@ namespace Lunar\Addons\Shipping\Exceptions;
 
 use Exception;
 
-class FailedAWBGenerationException extends Exception
+class FailedToDownloadAWBPDFException extends Exception
 {
     public function __construct(
         string $message,

@@ -73,15 +73,98 @@ class SamedayShippingProvider implements ShippingProviderInterface
         try {
             $response = $this->client->generateAWB($requestBody);
         } catch (\Throwable $e) {
-            throw new FailedAWBGenerationException('AWB generation failed: '.$e->getMessage());
+            // format the response message
+            try {
+                $detailedError = $this->formatDetailedError(['raw' => $e->getMessage()]);
+            } catch (\Throwable $formattingException) {
+                $detailedError = __('lunar::exceptions.order.failed_to_extract_error_details');
+            }
+
+            throw new FailedAWBGenerationException(
+                __('lunar::exceptions.order.awb_generation_failed').$e->getMessage(),
+                $detailedError,
+                0,
+                $e
+            );
         }
 
         if (! isset($response['awbNumber'])) {
-            $message = $response['message'] ?? 'Unknown error';
-            throw new FailedAWBGenerationException("No AWB number returned. {$message}");
+            throw new FailedAWBGenerationException(
+                __('lunar::exceptions.order.awb_generation_failed'),
+                __('lunar::exceptions.order.no_awb_returned'),
+            );
         }
 
         return $response;
+    }
+
+    /**
+     * Recursively extract error messages from a nested error structure.
+     *
+     * @param  array  $nodes  The current level of the error nodes to process.
+     * @param  string  $path  The dot-notated path to the current level in the error structure, used for building detailed error messages.
+     * @return array An array of formatted error messages
+     */
+    private function extractErrors(array $nodes, string $path = ''): array
+    {
+        $result = [];
+
+        foreach ($nodes as $field => $node) {
+            $currentPath = $path ? $path.'.'.$field : $field;
+
+            if (! empty($node['errors'])) {
+                foreach ($node['errors'] as $error) {
+                    $result[] = $currentPath.': '.$error;
+                }
+            }
+
+            if (! empty($node['children']) && is_array($node['children'])) {
+                $result = array_merge(
+                    $result,
+                    $this->extractErrors($node['children'], $currentPath)
+                );
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Format a detailed error message from the context of a FailedAWBGenerationException.
+     *
+     * @param  array  $context  The context array from the exception, which may contain raw error information.
+     * @return string A formatted error message with details extracted from the raw error information, if
+     */
+    private function formatDetailedError(array $context): string
+    {
+        $raw = $context['raw'] ?? null;
+
+        if (! $raw || ! str_contains($raw, '{')) {
+            return 'No detailed error information available.';
+        }
+
+        // extract JSON part
+        preg_match('/\{.*\}/s', $raw, $matches);
+
+        if (! isset($matches[0])) {
+            return 'No detailed error information available.';
+        }
+
+        $data = json_decode($matches[0], true);
+
+        if (! is_array($data)) {
+            return 'Failed to parse error response from carrier API.';
+        }
+
+        $errors = $data['errors']['children'] ?? [];
+
+        $lines = $this->extractErrors($errors);
+
+        if (empty($lines)) {
+            return 'Validation failed, but no field-specific errors were returned.';
+        }
+
+        return implode(' | ', $lines);
     }
 
     /**

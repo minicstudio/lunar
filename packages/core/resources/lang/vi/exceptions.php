@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => 'Lớp ":class" không triển khai giao diện FieldType.',
     'discounts.invalid_type' => 'Bộ sưu tập chỉ được chứa ":expected", đã tìm thấy ":actual"',
     'disallow_multiple_cart_orders' => 'Giỏ hàng chỉ có thể liên kết với một đơn hàng.',
+    'order.awb_generation_failed' => 'Tạo AWB thất bại.',
+    'order.no_awb_returned' => 'Không có số AWB nào được trả về.',
+    'order.details' => 'Chi tiết: :details',
+    'order.failed_to_extract_error_details' => 'Không thể trích xuất thông tin lỗi chi tiết.',
+    'order.failed_to_download_awb_pdf' => 'Không thể tải xuống PDF của AWB.',
 ];

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Lunar\Addons\Shipping\Contracts\AWBRequestBodyInterface;
 use Lunar\Addons\Shipping\Contracts\TokenAwareShippingApiClient;
 use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
+use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Exceptions\FailedToGetLocationsException;
 use Lunar\Addons\Shipping\Exceptions\FailedToGetLockersException;
 use Lunar\Addons\Shipping\Exceptions\InvalidShippingResponseException;
@@ -101,7 +102,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException('Failed to generate AWB: '.$response->body());
+            throw new FailedAWBGenerationException(__('lunar::exceptions.order.awb_generation_failed').$response->body());
         }
 
         return $response->json();
@@ -119,7 +120,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException('Failed to download AWB PDF: '.$response->body());
+            throw new FailedToDownloadAWBPDFException(__('lunar::exceptions.order.failed_to_download_awb_pdf'), $response->body());
         }
 
         return $response;
