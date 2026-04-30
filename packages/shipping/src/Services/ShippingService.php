@@ -4,7 +4,6 @@ namespace Lunar\Addons\Shipping\Services;
 
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Lunar\Addons\Shipping\Connectors\NominatimConnector;
 use Lunar\Addons\Shipping\Contracts\ShippingProviderInterface;
 use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
@@ -59,7 +58,7 @@ class ShippingService
             });
 
             Notification::make()->title(
-                __('lunar::exceptions.order.awb_generation_failed'). ' ' .
+                __('lunar::exceptions.order.awb_generation_failed').' '.
                 ($e->getDetails() ? __('lunar::exceptions.order.details', ['details' => $e->getDetails()]) : '')
             )->danger()->persistent()->send();
 
@@ -78,7 +77,7 @@ class ShippingService
      *
      * @throws OrderMissingShippingProviderException
      */
-    public function downloadAWBPDF(Order $order): Response|null
+    public function downloadAWBPDF(Order $order): ?Response
     {
         $shippingProvider = $this->getShippingProviderOfOrder($order);
 

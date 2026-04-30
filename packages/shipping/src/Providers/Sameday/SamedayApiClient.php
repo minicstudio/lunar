@@ -102,7 +102,7 @@ class SamedayApiClient extends Connector implements TokenAwareShippingApiClient
         });
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException(__('lunar::exceptions.order.awb_generation_failed') . $response->body());
+            throw new FailedAWBGenerationException(__('lunar::exceptions.order.awb_generation_failed').$response->body());
         }
 
         return $response->json();

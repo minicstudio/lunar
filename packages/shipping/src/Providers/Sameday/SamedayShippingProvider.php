@@ -76,12 +76,12 @@ class SamedayShippingProvider implements ShippingProviderInterface
             // format the response message
             try {
                 $detailedError = $this->formatDetailedError(['raw' => $e->getMessage()]);
-            } catch(\Throwable $formattingException) {
+            } catch (\Throwable $formattingException) {
                 $detailedError = __('lunar::exceptions.order.failed_to_extract_error_details');
             }
 
-             throw new FailedAWBGenerationException(
-                __('lunar::exceptions.order.awb_generation_failed') . $e->getMessage(),
+            throw new FailedAWBGenerationException(
+                __('lunar::exceptions.order.awb_generation_failed').$e->getMessage(),
                 $detailedError,
                 0,
                 $e
@@ -100,9 +100,9 @@ class SamedayShippingProvider implements ShippingProviderInterface
 
     /**
      * Recursively extract error messages from a nested error structure.
-     * 
-     * @param array $nodes The current level of the error nodes to process.
-     * @param string $path The dot-notated path to the current level in the error structure, used for building detailed error messages.
+     *
+     * @param  array  $nodes  The current level of the error nodes to process.
+     * @param  string  $path  The dot-notated path to the current level in the error structure, used for building detailed error messages.
      * @return array An array of formatted error messages
      */
     private function extractErrors(array $nodes, string $path = ''): array
@@ -110,15 +110,15 @@ class SamedayShippingProvider implements ShippingProviderInterface
         $result = [];
 
         foreach ($nodes as $field => $node) {
-            $currentPath = $path ? $path . '.' . $field : $field;
+            $currentPath = $path ? $path.'.'.$field : $field;
 
-            if (!empty($node['errors'])) {
+            if (! empty($node['errors'])) {
                 foreach ($node['errors'] as $error) {
-                    $result[] = $currentPath . ': ' . $error;
+                    $result[] = $currentPath.': '.$error;
                 }
             }
 
-            if (!empty($node['children']) && is_array($node['children'])) {
+            if (! empty($node['children']) && is_array($node['children'])) {
                 $result = array_merge(
                     $result,
                     $this->extractErrors($node['children'], $currentPath)
@@ -131,28 +131,28 @@ class SamedayShippingProvider implements ShippingProviderInterface
 
     /**
      * Format a detailed error message from the context of a FailedAWBGenerationException.
-     * 
-     * @param array $context The context array from the exception, which may contain raw error information.
+     *
+     * @param  array  $context  The context array from the exception, which may contain raw error information.
      * @return string A formatted error message with details extracted from the raw error information, if
      */
     private function formatDetailedError(array $context): string
     {
         $raw = $context['raw'] ?? null;
 
-        if (!$raw || !str_contains($raw, '{')) {
+        if (! $raw || ! str_contains($raw, '{')) {
             return 'No detailed error information available.';
         }
 
         // extract JSON part
         preg_match('/\{.*\}/s', $raw, $matches);
 
-        if (!isset($matches[0])) {
+        if (! isset($matches[0])) {
             return 'No detailed error information available.';
         }
 
         $data = json_decode($matches[0], true);
 
-        if (!is_array($data)) {
+        if (! is_array($data)) {
             return 'Failed to parse error response from carrier API.';
         }
 

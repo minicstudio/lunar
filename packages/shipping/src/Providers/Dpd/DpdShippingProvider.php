@@ -76,7 +76,7 @@ class DpdShippingProvider implements ShippingProviderInterface
         if (Arr::hasAll($response, 'error')) {
             try {
                 $detailedError = $this->formatDetailedError($response['error']);
-            } catch(\Throwable $formattingException) {
+            } catch (\Throwable $formattingException) {
                 $detailedError = __('lunar::exceptions.order.failed_to_extract_error_details');
             }
 
@@ -101,8 +101,8 @@ class DpdShippingProvider implements ShippingProviderInterface
 
     /**
      * Format a detailed error message from the context of a FailedAWBGenerationException.
-     * 
-     * @param string $context The context array from the exception, which may contain raw error information.
+     *
+     * @param  string  $context  The context array from the exception, which may contain raw error information.
      * @return string A formatted error message with details extracted from the raw error information, if
      */
     private function formatDetailedError(array $error): string

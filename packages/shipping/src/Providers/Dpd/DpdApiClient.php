@@ -4,7 +4,6 @@ namespace Lunar\Addons\Shipping\Providers\Dpd;
 
 use Lunar\Addons\Shipping\Contracts\AWBRequestBodyInterface;
 use Lunar\Addons\Shipping\Contracts\ShippingApiClient;
-use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
 use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdParcelRef;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdParcelToPrint;
