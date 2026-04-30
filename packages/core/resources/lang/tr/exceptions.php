@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => '":class" sınıfı FieldType arayüzünü uygulamamaktadır.',
     'discounts.invalid_type' => 'Koleksiyon sadece ":expected" içermeli, ":actual" bulundu',
     'disallow_multiple_cart_orders' => 'Sepetler sadece bir siparişle ilişkilendirilebilir.',
+    'order.awb_generation_failed' => 'AWB oluşturulamadı.',
+    'order.no_awb_returned' => 'AWB numarası döndürülmedi',
+    'order.details' => 'Detaylar: :details',
+    'order.failed_to_extract_error_details' => 'Hata detayları çıkarılamadı.',
+    'order.failed_to_download_awb_pdf' => 'AWB PDF\'i indirilemedi.',
 ];

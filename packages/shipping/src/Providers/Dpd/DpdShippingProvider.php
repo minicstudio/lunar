@@ -2,6 +2,7 @@
 
 namespace Lunar\Addons\Shipping\Providers\Dpd;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Lunar\Addons\Shipping\Contracts\AWBRequestBodyInterface;
 use Lunar\Addons\Shipping\Contracts\ShippingApiClient;
@@ -70,20 +71,43 @@ class DpdShippingProvider implements ShippingProviderInterface
     {
         $requestBody = $this->buildAWBGenerationRequestBody($order);
 
-        try {
-            $response = $this->client->generateAWB($requestBody);
-        } catch (\Throwable $e) {
-            throw new FailedAWBGenerationException('AWB generation failed: '.$e->getMessage());
+        $response = $this->client->generateAWB($requestBody);
+
+        if (Arr::hasAll($response, 'error')) {
+            try {
+                $detailedError = $this->formatDetailedError($response['error']);
+            } catch(\Throwable $formattingException) {
+                $detailedError = __('lunar::exceptions.order.failed_to_extract_error_details');
+            }
+
+            throw new FailedAWBGenerationException(
+                __('lunar::exceptions.order.awb_generation_failed'),
+                $detailedError,
+                0,
+            );
         }
 
         if (! isset($response['id'])) {
-            $message = $response['message'] ?? 'Unknown error';
-            throw new FailedAWBGenerationException("No AWB number returned. {$message}");
+            throw new FailedAWBGenerationException(
+                __('lunar::exceptions.order.awb_generation_failed'),
+                __('lunar::exceptions.order.no_awb_returned'),
+            );
         }
 
         $response['awbNumber'] = $response['id'];
 
         return $response;
+    }
+
+    /**
+     * Format a detailed error message from the context of a FailedAWBGenerationException.
+     * 
+     * @param string $context The context array from the exception, which may contain raw error information.
+     * @return string A formatted error message with details extracted from the raw error information, if
+     */
+    private function formatDetailedError(array $error): string
+    {
+        return $error['message'];
     }
 
     /**

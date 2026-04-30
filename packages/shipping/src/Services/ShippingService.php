@@ -2,10 +2,14 @@
 
 namespace Lunar\Addons\Shipping\Services;
 
+use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Lunar\Addons\Shipping\Connectors\NominatimConnector;
 use Lunar\Addons\Shipping\Contracts\ShippingProviderInterface;
 use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
+use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
+use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Exceptions\OrderMissingShippingProviderException;
 use Lunar\Addons\Shipping\Providers\Sameday\Requests\GeocodeCountyRequest;
 use Lunar\Models\Order;
@@ -41,7 +45,26 @@ class ShippingService
     {
         $shippingProvider = $this->getShippingProviderOfOrder($order);
 
-        $response = $shippingProvider->generateAWB($order);
+        try {
+            $response = $shippingProvider->generateAWB($order);
+        } catch (FailedAWBGenerationException $e) {
+            // Update order status without triggering observers and using query builder
+            // to bypass Eloquent's isDirty check (which fails when the original status
+            // matches the target status, e.g. on retry after a previous failure)
+            Order::withoutEvents(function () use ($order) {
+                $order->newModelQuery()
+                    ->where($order->getKeyName(), $order->getKey())
+                    ->update(['status' => 'failed-awb-generation']);
+                $order->status = 'failed-awb-generation';
+            });
+
+            Notification::make()->title(
+                __('lunar::exceptions.order.awb_generation_failed'). ' ' .
+                ($e->getDetails() ? __('lunar::exceptions.order.details', ['details' => $e->getDetails()]) : '')
+            )->danger()->persistent()->send();
+
+            return;
+        }
 
         // Save AWB to order without triggering events again
         Order::withoutEvents(function () use ($order, $response) {
@@ -55,13 +78,23 @@ class ShippingService
      *
      * @throws OrderMissingShippingProviderException
      */
-    public function downloadAWBPDF(Order $order): Response
+    public function downloadAWBPDF(Order $order): Response|null
     {
         $shippingProvider = $this->getShippingProviderOfOrder($order);
 
         $awbNumber = $this->getAwb($order);
 
-        return $shippingProvider->downloadAWBPDF($awbNumber);
+        try {
+            $response = $shippingProvider->downloadAWBPDF($awbNumber);
+        } catch (FailedToDownloadAWBPDFException $e) {
+            Notification::make()->title(
+                $e->getMessage()
+            )->danger()->send();
+
+            return null;
+        }
+
+        return $response;
     }
 
     /**

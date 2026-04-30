@@ -15,4 +15,9 @@ return [
     'invalid_fieldtype' => 'Die Klasse ":class" implementiert nicht das Feldtyp-Interface.',
     'discounts.invalid_type' => 'Die Liste der Rabatte darf nur ":expected" enthalten, gefunden wurde ":actual"',
     'disallow_multiple_cart_orders' => 'Ein Warenkorb kann nur zu einer Bestellung gehören.',
+    'order.awb_generation_failed' => 'Die Erstellung des AWB ist fehlgeschlagen.',
+    'order.no_awb_returned' => 'Keine AWB-Nummer zurückgegeben.',
+    'order.details' => 'Details: :details',
+    'order.failed_to_extract_error_details' => 'Fehlerdetails konnten nicht extrahiert werden.',
+    'order.failed_to_download_awb_pdf' => 'Das Herunterladen des AWB-PDFs ist fehlgeschlagen.',
 ];

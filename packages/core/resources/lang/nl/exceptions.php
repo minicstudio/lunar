@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => 'Klasse ":class" implementeert de FieldType interface niet.',
     'discounts.invalid_type' => 'Collectie moet alleen ":expected" bevatten, gevonden ":actual"',
     'disallow_multiple_cart_orders' => 'Winkelwagens kunnen slechts één bestelling hebben.',
+    'order.awb_generation_failed' => 'AWB-generatie mislukt.',
+    'order.no_awb_returned' => 'Geen AWB-nummer geretourneerd.',
+    'order.details' => 'Details: :details',
+    'order.failed_to_extract_error_details' => 'Kon geen gedetailleerde foutinformatie extraheren.',
+    'order.failed_to_download_awb_pdf' => 'Kon AWB PDF niet downloaden.',
 ];

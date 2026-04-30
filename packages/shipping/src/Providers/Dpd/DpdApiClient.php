@@ -5,6 +5,7 @@ namespace Lunar\Addons\Shipping\Providers\Dpd;
 use Lunar\Addons\Shipping\Contracts\AWBRequestBodyInterface;
 use Lunar\Addons\Shipping\Contracts\ShippingApiClient;
 use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
+use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdParcelRef;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdParcelToPrint;
 use Lunar\Addons\Shipping\Providers\Dpd\DTOs\DpdPrintRequestBody;
@@ -62,7 +63,7 @@ class DpdApiClient extends Connector implements ShippingApiClient
         $response = $this->send($request);
 
         if (! $response->successful()) {
-            throw new FailedAWBGenerationException('Failed to download AWB PDF: '.$response->body());
+            throw new FailedToDownloadAWBPDFException(__('lunar::exceptions.order.failed_to_download_awb_pdf'), $response->body());
         }
 
         return $response;

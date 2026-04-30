@@ -18,4 +18,9 @@ return [
     'invalid_fieldtype' => 'La clase ":class" no implementa la interfaz FieldType.',
     'discounts.invalid_type' => 'La colección solo debe contener ":expected", se encontró ":actual".',
     'disallow_multiple_cart_orders' => 'Los carritos solo pueden tener un pedido asociado.',
+    'order.awb_generation_failed' => 'La generación del AWB ha fallado.',
+    'order.no_awb_returned' => 'No se devolvió ningún número de AWB.',
+    'order.details' => 'Detalles: :details',
+    'order.failed_to_extract_error_details' => 'No se pudieron extraer detalles de error.',
+    'order.failed_to_download_awb_pdf' => 'No se pudo descargar el PDF del AWB.',
 ];
