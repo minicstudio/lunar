@@ -49,6 +49,7 @@ use Lunar\Console\Commands\PruneCarts;
 use Lunar\Console\Commands\ScoutIndexerCommand;
 use Lunar\Console\InstallLunar;
 use Lunar\Database\State\ConvertBackOrderPurchasability;
+use Lunar\Database\State\ConvertCancelledStatusToCanceled;
 use Lunar\Database\State\ConvertProductTypeAttributesToProducts;
 use Lunar\Database\State\ConvertTaxbreakdown;
 use Lunar\Database\State\EnsureBrandsAreUpgraded;
@@ -305,6 +306,7 @@ class LunarServiceProvider extends ServiceProvider
             MigrateCartOrderRelationship::class,
             ConvertTaxbreakdown::class,
             ConvertBackOrderPurchasability::class,
+            ConvertCancelledStatusToCanceled::class,
             UpdateWeightUnitToKg::class,
         ];
 
