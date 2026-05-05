@@ -18,6 +18,7 @@ class ErpSyncTemp extends BaseModel implements Contracts\ErpSyncTemp
         'name',
         'sku',
         'price',
+        'discount',
         'category_1',
         'category_2',
         'provider_data',
