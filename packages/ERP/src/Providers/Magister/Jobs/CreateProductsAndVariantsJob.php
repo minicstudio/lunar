@@ -320,6 +320,7 @@ class CreateProductsAndVariantsJob implements ShouldQueue
             if ($currentDiscountIds->isNotEmpty()) {
                 $this->handlePreviousDiscount($product);
             }
+
             return;
         }
 

@@ -404,12 +404,12 @@ test('creating product with discount attaches discount', function () {
     expect($variant)->not->toBeNull();
 
     $product = $variant->product;
-    
+
     // Check discount was created
     $discount = Discount::where('data->percentage', 10)
         ->where('type', AdvancedAmountOff::class)
         ->first();
-    
+
     expect($discount)->not->toBeNull()
         ->and($discount->name)->toBe('10% Discount')
         ->and($discount->data['percentage'])->toBe(10)
@@ -420,7 +420,7 @@ test('creating product with discount attaches discount', function () {
         ->where('discountable_id', $product->id)
         ->where('discount_id', $discount->id)
         ->first();
-    
+
     expect($discountable)->not->toBeNull()
         ->and($discountable->type)->toBe('limitation');
 });
@@ -466,7 +466,7 @@ test('product with same discount percentage reuses existing discount', function 
     $attachedProducts = Discountable::where('discount_id', $discount->id)
         ->where('discountable_type', Product::morphName())
         ->count();
-    
+
     expect($attachedProducts)->toBe(2);
 });
 
@@ -487,7 +487,7 @@ test('product with unchanged discount keeps same discount', function () {
 
     $variant = ProductVariant::where('sku', 'DISC-003')->first();
     $product = $variant->product;
-    
+
     $discount = Discount::where('data->percentage', 15)->first();
     $initialDiscountableId = Discountable::where('discountable_type', Product::morphName())
         ->where('discountable_id', $product->id)
@@ -511,7 +511,7 @@ test('product with unchanged discount keeps same discount', function () {
     $finalDiscountable = Discountable::where('discountable_type', Product::morphName())
         ->where('discountable_id', $product->id)
         ->first();
-    
+
     expect($finalDiscountable->id)->toBe($initialDiscountableId)
         ->and($finalDiscountable->discount_id)->toBe($discount->id);
 
@@ -519,7 +519,7 @@ test('product with unchanged discount keeps same discount', function () {
     $count = Discountable::where('discountable_type', Product::morphName())
         ->where('discountable_id', $product->id)
         ->count();
-    
+
     expect($count)->toBe(1);
 });
 
@@ -565,7 +565,7 @@ test('product with changed discount updates to new discount', function () {
     $discountable = Discountable::where('discountable_type', Product::morphName())
         ->where('discountable_id', $product->id)
         ->first();
-    
+
     expect($discountable->discount_id)->toBe($discount30->id)
         ->and($discountable->discount_id)->not->toBe($discount25->id);
 
@@ -573,7 +573,7 @@ test('product with changed discount updates to new discount', function () {
     $count = Discountable::where('discountable_type', Product::morphName())
         ->where('discountable_id', $product->id)
         ->count();
-    
+
     expect($count)->toBe(1);
 });
 
@@ -751,7 +751,7 @@ test('ended discount gets reactivated when reused', function () {
         ->where('discountable_id', $product->id)
         ->where('discount_id', $discount->id)
         ->first();
-    
+
     expect($discountable)->not->toBeNull();
 
     // Should not have created a new discount
