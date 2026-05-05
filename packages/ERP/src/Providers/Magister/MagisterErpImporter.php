@@ -339,6 +339,7 @@ class MagisterErpImporter implements ErpDataImporterInterface
                 [
                     'name' => $articleData['NAME'],
                     'price' => $articleData['PRICE'] * 100,
+                    'discount' => $articleData['DISCOUNT'] ? abs((int) $articleData['DISCOUNT']) : 0,
                     'stock' => 0, // Initialize with 0, will be updated during stock sync
                     'category_1' => $articleData['CATEG_1'],
                     'category_2' => $articleData['CATEG_2'],

@@ -9,10 +9,13 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\ERP\Models\ErpSyncTemp;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Currency;
+use Lunar\Models\Discount;
+use Lunar\Models\Discountable;
 use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductOptionValue;
@@ -143,6 +146,9 @@ class CreateProductsAndVariantsJob implements ShouldQueue
             $this->attachProductOptions($product, $article);
         }
 
+        // Handle discount attachment
+        $this->handleProductDiscount($product, $article);
+
         return $product;
     }
 
@@ -157,6 +163,9 @@ class CreateProductsAndVariantsJob implements ShouldQueue
         if ($article->provider_data['article_kind'] === 1) {
             $this->attachProductOptions($product, $article);
         }
+
+        // Handle discount attachment
+        $this->handleProductDiscount($product, $article);
 
         return $product;
     }
@@ -254,6 +263,109 @@ class CreateProductsAndVariantsJob implements ShouldQueue
 
             $productVariant->values()->attach($value);
         }
+    }
+
+    /**
+     * Handle previous discounts by detaching and ending orphaned discounts.
+     */
+    private function handlePreviousDiscount(Product $product): void
+    {
+        // Get discount IDs once
+        $relatedDiscountIds = Discountable::where('discountable_type', Product::morphName())
+            ->where('discountable_id', $product->id)
+            ->pluck('discount_id')
+            ->unique();
+
+        if ($relatedDiscountIds->isEmpty()) {
+            return;
+        }
+
+        // Remove product attachments
+        Discountable::where('discountable_type', Product::morphName())
+            ->where('discountable_id', $product->id)
+            ->delete();
+
+        // Load all discounts
+        $discounts = Discount::whereIn('id', $relatedDiscountIds)
+            ->withCount(['discountables', 'collections', 'brands'])
+            ->get();
+
+        foreach ($discounts as $discount) {
+            if (
+                $discount->discountables_count === 0 &&
+                $discount->collections_count === 0 &&
+                $discount->brands_count === 0
+            ) {
+                $discount->update([
+                    'ends_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Handle discount attachment for a product based on the article discount value.
+     */
+    private function handleProductDiscount(Product $product, ErpSyncTemp $article): void
+    {
+        $discountValue = $article->discount;
+
+        // Get currently attached discount IDs for this product
+        $currentDiscountIds = Discountable::where('discountable_type', Product::morphName())
+            ->where('discountable_id', $product->id)
+            ->pluck('discount_id');
+
+        // If no discount value, check if product has any discounts and remove them
+        if (is_null($discountValue) || $discountValue == 0) {
+            if ($currentDiscountIds->isNotEmpty()) {
+                $this->handlePreviousDiscount($product);
+            }
+
+            return;
+        }
+
+        // Check if a discount with this percentage already exists
+        $discount = Discount::where('data->percentage', $discountValue)
+            ->where('type', AdvancedAmountOff::class)
+            ->first();
+
+        // If the product already has this exact discount and only this one, do nothing
+        if ($discount && $currentDiscountIds->count() === 1 && $currentDiscountIds->first() === $discount->id) {
+            return;
+        }
+
+        // Product has wrong discount(s), detach them
+        if ($currentDiscountIds->isNotEmpty()) {
+            $this->handlePreviousDiscount($product);
+        }
+
+        // if there is a discount with the same percentage but it is ended, we can reuse it by setting a new end date and start date
+        if ($discount && $discount->ends_at && $discount->ends_at->isPast()) {
+            $discount->ends_at = null;
+            $discount->save();
+        }
+
+        // If no discount exists, create a new one
+        if (! $discount) {
+            $discount = Discount::create([
+                'name' => "{$discountValue}% Discount",
+                'handle' => Str::slug("{$discountValue}-percent-discount"),
+                'type' => AdvancedAmountOff::class,
+                'starts_at' => now(),
+                'priority' => 1,
+                'data' => [
+                    'percentage' => $discountValue,
+                    'fixed_value' => false,
+                ],
+            ]);
+        }
+
+        // Attach the product to the discount as a limitation
+        $discount->discountables()->firstOrCreate([
+            'discountable_type' => Product::morphName(),
+            'discountable_id' => $product->id,
+            'type' => 'limitation',
+        ]);
     }
 
     /**

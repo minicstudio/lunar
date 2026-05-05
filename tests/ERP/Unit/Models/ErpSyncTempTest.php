@@ -11,6 +11,7 @@ test('can create temp record with casts applied', function () {
         'name' => 'Sample',
         'sku' => 'SKU-1',
         'price' => 1234,
+        'discount' => 10,
         'category_1' => 'Cat A',
         'category_2' => 'Cat B',
         'provider_data' => ['source' => 'magister'],
