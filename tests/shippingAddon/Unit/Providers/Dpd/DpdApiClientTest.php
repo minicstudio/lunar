@@ -4,7 +4,7 @@ uses(\Lunar\Tests\shippingAddon\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Facades\Config;
-use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
+use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Providers\Dpd\DpdApiClient;
 use Lunar\Addons\Shipping\Providers\Dpd\DpdShippingProvider;
 use Lunar\Addons\Shipping\Providers\Dpd\Requests\DownloadAWBPDF;
@@ -69,5 +69,5 @@ it('downloadAWBPDF throws when response is not successful', function () {
     $client->withMockClient($mock);
 
     expect(fn () => $client->downloadAWBPDF('AWB_FAIL'))
-        ->toThrow(FailedAWBGenerationException::class);
+        ->toThrow(FailedToDownloadAWBPDFException::class);
 });

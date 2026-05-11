@@ -73,7 +73,7 @@ class DpdShippingProvider implements ShippingProviderInterface
 
         $response = $this->client->generateAWB($requestBody);
 
-        if (Arr::hasAll($response, 'error')) {
+        if (Arr::has($response, 'error')) {
             try {
                 $detailedError = $this->formatDetailedError($response['error']);
             } catch (\Throwable $formattingException) {

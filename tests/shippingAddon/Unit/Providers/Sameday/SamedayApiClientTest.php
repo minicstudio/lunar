@@ -6,6 +6,7 @@ uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 use Illuminate\Support\Facades\Config;
 use Lunar\Addons\Shipping\Enums\ShippingType;
 use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
+use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Exceptions\FailedToGetLocationsException;
 use Lunar\Addons\Shipping\Exceptions\FailedToGetLockersException;
 use Lunar\Addons\Shipping\Exceptions\InvalidShippingResponseException;
@@ -92,7 +93,7 @@ it('downloadAWBPDF throws when response is not successful', function () {
     ]);
 
     expect(fn () => $client->downloadAWBPDF('AWB_FAIL'))
-        ->toThrow(FailedAWBGenerationException::class);
+        ->toThrow(FailedToDownloadAWBPDFException::class);
 });
 
 it('getCounties returns array and throws on failure', function () {
