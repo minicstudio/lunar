@@ -29,6 +29,7 @@ it('only processes articles with stock greater than 0', function () {
             'SALECODE' => 'SKU-100',
             'NAME' => 'Product with Stock',
             'PRICE' => 10.00,
+            'DISCOUNT' => 0,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 0,
@@ -39,6 +40,7 @@ it('only processes articles with stock greater than 0', function () {
             'SALECODE' => 'SKU-200',
             'NAME' => 'Product without Stock',
             'PRICE' => 20.00,
+            'DISCOUNT' => 5,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 0,
@@ -94,6 +96,7 @@ it('includes generic products when their variants have stock', function () {
             'SALECODE' => 'GEN-300',
             'NAME' => 'Generic Product',
             'PRICE' => 0.00,
+            'DISCOUNT' => 0,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 1, // Generic
@@ -104,6 +107,7 @@ it('includes generic products when their variants have stock', function () {
             'SALECODE' => 'VAR-301',
             'NAME' => 'Variant Red',
             'PRICE' => 15.00,
+            'DISCOUNT' => 10,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 2, // Variant
@@ -115,6 +119,7 @@ it('includes generic products when their variants have stock', function () {
             'SALECODE' => 'VAR-302',
             'NAME' => 'Variant Blue',
             'PRICE' => 15.00,
+            'DISCOUNT' => 15,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 2, // Variant
@@ -176,6 +181,7 @@ it('excludes generic products when no variants have stock', function () {
             'SALECODE' => 'GEN-400',
             'NAME' => 'Generic Product No Stock',
             'PRICE' => 0.00,
+            'DISCOUNT' => 0,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 1, // Generic
@@ -186,6 +192,7 @@ it('excludes generic products when no variants have stock', function () {
             'SALECODE' => 'VAR-401',
             'NAME' => 'Variant Red No Stock',
             'PRICE' => 15.00,
+            'DISCOUNT' => 20,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 2, // Variant
