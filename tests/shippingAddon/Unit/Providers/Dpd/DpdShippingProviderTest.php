@@ -173,7 +173,7 @@ it('generateAWB wraps client exceptions into FailedAWBGenerationException', func
     $client->shouldReceive('generateAWB')
         ->once()
         ->with(\Mockery::type(AWBRequestBodyInterface::class))
-        ->andThrow(new Exception('Exception'));
+        ->andThrow(new FailedAWBGenerationException('Exception'));
 
     $provider = new DpdShippingProvider($client);
 

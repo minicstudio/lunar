@@ -36,6 +36,7 @@ it('syncProducts stores articles, confirms receiving and dispatches jobs', funct
             'SALECODE' => 'SKU-123',
             'NAME' => 'Test Product',
             'PRICE' => 12.34,
+            'DISCOUNT' => 0,
             'CATEG_1' => 'Cat1',
             'CATEG_2' => 'Cat2',
             'ARTICLE_KIND' => 0,

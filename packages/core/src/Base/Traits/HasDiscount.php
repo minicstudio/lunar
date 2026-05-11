@@ -70,11 +70,7 @@ trait HasDiscount
         $originalPrice = $this->getOriginalPrices();
 
         $originalPrice->each(function ($price) use ($discount, &$discountedPrice) {
-            // Call the static method dynamically based on discount type
-            $discountedPriceValue = $discount->type::calculateDiscountedPrice($price, $discount->data);
-
-            // Ensure price doesn't go below 0
-            $discountedPriceValue = max(0, $discountedPriceValue);
+            $discountedPriceValue = $this->calculateDiscountedPriceValue($discount, $price);
 
             $discountedPrice->push(new Price(
                 $discountedPriceValue,
@@ -91,26 +87,41 @@ trait HasDiscount
      */
     public function getDiscountedPricesIncTax(): Collection
     {
-        $discountedPricesExcTax = $this->getDiscountedPrices();
-        $discountedPricesIncTax = collect();
+        $discount = $this->getDiscountManager()->getDiscountForPurchasable($this);
 
-        if ($discountedPricesExcTax->isEmpty()) {
-            return $discountedPricesIncTax;
+        if (! $discount) {
+            return collect();
         }
 
-        $taxRate = $this->getTaxRate();
+        // If prices are stored inclusive of tax, apply discount directly to inc-tax prices
+        // to avoid cumulative rounding errors from inc->ex->inc conversions
+        if (prices_inc_tax()) {
+            return $this->getOriginalPricesIncTax()->map(function ($priceIncTax) use ($discount) {
+                $discountedValue = $this->calculateDiscountedPriceValue(
+                    $discount,
+                    $priceIncTax
+                );
 
-        // Apply tax rate to each discounted ex tax price
-        $discountedPricesExcTax->each(function ($priceExcTax) use ($taxRate, &$discountedPricesIncTax) {
-            $valueIncTax = (int) ($priceExcTax->value * (1 + $taxRate));
+                return new Price(
+                    $discountedValue,
+                    $priceIncTax->currency
+                );
+            });
+        }
 
-            $discountedPricesIncTax->push(new Price(
-                $valueIncTax,
-                $priceExcTax->currency
-            ));
+        // If prices are stored exclusive of tax, apply discount to inc-tax price
+        // to avoid rounding errors and ensure customer sees correct percentage discount
+        return $this->getOriginalPricesIncTax()->map(function ($priceIncTax) use ($discount) {
+            $discountedValue = $this->calculateDiscountedPriceValue(
+                $discount,
+                $priceIncTax
+            );
+
+            return new Price(
+                $discountedValue,
+                $priceIncTax->currency
+            );
         });
-
-        return $discountedPricesIncTax;
     }
 
     /**
@@ -265,5 +276,33 @@ trait HasDiscount
         $prices['currency'] = $price->currency->code;
 
         return $prices;
+    }
+
+    /**
+     * Calculate the discounted price value for a given price and discount.
+     * Validates the discount type before calling the static method.
+     *
+     * @param  object  $discount  The discount object containing type and data
+     * @param  Price  $price  The price to apply the discount to
+     * @return int The discounted price value (always >= 0)
+     */
+    private function calculateDiscountedPriceValue(object $discount, Price $price): int
+    {
+        // Validate that the discount type is a valid class string
+        if (! is_string($discount->type) || ! class_exists($discount->type)) {
+            return $price->value;
+        }
+
+        // Validate that the class has the required static method
+        if (! method_exists($discount->type, 'calculateDiscountedPrice')) {
+            return $price->value;
+        }
+
+        // Store in a variable for safer static method call
+        $discountType = $discount->type;
+        $discountedValue = $discountType::calculateDiscountedPrice($price, $discount->data);
+
+        // Ensure price doesn't go below 0
+        return max(0, $discountedValue);
     }
 }
