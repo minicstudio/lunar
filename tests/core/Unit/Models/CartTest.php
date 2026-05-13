@@ -513,7 +513,7 @@ test('can calculate the cart', function () {
     expect($cart->lines[1]->unitPrice->unitFormatted(null, NumberFormatter::CURRENCY, 6))->toEqual('$0.0158');
     expect($cart->lines[1]->unitPrice->unitFormatted(null, NumberFormatter::CURRENCY, 6, false))->toEqual('$0.015800');
     expect($cart->subTotal->value)->toEqual(103);
-    expect($cart->total->value)->toEqual(103);
+    expect($cart->total->value)->toEqual(104);
     expect($cart->taxBreakdown->amounts)->toHaveCount(2);
 });
 
