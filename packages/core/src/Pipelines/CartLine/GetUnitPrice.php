@@ -27,7 +27,7 @@ class GetUnitPrice
 
         // handle if cart is null
         if (! $cart) {
-            throw new CartNotFoundException('Cart not found for cart line ID: ' . $cartLine->id);
+            throw new CartNotFoundException('Cart not found for cart line ID: '.$cartLine->id);
         }
 
         if ($customer = $cart->customer) {
