@@ -69,7 +69,7 @@ class AdvancedAmountOff extends AbstractDiscountType
             $subTotal = $subTotalDiscounted;
         }
 
-        $amount = (int) ($subTotal * ($value / 100));
+        $amount = (int) round($subTotal * ($value / 100));
 
         if ($amount <= 0) {
             return $cart;
@@ -78,7 +78,7 @@ class AdvancedAmountOff extends AbstractDiscountType
         $totalDiscount += $amount;
 
         $cartLine->unitPriceWithoutCoupon = new Price(
-            (int) ($unitPrice - $unitPrice * $value / 100),
+            (int) round($unitPrice - $unitPrice * $value / 100),
             $cart->currency,
             1
         );
@@ -280,7 +280,7 @@ class AdvancedAmountOff extends AbstractDiscountType
         $taxRate = $line->purchasable?->getTaxRate() ?? 0.0;
 
         return new Price(
-            (int) ($price->value * (1 + $taxRate)),
+            (int) round($price->value * (1 + $taxRate)),
             $price->currency,
             $price->unitQty
         );

@@ -64,7 +64,7 @@ class CalculateLines
         }
 
         return new Price(
-            (int) ($price->value * (1 + $taxRate)),
+            (int) round($price->value * (1 + $taxRate)),
             $price->currency,
             $price->unitQty
         );
