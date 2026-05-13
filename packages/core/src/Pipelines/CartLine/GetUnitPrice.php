@@ -4,6 +4,7 @@ namespace Lunar\Pipelines\CartLine;
 
 use Closure;
 use Lunar\DataTypes\Price;
+use Lunar\Exceptions\Carts\CartNotFoundException;
 use Lunar\Exceptions\Carts\PurchasableNotFoundException;
 use Lunar\Facades\Pricing;
 use Lunar\Models\CartLine;
@@ -23,6 +24,11 @@ class GetUnitPrice
         /** @var CartLine $cart */
         $purchasable = $cartLine->purchasable;
         $cart = $cartLine->cart;
+
+        // handle if cart is null
+        if (! $cart) {
+            throw new CartNotFoundException('Cart not found for cart line ID: '.$cartLine->id);
+        }
 
         if ($customer = $cart->customer) {
             $customerGroups = $customer->customerGroups;
