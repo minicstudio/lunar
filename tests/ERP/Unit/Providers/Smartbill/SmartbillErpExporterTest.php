@@ -188,7 +188,7 @@ it('maps observations with empty shipping segment when shipping_breakdown has no
     ]);
 
     $exporter->generateInvoice($order);
-        expect($captured['observations'] ?? null)->toBe('#1525__');
+    expect($captured['observations'] ?? null)->toBe('#1525__');
 });
 
 it('maps observations with empty reference segment when reference is blank', function () {
