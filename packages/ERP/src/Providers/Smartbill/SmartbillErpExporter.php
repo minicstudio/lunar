@@ -188,7 +188,7 @@ class SmartbillErpExporter implements ErpDataExporterInterface
     {
         $driver = $this->observationsMetaString($order, 'payment_option');
         $map = config('lunar.erp.smartbill.observations.payment_map', []);
-        
+
         if (is_array($map) && $driver !== '' && isset($map[$driver])) {
             return (string) $map[$driver];
         }
