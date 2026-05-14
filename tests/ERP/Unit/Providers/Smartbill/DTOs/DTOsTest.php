@@ -81,3 +81,15 @@ it('serializes SmartbillInvoiceRequestBody DTO with nested client & products', f
         ->and($arr['client'])->toHaveKeys(['name', 'vatCode'])
         ->and($arr['products'][0])->toHaveKeys(['name', 'code', 'measuringUnitName']);
 });
+
+it('omits observations from SmartbillInvoiceRequestBody when null', function () {
+    $client = new SmartbillClient('John', '-', false, 'Str 1', 'Cluj', 'Cluj', 'Romania', 'a@b.c', false);
+    $dto = new SmartbillInvoiceRequestBody('RO123', 'S', $client, [], null);
+    expect($dto->toArray())->not->toHaveKey('observations');
+});
+
+it('includes observations on SmartbillInvoiceRequestBody when set', function () {
+    $client = new SmartbillClient('John', '-', false, 'Str 1', 'Cluj', 'Cluj', 'Romania', 'a@b.c', false);
+    $dto = new SmartbillInvoiceRequestBody('RO123', 'S', $client, [], '#1525_card_dpd');
+    expect($dto->toArray()['observations'])->toBe('#1525_card_dpd');
+});

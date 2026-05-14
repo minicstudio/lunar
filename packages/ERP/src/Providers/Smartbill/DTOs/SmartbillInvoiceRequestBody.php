@@ -11,6 +11,7 @@ class SmartbillInvoiceRequestBody implements DtoInterface
         public string $seriesName,
         public SmartbillClient $client,
         public array $products,
+        public string $observations,
     ) {}
 
     public function toArray(): array
@@ -20,6 +21,7 @@ class SmartbillInvoiceRequestBody implements DtoInterface
             'seriesName' => $this->seriesName,
             'client' => $this->client->toArray(),
             'products' => array_map(fn ($product) => $product->toArray(), $this->products),
+            'observations' => $this->observations,
         ];
     }
 }
