@@ -24,7 +24,7 @@ function makeSmartbillInvoiceBody(): SmartbillInvoiceRequestBody
 {
     $client = new SmartbillClient('ACME', 'RO123', false, 'Addr', 'Cluj', 'Cluj', 'Romania', 'a@b.c', false);
 
-    return new SmartbillInvoiceRequestBody('RO123', 'S', $client, []);
+    return new SmartbillInvoiceRequestBody('RO123', 'S', $client, [], '');
 }
 
 it('generateInvoice calls API and returns JSON', function () {

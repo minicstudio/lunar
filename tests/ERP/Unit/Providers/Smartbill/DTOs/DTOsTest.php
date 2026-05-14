@@ -74,18 +74,18 @@ it('serializes SmartbillInvoiceRequestBody DTO with nested client & products', f
     $products = [
         new SmartbillProduct('Prod', 'SKU1', 'buc', 'RON', 1, 100.0, true, 'TVA', 19, false, false),
     ];
-    $dto = new SmartbillInvoiceRequestBody('RO123', 'S', $client, $products);
+    $dto = new SmartbillInvoiceRequestBody('RO123', 'S', $client, $products, '');
 
     $arr = $dto->toArray();
-    expect($arr)->toHaveKeys(['companyVatCode', 'seriesName', 'client', 'products'])
+    expect($arr)->toHaveKeys(['companyVatCode', 'seriesName', 'client', 'products', 'observations'])
         ->and($arr['client'])->toHaveKeys(['name', 'vatCode'])
         ->and($arr['products'][0])->toHaveKeys(['name', 'code', 'measuringUnitName']);
 });
 
-it('omits observations from SmartbillInvoiceRequestBody when null', function () {
+it('serializes empty observations on SmartbillInvoiceRequestBody', function () {
     $client = new SmartbillClient('John', '-', false, 'Str 1', 'Cluj', 'Cluj', 'Romania', 'a@b.c', false);
-    $dto = new SmartbillInvoiceRequestBody('RO123', 'S', $client, [], null);
-    expect($dto->toArray())->not->toHaveKey('observations');
+    $dto = new SmartbillInvoiceRequestBody('RO123', 'S', $client, [], '');
+    expect($dto->toArray()['observations'])->toBe('');
 });
 
 it('includes observations on SmartbillInvoiceRequestBody when set', function () {
