@@ -207,7 +207,7 @@ class SamedayShippingProvider implements ShippingProviderInterface
             parcels: [new SamedayParcel(
                 weight: $order->packageWeight > 0 ? $order->packageWeight : 1, // kg
             )],
-            observation: str($order->shippingAddress->shipping_instructions)->limit(196),
+            observation: str($order->shippingAddress->delivery_instructions)->limit(196),
             oohLastMile: $oohLastMile, // locker id in case of easybox
         );
     }

@@ -165,7 +165,7 @@ class DpdShippingProvider implements ShippingProviderInterface
                 courierServicePayer: 'SENDER',
                 packagePayer: 'RECIPIENT',
             ),
-            shipmentNote: str($order->shippingAddress->shipping_instructions)->limit(196),
+            shipmentNote: str($order->shippingAddress->delivery_instructions)->limit(196),
         );
     }
 
