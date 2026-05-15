@@ -10,7 +10,6 @@ use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillClient;
 use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillInvoiceRequestBody;
 use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillPrintRequestQuery;
 use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillProduct;
-use Lunar\ERP\Providers\Smartbill\PaymentSlugMapper;
 use Lunar\Models\Language;
 use Lunar\Models\Order;
 use Lunar\Models\TaxClass;
