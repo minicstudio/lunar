@@ -165,8 +165,61 @@ class SmartbillErpExporter implements ErpDataExporterInterface
                 email: $billingAddress->contact_email,
                 saveToDb: $saveToDb,
             ),
-            products: $products
+            products: $products,
+            observations: $this->buildInvoiceObservations($order),
         );
+    }
+
+    /**
+     * Build the SmartBill invoice observations string: #reference_paymentSlug_shippingSegment.
+     */
+    protected function buildInvoiceObservations(Order $order): string
+    {
+        $order->refresh();
+
+        $reference = trim((string) ($order->reference ?? ''));
+        $paymentSlug = $this->observationsPaymentSlug($order);
+        $shippingSegment = $this->observationsShippingSegment($order);
+
+        return '#'.$reference.'_'.$paymentSlug.'_'.$shippingSegment;
+    }
+
+    private function observationsPaymentSlug(Order $order): string
+    {
+        $paymentOption = $this->observationsMetaString($order, 'payment_option');
+
+        return (new PaymentSlugMapper)($paymentOption);
+    }
+
+    /**
+     * Shipping segment from the order shipping_breakdown (first item identifier).
+     */
+    private function observationsShippingSegment(Order $order): string
+    {
+        $firstItem = $order->shipping_breakdown?->items?->first() ?? null;
+
+        if (! $firstItem) {
+            return '';
+        }
+
+        return trim((string) $firstItem->identifier ?? '');
+    }
+
+    private function observationsMetaString(Order $order, string $key): string
+    {
+        $meta = $order->meta;
+
+        if ($meta === null) {
+            return '';
+        }
+
+        if (! isset($meta[$key])) {
+            return '';
+        }
+
+        $value = $meta[$key];
+
+        return is_string($value) ? trim($value) : '';
     }
 
     /**
