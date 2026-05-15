@@ -135,23 +135,4 @@ return [
     |
     */
     'generate_invoice' => ['awaiting-payment'],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Invoice observations (SmartBill API)
-    |--------------------------------------------------------------------------
-    |
-    | Sent as the "observations" field on invoice creation. Format:
-    | #<order_reference>_<payment_slug>_<shipping_segment>
-    |
-    | payment_map maps meta["payment_type"] driver keys to short slugs.
-    | Shipping uses the stored shipping_option / breakdown identifier as-is.
-    |
-    */
-    'observations' => [
-        'payment_map' => [
-            'hosted-payment' => 'card',
-            'offline' => 'ramburs',
-        ],
-    ],
 ];

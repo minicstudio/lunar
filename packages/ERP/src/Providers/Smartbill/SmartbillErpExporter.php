@@ -10,6 +10,7 @@ use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillClient;
 use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillInvoiceRequestBody;
 use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillPrintRequestQuery;
 use Lunar\ERP\Providers\Smartbill\DTOs\SmartbillProduct;
+use Lunar\ERP\Providers\Smartbill\PaymentSlugMapper;
 use Lunar\Models\Language;
 use Lunar\Models\Order;
 use Lunar\Models\TaxClass;
@@ -186,14 +187,9 @@ class SmartbillErpExporter implements ErpDataExporterInterface
 
     private function observationsPaymentSlug(Order $order): string
     {
-        $driver = $this->observationsMetaString($order, 'payment_option');
-        $map = config('lunar.erp.smartbill.observations.payment_map', []);
+        $paymentOption = $this->observationsMetaString($order, 'payment_option');
 
-        if (is_array($map) && $driver !== '' && isset($map[$driver])) {
-            return (string) $map[$driver];
-        }
-
-        return '';
+        return (new PaymentSlugMapper)($paymentOption);
     }
 
     /**
