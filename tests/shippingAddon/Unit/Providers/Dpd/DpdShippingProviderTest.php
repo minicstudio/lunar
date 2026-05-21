@@ -39,7 +39,7 @@ it('DpdShippingProvider throws when response has no id', function () {
     $client->withMockClient($mock);
 
     $order = new Order;
-    $order->meta = ['payment_option' => 'stripe-card',];
+    $order->meta = ['payment_option' => 'stripe-card'];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'Jane',
