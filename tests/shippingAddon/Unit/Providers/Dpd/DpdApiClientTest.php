@@ -38,7 +38,7 @@ it('DpdApiClient hits correct endpoints with payloads', function () {
     $client->withMockClient($mock);
 
     $order = new Order;
-    $order->meta = ['payment_type' => 'online'];
+    $order->meta = ['payment_option' => 'stripe-card'];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',

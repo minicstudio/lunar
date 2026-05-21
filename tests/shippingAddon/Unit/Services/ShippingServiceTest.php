@@ -86,7 +86,7 @@ function makeOrderWithShippingBreakdown(): Order
         ]), 'shippingAddress')
         ->create([
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
             'shipping_breakdown' => $breakdown,
         ]);
@@ -156,7 +156,7 @@ it('generateAWB works with hyphenated identifier', function () {
         ]), 'shippingAddress')
         ->create([
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
             'shipping_breakdown' => $breakdown,
         ]);
@@ -253,7 +253,7 @@ it('throws when order has no shipping provider selected', function () {
         ]), 'shippingAddress')
         ->create([
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
         ]);
 

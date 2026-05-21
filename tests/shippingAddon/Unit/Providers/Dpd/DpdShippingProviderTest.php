@@ -39,7 +39,7 @@ it('DpdShippingProvider throws when response has no id', function () {
     $client->withMockClient($mock);
 
     $order = new Order;
-    $order->meta = ['payment_type' => 'online'];
+    $order->meta = ['payment_option' => 'stripe-card'];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'Jane',
@@ -82,7 +82,7 @@ it('generateAWB returns awbNumber and builds private recipient payload', functio
     $provider = new DpdShippingProvider($client);
 
     $order = new Order;
-    $order->meta = ['payment_type' => 'online'];
+    $order->meta = ['payment_option' => 'stripe-card'];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',
@@ -125,7 +125,7 @@ it('generateAWB builds corporate recipient when company present', function () {
     $provider = new DpdShippingProvider($client);
 
     $order = new Order;
-    $order->meta = ['payment_type' => 'online'];
+    $order->meta = ['payment_option' => 'stripe-card'];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'Jane',
@@ -178,7 +178,7 @@ it('generateAWB wraps client exceptions into FailedAWBGenerationException', func
     $provider = new DpdShippingProvider($client);
 
     $order = new Order;
-    $order->meta = ['payment_type' => 'online'];
+    $order->meta = ['payment_option' => 'stripe-card'];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',

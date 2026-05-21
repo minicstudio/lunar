@@ -65,7 +65,7 @@ function makeOrderForMagisterApi(): Order
         ]), 'shippingAddress')
         ->create([
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
         ]);
 }
@@ -198,7 +198,7 @@ it('sendOrder payload contains expected offline fields and customer/company when
         ]), 'shippingAddress')
         ->create([
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
         ]);
 
@@ -283,7 +283,7 @@ it('sendOrder payload switches to online payment type', function () {
 
     $order = makeOrderForMagisterApi();
     $meta = $order->getAttribute('meta');
-    $meta['payment_type'] = 'online';
+    $meta['payment_option'] = 'stripe-card';
     $order->meta = $meta;
     $order->save();
 

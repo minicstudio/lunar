@@ -187,7 +187,7 @@ class SamedayShippingProvider implements ShippingProviderInterface
             service: $service,
             serviceTaxes: config('lunar.shipping.sameday.personal_drop_off') ? ['PDO'] : [],
             awbPayment: 1,
-            cashOnDelivery: $order->meta['payment_type'] === 'offline' ? $order->total->decimal() : 0, // if payment type is offline, set cash on shipping to order total
+            cashOnDelivery: $order->meta['payment_option'] === 'cash-on-delivery' ? $order->total->decimal() : 0, // if payment type is offline, set cash on shipping to order total
             insuredValue: 0,
             thirdPartyPickup: 0,
             contactPerson: config('lunar.shipping.sameday.contact_person_id'),

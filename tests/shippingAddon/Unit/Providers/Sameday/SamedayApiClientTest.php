@@ -64,7 +64,7 @@ it('SamedayApiClient authenticates, hits AWB create and download endpoints', fun
 
     $order = new Order;
     $order->reference = 'ORDER-42';
-    $order->meta = ['payment_type' => 'online', 'shippingType' => ShippingType::COURIER->value];
+    $order->meta = ['payment_option' => 'stripe-card', 'shippingType' => ShippingType::COURIER->value];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',
@@ -200,7 +200,7 @@ it('sendWithRetry automatically retries on 401 and succeeds on second attempt', 
 
     $order = new Order;
     $order->reference = 'ORDER-42';
-    $order->meta = ['payment_type' => 'online', 'shippingType' => ShippingType::COURIER->value];
+    $order->meta = ['payment_option' => 'stripe-card', 'shippingType' => ShippingType::COURIER->value];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',
@@ -255,7 +255,7 @@ it('generateAWB throws FailedAWBGenerationException on unsuccessful response', f
 
     $order = new Order;
     $order->reference = 'ORDER-FAIL';
-    $order->meta = ['payment_type' => 'online', 'shippingType' => ShippingType::COURIER->value];
+    $order->meta = ['payment_option' => 'stripe-card', 'shippingType' => ShippingType::COURIER->value];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',
