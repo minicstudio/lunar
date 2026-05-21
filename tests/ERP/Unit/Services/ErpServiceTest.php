@@ -111,7 +111,7 @@ function makeOrderForErp(): Order
         ]), 'shippingAddress')
         ->create([
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
         ]);
 

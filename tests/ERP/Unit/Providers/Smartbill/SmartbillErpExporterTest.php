@@ -104,7 +104,7 @@ function makeOrderForSmartbillExporter(array $orderAttributes = []): Order
         ->create(array_merge([
             'reference' => '1525',
             'meta' => [
-                'payment_type' => 'offline',
+                'payment_option' => 'cash-on-delivery',
             ],
             'shipping_breakdown' => $shippingBreakdown,
         ], $orderAttributes));
@@ -140,7 +140,7 @@ it('maps observations with empty payment slug when payment_type is missing from 
 
     $exporter = new SmartbillErpExporter($client);
     $order = makeOrderForSmartbillExporter([
-        'meta' => ['payment_type' => 'Custom Driver!'],
+        'meta' => ['payment_option' => 'Custom Driver!'],
     ]);
 
     $exporter->generateInvoice($order);

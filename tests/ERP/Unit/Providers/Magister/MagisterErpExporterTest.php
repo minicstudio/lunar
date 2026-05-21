@@ -50,7 +50,7 @@ it('sendOrder returns true when client returns success true', function () {
             'line_one' => 'S1',
             'country_id' => $country->id,
         ]), 'shippingAddress')
-        ->create(['meta' => ['payment_type' => 'offline']]);
+        ->create(['meta' => ['payment_option' => 'cash-on-delivery']]);
     expect($exporter->sendOrder($order))->toBeTrue();
 });
 
@@ -84,7 +84,7 @@ it('generateInvoice returns empty array and downloadInvoicePDF returns null (stu
             'line_one' => 'S1',
             'country_id' => $country->id,
         ]), 'shippingAddress')
-        ->create(['meta' => ['payment_type' => 'offline']]);
+        ->create(['meta' => ['payment_option' => 'cash-on-delivery']]);
     expect($exporter->generateInvoice($order))->toBe([])
         ->and($exporter->downloadInvoicePDF($order))->toBeNull();
 });

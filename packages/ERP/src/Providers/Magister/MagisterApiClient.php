@@ -145,7 +145,7 @@ class MagisterApiClient extends Connector implements ErpApiClientInterface
             'ORDER_OBS' => $shippingAddress->delivery_instructions ?? '',
             'STATUS' => 2, // WAITING
             'STATUS_SUBTYPE' => 22, // Processable
-            'TYPEOF_PAYMENT' => $order->meta['payment_type'] === 'offline' ? 1 : 2, // 1 for cash, 2 for card
+            'TYPEOF_PAYMENT' => $order->meta['payment_option'] === 'cash-on-delivery' ? 1 : 2, // 1 for cash, 2 for card
             'TYPEOF_DELIVERY' => 2, // courier
             // billing
             'INVOICE_FIRSTNAME' => $billingAddress->first_name,

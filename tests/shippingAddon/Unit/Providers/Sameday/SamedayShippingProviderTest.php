@@ -61,7 +61,7 @@ it('SamedayShippingProvider throws when response has no awbNumber', function () 
 
     $order = new Order;
     $order->reference = 'ORD-1';
-    $order->meta = ['payment_type' => 'online', 'shippingType' => ShippingType::COURIER->value];
+    $order->meta = ['payment_option' => 'stripe-card', 'shippingType' => ShippingType::COURIER->value];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'Jane',
@@ -107,7 +107,7 @@ it('generateAWB returns awbNumber and builds recipient payload (courier)', funct
     $order = new Order;
     $order->reference = 'ORDER123';
     $order->packageWeight = 0;
-    $order->meta = ['payment_type' => 'online', 'shippingType' => ShippingType::COURIER->value];
+    $order->meta = ['payment_option' => 'stripe-card', 'shippingType' => ShippingType::COURIER->value];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',
@@ -190,7 +190,7 @@ it('generateAWB builds locker payload when shippingType is LOCKER', function () 
     $order = new Order;
     $order->reference = 'ORDER-L1';
     $order->meta = [
-        'payment_type' => 'offline',
+        'payment_option' => 'cash-on-delivery',
         'shippingType' => ShippingType::LOCKER->value,
     ];
     $order->setRelation('productLines', collect());
@@ -294,7 +294,7 @@ it('generateAWB wraps client exceptions into FailedAWBGenerationException', func
 
     $order = new Order;
     $order->reference = 'ORD-EX';
-    $order->meta = ['payment_type' => 'online', 'shippingType' => ShippingType::COURIER->value];
+    $order->meta = ['payment_option' => 'stripe-card', 'shippingType' => ShippingType::COURIER->value];
     $order->setRelation('productLines', collect());
     $order->setRelation('shippingAddress', new OrderAddress([
         'first_name' => 'John',

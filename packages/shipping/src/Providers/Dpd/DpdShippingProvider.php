@@ -150,7 +150,7 @@ class DpdShippingProvider implements ShippingProviderInterface
                 autoAdjustPickupDate: true,
                 additionalServices: new DpdAdditionalServices(
                     cod: new DpdCODAdditionalService(
-                        amount: $order->meta['payment_type'] === 'offline' ? $order->total->decimal() : 0
+                        amount: $order->meta['payment_option'] === 'cash-on-delivery' ? $order->total->decimal() : 0
                     )
                 ),
                 serviceId: $service,
