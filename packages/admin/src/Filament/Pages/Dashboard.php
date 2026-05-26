@@ -45,12 +45,12 @@ class Dashboard extends BaseDashboard
     public function getDefaultChartsWidgets(): array
     {
         return self::callLunarHook('getChartWidgets', [
+            OrderValuesByStatusChart::class,
             OrderTotalsChart::class,
             OrdersSalesChart::class,
             AverageOrderValueChart::class,
             NewVsReturningCustomersChart::class,
             OrdersByStatusChart::class,
-            OrderValuesByStatusChart::class,
         ]);
     }
 
