@@ -170,7 +170,7 @@ it('uses first shipping_breakdown item identifier for observations', function ()
 
     $exporter = new SmartbillErpExporter($client);
     $exporter->generateInvoice($order);
-    expect($captured['observations'] ?? null)->toBe('#1525__RAW_BREAKDOWN_ID');
+    expect($captured['observations'] ?? null)->toBe('#1525_ramburs_RAW_BREAKDOWN_ID');
 });
 
 it('maps observations with empty shipping segment when shipping_breakdown has no items', function () {
