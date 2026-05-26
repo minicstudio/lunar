@@ -126,7 +126,7 @@ it('generateInvoice returns series & number and exporter maps order to payload',
 
     $resp = $exporter->generateInvoice($order);
     expect($resp)->toBe(['series' => 'S', 'number' => 321]);
-    expect($captured['observations'] ?? null)->toBe('#1525__dpd');
+    expect($captured['observations'] ?? null)->toBe('#1525_ramburs_dpd');
 });
 
 it('maps observations with empty payment slug when payment_type is missing from payment_map', function () {
@@ -170,7 +170,7 @@ it('uses first shipping_breakdown item identifier for observations', function ()
 
     $exporter = new SmartbillErpExporter($client);
     $exporter->generateInvoice($order);
-    expect($captured['observations'] ?? null)->toBe('#1525__RAW_BREAKDOWN_ID');
+    expect($captured['observations'] ?? null)->toBe('#1525_ramburs_RAW_BREAKDOWN_ID');
 });
 
 it('maps observations with empty shipping segment when shipping_breakdown has no items', function () {
@@ -188,7 +188,7 @@ it('maps observations with empty shipping segment when shipping_breakdown has no
     ]);
 
     $exporter->generateInvoice($order);
-    expect($captured['observations'] ?? null)->toBe('#1525__');
+    expect($captured['observations'] ?? null)->toBe('#1525_ramburs_');
 });
 
 it('maps observations with empty reference segment when reference is blank', function () {
@@ -204,7 +204,7 @@ it('maps observations with empty reference segment when reference is blank', fun
     $order = makeOrderForSmartbillExporter(['reference' => '   ']);
 
     $exporter->generateInvoice($order);
-    expect($captured['observations'] ?? null)->toBe('#__dpd');
+    expect($captured['observations'] ?? null)->toBe('#_ramburs_dpd');
 });
 
 it('generateInvoice throws FailedErpInvoiceGenerationException when Smartbill returns error', function () {

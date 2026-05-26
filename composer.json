@@ -72,6 +72,7 @@
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
             "Lunar\\ERP\\": "packages/ERP/src/",
+            "Lunar\\Locations\\Database\\Seeders\\": "packages/locations/database/seeders",
             "Lunar\\Mailchimp\\": "packages/mailchimp/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
