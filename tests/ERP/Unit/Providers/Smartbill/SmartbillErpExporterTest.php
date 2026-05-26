@@ -126,7 +126,7 @@ it('generateInvoice returns series & number and exporter maps order to payload',
 
     $resp = $exporter->generateInvoice($order);
     expect($resp)->toBe(['series' => 'S', 'number' => 321]);
-    expect($captured['observations'] ?? null)->toBe('#1525__dpd');
+    expect($captured['observations'] ?? null)->toBe('#1525_ramburs_dpd');
 });
 
 it('maps observations with empty payment slug when payment_type is missing from payment_map', function () {
