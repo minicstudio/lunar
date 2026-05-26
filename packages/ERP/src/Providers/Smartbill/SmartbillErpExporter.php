@@ -175,8 +175,6 @@ class SmartbillErpExporter implements ErpDataExporterInterface
      */
     protected function buildInvoiceObservations(Order $order): string
     {
-        $order->refresh();
-
         $reference = trim((string) ($order->reference ?? ''));
         $paymentSlug = $this->observationsPaymentSlug($order);
         $shippingSegment = $this->observationsShippingSegment($order);
