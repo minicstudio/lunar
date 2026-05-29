@@ -29,6 +29,9 @@ test('can add address from addressable', function () {
     $attributes = $address->getAttributes();
     unset($attributes['shipping_default']);
     unset($attributes['billing_default']);
+    if (isset($attributes['meta']) && $attributes['meta'] === 'null') {
+        $attributes['meta'] = null;
+    }
 
     $this->assertDatabaseHas((new CartAddress)->getTable(), array_merge([
         'cart_id' => $cart->id,
@@ -89,6 +92,9 @@ test('can override existing address', function () {
     $attributes = $addressA->getAttributes();
     unset($attributes['shipping_default']);
     unset($attributes['billing_default']);
+    if (isset($attributes['meta']) && $attributes['meta'] === 'null') {
+        $attributes['meta'] = null;
+    }
 
     $this->assertDatabaseHas((new CartAddress)->getTable(), array_merge([
         'cart_id' => $cart->id,
@@ -100,6 +106,9 @@ test('can override existing address', function () {
     $attributes = $addressA->getAttributes();
     unset($attributes['shipping_default']);
     unset($attributes['billing_default']);
+    if (isset($attributes['meta']) && $attributes['meta'] === 'null') {
+        $attributes['meta'] = null;
+    }
 
     $this->assertDatabaseMissing((new CartAddress)->getTable(), array_merge([
         'cart_id' => $cart->id,
@@ -109,6 +118,9 @@ test('can override existing address', function () {
     $attributes = $addressB->getAttributes();
     unset($attributes['shipping_default']);
     unset($attributes['billing_default']);
+    if (isset($attributes['meta']) && $attributes['meta'] === 'null') {
+        $attributes['meta'] = null;
+    }
 
     $this->assertDatabaseHas((new CartAddress)->getTable(), array_merge([
         'cart_id' => $cart->id,
