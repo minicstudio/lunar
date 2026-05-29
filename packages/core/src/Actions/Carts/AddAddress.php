@@ -47,9 +47,15 @@ class AddAddress extends AbstractAction
         }
 
         if ($address instanceof Addressable) {
-            $cartAddress = new CartAddress(
-                $address->only($this->fillableAttributes)
-            );
+            $data = $address->only($this->fillableAttributes);
+
+            // AsArrayObject::set() encodes null as the string "null", so we must
+            // unset cast attributes that are null to let the DB store a proper NULL.
+            if (array_key_exists('meta', $data) && is_null($data['meta'])) {
+                unset($data['meta']);
+            }
+
+            $cartAddress = new CartAddress($data);
         }
 
         // Force the type.
