@@ -105,7 +105,7 @@ return [
             ],
             'confirm_non_webp' => [
                 'heading' => '💡 İpucu: WebP formatında görseller kullanın!',
-                'description' => 'Yüklemek için seçtiğiniz görselin WebP formatında olmadığını fark ettik. Sistem bu formatı da desteklese de WebP kullanımını şiddetle tavsiye ediyoruz, zira bu; JPEG veya PNG gibi geleneksel formatlara kıyasla kalite kaybı olmadan daha küçük dosya boyutları üreten modern bir görsel formatıdır. Büyük görseller sayfa yüklenmesini yavaşlatır, bu da müşteri kaybına yol açabilir ve arama motoru optimizasyonu (SEO) puanlarını olumsuz etkiler. Daha iyi performans için görsellerinizi WebP formatına dönüştürmenizi öneririz!',
+                'description' => 'Seçilen görsel WebP formatında değil. WebP, JPEG ve PNG\'ye kıyasla kalite kaybı olmadan daha küçük dosyalar sağlar, bu da daha hızlı yükleme ve daha iyi SEO anlamına gelir. Görsellerinizi dönüştürmenizi öneririz!',
                 'confirm' => 'Yüklemeye devam et',
                 'cancel' => 'İptal',
             ],

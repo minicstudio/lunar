@@ -109,7 +109,7 @@ return [
             ],
             'confirm_non_webp' => [
                 'heading' => '💡 Conseil : Utilisez des images au format WebP !',
-                'description' => "Nous avons remarqué que l'image sélectionnée pour le téléchargement n'est pas au format WebP. Bien que le système prenne en charge ce format également, nous recommandons vivement d'utiliser WebP, car c'est un format d'image moderne qui produit des fichiers plus petits par rapport aux formats traditionnels (comme JPEG ou PNG) sans perte de qualité. Les images volumineuses ralentissent le chargement de la page, ce qui peut entraîner une perte de clients et nuire au référencement (SEO). Nous vous recommandons de convertir vos images au format WebP pour de meilleures performances !",
+                'description' => "L'image sélectionnée n'est pas au format WebP. WebP offre des fichiers plus petits que JPEG et PNG sans perte de qualité, ce qui accélère le chargement et améliore le SEO. Nous recommandons de convertir vos images !",
                 'confirm' => "Continuer l'envoi",
                 'cancel' => 'Annuler',
             ],

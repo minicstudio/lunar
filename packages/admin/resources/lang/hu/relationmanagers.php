@@ -115,7 +115,7 @@ return [
             ],
             'confirm_non_webp' => [
                 'heading' => '💡 Javaslat: Használjon WebP formátumú képeket!',
-                'description' => 'Észrevettük, hogy a feltöltéshez kiválasztott kép nem WebP formátumú. Bár a rendszer támogatja ezt a formátumot is, erősen javasoljuk a WebP használatát, mivel ez egy modern képformátum, amely a hagyományos formátumokhoz (mint a JPEG vagy PNG) képest kisebb fájlméretet eredményez, minőségromlás nélkül. A nagy méretű képek lelassítják az oldal betöltését, ami akár a vásárlók elvesztéséhez vezethet, és rontja a keresőoptimalizálási (SEO) mutatókat. Javasoljuk, hogy a jobb teljesítmény érdekében konvertálja képeit WebP formátumba!',
+                'description' => 'A kiválasztott kép nem WebP formátumú. A WebP a JPEG-hez és PNG-hez képest kisebb fájlméretet biztosít minőségromlás nélkül, így gyorsabb betöltést és jobb SEO-t eredményez. Javasoljuk a konvertálást!',
                 'confirm' => 'Feltöltés folytatása',
                 'cancel' => 'Mégse',
             ],
