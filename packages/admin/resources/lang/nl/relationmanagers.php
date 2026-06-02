@@ -107,10 +107,17 @@ return [
             'view' => [
                 'label' => 'Bekijken',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Tip: Gebruik afbeeldingen in WebP-formaat!',
+                'description' => 'We hebben gemerkt dat de afbeelding die u wilt uploaden niet in WebP-formaat is. Hoewel het systeem dit formaat ook ondersteunt, raden we sterk aan om WebP te gebruiken, omdat dit een modern afbeeldingsformaat is dat kleinere bestandsgroottes oplevert vergeleken met traditionele formaten (zoals JPEG of PNG) zonder kwaliteitsverlies. Grote afbeeldingen vertragen het laden van de pagina, wat kan leiden tot het verlies van klanten en de SEO-prestaties negatief beïnvloedt. We raden u aan uw afbeeldingen naar WebP-formaat te converteren voor betere prestaties!',
+                'confirm' => 'Upload doorgaan',
+                'cancel' => 'Annuleren',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Naam',
+                'helper_text' => 'Wordt gebruikt als alt-tekst van de afbeelding — belangrijk voor SEO en toegankelijkheid voor slechtzienden.',
             ],
             'media' => [
                 'label' => 'Afbeelding',

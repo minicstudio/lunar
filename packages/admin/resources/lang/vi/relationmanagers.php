@@ -107,10 +107,17 @@ return [
             'view' => [
                 'label' => 'Xem',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Mẹo: Sử dụng hình ảnh định dạng WebP!',
+                'description' => 'Chúng tôi nhận thấy hình ảnh được chọn để tải lên không ở định dạng WebP. Mặc dù hệ thống cũng hỗ trợ định dạng này, chúng tôi khuyến nghị mạnh mẽ việc sử dụng WebP, vì đây là định dạng hình ảnh hiện đại tạo ra kích thước tệp nhỏ hơn so với các định dạng truyền thống (như JPEG hoặc PNG) mà không làm giảm chất lượng. Hình ảnh có kích thước lớn làm chậm tốc độ tải trang, có thể dẫn đến mất khách hàng và ảnh hưởng tiêu cực đến thứ hạng tìm kiếm (SEO). Chúng tôi khuyên bạn nên chuyển đổi hình ảnh sang định dạng WebP để có hiệu suất tốt hơn!',
+                'confirm' => 'Tiếp tục tải lên',
+                'cancel' => 'Hủy',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Tên',
+                'helper_text' => 'Được sử dụng làm văn bản thay thế của hình ảnh — quan trọng cho SEO và khả năng tiếp cận của người khiếm thị.',
             ],
             'media' => [
                 'label' => 'Hình ảnh',

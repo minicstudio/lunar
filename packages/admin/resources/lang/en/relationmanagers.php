@@ -113,10 +113,17 @@ return [
             'view' => [
                 'label' => 'View',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Tip: Use WebP format images!',
+                'description' => 'We noticed that the image selected for upload is not in WebP format. While the system supports this format too, we strongly recommend using WebP, as it is a modern image format that results in smaller file sizes compared to traditional formats (like JPEG or PNG) without quality loss. Large images slow down page loading, which can lead to losing customers and negatively affects SEO rankings. We recommend converting your images to WebP for better performance!',
+                'confirm' => 'Continue Upload',
+                'cancel' => 'Cancel',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Name',
+                'helper_text' => 'Used as the image alt text — important for SEO and accessibility for visually impaired users.',
             ],
             'media' => [
                 'label' => 'Image',
