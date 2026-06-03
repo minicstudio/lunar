@@ -107,10 +107,17 @@ return [
             'view' => [
                 'label' => 'Bekijken',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Tip: Gebruik afbeeldingen in WebP-formaat!',
+                'description' => 'De geselecteerde afbeelding is niet in WebP-formaat. WebP levert kleinere bestanden op dan JPEG en PNG zonder kwaliteitsverlies, wat resulteert in snellere laadtijden en betere SEO. We raden aan uw afbeeldingen te converteren!',
+                'confirm' => 'Upload doorgaan',
+                'cancel' => 'Annuleren',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Naam',
+                'helper_text' => 'Wordt gebruikt als alt-tekst van de afbeelding — belangrijk voor SEO en toegankelijkheid voor slechtzienden.',
             ],
             'media' => [
                 'label' => 'Afbeelding',

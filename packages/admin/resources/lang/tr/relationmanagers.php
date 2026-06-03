@@ -103,10 +103,17 @@ return [
             'view' => [
                 'label' => 'Görüntüle',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 İpucu: WebP formatında görseller kullanın!',
+                'description' => 'Seçilen görsel WebP formatında değil. WebP, JPEG ve PNG\'ye kıyasla kalite kaybı olmadan daha küçük dosyalar sağlar, bu da daha hızlı yükleme ve daha iyi SEO anlamına gelir. Görsellerinizi dönüştürmenizi öneririz!',
+                'confirm' => 'Yüklemeye devam et',
+                'cancel' => 'İptal',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Ad',
+                'helper_text' => 'Görsel alt metni olarak kullanılır — SEO ve görme engelliler için erişilebilirlik açısından önemlidir.',
             ],
             'media' => [
                 'label' => 'Görsel',

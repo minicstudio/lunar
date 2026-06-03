@@ -103,10 +103,17 @@ return [
             'view' => [
                 'label' => 'Vezi',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Sfat: Folosiți imagini în format WebP!',
+                'description' => 'Imaginea selectată nu este în format WebP. WebP oferă fișiere mai mici decât JPEG și PNG fără pierderi de calitate, rezultând în încărcare mai rapidă și SEO mai bun. Vă recomandăm să convertiți imaginile!',
+                'confirm' => 'Continuați încărcarea',
+                'cancel' => 'Anulați',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Nume',
+                'helper_text' => 'Devine textul alt al imaginii — important pentru SEO și pentru accesibilitatea persoanelor cu deficiențe de vedere.',
             ],
             'media' => [
                 'label' => 'Imagine',

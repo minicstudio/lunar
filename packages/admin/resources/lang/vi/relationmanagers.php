@@ -107,10 +107,17 @@ return [
             'view' => [
                 'label' => 'Xem',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Mẹo: Sử dụng hình ảnh định dạng WebP!',
+                'description' => 'Hình ảnh được chọn không ở định dạng WebP. WebP cung cấp file nhỏ hơn JPEG và PNG mà không làm giảm chất lượng, giúp tải trang nhanh hơn và cải thiện SEO. Chúng tôi khuyến nghị chuyển đổi hình ảnh!',
+                'confirm' => 'Tiếp tục tải lên',
+                'cancel' => 'Hủy',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Tên',
+                'helper_text' => 'Được sử dụng làm văn bản thay thế của hình ảnh — quan trọng cho SEO và khả năng tiếp cận của người khiếm thị.',
             ],
             'media' => [
                 'label' => 'Hình ảnh',

@@ -3,6 +3,8 @@
 namespace Lunar\Admin;
 
 use Filament\Support\Events\FilamentUpgraded;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\MigrationsStarted;
@@ -32,6 +34,7 @@ use Lunar\Admin\Listeners\FilamentUpgradedListener;
 use Lunar\Admin\Models\Staff;
 use Lunar\Admin\Support\ActivityLog\Manifest as ActivityLogManifest;
 use Lunar\Admin\Support\Forms\AttributeData;
+use Lunar\Admin\Support\RelationManagers\MediaRelationManager;
 use Lunar\Admin\Support\Synthesizers\PriceSynth;
 
 class LunarPanelProvider extends ServiceProvider
@@ -125,6 +128,7 @@ class LunarPanelProvider extends ServiceProvider
         $this->registerPermissionManifest();
         $this->registerStateListeners();
         $this->registerLunarSynthesizer();
+        $this->registerMediaRelationManagerHooks();
         // $this->registerUpgradedListener();
     }
 
@@ -188,5 +192,14 @@ class LunarPanelProvider extends ServiceProvider
     {
         \Lunar\Admin\Support\Facades\AttributeData::synthesizeLivewireProperties();
         Livewire::propertySynthesizer(PriceSynth::class);
+    }
+
+    protected function registerMediaRelationManagerHooks(): void
+    {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::RESOURCE_RELATION_MANAGER_AFTER,
+            fn () => view('lunarpanel::support.relation-managers.media-warning-modal'),
+            scopes: [MediaRelationManager::class],
+        );
     }
 }
