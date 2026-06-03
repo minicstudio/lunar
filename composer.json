@@ -52,7 +52,7 @@
         "pestphp/pest": "^2.0|^3.0",
         "pestphp/pest-plugin-laravel": "^2.0|^3.0",
         "symplify/monorepo-builder": "^10.0",
-        "laravel/boost": "^2.2"
+        "laravel/boost": "^2.4"
     },
     "autoload": {
         "files": [
@@ -91,6 +91,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "Workbench\\App\\": "workbench/app/",
             "Lunar\\Tests\\": "tests",
             "Lunar\\Tests\\Admin\\": "tests/admin",
             "Lunar\\Tests\\Core\\": "tests/core",

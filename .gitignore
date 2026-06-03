@@ -14,13 +14,14 @@ phpstan.neon
 Thumbs.db
 yarn.lock
 
+artisan
+testbench.yml
+workbench/
+
 # Generated MCP and boost files
 mcp.json
-SKILL.md
-AGENTS.md
 boost.json
 skills-lock.json
 .github/skills
 .cursor/skills
 .agents/skills
-.ai/skills
