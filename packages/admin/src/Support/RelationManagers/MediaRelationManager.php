@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\FileUploadConfiguration;
 use Lunar\Admin\Events\ModelMediaUpdated;
 use Lunar\Admin\Rules\SecureMediaUploadRule;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -22,7 +23,7 @@ class MediaRelationManager extends BaseRelationManager
 
     public string $mediaCollection = 'default';
 
-    public ?string $pendingMediaPath = null;
+    public ?string $pendingMediaFilename = null;
 
     public ?string $pendingMediaName = null;
 
@@ -38,7 +39,10 @@ class MediaRelationManager extends BaseRelationManager
     public function confirmNonWebpUpload(): void
     {
         $this->getOwnerRecord()
-            ->addMediaFromString(file_get_contents($this->pendingMediaPath))
+            ->addMediaFromDisk(
+                FileUploadConfiguration::path($this->pendingMediaFilename, false),
+                FileUploadConfiguration::disk()
+            )
             ->usingFileName($this->pendingMediaName)
             ->withCustomProperties([
                 'name' => $this->pendingMediaCustomName,
@@ -47,7 +51,7 @@ class MediaRelationManager extends BaseRelationManager
             ->preservingOriginal()
             ->toMediaCollection($this->mediaCollection);
 
-        $this->pendingMediaPath = null;
+        $this->pendingMediaFilename = null;
         $this->pendingMediaName = null;
         $this->pendingMediaCustomName = null;
         $this->pendingMediaPrimary = null;
@@ -60,7 +64,7 @@ class MediaRelationManager extends BaseRelationManager
 
     public function cancelNonWebpUpload(): void
     {
-        $this->pendingMediaPath = null;
+        $this->pendingMediaFilename = null;
         $this->pendingMediaName = null;
         $this->pendingMediaCustomName = null;
         $this->pendingMediaPrimary = null;
@@ -137,7 +141,7 @@ class MediaRelationManager extends BaseRelationManager
                         $ext = strtolower(pathinfo($data['media']->getClientOriginalName(), PATHINFO_EXTENSION));
 
                         if ($ext !== 'webp') {
-                            $this->pendingMediaPath = $data['media']->getRealPath();
+                            $this->pendingMediaFilename = $data['media']->getFilename();
                             $this->pendingMediaName = $data['media']->getClientOriginalName();
                             $this->pendingMediaCustomName = $data['custom_properties']['name'] ?? null;
                             $this->pendingMediaPrimary = $data['custom_properties']['primary'] ?? false;
