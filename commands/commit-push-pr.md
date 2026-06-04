@@ -1,0 +1,184 @@
+# Commit, Push & PR Workflow
+
+## Purpose
+
+Review the staged changes, generate an appropriate commit message, create the commit, push the current branch, and open a pull request against the repository's `main` branch.
+
+## Requirements
+
+This workflow requires access to:
+
+- Git CLI
+- Repository remotes (`origin`, optionally `upstream`)
+- Atlassian / Bitbucket tooling capable of creating pull requests
+
+If pull request creation is unavailable, complete the commit and push steps and provide the user with the branch name and instructions for creating the pull request manually.
+
+## Environment Validation
+
+Before attempting to create a pull request:
+
+1. Verify that the GitHub CLI is installed:
+
+   ```bash
+   gh --version
+   ```
+
+2. Verify that GitHub authentication is configured:
+
+   ```bash
+   gh auth status
+   ```
+
+3. Verify that the current repository is accessible:
+
+   ```bash
+   gh repo view
+   ```
+
+If any of the above checks fail:
+
+- Complete the commit and push steps.
+- Do not attempt to create a pull request.
+- Explain why pull request creation is unavailable.
+- Provide instructions for configuring GitHub CLI manually.
+
+## Instructions
+
+Before creating a commit:
+
+1. Review all staged changes.
+2. Understand the purpose of the modification.
+3. Group related changes into a single logical change.
+4. Identify:
+
+   * What changed
+   * Why it changed
+   * Any user-visible impact
+   * Any technical debt, refactoring, or bug fix involved
+
+## Commit Message Rules
+
+* Use Conventional Commit format whenever applicable:
+
+  ```
+  <type>: <task-number> <short summary>
+  ```
+
+  Examples:
+
+  ```
+  feat: LFP-678 add Algolia product filtering
+  fix: LFP-712 prevent duplicate GTM events
+  refactor: LFP-643 simplify pagination visibility logic
+  test: LFP-701 add coverage for checkout validation
+  docs: LFP-655 update installation instructions
+  chore: LFP-689 remove unused configuration
+  ```
+
+### Task Number
+
+- Always include the task number when available.
+- Prefer extracting the task number from:
+  - The current branch name
+  - The issue or ticket referenced by the user
+- If no task number can be determined automatically, ask the user for it before generating the commit message.
+
+* Keep the subject line under 72 characters.
+* Use imperative mood.
+* Do not end the subject line with a period.
+* Explain the intent, not implementation details.
+* Avoid vague messages such as:
+
+  * update code
+  * fixes
+  * improvements
+  * cleanup
+  * changes
+
+## Safety Checks
+
+Before committing:
+
+1. Verify that all intended changes are staged.
+2. If multiple unrelated changes are detected, suggest splitting them into separate commits.
+3. If the purpose of a change is unclear, ask for clarification instead of guessing.
+
+## Commit Workflow
+
+After generating the commit message:
+
+1. Create the git commit.
+2. Determine the current branch.
+
+### Main Branch Protection
+
+If the current branch is:
+
+```text
+main
+master
+```
+
+DO NOT:
+
+* Push changes automatically.
+* Create a pull request.
+
+Instead:
+
+* Stop and explain that commits on the main branch require manual review.
+* Ask the user whether they want to continue manually.
+
+### Feature Branch Workflow
+
+If the current branch is not `main` or `master`:
+
+1. Commit the staged changes.
+2. Push the current branch to `origin`.
+3. Check whether a pull request already exists for the current branch into `main`:
+
+   ```bash
+   gh pr list --head "$(git branch --show-current)" --base main --state open
+   ```
+
+   Or:
+
+   ```bash
+   gh pr view --json url,number 2>/dev/null
+   ```
+
+4. **If an open PR already exists:** do **not** create a new one. The push above updates that PR. Return the existing PR URL in the output.
+5. **If no open PR exists:** create one:
+
+   * Source branch: current branch
+   * Target branch: `main`
+   * Remote: `origin` (use `--repo` when `gh` does not default to `origin`)
+   * Use the commit message as the pull request title unless a better title is required
+   * Body: concise summary of what changed, why, and any testing performed
+
+## Pull Request Rules
+
+* Create the pull request against the repository hosted on `origin`.
+* **Skip PR creation** when an open PR already targets `main` from the current branch.
+* Never create pull requests against `upstream`.
+* Never merge the pull request automatically.
+* Never delete branches automatically.
+
+## Output
+
+Return:
+
+```text
+Commit created: <commit hash>
+
+Branch pushed:
+<branch name>
+
+Pull request:
+<pull request url> (new or existing — note if reused)
+```
+
+Or explain why the workflow was stopped.
+
+If an existing PR was reused, say so explicitly (e.g. “Open PR already exists; skipped creation.”).

@@ -1,0 +1,2234 @@
+Enum "lunar_erp_sync_logs_status_enum" {
+  "pending"
+  "running"
+  "completed"
+  "failed"
+}
+
+Enum "lunar_transactions_type_enum" {
+  "refund"
+  "intent"
+  "capture"
+}
+
+Table "activity_log" {
+  "id" bigint [pk, not null, increment]
+  "log_name" varchar(255)
+  "description" text [not null]
+  "subject_type" varchar(255)
+  "subject_id" bigint
+  "event" varchar(255)
+  "causer_type" varchar(255)
+  "causer_id" bigint
+  "properties" json
+  "batch_uuid" char(36)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (subject_type, subject_id) [name: "subject"]
+    (causer_type, causer_id) [name: "causer"]
+    log_name [name: "activity_log_log_name_index"]
+  }
+}
+
+Table "cache" {
+  "key" varchar(255) [pk, not null]
+  "value" mediumtext [not null]
+  "expiration" int [not null]
+}
+
+Table "cache_locks" {
+  "key" varchar(255) [pk, not null]
+  "owner" varchar(255) [not null]
+  "expiration" int [not null]
+}
+
+Table "contacts" {
+  "id" bigint [pk, not null, increment]
+  "first_name" varchar(255) [not null]
+  "last_name" varchar(255) [not null]
+  "email" varchar(255) [not null]
+  "phone_number" varchar(255) [not null]
+  "message" text [not null]
+  "locale" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "failed_jobs" {
+  "id" bigint [pk, not null, increment]
+  "uuid" varchar(255) [not null]
+  "connection" text [not null]
+  "queue" text [not null]
+  "payload" longtext [not null]
+  "exception" longtext [not null]
+  "failed_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    uuid [unique, name: "failed_jobs_uuid_unique"]
+  }
+}
+
+Table "features" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "scope" varchar(255) [not null]
+  "value" text [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (name, scope) [unique, name: "features_name_scope_unique"]
+  }
+}
+
+Table "job_batches" {
+  "id" varchar(255) [pk, not null]
+  "name" varchar(255) [not null]
+  "total_jobs" int [not null]
+  "pending_jobs" int [not null]
+  "failed_jobs" int [not null]
+  "failed_job_ids" longtext [not null]
+  "options" mediumtext
+  "cancelled_at" int
+  "created_at" int [not null]
+  "finished_at" int
+}
+
+Table "jobs" {
+  "id" bigint [pk, not null, increment]
+  "queue" varchar(255) [not null]
+  "payload" longtext [not null]
+  "attempts" tinyint [not null]
+  "reserved_at" int
+  "available_at" int [not null]
+  "created_at" int [not null]
+
+  Indexes {
+    queue [name: "jobs_queue_index"]
+  }
+}
+
+Table "lunar_address_customer_type_shipping_method" {
+  "id" bigint [pk, not null, increment]
+  "address_customer_type_id" bigint [not null]
+  "shipping_method_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "lunar_address_customer_types" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "label" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    name [unique, name: "lunar_address_customer_types_name_unique"]
+  }
+}
+
+Table "lunar_addresses" {
+  "id" bigint [pk, not null, increment]
+  "customer_id" bigint
+  "country_id" bigint
+  "title" varchar(255)
+  "first_name" varchar(255) [not null]
+  "last_name" varchar(255) [not null]
+  "address_customer_type_id" bigint
+  "company_name" varchar(255)
+  "tax_identifier" varchar(255)
+  "line_one" varchar(255) [not null]
+  "line_two" varchar(255)
+  "line_three" varchar(255)
+  "city" varchar(255) [not null]
+  "state" varchar(255)
+  "postcode" varchar(255)
+  "delivery_instructions" varchar(1000)
+  "contact_email" varchar(255)
+  "contact_phone" varchar(255)
+  "meta" json
+  "shipping_default" tinyint(1) [not null, default: '0']
+  "billing_default" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_id [name: "lunar_addresses_customer_id_foreign"]
+    country_id [name: "lunar_addresses_country_id_foreign"]
+    address_customer_type_id [name: "lunar_addresses_address_customer_type_id_foreign"]
+  }
+}
+
+Table "lunar_assets" {
+  "id" bigint [pk, not null, increment]
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "lunar_attributables" {
+  "id" bigint [pk, not null, increment]
+  "attributable_type" varchar(255) [not null]
+  "attributable_id" bigint [not null]
+  "attribute_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (attributable_type, attributable_id) [name: "lunar_attributables_attributable_type_attributable_id_index"]
+    attribute_id [name: "lunar_attributables_attribute_id_foreign"]
+  }
+}
+
+Table "lunar_attribute_groups" {
+  "id" bigint [pk, not null, increment]
+  "attributable_type" varchar(255) [not null]
+  "name" json [not null]
+  "handle" varchar(255) [not null]
+  "position" int [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    handle [unique, name: "lunar_attribute_groups_handle_unique"]
+    attributable_type [name: "lunar_attribute_groups_attributable_type_index"]
+    position [name: "lunar_attribute_groups_position_index"]
+  }
+}
+
+Table "lunar_attributes" {
+  "id" bigint [pk, not null, increment]
+  "attribute_type" varchar(255) [not null]
+  "attribute_group_id" bigint [not null]
+  "position" int [not null]
+  "name" json [not null]
+  "description" json
+  "handle" varchar(255) [not null]
+  "section" varchar(255)
+  "type" varchar(255) [not null]
+  "required" tinyint(1) [not null]
+  "default_value" varchar(255)
+  "configuration" json [not null]
+  "system" tinyint(1) [not null]
+  "validation_rules" varchar(255)
+  "filterable" tinyint(1) [not null, default: '0']
+  "searchable" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (attribute_type, handle) [unique, name: "lunar_attributes_attribute_type_handle_unique"]
+    attribute_group_id [name: "lunar_attributes_attribute_group_id_foreign"]
+    attribute_type [name: "lunar_attributes_attribute_type_index"]
+    position [name: "lunar_attributes_position_index"]
+    type [name: "lunar_attributes_type_index"]
+    searchable [name: "lunar_attributes_searchable_index"]
+    filterable [name: "lunar_attributes_filterable_index"]
+  }
+}
+
+Table "lunar_blog_categories" {
+  "id" bigint [pk, not null, increment]
+  "attribute_data" json [not null]
+  "status" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "lunar_blog_category_blog_post" {
+  "id" bigint [pk, not null, increment]
+  "blog_post_id" bigint [not null]
+  "blog_category_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    blog_post_id [name: "lunar_blog_category_blog_post_blog_post_id_foreign"]
+    blog_category_id [name: "lunar_blog_category_blog_post_blog_category_id_foreign"]
+  }
+}
+
+Table "lunar_blog_posts" {
+  "id" bigint [pk, not null, increment]
+  "attribute_data" json [not null]
+  "status" varchar(255) [not null]
+  "author_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    author_id [name: "lunar_blog_posts_author_id_foreign"]
+  }
+}
+
+Table "lunar_brand_collection" {
+  "id" bigint [pk, not null, increment]
+  "brand_id" bigint [not null]
+  "collection_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    brand_id [name: "lunar_brand_collection_brand_id_foreign"]
+    collection_id [name: "lunar_brand_collection_collection_id_foreign"]
+  }
+}
+
+Table "lunar_brand_discount" {
+  "id" bigint [pk, not null, increment]
+  "brand_id" bigint [not null]
+  "discount_id" bigint [not null]
+  "type" varchar(20) [not null, default: 'limitation']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    brand_id [name: "lunar_brand_discount_brand_id_foreign"]
+    discount_id [name: "lunar_brand_discount_discount_id_foreign"]
+  }
+}
+
+Table "lunar_brands" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "attribute_data" json
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "lunar_cart_addresses" {
+  "id" bigint [pk, not null, increment]
+  "cart_id" bigint [not null]
+  "country_id" bigint
+  "title" varchar(255)
+  "first_name" varchar(255)
+  "last_name" varchar(255)
+  "address_customer_type_id" bigint
+  "company_name" varchar(255)
+  "tax_identifier" varchar(255)
+  "line_one" varchar(255)
+  "line_two" varchar(255)
+  "line_three" varchar(255)
+  "city" varchar(255)
+  "state" varchar(255)
+  "postcode" varchar(255)
+  "delivery_instructions" varchar(1000)
+  "contact_email" varchar(255)
+  "contact_phone" varchar(255)
+  "type" varchar(255) [not null, default: 'shipping']
+  "shipping_option" varchar(255)
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    cart_id [name: "lunar_cart_addresses_cart_id_foreign"]
+    country_id [name: "lunar_cart_addresses_country_id_foreign"]
+    type [name: "lunar_cart_addresses_type_index"]
+    address_customer_type_id [name: "lunar_cart_addresses_address_customer_type_id_foreign"]
+  }
+}
+
+Table "lunar_cart_line_discount" {
+  "id" bigint [pk, not null, increment]
+  "cart_line_id" bigint [not null]
+  "discount_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    cart_line_id [name: "lunar_cart_line_discount_cart_line_id_foreign"]
+    discount_id [name: "lunar_cart_line_discount_discount_id_foreign"]
+  }
+}
+
+Table "lunar_cart_lines" {
+  "id" bigint [pk, not null, increment]
+  "cart_id" bigint [not null]
+  "purchasable_type" varchar(255) [not null]
+  "purchasable_id" bigint [not null]
+  "quantity" int [not null]
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    cart_id [name: "lunar_cart_lines_cart_id_foreign"]
+    (purchasable_type, purchasable_id) [name: "lunar_cart_lines_purchasable_type_purchasable_id_index"]
+  }
+}
+
+Table "lunar_carts" {
+  "id" bigint [pk, not null, increment]
+  "user_id" bigint
+  "customer_id" bigint
+  "merged_id" bigint
+  "currency_id" bigint [not null]
+  "channel_id" bigint [not null]
+  "order_id" bigint
+  "coupon_code" varchar(255)
+  "completed_at" datetime
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    user_id [name: "lunar_carts_user_id_foreign"]
+    merged_id [name: "lunar_carts_merged_id_foreign"]
+    currency_id [name: "lunar_carts_currency_id_foreign"]
+    channel_id [name: "lunar_carts_channel_id_foreign"]
+    order_id [name: "lunar_carts_order_id_foreign"]
+    coupon_code [name: "lunar_carts_coupon_code_index"]
+    completed_at [name: "lunar_carts_completed_at_index"]
+    customer_id [name: "lunar_carts_customer_id_foreign"]
+  }
+}
+
+Table "lunar_channelables" {
+  "id" bigint [pk, not null, increment]
+  "channel_id" bigint [not null]
+  "channelable_type" varchar(255) [not null]
+  "channelable_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '0']
+  "starts_at" datetime
+  "ends_at" datetime
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    channel_id [name: "lunar_channelables_channel_id_foreign"]
+    (channelable_type, channelable_id) [name: "lunar_channelables_channelable_type_channelable_id_index"]
+    ends_at [name: "lunar_channelables_ends_at_index"]
+    enabled [name: "lunar_channelables_enabled_index"]
+    starts_at [name: "lunar_channelables_starts_at_index"]
+  }
+}
+
+Table "lunar_channels" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "handle" varchar(255) [not null]
+  "default" tinyint(1) [not null, default: '0']
+  "url" varchar(255)
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    handle [unique, name: "lunar_channels_handle_unique"]
+    default [name: "lunar_channels_default_index"]
+  }
+}
+
+Table "lunar_collection_customer_group" {
+  "id" bigint [pk, not null, increment]
+  "collection_id" bigint [not null]
+  "customer_group_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '0']
+  "starts_at" timestamp
+  "ends_at" timestamp
+  "visible" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    collection_id [name: "lunar_collection_customer_group_collection_id_foreign"]
+    customer_group_id [name: "lunar_collection_customer_group_customer_group_id_foreign"]
+    enabled [name: "lunar_collection_customer_group_enabled_index"]
+    starts_at [name: "lunar_collection_customer_group_starts_at_index"]
+    ends_at [name: "lunar_collection_customer_group_ends_at_index"]
+    visible [name: "lunar_collection_customer_group_visible_index"]
+  }
+}
+
+Table "lunar_collection_discount" {
+  "id" bigint [pk, not null, increment]
+  "discount_id" bigint [not null]
+  "collection_id" bigint [not null]
+  "type" varchar(20) [not null, default: 'limitation']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    discount_id [name: "lunar_collection_discount_discount_id_foreign"]
+    collection_id [name: "lunar_collection_discount_collection_id_foreign"]
+  }
+}
+
+Table "lunar_collection_groups" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "handle" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    handle [unique, name: "lunar_collection_groups_handle_unique"]
+  }
+}
+
+Table "lunar_collection_product" {
+  "id" bigint [pk, not null, increment]
+  "collection_id" bigint [not null]
+  "product_id" bigint [not null]
+  "position" int [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    collection_id [name: "lunar_collection_product_collection_id_foreign"]
+    product_id [name: "lunar_collection_product_product_id_foreign"]
+    position [name: "lunar_collection_product_position_index"]
+  }
+}
+
+Table "lunar_collections" {
+  "id" bigint [pk, not null, increment]
+  "collection_group_id" bigint [not null]
+  "_lft" int [not null, default: '0']
+  "_rgt" int [not null, default: '0']
+  "parent_id" int
+  "type" varchar(255) [not null, default: 'static']
+  "attribute_data" json [not null]
+  "sort" varchar(255) [not null, default: 'custom']
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    collection_group_id [name: "lunar_collections_collection_group_id_foreign"]
+    (_lft, _rgt, parent_id) [name: "lunar_collections__lft__rgt_parent_id_index"]
+    type [name: "lunar_collections_type_index"]
+    sort [name: "lunar_collections_sort_index"]
+  }
+}
+
+Table "lunar_counties" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "code" varchar(255) [not null]
+  "country_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    code [unique, name: "lunar_counties_code_unique"]
+    country_id [name: "lunar_counties_country_id_foreign"]
+  }
+}
+
+Table "lunar_countries" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "iso3" varchar(255) [not null]
+  "iso2" varchar(255)
+  "phonecode" varchar(255) [not null]
+  "capital" varchar(255)
+  "currency" varchar(255) [not null]
+  "native" varchar(255)
+  "emoji" varchar(255) [not null]
+  "emoji_u" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    iso3 [unique, name: "lunar_countries_iso3_unique"]
+    iso2 [unique, name: "lunar_countries_iso2_unique"]
+  }
+}
+
+Table "lunar_country_shipping_zone" {
+  "id" bigint [pk, not null, increment]
+  "country_id" bigint [not null]
+  "shipping_zone_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    country_id [name: "lunar_country_shipping_zone_country_id_foreign"]
+    shipping_zone_id [name: "lunar_country_shipping_zone_shipping_zone_id_foreign"]
+  }
+}
+
+Table "lunar_currencies" {
+  "id" bigint [pk, not null, increment]
+  "code" varchar(255) [not null]
+  "name" varchar(255) [not null]
+  "exchange_rate" decimal(10,4) [not null]
+  "decimal_places" int [not null, default: '2']
+  "enabled" tinyint(1) [not null, default: '0']
+  "default" tinyint(1) [not null, default: '0']
+  "sync_prices" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    code [unique, name: "lunar_currencies_code_unique"]
+    decimal_places [name: "lunar_currencies_decimal_places_index"]
+    enabled [name: "lunar_currencies_enabled_index"]
+    default [name: "lunar_currencies_default_index"]
+  }
+}
+
+Table "lunar_customer_customer_group" {
+  "id" bigint [pk, not null, increment]
+  "customer_id" bigint [not null]
+  "customer_group_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_id [name: "lunar_customer_customer_group_customer_id_foreign"]
+    customer_group_id [name: "lunar_customer_customer_group_customer_group_id_foreign"]
+  }
+}
+
+Table "lunar_customer_discount" {
+  "id" bigint [pk, not null, increment]
+  "discount_id" bigint [not null]
+  "customer_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    discount_id [name: "lunar_customer_discount_discount_id_foreign"]
+    customer_id [name: "lunar_customer_discount_customer_id_foreign"]
+  }
+}
+
+Table "lunar_customer_group_discount" {
+  "id" bigint [pk, not null, increment]
+  "discount_id" bigint [not null]
+  "customer_group_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '0']
+  "starts_at" timestamp
+  "ends_at" timestamp
+  "visible" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    discount_id [name: "lunar_customer_group_discount_discount_id_foreign"]
+    customer_group_id [name: "lunar_customer_group_discount_customer_group_id_foreign"]
+    enabled [name: "lunar_customer_group_discount_enabled_index"]
+    starts_at [name: "lunar_customer_group_discount_starts_at_index"]
+    ends_at [name: "lunar_customer_group_discount_ends_at_index"]
+    visible [name: "lunar_customer_group_discount_visible_index"]
+  }
+}
+
+Table "lunar_customer_group_product" {
+  "id" bigint [pk, not null, increment]
+  "customer_group_id" bigint [not null]
+  "product_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '0']
+  "starts_at" timestamp
+  "ends_at" timestamp
+  "visible" tinyint(1) [not null, default: '1']
+  "purchasable" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_group_id [name: "lunar_customer_group_product_customer_group_id_foreign"]
+    product_id [name: "lunar_customer_group_product_product_id_foreign"]
+    enabled [name: "lunar_customer_group_product_enabled_index"]
+    starts_at [name: "lunar_customer_group_product_starts_at_index"]
+    ends_at [name: "lunar_customer_group_product_ends_at_index"]
+    visible [name: "lunar_customer_group_product_visible_index"]
+    purchasable [name: "lunar_customer_group_product_purchasable_index"]
+  }
+}
+
+Table "lunar_customer_group_shipping_method" {
+  "id" bigint [pk, not null, increment]
+  "customer_group_id" bigint [not null]
+  "shipping_method_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '0']
+  "starts_at" timestamp
+  "ends_at" timestamp
+  "visible" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_group_id [name: "lunar_customer_group_shipping_method_customer_group_id_foreign"]
+    shipping_method_id [name: "lunar_customer_group_shipping_method_shipping_method_id_foreign"]
+    enabled [name: "lunar_customer_group_shipping_method_enabled_index"]
+    starts_at [name: "lunar_customer_group_shipping_method_starts_at_index"]
+    ends_at [name: "lunar_customer_group_shipping_method_ends_at_index"]
+    visible [name: "lunar_customer_group_shipping_method_visible_index"]
+  }
+}
+
+Table "lunar_customer_groups" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "handle" varchar(255) [not null]
+  "default" tinyint(1) [not null, default: '0']
+  "attribute_data" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    handle [unique, name: "lunar_customer_groups_handle_unique"]
+    default [name: "lunar_customer_groups_default_index"]
+  }
+}
+
+Table "lunar_customer_user" {
+  "id" bigint [pk, not null, increment]
+  "customer_id" bigint [not null]
+  "user_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_id [name: "lunar_customer_user_customer_id_foreign"]
+    user_id [name: "lunar_customer_user_user_id_foreign"]
+  }
+}
+
+Table "lunar_customers" {
+  "id" bigint [pk, not null, increment]
+  "title" varchar(255)
+  "first_name" varchar(255) [not null]
+  "last_name" varchar(255) [not null]
+  "company_name" varchar(255)
+  "tax_identifier" varchar(255)
+  "account_ref" varchar(255)
+  "attribute_data" json
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    account_ref [name: "lunar_customers_account_ref_index"]
+  }
+}
+
+Table "lunar_discount_user" {
+  "id" bigint [pk, not null, increment]
+  "discount_id" bigint [not null]
+  "user_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    discount_id [name: "lunar_discount_user_discount_id_foreign"]
+    user_id [name: "lunar_discount_user_user_id_foreign"]
+  }
+}
+
+Table "lunar_discountables" {
+  "id" bigint [pk, not null, increment]
+  "discount_id" bigint [not null]
+  "discountable_type" varchar(255) [not null]
+  "discountable_id" bigint [not null]
+  "type" varchar(255) [not null, default: 'condition']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    discount_id [name: "lunar_discount_purchasables_discount_id_foreign"]
+    (discountable_type, discountable_id) [name: "purchasable_idx"]
+    type [name: "lunar_discount_purchasables_type_index"]
+  }
+}
+
+Table "lunar_discounts" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "handle" varchar(255) [not null]
+  "coupon" varchar(255)
+  "type" varchar(255) [not null]
+  "starts_at" datetime [not null]
+  "ends_at" datetime
+  "uses" int [not null, default: '0']
+  "max_uses" mediumint
+  "max_uses_per_user" mediumint
+  "priority" mediumint [not null, default: '1']
+  "stop" tinyint(1) [not null, default: '0']
+  "restriction" varchar(255)
+  "data" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    handle [unique, name: "lunar_discounts_handle_unique"]
+    coupon [unique, name: "lunar_discounts_coupon_unique"]
+    type [name: "lunar_discounts_type_index"]
+    starts_at [name: "lunar_discounts_starts_at_index"]
+    ends_at [name: "lunar_discounts_ends_at_index"]
+    uses [name: "lunar_discounts_uses_index"]
+    priority [name: "lunar_discounts_priority_index"]
+    stop [name: "lunar_discounts_stop_index"]
+    restriction [name: "lunar_discounts_restriction_index"]
+  }
+}
+
+Table "lunar_erp_sync_logs" {
+  "id" bigint [pk, not null, increment]
+  "provider" varchar(255) [not null]
+  "sync_type" varchar(255) [not null]
+  "status" lunar_erp_sync_logs_status_enum [not null, default: 'pending']
+  "started_at" timestamp
+  "completed_at" timestamp
+  "items_processed" int [not null, default: '0']
+  "items_total" int [not null, default: '0']
+  "error_message" text
+  "sync_data" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (provider, sync_type) [name: "lunar_erp_sync_logs_provider_sync_type_index"]
+    status [name: "lunar_erp_sync_logs_status_index"]
+    started_at [name: "lunar_erp_sync_logs_started_at_index"]
+  }
+}
+
+Table "lunar_erp_sync_temp" {
+  "id" bigint [pk, not null, increment]
+  "erp_id" varchar(255) [not null]
+  "name" varchar(255) [not null]
+  "sku" varchar(255) [not null]
+  "price" bigint [not null]
+  "discount" smallint
+  "stock" int [not null, default: '0']
+  "category_1" varchar(255)
+  "category_2" varchar(255)
+  "provider_data" json
+  "attributes" json
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    erp_id [unique, name: "lunar_erp_sync_temp_erp_id_unique"]
+    erp_id [name: "lunar_erp_sync_temp_erp_id_index"]
+    name [name: "lunar_erp_sync_temp_name_index"]
+    sku [name: "lunar_erp_sync_temp_sku_index"]
+  }
+}
+
+Table "lunar_exclusion_list_shipping_zone" {
+  "id" bigint [pk, not null, increment]
+  "exclusion_id" bigint [not null]
+  "shipping_zone_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    exclusion_id [name: "lunar_exclusion_list_shipping_zone_exclusion_id_foreign"]
+    shipping_zone_id [name: "lunar_exclusion_list_shipping_zone_shipping_zone_id_foreign"]
+  }
+}
+
+Table "lunar_languages" {
+  "id" bigint [pk, not null, increment]
+  "code" varchar(255) [not null]
+  "name" varchar(255) [not null]
+  "default" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    code [unique, name: "lunar_languages_code_unique"]
+    default [name: "lunar_languages_default_index"]
+  }
+}
+
+Table "lunar_localities" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "postal_code" varchar(255)
+  "county_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    county_id [name: "lunar_localities_county_id_foreign"]
+  }
+}
+
+Table "lunar_media_product_variant" {
+  "id" bigint [pk, not null, increment]
+  "media_id" bigint [not null]
+  "product_variant_id" bigint [not null]
+  "primary" tinyint(1) [not null, default: '0']
+  "position" smallint [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    media_id [name: "lunar_media_product_variant_media_id_foreign"]
+    product_variant_id [name: "lunar_media_product_variant_product_variant_id_foreign"]
+    primary [name: "lunar_media_product_variant_primary_index"]
+    position [name: "lunar_media_product_variant_position_index"]
+  }
+}
+
+Table "lunar_opayo_tokens" {
+  "id" bigint [pk, not null, increment]
+  "user_id" bigint [not null]
+  "card_type" varchar(255) [not null]
+  "last_four" varchar(255) [not null]
+  "token" varchar(255) [not null]
+  "auth_code" varchar(255)
+  "expires_at" timestamp [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    user_id [name: "lunar_opayo_tokens_user_id_foreign"]
+    card_type [name: "lunar_opayo_tokens_card_type_index"]
+  }
+}
+
+Table "lunar_order_addresses" {
+  "id" bigint [pk, not null, increment]
+  "order_id" bigint [not null]
+  "country_id" bigint
+  "title" varchar(255)
+  "first_name" varchar(255)
+  "last_name" varchar(255)
+  "address_customer_type_id" bigint
+  "company_name" varchar(255)
+  "tax_identifier" varchar(255)
+  "line_one" varchar(255)
+  "line_two" varchar(255)
+  "line_three" varchar(255)
+  "city" varchar(255)
+  "state" varchar(255)
+  "postcode" varchar(255)
+  "delivery_instructions" varchar(1000)
+  "contact_email" varchar(255)
+  "contact_phone" varchar(255)
+  "type" varchar(255) [not null, default: 'shipping']
+  "shipping_option" varchar(255)
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    order_id [name: "lunar_order_addresses_order_id_foreign"]
+    country_id [name: "lunar_order_addresses_country_id_foreign"]
+    type [name: "lunar_order_addresses_type_index"]
+    address_customer_type_id [name: "lunar_order_addresses_address_customer_type_id_foreign"]
+  }
+}
+
+Table "lunar_order_lines" {
+  "id" bigint [pk, not null, increment]
+  "order_id" bigint [not null]
+  "purchasable_type" varchar(255) [not null]
+  "purchasable_id" bigint [not null]
+  "type" varchar(255) [not null]
+  "description" varchar(255) [not null]
+  "option" varchar(255)
+  "identifier" varchar(255) [not null]
+  "unit_price" bigint [not null]
+  "unit_quantity" smallint [not null, default: '1']
+  "quantity" int [not null]
+  "sub_total" bigint [not null]
+  "discount_total" bigint [not null]
+  "tax_breakdown" json [not null]
+  "tax_total" bigint [not null]
+  "total" bigint [not null]
+  "notes" text
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    order_id [name: "lunar_order_lines_order_id_foreign"]
+    (purchasable_type, purchasable_id) [name: "lunar_order_lines_purchasable_type_purchasable_id_index"]
+    type [name: "lunar_order_lines_type_index"]
+    identifier [name: "lunar_order_lines_identifier_index"]
+    unit_price [name: "lunar_order_lines_unit_price_index"]
+    unit_quantity [name: "lunar_order_lines_unit_quantity_index"]
+    sub_total [name: "lunar_order_lines_sub_total_index"]
+    discount_total [name: "lunar_order_lines_discount_total_index"]
+    tax_total [name: "lunar_order_lines_tax_total_index"]
+    total [name: "lunar_order_lines_total_index"]
+  }
+}
+
+Table "lunar_order_shipping_zone" {
+  "id" int [pk, not null, increment]
+  "order_id" bigint [not null]
+  "shipping_zone_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    order_id [name: "lunar_order_shipping_zone_order_id_foreign"]
+    shipping_zone_id [name: "lunar_order_shipping_zone_shipping_zone_id_foreign"]
+  }
+}
+
+Table "lunar_orders" {
+  "id" bigint [pk, not null, increment]
+  "customer_id" bigint
+  "user_id" bigint
+  "cart_id" bigint
+  "channel_id" bigint [not null]
+  "new_customer" tinyint(1) [not null, default: '0']
+  "status" varchar(255) [not null]
+  "reference" varchar(255)
+  "customer_reference" varchar(255)
+  "sub_total" bigint [not null]
+  "discount_breakdown" json
+  "discount_total" bigint [not null]
+  "shipping_breakdown" json
+  "shipping_total" bigint [not null]
+  "tax_breakdown" json [not null]
+  "tax_total" bigint [not null]
+  "total" bigint [not null]
+  "notes" text
+  "currency_code" varchar(3) [not null]
+  "compare_currency_code" varchar(3)
+  "exchange_rate" decimal(10,4) [not null, default: '1.0000']
+  "placed_at" datetime
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+  "fingerprint" varchar(255)
+
+  Indexes {
+    reference [unique, name: "lunar_orders_reference_unique"]
+    user_id [name: "lunar_orders_user_id_foreign"]
+    channel_id [name: "lunar_orders_channel_id_foreign"]
+    status [name: "lunar_orders_status_index"]
+    sub_total [name: "lunar_orders_sub_total_index"]
+    discount_total [name: "lunar_orders_discount_total_index"]
+    shipping_total [name: "lunar_orders_shipping_total_index"]
+    tax_total [name: "lunar_orders_tax_total_index"]
+    total [name: "lunar_orders_total_index"]
+    placed_at [name: "lunar_orders_placed_at_index"]
+    customer_id [name: "lunar_orders_customer_id_foreign"]
+    new_customer [name: "lunar_orders_new_customer_index"]
+    cart_id [name: "lunar_orders_cart_id_foreign"]
+    fingerprint [name: "lunar_orders_fingerprint_index"]
+  }
+}
+
+Table "lunar_prices" {
+  "id" bigint [pk, not null, increment]
+  "customer_group_id" bigint
+  "currency_id" bigint [not null]
+  "priceable_type" varchar(255) [not null]
+  "priceable_id" bigint [not null]
+  "price" bigint [not null]
+  "compare_price" bigint
+  "min_quantity" int [not null, default: '1']
+  "max_quantity" int
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    customer_group_id [name: "lunar_prices_customer_group_id_foreign"]
+    currency_id [name: "lunar_prices_currency_id_foreign"]
+    (priceable_type, priceable_id) [name: "lunar_prices_priceable_type_priceable_id_index"]
+    price [name: "lunar_prices_price_index"]
+    min_quantity [name: "lunar_prices_tier_index"]
+  }
+}
+
+Table "lunar_product_associations" {
+  "id" bigint [pk, not null, increment]
+  "product_parent_id" bigint [not null]
+  "product_target_id" bigint [not null]
+  "type" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    product_parent_id [name: "lunar_product_associations_product_parent_id_foreign"]
+    product_target_id [name: "lunar_product_associations_product_target_id_foreign"]
+    type [name: "lunar_product_associations_type_index"]
+  }
+}
+
+Table "lunar_product_option_value_product_variant" {
+  "id" bigint [pk, not null, increment]
+  "value_id" bigint [not null]
+  "variant_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    value_id [name: "lunar_product_option_value_product_variant_value_id_foreign"]
+    variant_id [name: "lunar_product_option_value_product_variant_variant_id_foreign"]
+  }
+}
+
+Table "lunar_product_option_values" {
+  "id" bigint [pk, not null, increment]
+  "product_option_id" bigint [not null]
+  "name" json [not null]
+  "position" int [not null, default: '0']
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    product_option_id [name: "lunar_product_option_values_product_option_id_foreign"]
+    position [name: "lunar_product_option_values_position_index"]
+  }
+}
+
+Table "lunar_product_options" {
+  "id" bigint [pk, not null, increment]
+  "name" json [not null]
+  "label" json
+  "handle" varchar(255)
+  "shared" tinyint(1) [not null, default: '0']
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    shared [name: "lunar_product_options_shared_index"]
+    handle [name: "lunar_product_options_handle_index"]
+  }
+}
+
+Table "lunar_product_product_option" {
+  "id" bigint [pk, not null, increment]
+  "product_id" bigint [not null]
+  "product_option_id" bigint [not null]
+  "position" smallint [not null]
+
+  Indexes {
+    product_id [name: "lunar_product_product_option_product_id_foreign"]
+    product_option_id [name: "lunar_product_product_option_product_option_id_foreign"]
+    position [name: "lunar_product_product_option_position_index"]
+  }
+}
+
+Table "lunar_product_types" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+}
+
+Table "lunar_product_variants" {
+  "id" bigint [pk, not null, increment]
+  "product_id" bigint [not null]
+  "erp_id" bigint
+  "tax_class_id" bigint [not null]
+  "attribute_data" json
+  "tax_ref" varchar(255)
+  "unit_quantity" int [not null, default: '1']
+  "min_quantity" int [not null, default: '1']
+  "quantity_increment" int [not null, default: '1']
+  "sku" varchar(255)
+  "gtin" varchar(255)
+  "mpn" varchar(255)
+  "ean" varchar(255)
+  "length_value" decimal(10,4) [default: '0.0000']
+  "length_unit" varchar(255) [default: 'mm']
+  "width_value" decimal(10,4) [default: '0.0000']
+  "width_unit" varchar(255) [default: 'mm']
+  "height_value" decimal(10,4) [default: '0.0000']
+  "height_unit" varchar(255) [default: 'mm']
+  "weight_value" decimal(10,4) [default: '0.0000']
+  "weight_unit" varchar(255) [default: 'kg']
+  "volume_value" decimal(10,4) [default: '0.0000']
+  "volume_unit" varchar(255) [default: 'mm']
+  "shippable" tinyint(1) [not null, default: '1']
+  "stock" int [not null, default: '0']
+  "backorder" int [not null, default: '0']
+  "purchasable" varchar(255) [not null, default: 'always']
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    product_id [name: "lunar_product_variants_product_id_foreign"]
+    tax_class_id [name: "lunar_product_variants_tax_class_id_foreign"]
+    tax_ref [name: "lunar_product_variants_tax_ref_index"]
+    unit_quantity [name: "lunar_product_variants_unit_quantity_index"]
+    sku [name: "lunar_product_variants_sku_index"]
+    gtin [name: "lunar_product_variants_gtin_index"]
+    mpn [name: "lunar_product_variants_mpn_index"]
+    ean [name: "lunar_product_variants_ean_index"]
+    length_value [name: "lunar_product_variants_length_value_index"]
+    width_value [name: "lunar_product_variants_width_value_index"]
+    height_value [name: "lunar_product_variants_height_value_index"]
+    weight_value [name: "lunar_product_variants_weight_value_index"]
+    volume_value [name: "lunar_product_variants_volume_value_index"]
+    shippable [name: "lunar_product_variants_shippable_index"]
+    stock [name: "lunar_product_variants_stock_index"]
+    backorder [name: "lunar_product_variants_backorder_index"]
+    purchasable [name: "lunar_product_variants_purchasable_index"]
+    quantity_increment [name: "lunar_product_variants_quantity_increment_index"]
+    min_quantity [name: "lunar_product_variants_min_quantity_index"]
+    deleted_at [name: "lunar_product_variants_deleted_at_index"]
+  }
+}
+
+Table "lunar_products" {
+  "id" bigint [pk, not null, increment]
+  "brand_id" bigint
+  "product_type_id" bigint [not null]
+  "status" varchar(255) [not null]
+  "published_at" timestamp
+  "attribute_data" json [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    product_type_id [name: "lunar_products_product_type_id_foreign"]
+    status [name: "lunar_products_status_index"]
+    brand_id [name: "lunar_products_brand_id_foreign"]
+    deleted_at [name: "lunar_products_deleted_at_index"]
+  }
+}
+
+Table "lunar_reviews" {
+  "id" bigint [pk, not null, increment]
+  "order_id" bigint
+  "user_id" bigint
+  "reviewable_id" bigint
+  "reviewable_type" varchar(255)
+  "attribute_data" json [not null]
+  "approved_at" timestamp
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    order_id [name: "lunar_reviews_order_id_foreign"]
+    user_id [name: "lunar_reviews_user_id_foreign"]
+  }
+}
+
+Table "lunar_shipping_cities" {
+  "id" bigint [pk, not null, increment]
+  "provider" varchar(255) [not null]
+  "provider_city_id" int [not null]
+  "name" varchar(255) [not null]
+  "postal_code" varchar(255) [not null]
+  "county_id" bigint [not null]
+  "provider_county_id" int [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    (provider, provider_city_id) [unique, name: "lunar_shipping_cities_provider_provider_city_id_unique"]
+    county_id [name: "lunar_shipping_cities_county_id_foreign"]
+  }
+}
+
+Table "lunar_shipping_counties" {
+  "id" bigint [pk, not null, increment]
+  "provider" varchar(255) [not null]
+  "provider_county_id" int [not null]
+  "name" varchar(255) [not null]
+  "code" varchar(255)
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    (provider, provider_county_id) [unique, name: "lunar_shipping_counties_provider_provider_county_id_unique"]
+  }
+}
+
+Table "lunar_shipping_exclusion_lists" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    name [unique, name: "lunar_shipping_exclusion_lists_name_unique"]
+  }
+}
+
+Table "lunar_shipping_exclusions" {
+  "id" bigint [pk, not null, increment]
+  "shipping_exclusion_list_id" bigint [not null]
+  "purchasable_type" varchar(255) [not null]
+  "purchasable_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    shipping_exclusion_list_id [name: "lunar_shipping_exclusions_shipping_exclusion_list_id_foreign"]
+    (purchasable_type, purchasable_id) [name: "shipping_exclusions_purchasable_type_purchasable_id_index"]
+  }
+}
+
+Table "lunar_shipping_lockers" {
+  "id" bigint [pk, not null, increment]
+  "provider" varchar(255) [not null]
+  "provider_locker_id" int [not null]
+  "name" varchar(255) [not null]
+  "locker_type" tinyint
+  "county" varchar(255)
+  "county_id" bigint [not null]
+  "provider_county_id" int
+  "city" varchar(255)
+  "city_id" bigint [not null]
+  "provider_city_id" int
+  "postal_code" varchar(255)
+  "address" varchar(255)
+  "lat" decimal(10,7)
+  "lng" decimal(10,7)
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    (provider, provider_locker_id) [unique, name: "lunar_shipping_lockers_provider_provider_locker_id_unique"]
+    county_id [name: "lunar_shipping_lockers_county_id_foreign"]
+    city_id [name: "lunar_shipping_lockers_city_id_foreign"]
+  }
+}
+
+Table "lunar_shipping_methods" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "description" text
+  "code" varchar(255)
+  "enabled" tinyint(1) [not null, default: '1']
+  "stock_available" tinyint(1) [not null, default: '0']
+  "cutoff" time
+  "data" json
+  "driver" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    code [name: "lunar_shipping_methods_code_index"]
+  }
+}
+
+Table "lunar_shipping_provider_credentials" {
+  "id" bigint [pk, not null, increment]
+  "provider" varchar(255) [not null]
+  "token" varchar(255) [not null]
+  "expires_at" timestamp [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    provider [unique, name: "lunar_shipping_provider_credentials_provider_unique"]
+  }
+}
+
+Table "lunar_shipping_rates" {
+  "id" bigint [pk, not null, increment]
+  "shipping_method_id" bigint [not null]
+  "shipping_zone_id" bigint [not null]
+  "enabled" tinyint(1) [not null, default: '1']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    shipping_method_id [name: "lunar_shipping_rates_shipping_method_id_foreign"]
+    shipping_zone_id [name: "lunar_shipping_rates_shipping_zone_id_foreign"]
+  }
+}
+
+Table "lunar_shipping_zone_postcodes" {
+  "id" bigint [pk, not null, increment]
+  "shipping_zone_id" bigint [not null]
+  "postcode" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    shipping_zone_id [name: "lunar_shipping_zone_postcodes_shipping_zone_id_foreign"]
+    postcode [name: "lunar_shipping_zone_postcodes_postcode_index"]
+  }
+}
+
+Table "lunar_shipping_zones" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "type" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    type [name: "lunar_shipping_zones_type_index"]
+  }
+}
+
+Table "lunar_staff" {
+  "id" bigint [pk, not null, increment]
+  "admin" tinyint(1) [not null, default: '0']
+  "first_name" varchar(255) [not null]
+  "last_name" varchar(255) [not null]
+  "email" varchar(255) [not null]
+  "email_verified_at" timestamp
+  "password" varchar(255) [not null]
+  "two_factor_secret" text
+  "two_factor_recovery_codes" text
+  "two_factor_confirmed_at" timestamp
+  "remember_token" varchar(100)
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    email [unique, name: "lunar_staff_email_unique"]
+    admin [name: "lunar_staff_admin_index"]
+    first_name [name: "lunar_staff_firstname_index"]
+    last_name [name: "lunar_staff_lastname_index"]
+  }
+}
+
+Table "lunar_state_shipping_zone" {
+  "id" bigint [pk, not null, increment]
+  "state_id" bigint [not null]
+  "shipping_zone_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    state_id [name: "lunar_state_shipping_zone_state_id_foreign"]
+    shipping_zone_id [name: "lunar_state_shipping_zone_shipping_zone_id_foreign"]
+  }
+}
+
+Table "lunar_states" {
+  "id" bigint [pk, not null, increment]
+  "country_id" bigint
+  "name" varchar(255) [not null]
+  "code" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    country_id [name: "lunar_states_country_id_foreign"]
+  }
+}
+
+Table "lunar_stripe_payment_intents" {
+  "id" bigint [pk, not null, increment]
+  "cart_id" bigint [not null]
+  "order_id" bigint
+  "intent_id" varchar(255) [not null]
+  "status" varchar(255)
+  "event_id" varchar(255)
+  "processing_at" timestamp
+  "processed_at" timestamp
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    cart_id [name: "lunar_stripe_payment_intents_cart_id_foreign"]
+    order_id [name: "lunar_stripe_payment_intents_order_id_foreign"]
+    intent_id [name: "lunar_stripe_payment_intents_intent_id_index"]
+    event_id [name: "lunar_stripe_payment_intents_event_id_index"]
+  }
+}
+
+Table "lunar_taggables" {
+  "id" bigint [pk, not null, increment]
+  "tag_id" bigint [not null]
+  "taggable_type" varchar(255) [not null]
+  "taggable_id" bigint [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tag_id [name: "lunar_taggables_tag_id_foreign"]
+    (taggable_type, taggable_id) [name: "lunar_taggables_taggable_type_taggable_id_index"]
+  }
+}
+
+Table "lunar_tags" {
+  "id" bigint [pk, not null, increment]
+  "value" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    value [name: "lunar_tags_value_index"]
+  }
+}
+
+Table "lunar_tax_classes" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "default" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    default [name: "lunar_tax_classes_default_index"]
+  }
+}
+
+Table "lunar_tax_rate_amounts" {
+  "id" bigint [pk, not null, increment]
+  "tax_class_id" bigint
+  "tax_rate_id" bigint
+  "percentage" decimal(7,3) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tax_class_id [name: "lunar_tax_rate_amounts_tax_class_id_foreign"]
+    tax_rate_id [name: "lunar_tax_rate_amounts_tax_rate_id_foreign"]
+    percentage [name: "lunar_tax_rate_amounts_percentage_index"]
+  }
+}
+
+Table "lunar_tax_rates" {
+  "id" bigint [pk, not null, increment]
+  "tax_zone_id" bigint
+  "priority" tinyint [not null, default: '1']
+  "name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tax_zone_id [name: "lunar_tax_rates_tax_zone_id_foreign"]
+    priority [name: "lunar_tax_rates_priority_index"]
+  }
+}
+
+Table "lunar_tax_zone_countries" {
+  "id" bigint [pk, not null, increment]
+  "tax_zone_id" bigint
+  "country_id" bigint
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tax_zone_id [name: "lunar_tax_zone_countries_tax_zone_id_foreign"]
+    country_id [name: "lunar_tax_zone_countries_country_id_foreign"]
+  }
+}
+
+Table "lunar_tax_zone_customer_groups" {
+  "id" bigint [pk, not null, increment]
+  "tax_zone_id" bigint
+  "customer_group_id" bigint
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tax_zone_id [name: "lunar_tax_zone_customer_groups_tax_zone_id_foreign"]
+    customer_group_id [name: "lunar_tax_zone_customer_groups_customer_group_id_foreign"]
+  }
+}
+
+Table "lunar_tax_zone_postcodes" {
+  "id" bigint [pk, not null, increment]
+  "tax_zone_id" bigint
+  "country_id" bigint
+  "postcode" varchar(20) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tax_zone_id [name: "lunar_tax_zone_postcodes_tax_zone_id_foreign"]
+    country_id [name: "lunar_tax_zone_postcodes_country_id_foreign"]
+    postcode [name: "lunar_tax_zone_postcodes_postcode_index"]
+  }
+}
+
+Table "lunar_tax_zone_states" {
+  "id" bigint [pk, not null, increment]
+  "tax_zone_id" bigint
+  "state_id" bigint
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    tax_zone_id [name: "lunar_tax_zone_states_tax_zone_id_foreign"]
+    state_id [name: "lunar_tax_zone_states_state_id_foreign"]
+  }
+}
+
+Table "lunar_tax_zones" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "zone_type" varchar(255) [not null]
+  "price_display" varchar(255) [not null]
+  "active" tinyint(1) [not null]
+  "default" tinyint(1) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    zone_type [name: "lunar_tax_zones_zone_type_index"]
+    active [name: "lunar_tax_zones_active_index"]
+    default [name: "lunar_tax_zones_default_index"]
+  }
+}
+
+Table "lunar_transactions" {
+  "id" bigint [pk, not null, increment]
+  "parent_transaction_id" bigint
+  "order_id" bigint [not null]
+  "success" tinyint(1) [not null]
+  "type" lunar_transactions_type_enum [not null, default: 'capture']
+  "driver" varchar(255) [not null]
+  "amount" int [not null]
+  "reference" varchar(255) [not null]
+  "status" varchar(255) [not null]
+  "notes" varchar(255)
+  "card_type" varchar(25) [not null]
+  "last_four" varchar(255)
+  "meta" json
+  "created_at" timestamp
+  "updated_at" timestamp
+  "captured_at" datetime
+
+  Indexes {
+    order_id [name: "lunar_transactions_order_id_foreign"]
+    success [name: "lunar_transactions_success_index"]
+    amount [name: "lunar_transactions_amount_index"]
+    reference [name: "lunar_transactions_reference_index"]
+    card_type [name: "lunar_transactions_card_type_index"]
+    parent_transaction_id [name: "lunar_transactions_parent_transaction_id_foreign"]
+    captured_at [name: "lunar_transactions_captured_at_index"]
+    type [name: "lunar_transactions_type_index"]
+  }
+}
+
+Table "lunar_urls" {
+  "id" bigint [pk, not null, increment]
+  "language_id" bigint [not null]
+  "element_type" varchar(255) [not null]
+  "element_id" bigint [not null]
+  "slug" varchar(255) [not null]
+  "default" tinyint(1) [not null, default: '0']
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    language_id [name: "lunar_urls_language_id_foreign"]
+    (element_type, element_id) [name: "lunar_urls_element_type_element_id_index"]
+    slug [name: "lunar_urls_slug_index"]
+    default [name: "lunar_urls_default_index"]
+  }
+}
+
+Table "media" {
+  "id" bigint [pk, not null, increment]
+  "model_type" varchar(255) [not null]
+  "model_id" bigint [not null]
+  "uuid" char(36)
+  "collection_name" varchar(255) [not null]
+  "name" varchar(255) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(255)
+  "disk" varchar(255) [not null]
+  "conversions_disk" varchar(255)
+  "size" bigint [not null]
+  "manipulations" json [not null]
+  "custom_properties" json [not null]
+  "generated_conversions" json [not null]
+  "responsive_images" json [not null]
+  "order_column" int
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    uuid [unique, name: "media_uuid_unique"]
+    (model_type, model_id) [name: "media_model_type_model_id_index"]
+  }
+}
+
+Table "migrations" {
+  "id" int [pk, not null, increment]
+  "migration" varchar(255) [not null]
+  "batch" int [not null]
+}
+
+Table "model_has_permissions" {
+  "permission_id" bigint [not null]
+  "model_type" varchar(255) [not null]
+  "model_id" bigint [not null]
+
+  Indexes {
+    (permission_id, model_id, model_type) [pk]
+    (model_id, model_type) [name: "model_has_permissions_model_id_model_type_index"]
+  }
+}
+
+Table "model_has_roles" {
+  "role_id" bigint [not null]
+  "model_type" varchar(255) [not null]
+  "model_id" bigint [not null]
+
+  Indexes {
+    (role_id, model_id, model_type) [pk]
+    (model_id, model_type) [name: "model_has_roles_model_id_model_type_index"]
+  }
+}
+
+Table "password_reset_tokens" {
+  "email" varchar(255) [pk, not null]
+  "token" varchar(255) [not null]
+  "created_at" timestamp
+}
+
+Table "permissions" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "guard_name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (name, guard_name) [unique, name: "permissions_name_guard_name_unique"]
+  }
+}
+
+Table "pulse_aggregates" {
+  "id" bigint [pk, not null, increment]
+  "bucket" int [not null]
+  "period" mediumint [not null]
+  "type" varchar(255) [not null]
+  "key" mediumtext [not null]
+  "key_hash" binary(16)
+  "aggregate" varchar(255) [not null]
+  "value" decimal(20,2) [not null]
+  "count" int
+
+  Indexes {
+    (bucket, period, type, aggregate, key_hash) [unique, name: "pulse_aggregates_bucket_period_type_aggregate_key_hash_unique"]
+    (period, bucket) [name: "pulse_aggregates_period_bucket_index"]
+    type [name: "pulse_aggregates_type_index"]
+    (period, type, aggregate, bucket) [name: "pulse_aggregates_period_type_aggregate_bucket_index"]
+  }
+}
+
+Table "pulse_entries" {
+  "id" bigint [pk, not null, increment]
+  "timestamp" int [not null]
+  "type" varchar(255) [not null]
+  "key" mediumtext [not null]
+  "key_hash" binary(16)
+  "value" bigint
+
+  Indexes {
+    timestamp [name: "pulse_entries_timestamp_index"]
+    type [name: "pulse_entries_type_index"]
+    key_hash [name: "pulse_entries_key_hash_index"]
+    (timestamp, type, key_hash, value) [name: "pulse_entries_timestamp_type_key_hash_value_index"]
+  }
+}
+
+Table "pulse_values" {
+  "id" bigint [pk, not null, increment]
+  "timestamp" int [not null]
+  "type" varchar(255) [not null]
+  "key" mediumtext [not null]
+  "key_hash" binary(16)
+  "value" mediumtext [not null]
+
+  Indexes {
+    (type, key_hash) [unique, name: "pulse_values_type_key_hash_unique"]
+    timestamp [name: "pulse_values_timestamp_index"]
+    type [name: "pulse_values_type_index"]
+  }
+}
+
+Table "role_has_permissions" {
+  "permission_id" bigint [not null]
+  "role_id" bigint [not null]
+
+  Indexes {
+    (permission_id, role_id) [pk]
+    role_id [name: "role_has_permissions_role_id_foreign"]
+  }
+}
+
+Table "roles" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null]
+  "guard_name" varchar(255) [not null]
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (name, guard_name) [unique, name: "roles_name_guard_name_unique"]
+  }
+}
+
+Table "sessions" {
+  "id" varchar(255) [pk, not null]
+  "user_id" bigint
+  "ip_address" varchar(45)
+  "user_agent" text
+  "payload" longtext [not null]
+  "last_activity" int [not null]
+
+  Indexes {
+    user_id [name: "sessions_user_id_index"]
+    last_activity [name: "sessions_last_activity_index"]
+  }
+}
+
+Table "user_email_verifications" {
+  "id" bigint [pk, not null, increment]
+  "user_id" bigint [not null]
+  "new_email" varchar(255)
+  "old_email" varchar(255)
+  "new_email_verified_at" timestamp
+  "old_email_verified_at" timestamp
+  "created_at" timestamp
+  "updated_at" timestamp
+  "deleted_at" timestamp
+
+  Indexes {
+    user_id [name: "user_email_verifications_user_id_foreign"]
+  }
+}
+
+Table "user_oauth_tokens" {
+  "id" bigint [pk, not null, increment]
+  "user_id" bigint [not null]
+  "provider" varchar(255) [not null]
+  "provider_user_id" varchar(255)
+  "token" text
+  "refresh_token" text
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    user_id [name: "user_oauth_tokens_user_id_foreign"]
+  }
+}
+
+Table "users" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [not null, default: '']
+  "first_name" varchar(100) [not null, default: '']
+  "last_name" varchar(100) [not null, default: '']
+  "email" varchar(255) [not null]
+  "email_verified_at" timestamp
+  "terms_accepted_at" timestamp
+  "locale" varchar(255) [default: 'en']
+  "phone_number" varchar(255) [not null, default: '']
+  "password" varchar(255) [not null]
+  "password_changed_at" timestamp
+  "remember_token" varchar(100)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    email [unique, name: "users_email_unique"]
+  }
+}
+
+Ref "lunar_addresses_address_customer_type_id_foreign":"lunar_address_customer_types"."id" < "lunar_addresses"."address_customer_type_id"
+
+Ref "lunar_addresses_country_id_foreign":"lunar_countries"."id" < "lunar_addresses"."country_id"
+
+Ref "lunar_addresses_customer_id_foreign":"lunar_customers"."id" < "lunar_addresses"."customer_id"
+
+Ref "lunar_attributables_attribute_id_foreign":"lunar_attributes"."id" < "lunar_attributables"."attribute_id"
+
+Ref "lunar_attributes_attribute_group_id_foreign":"lunar_attribute_groups"."id" < "lunar_attributes"."attribute_group_id"
+
+Ref "lunar_blog_category_blog_post_blog_category_id_foreign":"lunar_blog_categories"."id" < "lunar_blog_category_blog_post"."blog_category_id" [delete: cascade]
+
+Ref "lunar_blog_category_blog_post_blog_post_id_foreign":"lunar_blog_posts"."id" < "lunar_blog_category_blog_post"."blog_post_id" [delete: cascade]
+
+Ref "lunar_blog_posts_author_id_foreign":"lunar_staff"."id" < "lunar_blog_posts"."author_id" [delete: cascade]
+
+Ref "lunar_brand_collection_brand_id_foreign":"lunar_brands"."id" < "lunar_brand_collection"."brand_id"
+
+Ref "lunar_brand_collection_collection_id_foreign":"lunar_collections"."id" < "lunar_brand_collection"."collection_id"
+
+Ref "lunar_brand_discount_brand_id_foreign":"lunar_brands"."id" < "lunar_brand_discount"."brand_id" [delete: cascade]
+
+Ref "lunar_brand_discount_discount_id_foreign":"lunar_discounts"."id" < "lunar_brand_discount"."discount_id" [delete: cascade]
+
+Ref "lunar_cart_addresses_address_customer_type_id_foreign":"lunar_address_customer_types"."id" < "lunar_cart_addresses"."address_customer_type_id"
+
+Ref "lunar_cart_addresses_cart_id_foreign":"lunar_carts"."id" < "lunar_cart_addresses"."cart_id"
+
+Ref "lunar_cart_addresses_country_id_foreign":"lunar_countries"."id" < "lunar_cart_addresses"."country_id"
+
+Ref "lunar_cart_line_discount_cart_line_id_foreign":"lunar_carts"."id" < "lunar_cart_line_discount"."cart_line_id" [delete: cascade]
+
+Ref "lunar_cart_line_discount_discount_id_foreign":"lunar_discounts"."id" < "lunar_cart_line_discount"."discount_id" [delete: cascade]
+
+Ref "lunar_cart_lines_cart_id_foreign":"lunar_carts"."id" < "lunar_cart_lines"."cart_id"
+
+Ref "lunar_carts_channel_id_foreign":"lunar_channels"."id" < "lunar_carts"."channel_id"
+
+Ref "lunar_carts_currency_id_foreign":"lunar_currencies"."id" < "lunar_carts"."currency_id"
+
+Ref "lunar_carts_customer_id_foreign":"lunar_customers"."id" < "lunar_carts"."customer_id"
+
+Ref "lunar_carts_merged_id_foreign":"lunar_carts"."id" < "lunar_carts"."merged_id"
+
+Ref "lunar_carts_order_id_foreign":"lunar_orders"."id" < "lunar_carts"."order_id"
+
+Ref "lunar_carts_user_id_foreign":"users"."id" < "lunar_carts"."user_id"
+
+Ref "lunar_channelables_channel_id_foreign":"lunar_channels"."id" < "lunar_channelables"."channel_id"
+
+Ref "lunar_collection_customer_group_collection_id_foreign":"lunar_collections"."id" < "lunar_collection_customer_group"."collection_id"
+
+Ref "lunar_collection_customer_group_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_collection_customer_group"."customer_group_id"
+
+Ref "lunar_collection_discount_collection_id_foreign":"lunar_collections"."id" < "lunar_collection_discount"."collection_id" [delete: cascade]
+
+Ref "lunar_collection_discount_discount_id_foreign":"lunar_discounts"."id" < "lunar_collection_discount"."discount_id" [delete: cascade]
+
+Ref "lunar_collection_product_collection_id_foreign":"lunar_collections"."id" < "lunar_collection_product"."collection_id"
+
+Ref "lunar_collection_product_product_id_foreign":"lunar_products"."id" < "lunar_collection_product"."product_id"
+
+Ref "lunar_collections_collection_group_id_foreign":"lunar_collection_groups"."id" < "lunar_collections"."collection_group_id"
+
+Ref "lunar_counties_country_id_foreign":"lunar_countries"."id" < "lunar_counties"."country_id" [delete: cascade]
+
+Ref "lunar_country_shipping_zone_country_id_foreign":"lunar_countries"."id" < "lunar_country_shipping_zone"."country_id"
+
+Ref "lunar_country_shipping_zone_shipping_zone_id_foreign":"lunar_shipping_zones"."id" < "lunar_country_shipping_zone"."shipping_zone_id"
+
+Ref "lunar_customer_customer_group_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_customer_customer_group"."customer_group_id"
+
+Ref "lunar_customer_customer_group_customer_id_foreign":"lunar_customers"."id" < "lunar_customer_customer_group"."customer_id"
+
+Ref "lunar_customer_discount_customer_id_foreign":"lunar_customers"."id" < "lunar_customer_discount"."customer_id"
+
+Ref "lunar_customer_discount_discount_id_foreign":"lunar_discounts"."id" < "lunar_customer_discount"."discount_id"
+
+Ref "lunar_customer_group_discount_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_customer_group_discount"."customer_group_id"
+
+Ref "lunar_customer_group_discount_discount_id_foreign":"lunar_discounts"."id" < "lunar_customer_group_discount"."discount_id"
+
+Ref "lunar_customer_group_product_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_customer_group_product"."customer_group_id"
+
+Ref "lunar_customer_group_product_product_id_foreign":"lunar_products"."id" < "lunar_customer_group_product"."product_id"
+
+Ref "lunar_customer_group_shipping_method_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_customer_group_shipping_method"."customer_group_id"
+
+Ref "lunar_customer_group_shipping_method_shipping_method_id_foreign":"lunar_shipping_methods"."id" < "lunar_customer_group_shipping_method"."shipping_method_id"
+
+Ref "lunar_customer_user_customer_id_foreign":"lunar_customers"."id" < "lunar_customer_user"."customer_id"
+
+Ref "lunar_customer_user_user_id_foreign":"users"."id" < "lunar_customer_user"."user_id"
+
+Ref "lunar_discount_user_discount_id_foreign":"lunar_discounts"."id" < "lunar_discount_user"."discount_id" [delete: cascade]
+
+Ref "lunar_discount_user_user_id_foreign":"users"."id" < "lunar_discount_user"."user_id"
+
+Ref "lunar_discount_purchasables_discount_id_foreign":"lunar_discounts"."id" < "lunar_discountables"."discount_id" [delete: cascade]
+
+Ref "lunar_exclusion_list_shipping_zone_exclusion_id_foreign":"lunar_shipping_exclusion_lists"."id" < "lunar_exclusion_list_shipping_zone"."exclusion_id"
+
+Ref "lunar_exclusion_list_shipping_zone_shipping_zone_id_foreign":"lunar_shipping_zones"."id" < "lunar_exclusion_list_shipping_zone"."shipping_zone_id"
+
+Ref "lunar_localities_county_id_foreign":"lunar_counties"."id" < "lunar_localities"."county_id" [delete: cascade]
+
+Ref "lunar_media_product_variant_media_id_foreign":"media"."id" < "lunar_media_product_variant"."media_id" [delete: cascade]
+
+Ref "lunar_media_product_variant_product_variant_id_foreign":"lunar_product_variants"."id" < "lunar_media_product_variant"."product_variant_id" [delete: cascade]
+
+Ref "lunar_opayo_tokens_user_id_foreign":"users"."id" < "lunar_opayo_tokens"."user_id"
+
+Ref "lunar_order_addresses_address_customer_type_id_foreign":"lunar_address_customer_types"."id" < "lunar_order_addresses"."address_customer_type_id"
+
+Ref "lunar_order_addresses_country_id_foreign":"lunar_countries"."id" < "lunar_order_addresses"."country_id"
+
+Ref "lunar_order_addresses_order_id_foreign":"lunar_orders"."id" < "lunar_order_addresses"."order_id"
+
+Ref "lunar_order_lines_order_id_foreign":"lunar_orders"."id" < "lunar_order_lines"."order_id"
+
+Ref "lunar_order_shipping_zone_order_id_foreign":"lunar_orders"."id" < "lunar_order_shipping_zone"."order_id"
+
+Ref "lunar_order_shipping_zone_shipping_zone_id_foreign":"lunar_shipping_zones"."id" < "lunar_order_shipping_zone"."shipping_zone_id"
+
+Ref "lunar_orders_cart_id_foreign":"lunar_carts"."id" < "lunar_orders"."cart_id" [delete: set null]
+
+Ref "lunar_orders_channel_id_foreign":"lunar_channels"."id" < "lunar_orders"."channel_id"
+
+Ref "lunar_orders_customer_id_foreign":"lunar_customers"."id" < "lunar_orders"."customer_id"
+
+Ref "lunar_orders_user_id_foreign":"users"."id" < "lunar_orders"."user_id"
+
+Ref "lunar_prices_currency_id_foreign":"lunar_currencies"."id" < "lunar_prices"."currency_id"
+
+Ref "lunar_prices_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_prices"."customer_group_id"
+
+Ref "lunar_product_associations_product_parent_id_foreign":"lunar_products"."id" < "lunar_product_associations"."product_parent_id"
+
+Ref "lunar_product_associations_product_target_id_foreign":"lunar_products"."id" < "lunar_product_associations"."product_target_id"
+
+Ref "lunar_product_option_value_product_variant_value_id_foreign":"lunar_product_option_values"."id" < "lunar_product_option_value_product_variant"."value_id"
+
+Ref "lunar_product_option_value_product_variant_variant_id_foreign":"lunar_product_variants"."id" < "lunar_product_option_value_product_variant"."variant_id"
+
+Ref "lunar_product_option_values_product_option_id_foreign":"lunar_product_options"."id" < "lunar_product_option_values"."product_option_id"
+
+Ref "lunar_product_product_option_product_id_foreign":"lunar_products"."id" < "lunar_product_product_option"."product_id"
+
+Ref "lunar_product_product_option_product_option_id_foreign":"lunar_product_options"."id" < "lunar_product_product_option"."product_option_id"
+
+Ref "lunar_product_variants_product_id_foreign":"lunar_products"."id" < "lunar_product_variants"."product_id"
+
+Ref "lunar_product_variants_tax_class_id_foreign":"lunar_tax_classes"."id" < "lunar_product_variants"."tax_class_id"
+
+Ref "lunar_products_brand_id_foreign":"lunar_brands"."id" < "lunar_products"."brand_id"
+
+Ref "lunar_products_product_type_id_foreign":"lunar_product_types"."id" < "lunar_products"."product_type_id"
+
+Ref "lunar_reviews_order_id_foreign":"lunar_orders"."id" < "lunar_reviews"."order_id" [delete: set null]
+
+Ref "lunar_reviews_user_id_foreign":"users"."id" < "lunar_reviews"."user_id" [delete: set null]
+
+Ref "lunar_shipping_cities_county_id_foreign":"lunar_shipping_counties"."id" < "lunar_shipping_cities"."county_id" [delete: cascade]
+
+Ref "lunar_shipping_exclusions_shipping_exclusion_list_id_foreign":"lunar_shipping_exclusion_lists"."id" < "lunar_shipping_exclusions"."shipping_exclusion_list_id"
+
+Ref "lunar_shipping_lockers_city_id_foreign":"lunar_shipping_cities"."id" < "lunar_shipping_lockers"."city_id" [delete: cascade]
+
+Ref "lunar_shipping_lockers_county_id_foreign":"lunar_shipping_counties"."id" < "lunar_shipping_lockers"."county_id" [delete: cascade]
+
+Ref "lunar_shipping_rates_shipping_method_id_foreign":"lunar_shipping_methods"."id" < "lunar_shipping_rates"."shipping_method_id"
+
+Ref "lunar_shipping_rates_shipping_zone_id_foreign":"lunar_shipping_zones"."id" < "lunar_shipping_rates"."shipping_zone_id"
+
+Ref "lunar_shipping_zone_postcodes_shipping_zone_id_foreign":"lunar_shipping_zones"."id" < "lunar_shipping_zone_postcodes"."shipping_zone_id"
+
+Ref "lunar_state_shipping_zone_shipping_zone_id_foreign":"lunar_shipping_zones"."id" < "lunar_state_shipping_zone"."shipping_zone_id"
+
+Ref "lunar_state_shipping_zone_state_id_foreign":"lunar_states"."id" < "lunar_state_shipping_zone"."state_id"
+
+Ref "lunar_states_country_id_foreign":"lunar_countries"."id" < "lunar_states"."country_id"
+
+Ref "lunar_stripe_payment_intents_cart_id_foreign":"lunar_carts"."id" < "lunar_stripe_payment_intents"."cart_id"
+
+Ref "lunar_stripe_payment_intents_order_id_foreign":"lunar_orders"."id" < "lunar_stripe_payment_intents"."order_id"
+
+Ref "lunar_taggables_tag_id_foreign":"lunar_tags"."id" < "lunar_taggables"."tag_id"
+
+Ref "lunar_tax_rate_amounts_tax_class_id_foreign":"lunar_tax_classes"."id" < "lunar_tax_rate_amounts"."tax_class_id"
+
+Ref "lunar_tax_rate_amounts_tax_rate_id_foreign":"lunar_tax_rates"."id" < "lunar_tax_rate_amounts"."tax_rate_id"
+
+Ref "lunar_tax_rates_tax_zone_id_foreign":"lunar_tax_zones"."id" < "lunar_tax_rates"."tax_zone_id"
+
+Ref "lunar_tax_zone_countries_country_id_foreign":"lunar_countries"."id" < "lunar_tax_zone_countries"."country_id"
+
+Ref "lunar_tax_zone_countries_tax_zone_id_foreign":"lunar_tax_zones"."id" < "lunar_tax_zone_countries"."tax_zone_id"
+
+Ref "lunar_tax_zone_customer_groups_customer_group_id_foreign":"lunar_customer_groups"."id" < "lunar_tax_zone_customer_groups"."customer_group_id"
+
+Ref "lunar_tax_zone_customer_groups_tax_zone_id_foreign":"lunar_tax_zones"."id" < "lunar_tax_zone_customer_groups"."tax_zone_id"
+
+Ref "lunar_tax_zone_postcodes_country_id_foreign":"lunar_countries"."id" < "lunar_tax_zone_postcodes"."country_id"
+
+Ref "lunar_tax_zone_postcodes_tax_zone_id_foreign":"lunar_tax_zones"."id" < "lunar_tax_zone_postcodes"."tax_zone_id"
+
+Ref "lunar_tax_zone_states_state_id_foreign":"lunar_states"."id" < "lunar_tax_zone_states"."state_id"
+
+Ref "lunar_tax_zone_states_tax_zone_id_foreign":"lunar_tax_zones"."id" < "lunar_tax_zone_states"."tax_zone_id"
+
+Ref "lunar_transactions_order_id_foreign":"lunar_orders"."id" < "lunar_transactions"."order_id"
+
+Ref "lunar_transactions_parent_transaction_id_foreign":"lunar_transactions"."id" < "lunar_transactions"."parent_transaction_id"
+
+Ref "lunar_urls_language_id_foreign":"lunar_languages"."id" < "lunar_urls"."language_id"
+
+Ref "model_has_permissions_permission_id_foreign":"permissions"."id" < "model_has_permissions"."permission_id" [delete: cascade]
+
+Ref "model_has_roles_role_id_foreign":"roles"."id" < "model_has_roles"."role_id" [delete: cascade]
+
+Ref "role_has_permissions_permission_id_foreign":"permissions"."id" < "role_has_permissions"."permission_id" [delete: cascade]
+
+Ref "role_has_permissions_role_id_foreign":"roles"."id" < "role_has_permissions"."role_id" [delete: cascade]
+
+Ref "user_email_verifications_user_id_foreign":"users"."id" < "user_email_verifications"."user_id" [delete: cascade]
+
+Ref "user_oauth_tokens_user_id_foreign":"users"."id" < "user_oauth_tokens"."user_id" [delete: cascade]
+
+Records migrations(id, migration, batch) {
+  1, '0001_01_01_000000_create_users_table', 1
+  2, '0001_01_01_000001_create_cache_table', 1
+  3, '0001_01_01_000002_create_jobs_table', 1
+  4, '2021_07_29_100000_create_channels_table', 1
+  5, '2021_07_29_100001_create_languages_table', 1
+  6, '2021_07_29_100002_create_channelables_table', 1
+  7, '2021_07_29_100003_create_currencies_table', 1
+  8, '2021_07_29_100004_create_attribute_groups_table', 1
+  9, '2021_07_29_100005_create_attributes_table', 1
+  10, '2021_07_29_100006_create_attributables_table', 1
+  11, '2021_07_29_100010_create_product_types_table', 1
+  12, '2021_07_29_100011_create_tax_classes_table', 1
+  13, '2021_07_29_100012_create_tax_zones_table', 1
+  14, '2021_07_29_100020_create_products_table', 1
+  15, '2021_07_29_100025_create_product_associations_table', 1
+  16, '2021_07_29_100030_create_product_variants_table', 1
+  17, '2021_07_29_100040_create_customer_groups_table', 1
+  18, '2021_07_29_100041_create_customer_group_product_table', 1
+  19, '2021_07_29_100041_create_customers_table', 1
+  20, '2021_07_29_100042_create_customer_customer_group_table', 1
+  21, '2021_07_29_100042_create_customer_user_table', 1
+  22, '2021_07_29_100050_create_prices_table', 1
+  23, '2021_07_30_100000_create_countries_table', 1
+  24, '2021_07_30_100001_create_states_table', 1
+  25, '2021_07_30_100002_create_addresses_table', 1
+  26, '2021_07_30_100003_create_tax_zone_countries_table', 1
+  27, '2021_07_30_100004_create_tax_zone_states_table', 1
+  28, '2021_07_30_100005_create_tax_zone_postcodes_table', 1
+  29, '2021_07_30_100006_create_tax_zone_customer_groups_table', 1
+  30, '2021_07_30_100007_create_tax_rates_table', 1
+  31, '2021_07_30_100008_create_tax_rate_amounts_table', 1
+  32, '2021_08_10_101547_create_media_table', 1
+  33, '2021_08_10_102000_create_collection_groups_table', 1
+  34, '2021_08_10_103000_create_collections_table', 1
+  35, '2021_08_10_103001_create_collection_product_table', 1
+  36, '2021_08_10_103002_create_collection_customer_group_table', 1
+  37, '2021_08_17_142630_create_activity_log_table', 1
+  38, '2021_08_19_110000_create_staff_table', 1
+  39, '2021_09_09_100000_create_product_options_table', 1
+  40, '2021_09_09_100001_create_product_option_values_table', 1
+  41, '2021_09_09_100010_create_product_option_value_product_variant_table', 1
+  42, '2021_09_10_100000_create_tags_table', 1
+  43, '2021_09_10_100001_create_taggables_table', 1
+  44, '2021_09_29_100000_create_urls_table', 1
+  45, '2021_10_01_090000_create_orders_table', 1
+  46, '2021_10_01_090001_create_order_lines_table', 1
+  47, '2021_10_01_090002_create_order_addresses_table', 1
+  48, '2021_10_01_090003_create_transactions_table', 1
+  49, '2021_10_01_100000_create_carts_table', 1
+  50, '2021_10_01_100001_create_cart_addresses_table', 1
+  51, '2021_10_01_100001_create_cart_lines_table', 1
+  52, '2022_01_12_100000_add_columns_to_attributes_table', 1
+  53, '2022_01_12_100001_add_attribute_data_to_product_variants_table', 1
+  54, '2022_01_12_100002_add_default_column_to_tax_classes_table', 1
+  55, '2022_01_18_100000_add_starts_ends_at_to_channelables_table', 1
+  56, '2022_01_18_100001_add_customer_id_to_orders_table', 1
+  57, '2022_03_11_100000_remove_formatting_columns_from_currencies_table', 1
+  58, '2022_03_17_100000_add_fields_to_transactions_table', 1
+  59, '2022_03_29_100000_update_quantity_on_cart_lines_table', 1
+  60, '2022_03_30_100000_update_quantity_on_order_lines_table', 1
+  61, '2022_04_28_100000_create_shipping_zones_table', 1
+  62, '2022_04_28_110000_create_shipping_methods_table', 1
+  63, '2022_04_28_111000_create_shipping_rates_table', 1
+  64, '2022_04_28_120000_create_shipping_exclusion_lists_table', 1
+  65, '2022_04_28_130000_create_shipping_exclusions_table', 1
+  66, '2022_04_28_140000_create_shipping_exclusion_list_shipping_zone_table', 1
+  67, '2022_04_28_150000_create_country_shipping_zone_table', 1
+  68, '2022_04_28_160000_create_shipping_zone_postcodes_table', 1
+  69, '2022_04_28_170000_create_state_shipping_zone_table', 1
+  70, '2022_05_10_100000_fix_last_four_on_transactions_table', 1
+  71, '2022_05_19_100000_add_attributes_to_customers_table', 1
+  72, '2022_06_29_100000_create_assets_table', 1
+  73, '2022_07_15_100000_set_last_four_to_nullable_on_transactions', 1
+  74, '2022_07_23_215417_add_handle_position_to_product_options_table', 1
+  75, '2022_07_23_215418_add_position_to_product_option_values_table', 1
+  76, '2022_08_09_100000_create_media_variant_table', 1
+  77, '2022_08_09_100001_create_brands_table', 1
+  78, '2022_08_09_100002_add_brand_id_to_products_table', 1
+  79, '2022_09_05_100000_add_account_ref_to_customers_table', 1
+  80, '2022_09_08_100000_add_position_to_media_product_variant_table', 1
+  81, '2022_10_07_100000_create_order_shipping_zone_table', 1
+  82, '2022_11_13_110447_update_prices_on_prices_table', 1
+  83, '2022_11_13_111734_update_prices_on_orders_table', 1
+  84, '2022_11_13_111744_update_prices_on_order_lines_table', 1
+  85, '2022_11_18_100000_create_discounts_table', 1
+  86, '2022_11_18_100005_create_cart_line_discount_table', 1
+  87, '2022_11_18_100010_create_brand_discount_table', 1
+  88, '2022_11_18_100015_create_customer_group_discount_table', 1
+  89, '2022_11_18_100020_create_discount_collections_table', 1
+  90, '2022_11_18_100030_create_discount_purchasables_table', 1
+  91, '2022_12_09_100000_add_new_customer_flag_to_orders_table', 1
+  92, '2023_03_03_100001_add_discount_breakdown_to_orders_table', 1
+  93, '2023_03_03_100001_add_max_uses_per_user_to_discounts_table', 1
+  94, '2023_03_13_100030_create_discount_user_table', 1
+  95, '2023_04_19_100000_add_shipping_breakdown_to_orders_table', 1
+  96, '2023_05_20_100000_add_customer_id_to_carts_table', 1
+  97, '2023_05_26_100000_add_label_to_product_options_table', 1
+  98, '2023_05_31_100000_create_permission_tables', 1
+  99, '2023_06_07_100000_add_cart_id_to_orders_table', 1
+  100, '2023_08_16_100013_add_attributes_to_brands_table', 1
+  101, '2023_09_21_100000_set_section_to_nullable_on_attributes', 1
+  102, '2023_10_06_100010_add_type_to_brand_discount_table', 1
+  103, '2023_10_06_100010_add_type_to_collection_discount_table', 1
+  104, '2023_12_18_100000_add_quantity_increment_min_quantity_to_product_variants_table', 1
+  105, '2024_01_04_100013_add_attributes_to_customer_groups_table', 1
+  106, '2024_01_11_100000_add_description_to_attributes_table', 1
+  107, '2024_01_16_100000_create_product_product_option_table', 1
+  108, '2024_01_16_100010_update_product_option_relations', 1
+  109, '2024_01_16_100020_remove_position_from_product_options_table', 1
+  110, '2024_01_16_100030_add_and_set_shared_to_product_options_table', 1
+  111, '2024_01_24_100000_update_product_option_handle_fk', 1
+  112, '2024_01_29_100000_update_nullable_currency_on_prices_table', 1
+  113, '2024_01_31_100000_update_tier_to_min_quantity_on_prices_table', 1
+  114, '2024_02_22_100000_create_opayo_tokens_table', 1
+  115, '2024_03_15_100000_remap_polymorphic_relations', 1
+  116, '2024_03_19_100000_remap_shipping_polymorphic_relations', 1
+  117, '2024_03_26_100000_create_brand_collection_table', 1
+  118, '2024_04_23_100000_add_soft_deletes_to_carts_table', 1
+  119, '2024_05_25_100000_update_collection_group_handle_unique', 1
+  120, '2024_06_28_100000_create_customer_group_shipping_method_table', 1
+  121, '2024_07_23_100000_add_fingerprint_to_orders_table', 1
+  122, '2024_07_31_100000_create_stripe_payment_intents_table', 1
+  123, '2025_02_07_100000_create_customer_discount_table', 1
+  124, '2025_02_14_100000_add_vat_number_to_addresses_table', 1
+  125, '2025_02_14_100010_add_vat_number_to_order_addresses_table', 1
+  126, '2025_02_14_100020_add_vat_number_to_cart_addresses_table', 1
+  127, '2025_02_14_100030_rename_vat_no_at_customers_table', 1
+  128, '2025_05_06_043013_create_contacts_table', 1
+  129, '2025_05_06_043017_alter_users_table', 1
+  130, '2025_05_06_043018_add_phone_number_to_users_table', 1
+  131, '2025_05_06_043019_add_oauth_fields_to_users', 1
+  132, '2025_05_06_043020_create_user_oauth_tokens_table', 1
+  133, '2025_05_06_043022_create_user_email_verifications_table', 1
+  134, '2025_06_03_104058_create_shipping_provider_credentials_table', 2
+  135, '2025_06_25_123919_create_pulse_tables', 3
+  136, '2025_06_27_102745_create_shipping_counties_table', 3
+  137, '2025_06_27_103024_create_shipping_cities_table', 3
+  138, '2025_06_27_111336_create_shipping_lockers_table', 3
+  139, '2024_11_25_110000_rename_firstname_column_on_staff_table', 4
+  140, '2024_11_25_110001_rename_lastname_column_on_staff_table', 4
+  141, '2025_04_28_100000_add_two_factor_columns_to_staff_table', 4
+  142, '2025_02_14_100000_add_tax_identifier_to_addresses_table', 5
+  143, '2025_02_14_100010_add_tax_identifier_to_order_addresses_table', 5
+  144, '2025_02_14_100020_add_tax_identifier_to_cart_addresses_table', 5
+  145, '2025_06_18_100000_rename_discount_purchasables_table', 5
+  146, '2025_07_23_100030_rename_vat_number_at_customers_table', 5
+  147, '2025_07_24_110030_remove_vat_number_from_addresses_table', 5
+  148, '2025_07_24_110031_remove_vat_number_from_order_addresses_table', 5
+  149, '2025_07_24_110032_remove_vat_number_from_cart_addresses_table', 5
+  150, '2025_06_18_100000_add_sync_prices_to_currencies_table', 6
+  151, '2025_08_05_083800_update_delivery_instructions_columns', 6
+  152, '2025_08_14_164000_switch_to_jsonb', 6
+  153, '2025_11_17_125635_create_features_table', 7
+  154, '2025_11_18_062451_create_reviews_table', 7
+  155, '2025_12_23_000001_add_max_quantity_to_prices_table', 8
+  156, '2025_12_23_000005_create_address_customer_types_table', 8
+  157, '2025_12_23_000006_create_address_customer_type_shipping_method_table', 8
+  158, '2025_12_23_000007_add_address_customer_type_id_to_addresses_tables', 8
+  159, '2026_01_22_120711_update_weight_unit_default_on_product_variants_table', 9
+  160, '2025_08_18_100000_switch_shipping_to_jsonb_columns', 10
+  161, '2025_10_29_084000_add_missing_indexes_to_tables', 10
+  162, '2025_11_12_005200_add_meta_to_product_options', 10
+  163, '2026_02_09_113928_create_blog_categories_table', 11
+  164, '2026_02_09_114316_create_blog_posts_table', 11
+  165, '2026_02_09_115132_create_blog_category_blog_post_table', 11
+  166, '2026_02_26_120444_create_erp_sync_logs_table', 11
+  167, '2026_02_26_120448_create_erp_sync_temp_table', 11
+  168, '2026_02_26_120457_add_erp_id_to_product_variants_table', 11
+  169, '2026_04_16_100000_add_published_at_to_products_table', 12
+  170, '2026_05_05_000001_add_discount_to_erp_sync_temp_table', 13
+}
