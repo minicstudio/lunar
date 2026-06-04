@@ -59,22 +59,30 @@ Before creating a commit:
 
 ## Commit Message Rules
 
-Use Conventional Commit format whenever applicable:
+* Use Conventional Commit format whenever applicable:
 
-```text
-<type>: <short summary>
-```
+  ```
+  <type>: <task-number> <short summary>
+  ```
 
-Examples:
+  Examples:
 
-```text
-feat: add Algolia product filtering
-fix: prevent duplicate GTM events
-refactor: simplify pagination visibility logic
-test: add coverage for checkout validation
-docs: update installation instructions
-chore: remove unused configuration
-```
+  ```
+  feat: LFP-678 add Algolia product filtering
+  fix: LFP-712 prevent duplicate GTM events
+  refactor: LFP-643 simplify pagination visibility logic
+  test: LFP-701 add coverage for checkout validation
+  docs: LFP-655 update installation instructions
+  chore: LFP-689 remove unused configuration
+  ```
+
+### Task Number
+
+- Always include the task number when available.
+- Prefer extracting the task number from:
+  - The current branch name
+  - The issue or ticket referenced by the user
+- If no task number can be determined automatically, ask the user for it before generating the commit message.
 
 * Keep the subject line under 72 characters.
 * Use imperative mood.

@@ -20,6 +20,7 @@ workbench/
 
 # Generated MCP and boost files
 mcp.json
+AGENTS.md
 boost.json
 skills-lock.json
 .github/skills
