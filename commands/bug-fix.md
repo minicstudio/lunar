@@ -75,7 +75,7 @@ When implementing the fix:
 If the fix changes behavior:
 
 * Update affected documentation.
-* Add an entry to `docs/system/CHANGELOG.md`.
+* Update changelog. Changelog entries are maintained in `docs/changelog`, with a separate file for each day. Follow the conventions documented in `docs/changelog/CHANGELOG.md`.
 
 ## When Information Is Missing
 

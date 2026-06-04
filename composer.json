@@ -52,7 +52,8 @@
         "pestphp/pest": "^2.0|^3.0",
         "pestphp/pest-plugin-laravel": "^2.0|^3.0",
         "symplify/monorepo-builder": "^10.0",
-        "laravel/boost": "^2.4"
+        "laravel/boost": "^2.4",
+        "spatie/guidelines-skills": "^1.0"
     },
     "autoload": {
         "files": [

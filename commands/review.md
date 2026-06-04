@@ -52,7 +52,7 @@ Verify:
 
 * Documentation remains accurate.
 * Relevant documentation was updated if behavior changed.
-* `docs/system/CHANGELOG.md` was updated when appropriate.
+* Changelog was updated when appropriate (Changelog entries are maintained in `docs/changelog`, with a separate file for each day. Follow the conventions documented in `docs/changelog/CHANGELOG.md`).
 
 ### Maintainability
 

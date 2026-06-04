@@ -1,41 +1,68 @@
-<p align="center"><a href="https://lunarphp.com/" target="_blank"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/lunarphp/art/main/lunar-logo-dark.svg"><img alt="Lunar" width="200" src="https://raw.githubusercontent.com/lunarphp/art/main/lunar-logo.svg"></picture></a></p>
+# Lunar Minic
 
-[Lunar](https://lunarphp.com) is a set of Laravel packages that bring functionality akin to Shopify and other e-commerce platforms to 
-Laravel. You have complete freedom to create your own storefront(s), but we've already done the hard work for you in 
-the backend.
+Custom fork of [Lunar PHP](https://lunarphp.com/) 1.x (`lunarphp/lunar-minic`): the ecommerce engine and Filament admin for the Minic webshop stack—catalog, pricing, carts, orders, discounts, shipping, payments, ERP, Mailchimp, and search.
 
-This repository serves as a monorepo for the main packages that make up Lunar.
+**Storefront is separate.** Customer routes, Livewire checkout, and payment finalization live in [`minic/lunar-frontend`](../lunar-frontend). This repo is domain logic, integrations, migrations, and admin only.
+
+## Before you implement
+
+1. Read **[PROJECT_SPECIFICATION.md](docs/system/PROJECT_SPECIFICATION.md)** — architecture, domain rules, host integration, and fork-specific risks.
+2. Use **[CODE_MAP.md](docs/system/CODE_MAP.md)** to find where code belongs (`packages/core`, `packages/admin`, add-ons, tests).
+3. For flows that touch carts, orders, or pricing, check the **design** docs (engine behavior only; not storefront orchestration).
+4. Follow **[coding standards](docs/conventions/coding-standards.md)** and **[Laravel conventions](docs/conventions/laravel-conventions.md)** when writing or changing code.
+5. Follow **[AGENTS.md](AGENTS.md)** (Laravel Boost + agent rules). Activate the relevant **skill** under [`.ai/skills/`](.ai/skills/) when working in that domain.
+6. Add or update tests per **[TESTING.md](docs/system/TESTING.md)**.
 
 ## Documentation
 
-- [v1.0 documentation](https://docs.lunarphp.com/)
+### System (`docs/system/`)
 
-## Contribution
+| Doc | Purpose |
+| --- | --- |
+| [PROJECT_SPECIFICATION.md](docs/system/PROJECT_SPECIFICATION.md) | Technical spec and source of truth for this fork |
+| [CODE_MAP.md](docs/system/CODE_MAP.md) | Where to look and how packages connect |
+| [TESTING.md](docs/system/TESTING.md) | What to test here vs in `lunar-frontend` |
+| [CHANGELOG.md](docs/changelog/) | Notable changes |
 
-- Bug reports should be submitted as a new Github issue
-- Enhancements should [be in discussions](https://github.com/lunarphp/lunar/discussions/new?category=enhancements)
-- Feature requests should [be in discussions](https://github.com/lunarphp/lunar/discussions/new?category=feature-requests)
+### Design (`docs/design/`)
 
-## Community
+| Doc | Purpose |
+| --- | --- |
+| [checkout.md](docs/design/checkout.md) | Cart, shipping, order creation, payment infrastructure |
+| [order_processing.md](docs/design/order_processing.md) | Order status, AWB, ERP, invoices |
+| [pricing_and_discounts.md](docs/design/pricing_and_discounts.md) | Pricing pipelines, discounts, cart totals |
 
-- [Join our discord server](https://lunarphp.com/discord) and chat to the developers and people using Lunar.
-- [We have a roadmap](https://github.com/orgs/lunarphp/projects/9) where we will be detailing which features are next.
+### Conventions (`docs/conventions/`)
 
-## Packages in this monorepo
+| Doc | Purpose |
+| --- | --- |
+| [coding-standards.md](docs/conventions/coding-standards.md) | PHPDoc, naming, structure, and readability rules |
+| [laravel-conventions.md](docs/conventions/laravel-conventions.md) | Eloquent, events, and Collection usage |
 
-### Admin panel
+### Database
 
-The admin panel is provided to enable you to manage your store via a modern interface. You can manage all aspects of 
-your store including products, orders, staff members etc. It's built using Filament and can be extended to meet each of 
-your stores requirements.
+| Doc | Purpose |
+| --- | --- |
+| [schema.dbml](docs/database/schema.dbml) | Database schema reference |
 
-### Core
+### AI guidelines & skills (`.ai/`)
 
-The core Lunar package, this provides all the things needed for your store to function. This is where all the models, 
-actions and utilities live and is required by the admin hub.
+| Path | Purpose |
+| --- | --- |
+| [base-guidelines.md](.ai/guidelines/base-guidelines.md) | Agent workflow and documentation rules |
+| [behavioral-guidelines.md](.ai/guidelines/behavioral-guidelines.md) | How agents should work in this project |
+| [`.ai/skills/`](.ai/skills/) | Domain skills (activate when relevant): `magister`, `smartbill`, `mailchimp`, `pest-testing` |
 
----
+### Agent entrypoints
 
-## License
+| Path | Purpose |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | Cursor / Laravel Boost rules for this repo |
+| [`commands/`](commands/) | Prompt workflows (e.g. bug fix, review, commit) |
 
-Lunar is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Layout (short)
+
+- `packages/core` — domain models, pipelines, config, migrations
+- `packages/admin` — Filament panel
+- Other `packages/*` — payments, shipping, ERP, search, blog, reviews, etc.
+- `tests/` — Pest suites by package/domain
