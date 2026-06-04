@@ -136,21 +136,31 @@ If the current branch is not `main` or `master`:
 
 1. Commit the staged changes.
 2. Push the current branch to `origin`.
-3. Create a pull request:
+3. Check whether a pull request already exists for the current branch into `main`:
+
+   ```bash
+   gh pr list --head "$(git branch --show-current)" --base main --state open
+   ```
+
+   Or:
+
+   ```bash
+   gh pr view --json url,number 2>/dev/null
+   ```
+
+4. **If an open PR already exists:** do **not** create a new one. The push above updates that PR. Return the existing PR URL in the output.
+5. **If no open PR exists:** create one:
 
    * Source branch: current branch
    * Target branch: `main`
-   * Remote: `origin`
-4. Use the commit message as the pull request title unless a better title is required.
-5. Generate a concise pull request description summarizing:
-
-   * What changed
-   * Why it changed
-   * Any testing performed
+   * Remote: `origin` (use `--repo` when `gh` does not default to `origin`)
+   * Use the commit message as the pull request title unless a better title is required
+   * Body: concise summary of what changed, why, and any testing performed
 
 ## Pull Request Rules
 
 * Create the pull request against the repository hosted on `origin`.
+* **Skip PR creation** when an open PR already targets `main` from the current branch.
 * Never create pull requests against `upstream`.
 * Never merge the pull request automatically.
 * Never delete branches automatically.
@@ -166,7 +176,9 @@ Branch pushed:
 <branch name>
 
 Pull request:
-<pull request url>
+<pull request url> (new or existing — note if reused)
 ```
 
 Or explain why the workflow was stopped.
+
+If an existing PR was reused, say so explicitly (e.g. “Open PR already exists; skipped creation.”).
