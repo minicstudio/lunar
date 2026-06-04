@@ -39,13 +39,13 @@ Never call real external services from automated tests.
 
 Mock or fake external dependencies, including:
 
-* Mailchimp
-* SmartBill
-* Magister
-* Sameday
-* DPD
-* Stripe
-* Algolia
+* Mailchimp (`tests/mailchimp/`)
+* Smartbill (`tests/ERP/Unit/Providers/Smartbill/`)
+* Magister (`tests/ERP/Unit/Providers/Magister/`)
+* Sameday / DPD (`tests/shippingAddon/`)
+* Stripe (`tests/stripe/`)
+* Opayo (`tests/opayo/` — present but not in `phpunit.xml` yet)
+* PayPal (`tests/paypal/` — directory placeholder, no tests yet)
 
 Verify:
 
@@ -59,6 +59,5 @@ Do not verify behavior through real API responses.
 ## Test Maintenance
 
 * Add regression tests in the same change set as bug fixes whenever practical.
-* If adding a new top-level test directory, register a corresponding testsuite in `phpunit.xml`.
-* If a new testsuite is added, update `.github/workflows/tests.yml`.
+* If adding a new top-level test directory with tests, register a corresponding testsuite in `phpunit.xml` and add it to the CI matrix in `.github/workflows/tests.yml` (current matrix: `core`, `admin`, `shipping`, `stripe`, `search`, `blog`, `ERP`, `review`, `shippingAddon`).
 * Do not create standalone verification scripts when Pest coverage is sufficient.

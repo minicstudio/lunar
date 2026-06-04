@@ -50,7 +50,7 @@ External integrations are tested using mocks and fakes.
 | PHPUnit (`phpunit.xml`) | Test suite definitions, env defaults, coverage roots |
 | [Larastan](https://github.com/larastan/larastan) | Static analysis on `packages/**` (`composer test:phpstan`) |
 
-All test files use Pest. There are no PHPUnit class-based `*Test extends TestCase` files under `tests/`.
+All test files use Pest. PHPUnit class-based tests are rare; the exception is `tests/core/Unit/Base/Extendable/ExtendableTestCase.php` (extends `TestCase` for extendability coverage).
 
 **Composer scripts:**
 
@@ -82,7 +82,7 @@ Defaults from `phpunit.xml` and CI:
 | `DB_CONNECTION` | `testing` | SQLite (in-memory in CI via `DB_DATABASE=:memory:`) |
 | `LUNAR_TESTING_REPLACE_MODELS` | `false` (also `true` in CI matrix) | When `true`, swaps Lunar models for stub models under `tests/core/Stubs/Models` to exercise model extending |
 
-CI runs each testsuite on PHP 8.3/8.4 × Laravel 11/12, with and without `LUNAR_TESTING_REPLACE_MODELS=true`. See `.github/workflows/tests.yml`.
+CI runs each testsuite on PHP 8.3/8.4 × Laravel 11/12 (PHP 8.2 is listed in the matrix but excluded for Laravel 11/12), with and without `LUNAR_TESTING_REPLACE_MODELS=true`. See `.github/workflows/tests.yml`.
 
 ---
 
@@ -102,7 +102,7 @@ Tests live under `tests/`, grouped by domain. Suites are declared in `phpunit.xm
 | `blog` | `tests/blog/Unit`, `Feature` | `packages/blog` |
 | `review` | `tests/review/Feature` | `packages/review` |
 
-**Also present but not in `phpunit.xml` suites today:** `tests/mailchimp/` (Mailchimp Saloon/services/jobs). Add a suite entry and CI job when extending Mailchimp behavior. 
+**Also present but not in `phpunit.xml` suites today:** `tests/mailchimp/` (Mailchimp Saloon/services/jobs), `tests/opayo/` (Opayo payment type). `tests/paypal/` exists as a placeholder directory with no tests yet. Add suite entries and CI jobs when extending those packages. 
 
 Package-local tests: `packages/table-rate-shipping/tests/` (separate `Pest.php`; not part of root `phpunit.xml` suites).
 
@@ -232,11 +232,11 @@ Read the nearest existing test file first—it defines providers, factories, and
 
 ---
 
-# Documentation References
+## Documentation references
 
-When testing:
+When testing behavior in this repo, see:
 
-- Checkout → docs/design/checkout.md
-- Order processing → docs/design/order-processing.md
-- Pricing and discounts → docs/design/pricing-and-discounts.md
-- Integrations → docs/integrations/*
+- Checkout → [checkout.md](../design/checkout.md)
+- Order processing → [order_processing.md](../design/order_processing.md)
+- Pricing and discounts → [pricing_and_discounts.md](../design/pricing_and_discounts.md)
+- Package integration notes → `packages/*/README.md` or `*_PLUGIN.md` where present (e.g. `packages/mailchimp/MAILCHIMP_PLUGIN.md`)

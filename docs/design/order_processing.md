@@ -124,7 +124,7 @@ On `authorize()`: creates draft order if needed, merges meta, sets status from `
 | `ProcessStripeWebhook` | Queued webhook handler; `authorize()` on order or cart |
 | Webhook route | `packages/stripe/routes/webhooks.php` |
 
-Host apps may use a separate Stripe integration; this repo’s package registers driver key `stripe` via `StripeServiceProvider`.
+Host apps may use a separate Stripe integration; this repo’s package registers driver key `stripe` via `StripePaymentsServiceProvider`.
 
 ### Transactions
 
@@ -159,8 +159,8 @@ The host application may trigger:
 - Mailchimp order synchronization
 
 See:
-- mailchimp skill
-- erp skill
+- `packages/ERP/` — Magister/Smartbill sync, `SendOrderToERP`, invoice observers
+- `packages/mailchimp/` — `SyncOrderOnPlacement`, cart line observer, `MAILCHIMP_PLUGIN.md`
 
 ---
 

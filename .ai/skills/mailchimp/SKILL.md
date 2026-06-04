@@ -25,7 +25,7 @@ Activate this skill when:
 | Observer | `Observers/CartLineObserver.php` (registered in `MailchimpServiceProvider`) |
 | Listener | `Listeners/SyncOrderOnPlacement.php` (**not** registered in package provider) |
 | Trait | `Traits/TrackRemoveFromCart.php` (used from lunar-frontend) |
-| Tests | `tests/mailchimp/` (Saloon `MockClient`; not in root `phpunit.xml` suites yet) |
+| Tests | `tests/mailchimp/` (Saloon `MockClient`; not in root `phpunit.xml` or CI matrix yet) |
 
 ## Architecture
 
@@ -89,7 +89,7 @@ Ecommerce operations call `MailchimpService::ensureStoreIdIsSet()` — set `MAIL
 - **`syncProduct`**: PUT product + variants; unavailable products → `deleteProduct`. Prices from default currency, inc tax; image from primary media.
 - **`syncCustomer`**: Requires `Customer` with linked user.
 - **`syncOrder`**: `syncCustomerAfterOrder` (user or billing `contact_email`) → optional subscriber + merge fields if `sync_subscribers` → PUT order. On 400, syncs line products and retries.
-- **`syncCart`**: Logged-in users only; `refresh()` + `recalculate()`; POST cart, on 400 sync products and retry, then PATCH if cart exists. `checkout_url` uses `route('lfp.checkout.details')`.
+- **`syncCart`**: Logged-in users only; `refresh()` + `recalculate()`; POST cart, on 400 sync products and retry, then PATCH if cart exists. `checkout_url` uses `route('lfp.checkout.details')` — that named route is registered by the host storefront (`lunar-frontend`), not this package.
 - **`deleteCart` / `deleteProduct`**: Treat 404 as success.
 - **`calculateOrderData`**: Builds merge fields from order lines — `PREFCAT` / `PREFSUBCAT` (collection frequency), configured `option_fields`, phone/address from shipping or billing.
 

@@ -28,7 +28,7 @@ Activate this skill when:
 | Payment observations | `PaymentSlugMapper` |
 | Invoice trigger | `packages/ERP/src/Observers/OrderObserver.php` |
 | Orchestration | `packages/ERP/src/Services/ErpService.php` (`generateInvoice`, `downloadInvoicePDF`) |
-| Admin PDF action | `Filament/Actions/DownloadInvoicePdfAction.php` via `Filament/Extensions/ShippingExtension.php` |
+| Admin PDF action | `packages/ERP/src/Filament/Actions/DownloadInvoicePdfAction.php` via `packages/ERP/src/Filament/Extensions/ShippingExtension.php` (ERP panel extension on `ManageOrder`, not `packages/shipping`) |
 | Enum | `Enums/ErpProviderEnum::smartbill` |
 | Tests | `tests/ERP/Unit/Providers/Smartbill/`, `tests/ERP/Unit/Services/ErpServiceTest.php` |
 | Overview (may lag code) | `packages/ERP/ERP_PLUGIN.md` |
@@ -58,7 +58,7 @@ flowchart TD
 
 ## Host Configuration (required)
 
-Package defaults in `packages/ERP/config/erp.php` leave `providers`, `sync.*`, and `actions.*` **empty**. Smartbill config is **not** merged at boot — it must be **published** and loaded by the host (`php artisan vendor:publish --tag=lunar.erp.config`).
+Only `packages/ERP/config/erp.php` is merged at boot (`lunar.erp`). Package defaults leave `providers`, `sync.*`, and `actions.*` **empty**. Smartbill settings live in `packages/ERP/src/Providers/Smartbill/config.php` as the publish source; the host must publish to `config/lunar/erp/smartbill.php` (`php artisan vendor:publish --tag=lunar.erp.config`) so `config('lunar.erp.smartbill')` resolves, and list `smartbill` under `lunar.erp.providers`.
 
 Typical host setup (see `packages/ERP/ERP_PLUGIN.md`):
 
@@ -82,6 +82,8 @@ SMARTBILL_SERIES_NAME=...
 SMARTBILL_MEASURING_UNIT_NAME=buc
 SMARTBILL_SAVE_TO_DB=false
 ```
+
+(`measuring_unit_name` has no default in package config; set via env when publishing.)
 
 `ErpServiceProvider::registerErpProviders()` binds each enabled entry in `lunar.erp.providers` using `provider_class` + `client_class` from `lunar.erp.{provider}`.
 
@@ -156,7 +158,7 @@ Loads: `billingAddress.country`, `productLines.purchasable.values`, `productLine
 
 **Coupon line** (if `$order->appliedCoupon`):
 
-- Negative price from `coupon_total->decimal`, code `'CUPON'`, default tax class rate, `isService`: `true`
+- Name: `'Cupon de reducere'` (+ optional coupon code suffix), code `'CUPON'`, negative `coupon_total->decimal`, default tax class rate, `isService`: `true`
 
 **Observations** (`buildInvoiceObservations`):
 

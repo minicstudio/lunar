@@ -13,7 +13,7 @@ This document explains how **unit prices are resolved** and how **discounts are 
 - Full cart/checkout flow — [checkout.md](./checkout.md)
 - Order placement and post-create lifecycle — [order_processing.md](./order_processing.md)
 - File-level navigation — [CODE_MAP.md](../system/CODE_MAP.md) § Pricing & tax, Discounts
-- Storefront checkout wiring — `minic/lunar-frontend` (referenced briefly where it extends engine behavior)
+- Storefront checkout wiring — sibling `minic/lunar-frontend` (referenced only where it extends engine behavior; not shipped from this repo)
 
 ---
 
@@ -97,7 +97,7 @@ Tax **amounts** on carts are computed later in `CalculateTax` via `TaxManager` /
 
 ### Discount manager
 
-Entry point: `Discounts` facade → **scoped** `DiscountManager` (`LunarServiceProvider` binds `DiscountManagerInterface` scoped, not singleton). The manager caches the loaded discount collection for the remainder of that request until `resetDiscounts()` clears it — `lunar-frontend` calls `resetDiscounts()` when applying or removing coupons (`HandlesDiscounts`).
+Entry point: `Discounts` facade → **scoped** `DiscountManager` (`LunarServiceProvider` binds `DiscountManagerInterface` scoped, not singleton). The manager caches the loaded discount collection for the remainder of that request until `resetDiscounts()` clears it. The production storefront (`lunar-frontend`) calls `resetDiscounts()` when applying or removing coupons.
 
 Responsibilities:
 
@@ -106,7 +106,7 @@ Responsibilities:
 - Apply **one coupon discount** when `cart.coupon_code` matches
 - Track `discountBreakdown` and applied discount types on the cart during calculation
 
-Configurable: `lunar.discounts.coupon_validator` (default `CouponValidator`). The production storefront does **not** replace this class; `lunar-frontend` adds Livewire rules `CouponIsCorrect` (delegates to `Discounts::validateCoupon()`) and `MaxUsesPerUser` before a coupon is saved on the cart (`HandlesDiscounts`).
+Configurable: `lunar.discounts.coupon_validator` (default `CouponValidator`). The storefront package may add validation rules (e.g. `CouponIsCorrect`, `MaxUsesPerUser` in `lunar-frontend`) before `cart.coupon_code` is set; core `CouponValidator` still governs `Discounts::validateCoupon()`.
 
 ### Conditions and rewards (`AdvancedAmountOff` + `AbstractDiscountType`)
 
@@ -126,7 +126,7 @@ Configurable: `lunar.discounts.coupon_validator` (default `CouponValidator`). Th
 
 **Static helper:** `calculateDiscountedPrice()` supports percentage or fixed amount per currency — used for **catalog preview** (`HasDiscount`), not for cart line application.
 
-**Usage recording:** `markAsUsed()` increments `uses` and attaches the user pivot. Cart `apply()` does not call it. After successful payment, `lunar-frontend` `AuthorizeOrderPayment` runs `MarkDiscountsAsUsed`, which calls `markAsUsed()` for each discount in `order.discount_breakdown`.
+**Usage recording:** `markAsUsed()` increments `uses` and attaches the user pivot. Cart `apply()` does not call it. The host marks discounts used after payment (e.g. `MarkDiscountsAsUsed` in `lunar-frontend`); not invoked by core `CreateOrder` or cart pipelines.
 
 ---
 
@@ -236,10 +236,10 @@ Rules verified in code that change runtime behavior:
 5. **Coupon discounts** apply only to eligible lines; cart totals split coupon vs non-coupon amounts for shipping and display.
 6. **Tax** is calculated on post-discount line subtotals (`subTotalDiscounted`) where present.
 7. **Cart `total`** uses inc-tax subtotal excluding coupon, plus shipping, minus coupon inc-tax component (fork formula in `Calculate`).
-8. **Table-rate `ShipBy`** thresholds use `subTotalDiscountedWithoutCouponIncTax` per line (fallback `subTotal`). Tier **qualification** runs inside `ShippingManifest::getOptions()` (shipping-modifier pipeline), which is separate from cart `recalculate()`. The storefront loads options after `recalculate()` (`ShippingOptions`, `cart.updated`), so automatic discounts from the latest recalculation are reflected. Within one `recalculate()`, `ApplyShipping` still runs before `ApplyDiscounts`, but that stage only applies an already-chosen option, not re-resolve tiers.
+8. **Table-rate `ShipBy`** thresholds use `subTotalDiscountedWithoutCouponIncTax` per line (fallback `subTotal`). Tier **qualification** runs inside `ShippingManifest::getOptions()` (shipping-modifier pipeline), which is separate from cart `recalculate()`. Within one `recalculate()`, `ApplyShipping` runs before `ApplyDiscounts`; that stage applies an already-selected option—it does not re-run tier resolution. Host UIs should call `getOptions()` after `recalculate()` so automatic discounts are reflected in quoted rates.
 9. **Automatic discount winner** uses **percentage only** in `getHighestValueDiscount`. Admin may set `fixed_value`, but cart automatic/coupon application paths use percentage only; fixed amounts affect catalog preview via `calculateDiscountedPrice()`.
 10. **Discounts without `data`** never apply (filtered at load).
-11. **Coupon validation** — core `CouponValidator` checks active discounts (including disabled types `AmountOff` / `BuyXGetY` in its query). Storefront `CouponIsCorrect` wraps `Discounts::validateCoupon()`; `MaxUsesPerUser` adds guest/login and per-user cap checks before apply.
+11. **Coupon validation** — core `CouponValidator` checks active discounts (including disabled types `AmountOff` / `BuyXGetY` in its query). Per-user limits are enforced in `checkDiscountConditions` at apply time; hosts may add pre-apply validation before setting `cart.coupon_code`.
 12. **Product channel visibility** is independent of price rows — unavailable products should be excluded before pricing via `Product::scopeAvailable()`, not `PricingManager`.
 
 ---

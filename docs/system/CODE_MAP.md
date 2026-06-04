@@ -16,7 +16,7 @@ Navigation guide for developers and AI coding agents working in this repository.
 | Layer          | Repository                                                | Responsibility                                                                                                                                       |
 | -------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Engine + admin | **This repo** (`lunarphp/lunar-minic`)                    | Eloquent domain, cart/order/pricing pipelines, Filament admin, integrations (ERP, carriers, Mailchimp, payments), migrations, config under `lunar.`* |
-| Storefront     | `**minic/lunar-frontend`** (sibling: `../lunar-frontend`) | Customer HTTP routes, Livewire checkout, payment authorization, Algolia catalog filter, published config overrides                                   |
+| Storefront     | `minic/lunar-frontend` (sibling: `../lunar-frontend`) | Customer HTTP routes, Livewire checkout, payment authorization, Algolia catalog filter, published config overrides                                   |
 
 
 There is no storefront REST API in this repo. Commerce behavior is consumed by the host via models, facades/managers, config pipelines, and a small HTTP surface (payment webhooks, admin panel, 3DS routes).
@@ -93,7 +93,9 @@ flowchart LR
 | `packages/ERP`                         | Magister/Smartbill providers, sync commands, invoice on order update                                               |
 | `packages/search`                      | `SearchManager` — DB / Meilisearch / Typesense faceted admin search                                                |
 | `packages/meilisearch`                 | `lunar:meilisearch:setup` command                                                                                  |
-| `packages/stripe`   | Payment drivers, routes, webhooks (Stripe), Livewire (Stripe)                                                      |
+| `packages/stripe`   | Payment drivers, webhook route, Livewire (Stripe)                                                      |
+| `packages/paypal`   | PayPal payment driver (`Payments::extend('paypal')`)                                                               |
+| `packages/opayo`    | Opayo payment driver (`Payments::extend('opayo')`)                                                                 |
 | `packages/mailchimp`                   | Saloon client, ecommerce sync jobs, cart line observer                                                             |
 | `packages/blog`, `review`, `locations` | Content, reviews, Romanian county/locality data                                                                    |
 | `tests/*`                              | Pest suites per package/domain                                                                                     |
@@ -212,15 +214,15 @@ Only domains with code in this repository are listed. Admin UI for a domain is g
 | ---------------- | ---------------------------------------------------------------------------------------- |
 | **Purpose**      | Payment driver registry, offline default, card/wallet integrations                       |
 | **Core**         | `PaymentManager`, `PaymentTypes\OfflinePayment`, `PaymentAttemptEvent`                   |
-| **Packages**     | Stripe (`StripePaymentType`, webhook, Livewire `stripe.payment`),                        |
-| **Routes**       | `packages/stripe/routes/webhooks.php`; `routes/web.php` |
+| **Packages**     | Stripe (`StripePaymentType`, webhook, Livewire `stripe.payment`); PayPal (`PaypalPaymentType`); Opayo (`OpayoPaymentType`) |
+| **Routes**       | `packages/stripe/routes/webhooks.php` (POST webhook only; no storefront routes in this repo) |
 | **Middleware**   | `StripeWebhookMiddleware`                                                                |
 | **Jobs**         | `stripe/.../ProcessStripeWebhook`                                                        |
 | **Config**       | `packages/core/config/payments.php`; per-package `config/*.php` merged into `lunar.*`    |
 | **Entry points** | `Payments` facade; `*ServiceProvider` `Payments::extend(...)`                            |
 
 
-Storefront payment finalization and extra drivers: `**lunar-frontend`** (`AuthorizeOrderPayment`, `config/lunar-frontend/payment.php`).
+Storefront payment finalization and extra drivers: `lunar-frontend` (`AuthorizeOrderPayment`, `config/lunar-frontend/payment.php`).
 
 ### Table-rate shipping (`packages/table-rate-shipping`)
 
@@ -358,6 +360,8 @@ Registered in `composer.json` → `extra.laravel.providers`:
 | `Lunar\Search\SearchServiceProvider`            | search              |
 | `Lunar\Meilisearch\MeilisearchServiceProvider`  | meilisearch         |
 | `Lunar\Stripe\StripePaymentsServiceProvider`    | stripe              |
+| `Lunar\Paypal\PaypalServiceProvider`            | paypal              |
+| `Lunar\Opayo\OpayoServiceProvider`              | opayo               |
 
 
 Core registration highlights: `packages/core/src/LunarServiceProvider.php` — config merge, managers, `ModelManifest`, observers, cart prune schedule, auth listeners.
@@ -389,7 +393,7 @@ Admin panel: `packages/admin/src/LunarPanelProvider.php` registers `lunar-panel`
 | Admin activity log / table | `packages/admin/src/Livewire/Components/*`       |
 
 
-Storefront checkout Livewire: `**lunar-frontend/src/Livewire/Checkout/**`.
+Storefront checkout Livewire: `lunar-frontend/src/Livewire/Checkout/` (sibling repo).
 
 ### Middleware
 
@@ -439,6 +443,8 @@ Review reminder scheduling: **not found** in package providers (command exists).
 | Integration                          | Purpose                       | Main classes                                                                                | Jobs / async                     | Events                         | Config                                              |
 | ------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------ | --------------------------------------------------- |
 | **Stripe**                           | Card payments, webhooks       | `StripePaymentType`, `WebhookController`, `StripeManager`                                   | `ProcessStripeWebhook`           | Webhook cart-missing event     | `lunar.stripe` (package config)                     |
+| **PayPal**                           | PayPal payments               | `PaypalPaymentType`, `PaypalServiceProvider`                                                | —                                | —                              | `lunar.paypal` (package config)                     |
+| **Opayo**                            | Opayo card payments           | `OpayoPaymentType`, `OpayoServiceProvider`                                                  | —                                | —                              | `lunar.opayo` (package config)                      |
 | **Sameday / DPD / Pickup / InHouse** | AWB, lockers, tracking        | `*ShippingProvider`, `*ApiClient`, Saloon requests under `packages/shipping/src/Providers/` | Locker sync via command schedule | —                              | `lunar.shipping` (+ per-provider published configs) |
 | **Magister**                         | ERP import/sync, order export | `MagisterErpProvider`, `MagisterApiClient`, sync commands                                   | `CreateProductsAndVariantsJob`   | —                              | `lunar.erp` + `lunar/erp/magister.php`              |
 | **Smartbill**                        | Invoicing, PDF                | `SmartbillErpProvider`, `SmartbillApiClient`                                                | —                                | —                              | `lunar.erp` + `lunar/erp/smartbill.php`             |

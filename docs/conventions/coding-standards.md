@@ -21,7 +21,7 @@ Example:
  */
 ```
 
- ## Function Responsibility
+## Function Responsibility
 
 - Each method should have a single responsibility.
 - Write small, focused, and easy-to-follow methods.

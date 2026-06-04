@@ -20,17 +20,17 @@ This document summarizes the repository at local HEAD. It is intended as working
 
 | Area | Verified implementation |
 | --- | --- |
-| PHP | `composer.json` requires `php:^8.2`; project context states PHP 8.3. |
-| Laravel | Root `composer.json` supports `laravel/framework:^11.0|^12.0`; `composer.lock` contains Laravel `v12.56.0`. |
-| Admin/UI | Filament `v3.3.49`, Livewire `v3.7.12`, Spatie Permission, Filament Apex Charts, Filament 2FA plugin. |
+| PHP | `composer.json` requires `php:^8.2`; CI exercises 8.3/8.4 (see `.github/workflows/tests.yml`). |
+| Laravel | Root `composer.json` supports `laravel/framework:^11.0|^12.0`. |
+| Admin/UI | Filament 3, Livewire 3, Spatie Permission, Filament Apex Charts, Filament 2FA plugin (exact versions: installed `composer.lock` when present). |
 | Admin assets | No root `package.json`; `packages/admin/package.json` uses Tailwind 3, PostCSS, esbuild, npm-run-all, and filament-purge. |
-| Search | Laravel Scout `v10.25.0`, Meilisearch PHP `v1.16.1`, Typesense PHP `v4.9.3`; custom `packages/search` and `packages/meilisearch` for admin/indexing. Storefront (`lunar-frontend`) uses Algolia Scout Extended for catalog filter; default `SCOUT_DRIVER` there is `algolia`. |
+| Search | Laravel Scout, Meilisearch PHP, Typesense PHP; custom `packages/search` and `packages/meilisearch` for admin/indexing. Storefront (`lunar-frontend`, sibling repo) uses Algolia for catalog filter per that package’s docs — not implemented in `packages/search`. |
 | Payments | Core offline payment driver plus Stripe, PayPal, and Opayo packages. |
 | Shipping | Core shipping config, table-rate shipping package, and custom carrier add-on with Sameday, DPD, Pickup, and InHouse providers. `fan` exists in `ShippingProviderEnum` but no default provider config/class was found. |
 | ERP | Custom ERP package with Magister and Smartbill providers, Saloon HTTP clients, sync commands, jobs, and invoice/AWB-related order workflows. |
 | Marketing | Custom Mailchimp package using Saloon requests for audience, subscriber, ecommerce store, cart, product, and order sync. |
 | Media/documents | Spatie Media Library, DomPDF/barryvdh DomPDF. |
-| HTTP/API clients | Saloon `v4.0.0`, Guzzle `v7.10.0`, Laravel HTTP client for PayPal. |
+| HTTP/API clients | Saloon 4, Guzzle 7, Laravel HTTP client (PayPal package). |
 | Development tooling | Pest, Orchestra Testbench, Larastan/PHPStan, Laravel Pint, Mockery, Faker, Laravel Boost as a dev dependency. |
 
 Core service providers are registered in root `composer.json` under Laravel package discovery. Important providers include:
@@ -45,7 +45,7 @@ Core service providers are registered in root `composer.json` under Laravel pack
 - `Lunar\Addons\Shipping\ShippingServiceProvider`
 - `Lunar\Shipping\ShippingServiceProvider`
 - `Lunar\Search\SearchServiceProvider`
-- `Lunar\Stripe\StripeServiceProvider`
+- `Lunar\Stripe\StripePaymentsServiceProvider`
 - `Lunar\Paypal\PaypalServiceProvider`
 - `Lunar\Opayo\OpayoServiceProvider`
 
@@ -248,7 +248,7 @@ Core service providers are registered in root `composer.json` under Laravel pack
 - Core payments are managed by `Lunar\Managers\PaymentManager`.
 - Default core payment type is `cash-in-hand`, implemented by `OfflinePayment`. It can create/reuse a draft order, merge payment meta into order meta, set authorized status, set `placed_at`, and dispatch `PaymentAttemptEvent`.
 - Stripe:
-  - Registered by `StripeServiceProvider` through `Payments::extend('stripe')`.
+  - Registered by `StripePaymentsServiceProvider` through `Payments::extend('stripe')`.
   - Adds payment intents, webhook route at `config('lunar.stripe.webhook_path')`, Livewire component, and queued webhook processing.
   - `StripePaymentType` creates/reuses orders, retrieves/captures PaymentIntents, updates order status from config mapping, and marks processed intents.
 
@@ -258,12 +258,12 @@ The storefront (`lunar-frontend`) owns checkout meta. `FillOrderFromCart` copies
 
 | Key | Set on | Values / notes |
 | --- | --- | --- |
-| `payment_option` | Cart during checkout; copied to order | Must be a key in merged `lunar.payments.types`. Host defaults: `cash-on-delivery`, `stripe-card`. Also referenced: `offline`, `hosted-payment` (via `minic/lunar-hosted-payment`). Validated in `PaymentOptions` Livewire. Used by payment drivers, `AuthorizeOrderPayment`, Stripe webhooks, Smartbill `PaymentSlugMapper` (`ramburs` / `card`), Magister (`TYPEOF_PAYMENT`), and carrier AWB builders (COD amount). |
-| `shippingType` | Cart shipping step | `courier` or `locker` (`Lunar\Addons\Shipping\Enums\ShippingType`). Drives locker UI and Sameday/DPD AWB logic. |
-| `isBillingSameAsShipping` | Cart billing/shipping | Boolean. |
-| `is_guest` | Checkout identity | Boolean guest checkout flag. |
-| `language_locale` | Order placement (`Summary`) | App locale at checkout; used by order emails. |
-| `gtm_purchase_event_id` | Post-authorization | Set by `AuthorizeOrderPayment` for GTM deduplication. |
+| `payment_option` | Cart during checkout; copied to order | Must be a key in merged `lunar.payments.types`. Core default type is `cash-in-hand` (`offline` driver). **This repo** reads `cash-on-delivery` in Magister, Smartbill, Sameday, and DPD code. Host storefronts typically use `cash-on-delivery` and `stripe-card` (see `lunar-frontend`). |
+| `shippingType` | Cart shipping step | `courier` or `locker` (`Lunar\Addons\Shipping\Enums\ShippingType`). Used by `ShipBy`, locker traits, Sameday/DPD AWB builders. |
+| `isBillingSameAsShipping` | Cart billing/shipping | Host/checkout convention; copied via `FillOrderFromCart` but not read in `packages/*`. |
+| `is_guest` | Checkout identity | Host convention; not read in `packages/*`. |
+| `language_locale` | Order placement | Host convention; not read in `packages/*`. |
+| `gtm_purchase_event_id` | Post-authorization | Host convention (`lunar-frontend`); not read in `packages/*`. |
 
 Address meta (not order-level): shipping addresses for lockers store `locker_id` (and related locker fields) on the address `meta` JSON.
 

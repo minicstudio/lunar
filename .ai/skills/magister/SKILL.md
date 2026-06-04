@@ -33,7 +33,7 @@ Activate this skill when:
 | Temp staging                     | `Models/ErpSyncTemp`, `Models/ErpSyncLog`                                                                                         |
 | Status emails on sync            | `Support/OrderStatusUpdater`                                                                                                      |
 | Orchestration                    | `Services/ErpService.php`                                                                                                         |
-| Console                          | `Console/SyncErpProductsCommand`, `SyncErpOrdersCommand`, `SyncErpStockCommand`, `SyncLocalitiesCommand`, `SyncAttributesCommand` |
+| Console                          | `SyncErpProductsCommand` (`erp:sync-products`), `SyncErpOrdersCommand` (`erp:sync-order-statuses`), `SyncErpStockCommand` (`erp:sync-stock`), `SyncLocalitiesCommand` (`erp:sync-localities`), `SyncAttributesCommand` (`erp:sync-attributes`) |
 | Tests                            | `tests/ERP/Unit/Providers/Magister/`, `tests/ERP/Unit/Listeners/SendOrderToERPTest.php`                                           |
 | Overview (may lag code)          | `packages/ERP/ERP_PLUGIN.md`                                                                                                      |
 
@@ -73,7 +73,7 @@ flowchart TD
 
 ## Host Configuration (required)
 
-Package defaults in `packages/ERP/config/erp.php` leave `providers`, `sync.*`, and `actions.*` **empty**. Magister config is **not** auto-merged at boot — publish and load via host (`php artisan vendor:publish --tag=lunar.erp.config`).
+Only `packages/ERP/config/erp.php` is merged at boot (`lunar.erp`). Package defaults leave `providers`, `sync.*`, and `actions.*` **empty**. Magister settings live in `packages/ERP/src/Providers/Magister/config.php` as the publish source; the host must publish to `config/lunar/erp/magister.php` (`php artisan vendor:publish --tag=lunar.erp.config`) and list `magister` under `lunar.erp.providers`.
 
 Typical host setup (see `packages/ERP/ERP_PLUGIN.md`):
 
@@ -176,7 +176,7 @@ Sync commands call `getAllowedProviders()` for the relevant feature and prompt f
 4. `createProductsAndVariantsFromTemp()` — articles with `stock > 0` plus generic parents of stocked variants; sort by `article_kind` (0, 1, 2); dispatch `CreateProductsAndVariantsJob` per article.
 5. Mark sync log completed.
 
-`**provider_data` on temp rows** (via `getProviderSpecificData`):
+**`provider_data` on temp rows** (via `getProviderSpecificData`):
 
 - `article_kind` ← `ARTICLE_KIND` (0 standard, 1 generic, 2 variant)
 - `generic_article_id` ← `IDSMARTCASH_GENERIC_ARTICLE`
@@ -262,11 +262,11 @@ Requires `lunar_product_variants.erp_id` migration from ERP package.
 
 ## Localities & Attributes
 
-`**MagisterErpProvider::getLocalities`:** Parses `DATASET` → `countyCode`, `countyName`, `localityName`. Throws `ErpSyncException` on failure.
+**`MagisterErpProvider::getLocalities`:** Parses `DATASET` → `countyCode`, `countyName`, `localityName`. Throws `ErpSyncException` on failure.
 
-`**getAttributes`:** Parses attribute `NAME` + `ITEMS[].NAME` into `optionName` / `optionValues`.
+**`getAttributes`:** Parses attribute `NAME` + `ITEMS[].NAME` into `optionName` / `optionValues`.
 
-`**erp:sync-localities`:** Uses `ErpService::getLocalities`, writes `packages/locations` `County` / `Locality` models (Romania `iso2` RO required).
+**`erp:sync-localities`:** Uses `ErpService::getLocalities`, writes `packages/locations` `County` / `Locality` models (Romania `iso2` RO required).
 
 Attributes command consumes `getAttributes` for product option setup (see command implementation in `SyncAttributesCommand`).
 

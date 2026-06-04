@@ -116,15 +116,15 @@ Cart relations: `lines`, `shippingAddress`, `billingAddress`, `currency`, `chann
 
 The engine treats `meta` as opaque JSON on the cart. `FillOrderFromCart` copies it to `order.meta` unchanged.
 
-Hosts typically persist checkout choices here (documented in [PROJECT_SPECIFICATION.md](../system/PROJECT_SPECIFICATION.md)):
+Hosts typically persist checkout choices here. Keys **read in this repo** are noted in [PROJECT_SPECIFICATION.md](../system/PROJECT_SPECIFICATION.md) § Payment and checkout meta.
 
-| Key | Typical use in integrations |
+| Key | Use |
 | --- | --- |
-| `payment_option` | Selected payment type key from `lunar.payments.types` |
-| `shippingType` | `courier` or `locker` (`Lunar\Addons\Shipping\Enums\ShippingType`) |
-| `isBillingSameAsShipping` | Billing mirrors shipping when true |
-| `is_guest` | Guest vs registered checkout (host convention) |
-| `language_locale` | Locale for transactional email (host convention) |
+| `payment_option` | Payment type key; used by ERP and carrier packages (`cash-on-delivery` in shipping/ERP code) |
+| `shippingType` | `courier` or `locker` (`Lunar\Addons\Shipping\Enums\ShippingType`); used by table-rate and carrier packages |
+| `isBillingSameAsShipping` | Copied to order via `FillOrderFromCart`; host/checkout convention |
+| `is_guest` | Host convention; not read in `packages/*` |
+| `language_locale` | Host convention; not read in `packages/*` |
 
 Address-level meta (e.g. `locker_id` on `CartAddress`) is used by carrier AWB logic in `packages/shipping`.
 
