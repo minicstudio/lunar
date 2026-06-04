@@ -107,10 +107,17 @@ return [
             'view' => [
                 'label' => 'Voir',
             ],
+            'confirm_non_webp' => [
+                'heading' => '💡 Conseil : Utilisez des images au format WebP !',
+                'description' => "L'image sélectionnée n'est pas au format WebP. WebP offre des fichiers plus petits que JPEG et PNG sans perte de qualité, ce qui accélère le chargement et améliore le SEO. Nous recommandons de convertir vos images !",
+                'confirm' => "Continuer l'envoi",
+                'cancel' => 'Annuler',
+            ],
         ],
         'form' => [
             'name' => [
                 'label' => 'Nom',
+                'helper_text' => 'Utilisé comme texte alternatif de l\'image — important pour le SEO et l\'accessibilité des personnes malvoyantes.',
             ],
             'media' => [
                 'label' => 'Image',

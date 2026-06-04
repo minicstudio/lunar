@@ -10,6 +10,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\FileUploadConfiguration;
 use Lunar\Admin\Events\ModelMediaUpdated;
 use Lunar\Admin\Rules\SecureMediaUploadRule;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -22,9 +23,53 @@ class MediaRelationManager extends BaseRelationManager
 
     public string $mediaCollection = 'default';
 
+    public ?string $pendingMediaFilename = null;
+
+    public ?string $pendingMediaName = null;
+
+    public ?string $pendingMediaCustomName = null;
+
+    public ?bool $pendingMediaPrimary = null;
+
     public function isReadOnly(): bool
     {
         return false;
+    }
+
+    public function confirmNonWebpUpload(): void
+    {
+        $this->getOwnerRecord()
+            ->addMediaFromDisk(
+                FileUploadConfiguration::path($this->pendingMediaFilename, false),
+                FileUploadConfiguration::disk()
+            )
+            ->usingFileName($this->pendingMediaName)
+            ->withCustomProperties([
+                'name' => $this->pendingMediaCustomName,
+                'primary' => $this->pendingMediaPrimary,
+            ])
+            ->preservingOriginal()
+            ->toMediaCollection($this->mediaCollection);
+
+        $this->pendingMediaFilename = null;
+        $this->pendingMediaName = null;
+        $this->pendingMediaCustomName = null;
+        $this->pendingMediaPrimary = null;
+
+        ModelMediaUpdated::dispatch($this->getOwnerRecord());
+
+        $this->dispatch('close-modal', id: 'media-non-webp-warning');
+        $this->unmountTableAction();
+    }
+
+    public function cancelNonWebpUpload(): void
+    {
+        $this->pendingMediaFilename = null;
+        $this->pendingMediaName = null;
+        $this->pendingMediaCustomName = null;
+        $this->pendingMediaPrimary = null;
+
+        $this->dispatch('close-modal', id: 'media-non-webp-warning');
     }
 
     public function getDefaultForm(Form $form): Form
@@ -33,6 +78,7 @@ class MediaRelationManager extends BaseRelationManager
             ->schema([
                 Forms\Components\TextInput::make('custom_properties.name')
                     ->label(__('lunarpanel::relationmanagers.medias.form.name.label'))
+                    ->helperText(__('lunarpanel::relationmanagers.medias.form.name.helper_text'))
                     ->maxLength(255),
                 Forms\Components\Toggle::make('custom_properties.primary')
                     ->label(__('lunarpanel::relationmanagers.medias.form.primary.label'))
@@ -91,8 +137,20 @@ class MediaRelationManager extends BaseRelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label(__('lunarpanel::relationmanagers.medias.actions.create.label'))
-                    ->using(function (array $data, string $model): Model {
+                    ->before(function (array $data, Tables\Actions\CreateAction $action) {
+                        $ext = strtolower(pathinfo($data['media']->getClientOriginalName(), PATHINFO_EXTENSION));
 
+                        if ($ext !== 'webp') {
+                            $this->pendingMediaFilename = $data['media']->getFilename();
+                            $this->pendingMediaName = $data['media']->getClientOriginalName();
+                            $this->pendingMediaCustomName = $data['custom_properties']['name'] ?? null;
+                            $this->pendingMediaPrimary = $data['custom_properties']['primary'] ?? false;
+
+                            $this->dispatch('open-modal', id: 'media-non-webp-warning');
+                            $action->halt();
+                        }
+                    })
+                    ->using(function (array $data, string $model): Model {
                         return $this->getOwnerRecord()->addMediaFromString($data['media']->get())
                             ->usingFileName(
                                 $data['media']->getClientOriginalName()
