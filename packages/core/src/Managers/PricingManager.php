@@ -155,14 +155,9 @@ class PricingManager implements PricingManagerInterface
             $this->currency = Currency::getDefault();
         }
 
-        if (! $this->customerGroups || ! $this->customerGroups->count()) {
-            $this->customerGroups = collect([
-                CustomerGroup::getDefault(),
-            ]);
-        }
+        $providedCustomerGroups = $this->customerGroups && $this->customerGroups->isNotEmpty();
 
-        // Do we have a user?
-        if ($this->user && $this->user->customers->count()) {
+        if (! $providedCustomerGroups && $this->user && $this->user->customers->count()) {
             $customers = $this->user->customers;
             $customerGroups = $customers->pluck('customerGroups')->flatten();
 
@@ -171,7 +166,19 @@ class PricingManager implements PricingManagerInterface
             }
         }
 
-        $currencyPrices = $this->purchasable->getPrices()->filter(function ($price) {
+        if (! $this->customerGroups || ! $this->customerGroups->count()) {
+            $this->customerGroups = collect([
+                CustomerGroup::getDefault(),
+            ]);
+        }
+
+        $prices = $this->purchasable->getPrices();
+
+        if ($prices instanceof \Illuminate\Database\Eloquent\Collection) {
+            $prices->loadMissing('currency');
+        }
+
+        $currencyPrices = $prices->filter(function ($price) {
             return $price->currency_id == $this->currency->id;
         });
 
