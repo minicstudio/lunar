@@ -171,7 +171,13 @@ class PricingManager implements PricingManagerInterface
             }
         }
 
-        $currencyPrices = $this->purchasable->getPrices()->filter(function ($price) {
+        $prices = $this->purchasable->getPrices();
+
+        if ($prices instanceof \Illuminate\Database\Eloquent\Collection) {
+            $prices->loadMissing('currency');
+        }
+
+        $currencyPrices = $prices->filter(function ($price) {
             return $price->currency_id == $this->currency->id;
         });
 
