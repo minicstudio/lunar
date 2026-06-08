@@ -141,7 +141,7 @@ class DiscountManager implements DiscountManagerInterface
             $this->customerGroup($defaultGroup);
         }
 
-        return Discount::active()
+        return $this->discounts = Discount::active()
             ->usable()
             ->channel($this->channels)
             ->customerGroup($this->customerGroups)
