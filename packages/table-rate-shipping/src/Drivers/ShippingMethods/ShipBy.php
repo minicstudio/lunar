@@ -111,12 +111,10 @@ class ShipBy implements ShippingRateInterface
         $pricing = Pricing::for($shippingRate)->customerGroups($customerGroups)->qty($tier)->get();
 
         $prices = $pricing->priceBreaks;
-        $this->loadPriceCurrencies($prices);
 
         // If there are customer group prices, they need to take priority.
         if (! $pricing->customerGroupPrices->isEmpty()) {
             $prices = $pricing->customerGroupPrices;
-            $this->loadPriceCurrencies($prices);
         }
 
         $matched = $prices->filter(function ($price) use ($tier) {
@@ -145,8 +143,6 @@ class ShipBy implements ShippingRateInterface
             return null;
         }
 
-        $this->loadPriceCurrencies(collect([$matched, $pricing->base]));
-
         $price = $matched->price;
 
         return new ShippingOption(
@@ -169,13 +165,5 @@ class ShipBy implements ShippingRateInterface
         $this->shippingRate = $shippingRate;
 
         return $this;
-    }
-
-    /**
-     * Ensure currency is loaded before the price cast accesses it.
-     */
-    protected function loadPriceCurrencies(\Illuminate\Support\Collection $prices): void
-    {
-        $prices->each(fn ($price) => $price->loadMissing('currency'));
     }
 }
