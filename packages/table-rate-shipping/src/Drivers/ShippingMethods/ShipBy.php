@@ -65,7 +65,7 @@ class ShipBy implements ShippingRateInterface
 
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
-        $productIds = $cart->lines->load('purchasable')->pluck('purchasable.product_id');
+        $productIds = $cart->lines->pluck('purchasable.product_id');
 
         $hasExclusions = $shippingZone->shippingExclusions()
             ->whereHas('exclusions', function ($query) use ($productIds) {
