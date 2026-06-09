@@ -20,10 +20,12 @@ workbench/
 
 # Generated MCP and boost files
 mcp.json
+.mcp.json
 AGENTS.md
-CLAUDE.md
 boost.json
 skills-lock.json
 .github/skills
+.claude/skills
+.claude/commands
 .cursor/skills
 .agents/skills
