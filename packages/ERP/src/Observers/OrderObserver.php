@@ -15,7 +15,7 @@ class OrderObserver
      *
      * @return void
      */
-    public function updating(Order $order)
+    public function updated(Order $order)
     {
         $this->handleBilling($order);
     }
@@ -50,7 +50,7 @@ class OrderObserver
             return;
         }
 
-        if (! $order->isDirty('status')) {
+        if (! $order->wasChanged('status')) {
             return;
         }
 
