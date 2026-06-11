@@ -77,6 +77,27 @@ test('job throws FailedMailchimpSyncException on API failure', function () {
     $job->handle($mockService);
 })->throws(FailedMailchimpSyncException::class);
 
+test('job syncs language only when languageOnly flag is set', function () {
+    $user = User::factory()->create([
+        'email' => 'test@example.com',
+    ]);
+
+    $mockService = Mockery::mock(MailchimpSubscriberService::class);
+    $mockService->shouldReceive('syncSubscriberLanguage')
+        ->once()
+        ->with($user)
+        ->andReturn([
+            'email_address' => 'test@example.com',
+            'merge_fields' => ['LANGUAGE' => 'hu'],
+        ]);
+    $mockService->shouldNotReceive('syncSubscriber');
+
+    $job = new SyncSubscriberToMailchimp($user, languageOnly: true);
+    $job->handle($mockService);
+
+    expect(true)->toBeTrue();
+});
+
 test('job includes merge fields when provided', function () {
     $user = User::factory()->create([
         'email' => 'test@example.com',

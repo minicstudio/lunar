@@ -7,6 +7,7 @@ use Lunar\Mailchimp\Commands\CreateMailchimpStoreCommand;
 use Lunar\Mailchimp\Commands\SetupMailchimpMergeFieldsCommand;
 use Lunar\Mailchimp\Commands\SyncAllOrdersToMailchimpCommand;
 use Lunar\Mailchimp\Commands\SyncAllProductsToMailchimpCommand;
+use Lunar\Mailchimp\Commands\SyncAllUserLanguagesToMailchimpCommand;
 use Lunar\Mailchimp\Commands\SyncAllUsersToMailchimpCommand;
 use Lunar\Mailchimp\Observers\CartLineObserver;
 use Lunar\Models\CartLine;
@@ -51,6 +52,7 @@ class MailchimpServiceProvider extends ServiceProvider
                 CreateMailchimpStoreCommand::class,
                 SetupMailchimpMergeFieldsCommand::class,
                 SyncAllUsersToMailchimpCommand::class,
+                SyncAllUserLanguagesToMailchimpCommand::class,
                 SyncAllOrdersToMailchimpCommand::class,
                 SyncAllProductsToMailchimpCommand::class,
             ]);
