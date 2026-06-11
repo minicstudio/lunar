@@ -182,7 +182,7 @@ class MailchimpSubscriberService
         $subscriberHash = md5(strtolower($email));
 
         $cleanedMergeFields = collect($mergeFields)
-            ->filter(fn ($value, $key) => ! empty($key))
+            ->filter(fn ($value, $key) => ! empty($key) && filled($value))
             ->all();
 
         $data = [
