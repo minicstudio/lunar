@@ -123,6 +123,7 @@ return [
         'address' => 'ADDRESS',
         'preferred_category' => 'PREFCAT',
         'preferred_subcategory' => 'PREFSUBCAT',
+        'language' => 'LANGUAGE',
     ],
 
     /*

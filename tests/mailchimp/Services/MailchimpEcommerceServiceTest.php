@@ -18,6 +18,7 @@ use Lunar\Mailchimp\Services\MailchimpSubscriberService;
 use Lunar\Models\Cart;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
+use Lunar\Models\Customer;
 use Lunar\Models\Order;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
@@ -37,6 +38,7 @@ beforeEach(function () {
     Config::set('lunar.mailchimp.store_id', 'test-store-id');
     Config::set('lunar.mailchimp.server', 'us1');
     Config::set('lunar.mailchimp.sync_subscribers', true);
+    Config::set('lunar.mailchimp.merge_fields.language', 'LANGUAGE');
 
     $this->mailchimpService = new MailchimpService;
     $this->subscriberService = new MailchimpSubscriberService($this->mailchimpService);
@@ -134,18 +136,19 @@ test('syncCustomer creates customer in Mailchimp', function () {
         'last_name' => 'Doe',
     ]);
 
-    $mockResponse = MockResponse::make([
-        'id' => md5('customer@example.com'),
-        'email_address' => 'customer@example.com',
-    ], 200);
+    $customer = Customer::factory()->create();
+    $user->customers()->attach($customer);
 
     $mockClient = new MockClient([
-        SyncCustomerRequest::class => $mockResponse,
+        SyncCustomerRequest::class => MockResponse::make([
+            'id' => md5('customer@example.com'),
+            'email_address' => 'customer@example.com',
+        ], 200),
     ]);
 
     $this->mailchimpService->getConnector()->withMockClient($mockClient);
 
-    $result = $this->ecommerceService->syncCustomer($user);
+    $result = $this->ecommerceService->syncCustomer($customer);
 
     expect($result)
         ->toBeArray()

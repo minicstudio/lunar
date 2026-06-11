@@ -227,8 +227,12 @@ class MailchimpEcommerceService
 
         $this->syncCustomerByEmail($customerId, $email, $firstName, $lastName);
 
-        if (config('lunar.mailchimp.sync_subscribers', true)) {
-            $orderData = $this->calculateOrderData($order);
+        if (config('lunar.mailchimp.sync_subscribers', false)) {
+            $languageMergeFields = $order->user_id
+                ? $this->subscriberService->getLanguageMergeFields($order->user->locale ?? null)
+                : [];
+
+            $orderData = array_merge($languageMergeFields, $this->calculateOrderData($order));
             $this->subscriberService->syncSubscriberByEmail($email, $firstName, $lastName, $orderData);
         }
 

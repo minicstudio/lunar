@@ -77,8 +77,95 @@ class MailchimpSubscriberService
             $user->email,
             $user->first_name ?? '',
             $user->last_name ?? '',
-            $mergeFields,
+            array_merge($this->getCustomerMergeFields($customer), $mergeFields),
         );
+    }
+
+    /**
+     * Sync only the language merge field for a subscriber.
+     *
+     * @return array|null The Mailchimp API response, or null when the customer has no locale to sync.
+     *
+     * @throws FailedMailchimpSyncException
+     */
+    public function syncSubscriberLanguage(Customer $customer): ?array
+    {
+        $user = $customer->users()?->first();
+
+        if (! $user) {
+            throw new FailedMailchimpSyncException("Customer {$customer->id} has no associated user account.");
+        }
+
+        $mergeFields = $this->getCustomerMergeFields($customer);
+
+        if ($mergeFields === []) {
+            return null;
+        }
+
+        return $this->syncSubscriberMergeFieldsByEmail($user->email, $mergeFields);
+    }
+
+    /**
+     * Update specific merge fields on an existing subscriber without touching other fields.
+     *
+     * @param  array<string, mixed>  $mergeFields
+     *
+     * @throws FailedMailchimpSyncException
+     */
+    public function syncSubscriberMergeFieldsByEmail(string $email, array $mergeFields): array
+    {
+        $subscriberHash = md5(strtolower($email));
+
+        $cleanedMergeFields = collect($mergeFields)
+            ->filter(fn ($value, $key) => ! empty($key) && filled($value))
+            ->all();
+
+        if ($cleanedMergeFields === []) {
+            throw new FailedMailchimpSyncException('No merge fields to sync.');
+        }
+
+        $data = [
+            'email_address' => $email,
+            'merge_fields' => $cleanedMergeFields,
+        ];
+
+        $response = $this->mailchimp->getConnector()->send(
+            new SyncSubscriberRequest($this->mailchimp->getListId(), $subscriberHash, $data)
+        );
+
+        if (! $response->successful()) {
+            throw new FailedMailchimpSyncException("Failed to sync subscriber merge fields: {$response->body()}");
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Build merge fields derived from customer profile data (e.g. preferred language).
+     *
+     * @return array<string, string>
+     */
+    public function getCustomerMergeFields(Customer $customer): array
+    {
+        $user = $customer->users()?->first();
+
+        return $this->getLanguageMergeFields($user?->locale);
+    }
+
+    /**
+     * Build the language merge field from a locale code.
+     *
+     * @return array<string, string>
+     */
+    public function getLanguageMergeFields(?string $locale): array
+    {
+        $tag = config('lunar.mailchimp.merge_fields.language');
+
+        if (! $tag || empty($locale)) {
+            return [];
+        }
+
+        return [$tag => $locale];
     }
 
     /**
@@ -184,6 +271,12 @@ class MailchimpSubscriberService
             ],
             'preferred_subcategory' => [
                 'name' => 'Preferred Subcategory',
+                'type' => 'text',
+                'required' => false,
+                'public' => false,
+            ],
+            'language' => [
+                'name' => 'Language',
                 'type' => 'text',
                 'required' => false,
                 'public' => false,

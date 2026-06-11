@@ -32,15 +32,22 @@ class SyncSubscriberToMailchimp implements ShouldQueue
     protected array $mergeFields;
 
     /**
+     * When true, only the customer's language merge field is synced.
+     */
+    public bool $languageOnly;
+
+    /**
      * The job's constructor.
      */
     public function __construct(
         public Customer $user,
-        array $mergeFields = []
+        array $mergeFields = [],
+        bool $languageOnly = false,
     ) {
         $this->tries = config('lunar.mailchimp.retry.max_attempts', 4);
         $this->backoff = config('lunar.mailchimp.retry.backoff', [60, 300, 3600]);
         $this->mergeFields = $mergeFields;
+        $this->languageOnly = $languageOnly;
     }
 
     /**
@@ -55,7 +62,11 @@ class SyncSubscriberToMailchimp implements ShouldQueue
         $subscriberService = app(MailchimpSubscriberService::class);
 
         try {
-            $subscriberService->syncSubscriber($this->user, $this->mergeFields);
+            if ($this->languageOnly) {
+                $subscriberService->syncSubscriberLanguage($this->user);
+            } else {
+                $subscriberService->syncSubscriber($this->user, $this->mergeFields);
+            }
         } catch (Exception $e) {
             throw new FailedMailchimpSyncException('Mailchimp subscriber sync error for user '.$this->user->id.'. '.$e->getMessage());
         }
