@@ -59,6 +59,6 @@ return [
     | to fall back to the application's configured timezone.
     |
     */
-    'timezone' => null,
+    'timezone' => 'Europe/Bucharest',
 
 ];
