@@ -86,7 +86,7 @@
                                         </div>
 
                                         <time class="flex-shrink-0 ml-4 text-xs mt-0.5 text-gray-500 dark:text-gray-400 font-medium">
-                                            {{ $item['log']->created_at->format('h:ia') }}
+                                            {{ $item['log']->created_at->copy()->setTimezone(config('lunar.panel.timezone') ?? config('app.timezone'))->format('h:ia') }}
                                         </time>
                                     </div>
                                 </li>
