@@ -48,4 +48,17 @@ return [
     */
     'order_count_statuses' => ['payment-received'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | The timezone used for displaying dates and times in the admin panel.
+    | This only affects how dates are shown — data is always stored in UTC.
+    | Set to a valid PHP timezone string (e.g. 'Europe/Bucharest') or null
+    | to fall back to the application's configured timezone.
+    |
+    */
+    'timezone' => null,
+
 ];

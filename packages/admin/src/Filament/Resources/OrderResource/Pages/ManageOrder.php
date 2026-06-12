@@ -156,6 +156,18 @@ class ManageOrder extends BaseViewRecord
                         return Infolists\Components\KeyValueEntry::make('meta_'.$key)->state($value);
                     }
 
+                    if (\Carbon\Carbon::hasFormat((string) $value, 'Y-m-d H:i:s')) {
+                        $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
+                        $converted = \Carbon\Carbon::parse($value, config('app.timezone'))
+                            ->setTimezone($timezone)
+                            ->format('Y-m-d H:i:s');
+
+                        return Infolists\Components\TextEntry::make('meta_'.$key)
+                            ->state($converted)
+                            ->label(__($key))
+                            ->copyable();
+                    }
+
                     // Format boolean values as yes/no
                     if (is_bool($value) || $value === 0 || $value === 1 || $value === '0' || $value === '1') {
                         $boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN);

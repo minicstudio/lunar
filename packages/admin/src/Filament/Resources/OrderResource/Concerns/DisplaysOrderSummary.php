@@ -83,7 +83,7 @@ trait DisplaysOrderSummary
         return Infolists\Components\TextEntry::make('created_at')
             ->label(__('lunarpanel::order.infolist.date_created.label'))
             ->alignEnd()
-            ->dateTime('Y-m-d h:i a')
+            ->dateTime('Y-m-d h:i a', timezone: config('lunar.panel.timezone'))
             ->visible(fn ($record) => ! $record->placed_at);
     }
 
@@ -97,7 +97,7 @@ trait DisplaysOrderSummary
         return Infolists\Components\TextEntry::make('placed_at')
             ->label(__('lunarpanel::order.infolist.date_placed.label'))
             ->alignEnd()
-            ->dateTime('Y-m-d h:i a')
+            ->dateTime('Y-m-d h:i a', timezone: config('lunar.panel.timezone'))
             ->placeholder('-');
     }
 
