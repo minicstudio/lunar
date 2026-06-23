@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Lunar\Admin\Database\Factories\StaffFactory;
 use Lunar\Base\Traits\LogsActivity;
+use Minic\LaravelAiAssistant\Traits\HasAiConversations;
 use Spatie\Permission\Traits\HasRoles;
 use Stephenjude\FilamentTwoFactorAuthentication\TwoFactorAuthenticatable;
 
@@ -34,6 +35,7 @@ use Stephenjude\FilamentTwoFactorAuthentication\TwoFactorAuthenticatable;
  */
 class Staff extends Authenticatable implements FilamentUser, HasName
 {
+    use HasAiConversations;
     use HasFactory;
     use HasRoles;
     use LogsActivity;

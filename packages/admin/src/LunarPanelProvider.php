@@ -15,6 +15,7 @@ use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Lunar\Admin\Auth\Manifest;
 use Lunar\Admin\Console\Commands\MakeLunarAdminCommand;
+use Lunar\Admin\Database\State\EnsureAiAssistantPermissions;
 use Lunar\Admin\Database\State\EnsureBaseRolesAndPermissions;
 use Lunar\Admin\Events\ChildCollectionCreated;
 use Lunar\Admin\Events\CollectionProductDetached;
@@ -87,12 +88,18 @@ class LunarPanelProvider extends ServiceProvider
             $this->mergeConfigFrom("{$this->root}/config/$config.php", "lunar.$config");
         });
 
+        $this->mergeConfigFrom("{$this->root}/config/ai-assistant.php", 'ai-assistant');
+
         if ($this->app->runningInConsole()) {
             collect($this->configFiles)->each(function ($config) {
                 $this->publishes([
                     "{$this->root}/config/$config.php" => config_path("lunar/$config.php"),
                 ], 'lunar');
             });
+
+            $this->publishes([
+                "{$this->root}/config/ai-assistant.php" => config_path('ai-assistant.php'),
+            ], 'lunar.ai-assistant');
 
             $this->commands([
                 MakeLunarAdminCommand::class,
@@ -171,6 +178,7 @@ class LunarPanelProvider extends ServiceProvider
     {
         $states = [
             EnsureBaseRolesAndPermissions::class,
+            EnsureAiAssistantPermissions::class,
         ];
 
         foreach ($states as $state) {
