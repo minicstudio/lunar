@@ -235,6 +235,10 @@ class LunarPanelManager
                 ->forceTwoFactorSetup(condition: $this->twoFactorAuthForced);
         }
 
+        if (class_exists(\Minic\LaravelAiAssistant\Filament\AiAssistantPlugin::class)) {
+            $plugins[] = \Lunar\Admin\Filament\AiAssistantPlugin::make();
+        }
+
         return Panel::make()
             ->spa()
             ->default()

@@ -31,6 +31,7 @@
         "lunarphp/filament3-2fa": "^2.1.0",
         "lunarphp/lunar": "self.version",
         "meilisearch/meilisearch-php": "^1.10",
+        "minic/laravel-ai-assistant": "^1.0.0",
         "php": "^8.2",
         "saloonphp/saloon": "^4.0",
         "spatie/laravel-activitylog": "^4.10.1",
@@ -177,5 +178,11 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": {
+        "laravel-ai-assistant": {
+            "type": "git",
+            "url": "git@github.com:minicstudio/laravel-ai-assistant.git"
+        }
+    }
 }
