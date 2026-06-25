@@ -24,7 +24,7 @@
         "awcodes/shout": "^2.0.4",
         "awcodes/filament-badgeable-column": "^2.3.2",
         "lunarphp/filament3-2fa": "^2.1.0",
-        "minic/laravel-ai-assistant": "*"
+        "minic/laravel-ai-assistant": "^1.0.0"
     },
     "extra": {
         "laravel": {
