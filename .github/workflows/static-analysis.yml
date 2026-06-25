@@ -38,10 +38,14 @@ jobs:
 
       - name: "Install dependencies from composer.json"
         if: "matrix.dependencies != 'lowest'"
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.COMPOSER_PRIVATE_REPO_TOKEN }}"}}'
         run: "composer update --with='laravel/framework:${{ matrix.laravel }}' --no-interaction --no-progress"
 
       - name: "Install lowest dependencies from composer.json"
         if: "matrix.dependencies == 'lowest'"
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.COMPOSER_PRIVATE_REPO_TOKEN }}"}}'
         run: "composer update --with='laravel/framework:${{ matrix.laravel }}' --no-interaction --no-progress --prefer-lowest"
 
       - name: "Run PHPStan"
