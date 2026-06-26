@@ -122,6 +122,7 @@ class Collection extends BaseModel implements Contracts\Collection, HasCustomerG
             "{$prefix}collection_customer_group"
         )->withPivot([
             'visible',
+            'display_in_header',
             'enabled',
             'starts_at',
             'ends_at',
@@ -187,6 +188,23 @@ class Collection extends BaseModel implements Contracts\Collection, HasCustomerG
                     $query->whereNull('ends_at')
                         ->orWhere('ends_at', '>=', now());
                 });
+        });
+    }
+
+    /**
+     * Scope to filter collections that are displayed in the header for customer groups.
+     *
+     * @param  CustomerGroup|Collection|null  $customerGroup  Optional customer group to filter by; uses session groups if null
+     */
+    public function scopeDisplayInHeader($query, CustomerGroup|Collection|null $customerGroup = null): QueryBuilder
+    {
+        $customerGroupIds = $customerGroup
+            ? collect([$customerGroup->id])
+            : StorefrontSession::getCustomerGroups()->pluck('id');
+
+        return $query->whereHas('customerGroups', function ($query) use ($customerGroupIds) {
+            $query->whereIn('lunar_customer_groups.id', $customerGroupIds)
+                ->where('display_in_header', true);
         });
     }
 

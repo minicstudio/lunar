@@ -24,6 +24,9 @@ return [
             'visible' => [
                 'label' => 'Vizibil',
             ],
+            'display_in_header' => [
+                'label' => 'Display in header',
+            ],
             'purchasable' => [
                 'label' => 'Achiziționabil',
             ],
@@ -44,6 +47,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Vizibil',
+            ],
+            'display_in_header' => [
+                'label' => 'Display in header',
             ],
             'purchasable' => [
                 'label' => 'Achiziționabil',
