@@ -24,6 +24,9 @@ return [
             'visible' => [
                 'label' => 'Vizibil',
             ],
+            'display_in_header' => [
+                'label' => 'Afișează în antet',
+            ],
             'purchasable' => [
                 'label' => 'Achiziționabil',
             ],
@@ -44,6 +47,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Vizibil',
+            ],
+            'display_in_header' => [
+                'label' => 'Afișează în antent',
             ],
             'purchasable' => [
                 'label' => 'Achiziționabil',

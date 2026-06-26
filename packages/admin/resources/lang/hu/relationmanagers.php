@@ -29,6 +29,9 @@ return [
             'visible' => [
                 'label' => 'Látható',
             ],
+            'display_in_header' => [
+                'label' => 'Megjelenítés a fejlécben',
+            ],
             'purchasable' => [
                 'label' => 'Megvásárolható',
             ],
@@ -49,6 +52,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Látható',
+            ],
+            'display_in_header' => [
+                'label' => 'Megjelenítés a fejlécben',
             ],
             'purchasable' => [
                 'label' => 'Megvásárolható',

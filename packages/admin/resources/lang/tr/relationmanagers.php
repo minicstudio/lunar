@@ -24,6 +24,9 @@ return [
             'visible' => [
                 'label' => 'Görünür',
             ],
+            'display_in_header' => [
+                'label' => 'Başlıkta göster',
+            ],
             'purchasable' => [
                 'label' => 'Satın Alınabilir',
             ],
@@ -44,6 +47,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Görünür',
+            ],
+            'display_in_header' => [
+                'label' => 'Başlıkta göster',
             ],
             'purchasable' => [
                 'label' => 'Satın Alınabilir',

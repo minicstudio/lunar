@@ -29,6 +29,9 @@ return [
             'visible' => [
                 'label' => 'Zichtbaar',
             ],
+            'display_in_header' => [
+                'label' => 'Weergeven in header',
+            ],
             'purchasable' => [
                 'label' => 'Koopbaar',
             ],
@@ -49,6 +52,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Zichtbaar',
+            ],
+            'display_in_header' => [
+                'label' => 'Weergeven in header',
             ],
             'purchasable' => [
                 'label' => 'Koopbaar',
