@@ -26,7 +26,7 @@ return [
             ],
             'display_in_header' => [
                 'label' => 'Im Header anzeigen',
-            ],            
+            ],
             'purchasable' => [
                 'label' => 'Käuflich',
             ],
