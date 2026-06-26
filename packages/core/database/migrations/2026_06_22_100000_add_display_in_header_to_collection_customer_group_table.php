@@ -16,6 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table($this->prefix.'collection_customer_group', function (Blueprint $table) {
+            $table->dropIndex('lunar_collection_customer_group_display_in_header_index');
             $table->dropColumn('display_in_header');
         });
     }
