@@ -30,7 +30,7 @@ return [
                 'label' => 'Visible',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Afficher dans l\'en-tête',
             ],
             'purchasable' => [
                 'label' => 'Achetable',
@@ -54,7 +54,7 @@ return [
                 'label' => 'Visible',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Afficher dans l\'en-tête',
             ],
             'purchasable' => [
                 'label' => 'Achetable',

@@ -25,7 +25,7 @@ return [
                 'label' => 'Visível',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Exibir no cabeçalho',
             ],
             'purchasable' => [
                 'label' => 'Disponível para compra',
@@ -49,7 +49,7 @@ return [
                 'label' => 'Visível',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Exibir no cabeçalho',
             ],
             'purchasable' => [
                 'label' => 'Disponível para compra',

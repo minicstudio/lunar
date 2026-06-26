@@ -25,7 +25,7 @@ return [
                 'label' => 'Vizibil',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Afișează în antet',
             ],
             'purchasable' => [
                 'label' => 'Achiziționabil',
@@ -49,7 +49,7 @@ return [
                 'label' => 'Vizibil',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Afișează în antent',
             ],
             'purchasable' => [
                 'label' => 'Achiziționabil',

@@ -25,7 +25,7 @@ return [
                 'label' => 'Görünür',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Başlıkta göster',
             ],
             'purchasable' => [
                 'label' => 'Satın Alınabilir',
@@ -49,7 +49,7 @@ return [
                 'label' => 'Görünür',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Başlıkta göster',
             ],
             'purchasable' => [
                 'label' => 'Satın Alınabilir',

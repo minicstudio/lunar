@@ -30,7 +30,7 @@ return [
                 'label' => 'Látható',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Megjelenítés a fejlécben',
             ],
             'purchasable' => [
                 'label' => 'Megvásárolható',
@@ -54,7 +54,7 @@ return [
                 'label' => 'Látható',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Megjelenítés a fejlécben',
             ],
             'purchasable' => [
                 'label' => 'Megvásárolható',

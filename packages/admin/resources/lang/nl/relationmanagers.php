@@ -30,7 +30,7 @@ return [
                 'label' => 'Zichtbaar',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Weergeven in header',
             ],
             'purchasable' => [
                 'label' => 'Koopbaar',
@@ -54,7 +54,7 @@ return [
                 'label' => 'Zichtbaar',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Weergeven in header',
             ],
             'purchasable' => [
                 'label' => 'Koopbaar',

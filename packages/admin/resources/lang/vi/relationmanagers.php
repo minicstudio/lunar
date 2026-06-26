@@ -30,7 +30,7 @@ return [
                 'label' => 'Hiển thị',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Hiển thị trong header',
             ],
             'purchasable' => [
                 'label' => 'Có thể mua',
@@ -54,7 +54,7 @@ return [
                 'label' => 'Hiển thị',
             ],
             'display_in_header' => [
-                'label' => 'Display in header',
+                'label' => 'Hiển thị trong header',
             ],
             'purchasable' => [
                 'label' => 'Có thể mua',
