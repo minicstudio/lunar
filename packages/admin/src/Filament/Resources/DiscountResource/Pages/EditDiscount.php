@@ -3,6 +3,7 @@
 namespace Lunar\Admin\Filament\Resources\DiscountResource\Pages;
 
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationGroup;
 use Lunar\Admin\Base\LunarPanelDiscountInterface;
 use Lunar\Admin\Events\DiscountDeleted;
@@ -67,11 +68,38 @@ class EditDiscount extends BaseEditRecord
             }
         }
 
+        // Convert the stored integer amounts back to their decimal display values.
+        // This is done here (once) rather than in the form component's
+        // afterStateHydrated because the fixed_values inputs are rendered twice
+        // (AmountOff + AdvancedAmountOff sections) on the same state path, which
+        // would otherwise divide by the currency factor twice.
+        $currencies = Currency::enabled()->get();
+
+        foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $value) {
+            $currency = $currencies->first(
+                fn ($currency) => $currency->code == $currencyCode
+            );
+
+            if (! $currency) {
+                continue;
+            }
+            $data['data']['fixed_values'][$currencyCode] = $value / $currency->factor;
+        }
+
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        if (($data['data']['fixed_value'] ?? false) && blank($data['coupon'] ?? null)) {
+            Notification::make()
+                ->danger()
+                ->title(__('lunarpanel::discount.notifications.fixed_value_requires_coupon'))
+                ->send();
+
+            $this->halt();
+        }
+
         if (class_exists($data['type'])) {
             $type = new $data['type'];
 

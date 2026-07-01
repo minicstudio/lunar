@@ -3,6 +3,15 @@
 return [
     'plural_label' => 'Reduceri',
     'label' => 'Reducere',
+    'notifications' => [
+        'fixed_value_requires_coupon' => 'O reducere cu valoare fixă necesită un cod de cupon. Vă rugăm să setați un cupon înainte de salvare.',
+    ],
+    'notices' => [
+        'minimum_spend' => 'Suma minimă a coșului este comparată cu valoarea cu TVA inclus a coșului.',
+        'minimum_spend_net' => 'Suma minimă a coșului este comparată cu valoarea fără TVA a coșului.',
+        'fixed_value' => 'Valoarea fixă este suma totală cu TVA inclus care se scade — exact această sumă se deduce în total.',
+        'fixed_value_net' => 'Valoarea fixă este o sumă fără TVA; TVA-ul se adaugă deasupra, astfel încât clientul vede o reducere brută mai mare.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Condiții',
@@ -93,6 +102,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Valoare fixă',
+            'helper_text' => 'Utilizați versiunea cu valoare fixă doar împreună cu un cod de cupon.',
         ],
         'percentage' => [
             'label' => 'Procent',

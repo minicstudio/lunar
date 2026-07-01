@@ -119,6 +119,23 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
                     return new PriceDataType((int) (($this->total->value - $taxTotal) / $this->quantity), $this->order->currency, 1);
                 }
 
+                // Fixed-value coupons store no percentage to reverse; add this line's
+                // recorded coupon amount back onto the net (ex tax) line total to recover
+                // the unit price before the coupon (keeping any automatic discount). Falls
+                // back to the line's total discount for orders created before the per-line
+                // coupon amount was persisted.
+                if ($breakdown->discount->data->fixed_value ?? false) {
+                    $breakdownLine = $breakdown->lines->first(fn ($lineData) => $lineData->line?->id === $this->id);
+
+                    // No coupon touched this line -> nothing to add back. Otherwise use the
+                    // recorded per-line coupon amount.
+                    $couponAmount = $breakdownLine ? ($breakdownLine->amount?->value ?? 0) : 0;
+
+                    $value = (($this->total->value - $taxTotal) + $couponAmount) / $this->quantity;
+
+                    return new PriceDataType((int) $value, $this->order->currency);
+                }
+
                 $percentage = $breakdown->discount->data->percentage;
 
                 // We need to calculate the original price without the percentage discount applied.

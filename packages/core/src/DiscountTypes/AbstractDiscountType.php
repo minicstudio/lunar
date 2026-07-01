@@ -80,7 +80,21 @@ abstract class AbstractDiscountType implements DiscountTypeInterface
         $minSpend = (int) bcmul($minSpend, $cart->currency->factor);
 
         $lines = $this->getEligibleLines($cart);
-        $validMinSpend = $minSpend ? $minSpend < $lines->sum('subTotal.value') : true;
+
+        // Measure the cart in the stored pricing basis (net when prices are stored
+        // exclusive of tax, gross when inclusive): the subtotal after automatic
+        // (non-coupon) discounts, falling back to the raw subtotal. The min_prices
+        // condition is configured in the same basis, so this compares like with like.
+        $cartValue = $lines->sum(function ($line) {
+            return $line->subTotalDiscounted?->value ?? $line->subTotal?->value;
+        });
+
+        $validMinSpend = $minSpend ? $minSpend < $cartValue : true;
+
+        if (filled($conditionCoupon) && $validCoupon && ! $validMinSpend) {
+            $cart->coupon_code = null;
+            $cart->save();
+        }
 
         $validMaxUses = $this->discount->max_uses ? $this->discount->uses < $this->discount->max_uses : true;
 
