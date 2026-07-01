@@ -2,6 +2,7 @@
 
 namespace Lunar\Admin\Filament\Resources;
 
+use Awcodes\Shout\Components\Shout;
 use Filament\Forms;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Form;
@@ -244,10 +245,21 @@ class DiscountResource extends BaseResource
             );
     }
 
+    protected static function getPricingNoticeComponent(string $name, string $key): Component
+    {
+        return Shout::make($name)->content(
+            fn () => __(config('lunar.pricing.stored_inclusive_of_tax', false)
+                ? "lunarpanel::discount.notices.{$key}"
+                : "lunarpanel::discount.notices.{$key}_net")
+        )->columnSpanFull();
+    }
+
     protected static function getMinimumCartAmountsFormComponents(): array
     {
         $currencies = Currency::enabled()->get();
-        $inputs = [];
+        $inputs = [
+            static::getPricingNoticeComponent('minimum_cart_amount_notice', 'minimum_spend'),
+        ];
 
         foreach ($currencies as $currency) {
             $inputs[] = Forms\Components\TextInput::make('data.min_prices.'.$currency->code)->label(
@@ -287,21 +299,19 @@ class DiscountResource extends BaseResource
     {
         $currencies = Currency::get();
 
-        $currencyInputs = [];
+        $currencyInputs = [
+            static::getPricingNoticeComponent('fixed_value_notice', 'fixed_value'),
+        ];
 
         foreach ($currencies as $currency) {
+            // NB: the stored-value -> display-value conversion is handled once in
+            // EditDiscount::mutateFormDataBeforeFill(). It must NOT be done here via
+            // afterStateHydrated because this method builds a second, identical set of
+            // inputs for the AdvancedAmountOff section bound to the same state path,
+            // which would divide the value by the currency factor twice (e.g. 5000 -> 0.5).
             $currencyInputs[] = Forms\Components\TextInput::make(
                 'data.fixed_values.'.$currency->code
-            )->label($currency->name)->afterStateHydrated(function (Forms\Components\TextInput $component, $state) use ($currencies) {
-                $currencyCode = last(explode('.', $component->getStatePath()));
-                $currency = $currencies->first(
-                    fn ($currency) => $currency->code == $currencyCode
-                );
-
-                if ($currency) {
-                    $component->state($state / $currency->factor);
-                }
-            });
+            )->label($currency->name);
         }
 
         return [
@@ -309,6 +319,9 @@ class DiscountResource extends BaseResource
                 ->live()
                 ->label(
                     __('lunarpanel::discount.form.fixed_value.label')
+                )
+                ->helperText(
+                    __('lunarpanel::discount.form.fixed_value.helper_text')
                 ),
             Forms\Components\TextInput::make('data.percentage')->visible(
                 fn (Forms\Get $get) => ! $get('data.fixed_value')

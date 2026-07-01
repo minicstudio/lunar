@@ -42,6 +42,7 @@ class MapDiscountBreakdown
                     return (object) [
                         'quantity' => $discountLine->quantity,
                         'line' => $cartLinesMappedToOrderLines[$discountLine->line->id],
+                        'amount' => $discountLine->amount,
                     ];
                 }),
                 'total' => $discount->price,

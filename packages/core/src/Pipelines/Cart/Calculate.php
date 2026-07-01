@@ -99,6 +99,6 @@ class Calculate
             return $value;
         }
 
-        return (int) ($value * (1 + $taxRate));
+        return (int) round($value * (1 + $taxRate));
     }
 }

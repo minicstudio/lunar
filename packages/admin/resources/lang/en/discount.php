@@ -3,6 +3,15 @@
 return [
     'plural_label' => 'Discounts',
     'label' => 'Discount',
+    'notifications' => [
+        'fixed_value_requires_coupon' => 'A fixed value discount requires a coupon code. Please set a coupon before saving.',
+    ],
+    'notices' => [
+        'minimum_spend' => "The minimum cart amount is compared against the cart's tax-inclusive value.",
+        'minimum_spend_net' => "The minimum cart amount is compared against the cart's tax-exclusive value.",
+        'fixed_value' => 'The fixed value is the total tax-inclusive amount deducted — exactly this amount is taken off in total.',
+        'fixed_value_net' => 'The fixed value is a tax-exclusive amount; tax is added on top, so the shopper sees a larger gross reduction.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Conditions',
@@ -93,6 +102,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Fixed value',
+            'helper_text' => 'Only use the fixed value version together with a coupon code.',
         ],
         'percentage' => [
             'label' => 'Percentage',
