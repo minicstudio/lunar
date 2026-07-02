@@ -246,7 +246,6 @@ test('addTaxValue returns original value when pricing is inclusive', function ()
     expect($result)->toBe(1000);
 });
 
-
 test('taxes the aggregate coupon once so per-line rounding never drifts', function () {
     Config::set('lunar.pricing.stored_inclusive_of_tax', false);
 
