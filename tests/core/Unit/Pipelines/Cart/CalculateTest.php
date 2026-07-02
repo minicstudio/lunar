@@ -246,6 +246,51 @@ test('addTaxValue returns original value when pricing is inclusive', function ()
     expect($result)->toBe(1000);
 });
 
+
+test('taxes the aggregate coupon once so per-line rounding never drifts', function () {
+    Config::set('lunar.pricing.stored_inclusive_of_tax', false);
+
+    [$cart, $currency] = createCalculateCartWithLine(1000, 1, 20);
+
+    $purchasable = $cart->lines->first()->purchasable;
+
+    $cart->lines()->create([
+        'purchasable_type' => $purchasable->getMorphClass(),
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 1,
+    ]);
+
+    $cart->load('lines.purchasable.taxClass.taxRateAmounts.taxRate');
+
+    $couponDiscount = Discount::factory()->create([
+        'coupon' => 'DRIFT',
+    ]);
+
+    foreach ($cart->lines as $line) {
+        $line->subTotal = new DataTypesPrice(1000, $currency, 1);
+        $line->subTotalDiscounted = new DataTypesPrice(997, $currency, 1);
+        $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(1200, $currency, 1);
+        $line->discountTotal = new DataTypesPrice(3, $currency, 1);
+        $line->discountTotalWithoutCoupon = new DataTypesPrice(0, $currency, 1);
+        $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(0, $currency, 1);
+    }
+
+    $cart->discountBreakdown = collect([
+        (object) [
+            'discount' => $couponDiscount,
+            'price' => new DataTypesPrice(6, $currency, 1),
+        ],
+    ]);
+    $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+
+    $result = runCalculatePipeline($cart);
+
+    expect($result->couponTotal->value)->toBe(6)
+        ->and($result->couponTotalIncTax->value)->toBe(7)
+        ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(2400)
+        ->and($result->total->value)->toBe(2393);
+});
+
 test('addTaxValue adds tax when pricing is not inclusive', function () {
     Config::set('lunar.pricing.stored_inclusive_of_tax', false);
 

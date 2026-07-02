@@ -6,12 +6,6 @@ return [
     'notifications' => [
         'fixed_value_requires_coupon' => 'A fix összegű kedvezményhez kuponkód szükséges. Kérjük, mentés előtt adjon meg egy kupont.',
     ],
-    'notices' => [
-        'minimum_spend' => 'A minimum kosárérték a kosár ÁFÁ-s értékével kerül összehasonlításra.',
-        'minimum_spend_net' => 'A minimum kosárérték a kosár ÁFA nélküli értékével kerül összehasonlításra.',
-        'fixed_value' => 'A megadott fix érték a teljes ÁFA-s levonandó összeg - összesen ennyi kerül levonásra.',
-        'fixed_value_net' => 'A megadott fix érték ÁFA nélküli összeg; erre rakódik rá az ÁFA, így a vásárló ennél nagyobb bruttó levonást lát.',
-    ],
     'form' => [
         'conditions' => [
             'heading' => 'Feltételek',

@@ -2,7 +2,6 @@
 
 namespace Lunar\Admin\Filament\Resources;
 
-use Awcodes\Shout\Components\Shout;
 use Filament\Forms;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Form;
@@ -245,21 +244,10 @@ class DiscountResource extends BaseResource
             );
     }
 
-    protected static function getPricingNoticeComponent(string $name, string $key): Component
-    {
-        return Shout::make($name)->content(
-            fn () => __(config('lunar.pricing.stored_inclusive_of_tax', false)
-                ? "lunarpanel::discount.notices.{$key}"
-                : "lunarpanel::discount.notices.{$key}_net")
-        )->columnSpanFull();
-    }
-
     protected static function getMinimumCartAmountsFormComponents(): array
     {
         $currencies = Currency::enabled()->get();
-        $inputs = [
-            static::getPricingNoticeComponent('minimum_cart_amount_notice', 'minimum_spend'),
-        ];
+        $inputs = [];
 
         foreach ($currencies as $currency) {
             $inputs[] = Forms\Components\TextInput::make('data.min_prices.'.$currency->code)->label(
@@ -299,9 +287,7 @@ class DiscountResource extends BaseResource
     {
         $currencies = Currency::get();
 
-        $currencyInputs = [
-            static::getPricingNoticeComponent('fixed_value_notice', 'fixed_value'),
-        ];
+        $currencyInputs = [];
 
         foreach ($currencies as $currency) {
             // NB: the stored-value -> display-value conversion is handled once in

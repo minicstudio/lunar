@@ -208,21 +208,25 @@ class Order extends BaseModel implements Contracts\Order
 
                 foreach ($couponBreakdowns as $breakdown) {
                     if ($breakdown->discount->data->fixed_value ?? false) {
-                        // Fixed-value discounts store the breakdown in the stored pricing
-                        // basis, so add the tax back per line  to report the gross amount deducted.
+                        // Fixed-value discounts store the breakdown in the stored pricing basis.
+                        $couponNet = 0;
+                        $taxRate = 0.0;
+
                         foreach ($breakdown->lines as $lineData) {
-                            $orderLine = $lineData->line;
                             $amount = (int) ($lineData->amount?->value ?? 0);
 
                             if ($amount <= 0) {
                                 continue;
                             }
 
-                            if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
-                                $amount = (int) round($amount * (1 + ($orderLine?->tax_rate ?? 0)));
-                            }
+                            $couponNet += $amount;
+                            $taxRate = $lineData->line?->tax_rate ?? 0.0;
+                        }
 
-                            $total += $amount;
+                        if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                            $total += $couponNet;
+                        } else {
+                            $total += (int) (round($couponNet * (1 + $taxRate)));
                         }
 
                         continue;

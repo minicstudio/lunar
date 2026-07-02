@@ -66,7 +66,9 @@ class Calculate
     {
         $subTotalWithoutCouponIncTax = 0;
         $discountWithoutCouponIncTax = 0;
-        $couponIncTax = 0;
+
+        $couponNet = 0;
+        $couponTaxRate = 0.0;
 
         foreach ($cart->lines as $line) {
             $taxRate = $line?->purchasable?->getTaxRate() ?? 0.0;
@@ -79,14 +81,15 @@ class Calculate
             $lineCouponValue = max(($line->discountTotal?->value ?? 0) - ($line->discountTotalWithoutCoupon?->value ?? 0), 0);
 
             if ($lineCouponValue > 0) {
-                $couponIncTax += $this->addTaxValue($lineCouponValue, $taxRate);
+                $couponNet += $lineCouponValue;
+                $couponTaxRate = $taxRate;
             }
         }
 
         return [
             'subTotalWithoutCouponIncTax' => $subTotalWithoutCouponIncTax,
             'discountWithoutCouponIncTax' => $discountWithoutCouponIncTax,
-            'couponIncTax' => $couponIncTax,
+            'couponIncTax' => $this->addTaxValue($couponNet, $couponTaxRate),
         ];
     }
 
