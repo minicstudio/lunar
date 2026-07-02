@@ -99,7 +99,6 @@ class AdvancedAmountOff extends AbstractDiscountType
             $cart->currency,
             1
         );
-        $cartLine->discountTotalWithoutCouponIncTax = $this->convertToIncTax($cartLine, $cartLine->discountTotalWithoutCoupon);
 
         $cartLine->subTotalDiscounted = new Price(
             $subTotal - $amount,
@@ -107,7 +106,8 @@ class AdvancedAmountOff extends AbstractDiscountType
             1
         );
 
-        $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($cartLine, new Price($subTotal - $amount, $cart->currency, 1));
+        $cartLine->subTotalDiscountedWithoutCoupon = new Price($subTotal - $amount, $cart->currency, 1);
+        $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($cartLine, $cartLine->subTotalDiscountedWithoutCoupon);
 
         $affectedLines->push(new DiscountBreakdownLine(
             line: $cartLine,
@@ -180,7 +180,6 @@ class AdvancedAmountOff extends AbstractDiscountType
                 $cart->currency,
                 1
             );
-            $line->discountTotalWithoutCouponIncTax = $this->convertToIncTax($line, $line->discountTotalWithoutCoupon);
 
             $line->subTotalDiscounted = new Price(
                 $subTotal - $amount,
@@ -188,7 +187,8 @@ class AdvancedAmountOff extends AbstractDiscountType
                 1
             );
 
-            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, new Price($subTotal, $cart->currency, 1));
+            $line->subTotalDiscountedWithoutCoupon = new Price($subTotal, $cart->currency, 1);
+            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, $line->subTotalDiscountedWithoutCoupon);
 
             $affectedLines->push(new DiscountBreakdownLine(
                 line: $line,
@@ -277,7 +277,6 @@ class AdvancedAmountOff extends AbstractDiscountType
                 $cart->currency,
                 1
             );
-            $line->discountTotalWithoutCouponIncTax = $this->convertToIncTax($line, $line->discountTotalWithoutCoupon);
 
             $line->subTotalDiscounted = new Price(
                 $subTotal - $amount,
@@ -285,7 +284,8 @@ class AdvancedAmountOff extends AbstractDiscountType
                 1
             );
 
-            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, new Price($subTotal, $cart->currency, 1));
+            $line->subTotalDiscountedWithoutCoupon = new Price($subTotal, $cart->currency, 1);
+            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, $line->subTotalDiscountedWithoutCoupon);
         }
 
         // Spread any rounding remainder over the lines that still have a balance.

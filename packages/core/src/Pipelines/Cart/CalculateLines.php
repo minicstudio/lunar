@@ -46,9 +46,9 @@ class CalculateLines
             $cartLine->unitPriceWithoutCouponIncTax = $this->addTax($cartLine->unitPriceWithoutCoupon, $taxRate);
 
             $cartLine->discountTotalWithoutCoupon = new Price(0, $cart->currency, 1);
-            $cartLine->discountTotalWithoutCouponIncTax = $this->addTax($cartLine->discountTotalWithoutCoupon, $taxRate);
 
-            $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->addTax(new Price($cartLine->subTotalDiscounted->value, $cart->currency, 1), $taxRate);
+            $cartLine->subTotalDiscountedWithoutCoupon = new Price($cartLine->subTotalDiscounted->value, $cart->currency, 1);
+            $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->addTax($cartLine->subTotalDiscountedWithoutCoupon, $taxRate);
         }
 
         return $next($cart);

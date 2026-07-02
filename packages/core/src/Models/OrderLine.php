@@ -166,19 +166,31 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
     }
 
     /**
+     * Get the price (subtotal) excluding tax before coupon discount.
+     */
+    protected function priceWithoutCoupon(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $priceExcTax = $this->unit_price_without_coupon->value * $this->quantity;
+
+                return new PriceDataType((int) $priceExcTax, $this->order->currency);
+            },
+        );
+    }
+
+    /**
      * Get the unit price including tax before coupon discount.
      */
     protected function priceWithoutCouponIncTax(): Attribute
     {
         return Attribute::make(
             get: function () {
-                $priceExcTax = $this->unit_price_without_coupon->value * $this->quantity;
-
                 if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
-                    return new PriceDataType((int) ($priceExcTax), $this->order->currency);
+                    return $this->price_without_coupon;
                 }
 
-                $priceIncTax = $priceExcTax * (1 + $this->tax_rate);
+                $priceIncTax = $this->price_without_coupon->value * (1 + $this->tax_rate);
 
                 return new PriceDataType((int) $priceIncTax, $this->order->currency);
             },

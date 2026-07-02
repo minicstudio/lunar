@@ -77,21 +77,22 @@ test('handle calculates cart totals without discounts', function () {
     $line = $cart->lines->first();
     $line->subTotal = new DataTypesPrice(2000, $currency, 1);
     $line->subTotalDiscounted = new DataTypesPrice(2000, $currency, 1);
+    $line->subTotalDiscountedWithoutCoupon = new DataTypesPrice(2000, $currency, 1);
     $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(2400, $currency, 1);
     $line->discountTotal = new DataTypesPrice(0, $currency, 1);
     $line->discountTotalWithoutCoupon = new DataTypesPrice(0, $currency, 1);
-    $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(0, $currency, 1);
 
     $cart->discountBreakdown = new Collection;
+    $cart->shippingSubTotal = new DataTypesPrice(0, $currency, 1);
     $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+    $cart->taxTotal = new DataTypesPrice(400, $currency, 1);
 
     $result = runCalculatePipeline($cart);
 
     expect($result->couponTotal->value)->toBe(0)
         ->and($result->discountTotalWithoutCoupon->value)->toBe(0)
+        ->and($result->subTotalDiscountedWithoutCoupon->value)->toBe(2000)
         ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(2400)
-        ->and($result->couponTotalIncTax->value)->toBe(0)
-        ->and($result->discountTotalWithoutCouponIncTax->value)->toBe(0)
         ->and($result->total->value)->toBe(2400);
 });
 
@@ -105,10 +106,10 @@ test('handle calculates cart totals with coupon discount', function () {
     $line = $cart->lines->first();
     $line->subTotal = new DataTypesPrice(1000, $currency, 1);
     $line->subTotalDiscounted = new DataTypesPrice(900, $currency, 1);
+    $line->subTotalDiscountedWithoutCoupon = new DataTypesPrice(1000, $currency, 1);
     $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(1200, $currency, 1);
     $line->discountTotal = new DataTypesPrice(100, $currency, 1);
     $line->discountTotalWithoutCoupon = new DataTypesPrice(0, $currency, 1);
-    $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(0, $currency, 1);
 
     $cart->discountBreakdown = collect([
         (object) [
@@ -116,14 +117,15 @@ test('handle calculates cart totals with coupon discount', function () {
             'price' => new DataTypesPrice(100, $currency, 1),
         ],
     ]);
+    $cart->shippingSubTotal = new DataTypesPrice(0, $currency, 1);
     $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+    $cart->taxTotal = new DataTypesPrice(180, $currency, 1);
 
     $result = runCalculatePipeline($cart);
 
     expect($result->couponTotal->value)->toBe(100)
-        ->and($result->couponTotalIncTax->value)->toBe(120)
         ->and($result->discountTotalWithoutCoupon->value)->toBe(0)
-        ->and($result->discountTotalWithoutCouponIncTax->value)->toBe(0)
+        ->and($result->subTotalDiscountedWithoutCoupon->value)->toBe(1000)
         ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(1200)
         ->and($result->total->value)->toBe(1080);
 });
@@ -138,10 +140,10 @@ test('handle calculates cart totals with non coupon discount', function () {
     $line = $cart->lines->first();
     $line->subTotal = new DataTypesPrice(2000, $currency, 1);
     $line->subTotalDiscounted = new DataTypesPrice(1700, $currency, 1);
+    $line->subTotalDiscountedWithoutCoupon = new DataTypesPrice(1700, $currency, 1);
     $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(2040, $currency, 1);
     $line->discountTotal = new DataTypesPrice(300, $currency, 1);
     $line->discountTotalWithoutCoupon = new DataTypesPrice(300, $currency, 1);
-    $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(360, $currency, 1);
 
     $cart->discountBreakdown = collect([
         (object) [
@@ -149,14 +151,15 @@ test('handle calculates cart totals with non coupon discount', function () {
             'price' => new DataTypesPrice(300, $currency, 1),
         ],
     ]);
+    $cart->shippingSubTotal = new DataTypesPrice(0, $currency, 1);
     $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+    $cart->taxTotal = new DataTypesPrice(340, $currency, 1);
 
     $result = runCalculatePipeline($cart);
 
     expect($result->couponTotal->value)->toBe(0)
-        ->and($result->couponTotalIncTax->value)->toBe(0)
         ->and($result->discountTotalWithoutCoupon->value)->toBe(300)
-        ->and($result->discountTotalWithoutCouponIncTax->value)->toBe(360)
+        ->and($result->subTotalDiscountedWithoutCoupon->value)->toBe(1700)
         ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(2040)
         ->and($result->total->value)->toBe(2040);
 });
@@ -175,10 +178,10 @@ test('handle calculates cart totals with coupon and non coupon discount', functi
     $line = $cart->lines->first();
     $line->subTotal = new DataTypesPrice(3000, $currency, 1);
     $line->subTotalDiscounted = new DataTypesPrice(2565, $currency, 1);
+    $line->subTotalDiscountedWithoutCoupon = new DataTypesPrice(2850, $currency, 1);
     $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(3420, $currency, 1);
     $line->discountTotal = new DataTypesPrice(435, $currency, 1);
     $line->discountTotalWithoutCoupon = new DataTypesPrice(150, $currency, 1);
-    $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(180, $currency, 1);
 
     $cart->discountBreakdown = collect([
         (object) [
@@ -190,14 +193,15 @@ test('handle calculates cart totals with coupon and non coupon discount', functi
             'price' => new DataTypesPrice(285, $currency, 1),
         ],
     ]);
+    $cart->shippingSubTotal = new DataTypesPrice(0, $currency, 1);
     $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+    $cart->taxTotal = new DataTypesPrice(513, $currency, 1);
 
     $result = runCalculatePipeline($cart);
 
     expect($result->couponTotal->value)->toBe(285)
-        ->and($result->couponTotalIncTax->value)->toBe(342)
         ->and($result->discountTotalWithoutCoupon->value)->toBe(150)
-        ->and($result->discountTotalWithoutCouponIncTax->value)->toBe(180)
+        ->and($result->subTotalDiscountedWithoutCoupon->value)->toBe(2850)
         ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(3420)
         ->and($result->total->value)->toBe(3078);
 });
@@ -214,10 +218,10 @@ test('handle calculates discount tax using fallback when line discount inc tax i
     $line = $cart->lines->first();
     $line->subTotal = new DataTypesPrice(2000, $currency, 1);
     $line->subTotalDiscounted = new DataTypesPrice(1500, $currency, 1);
+    $line->subTotalDiscountedWithoutCoupon = new DataTypesPrice(1500, $currency, 1);
     $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(2375, $currency, 1);
     $line->discountTotal = new DataTypesPrice(500, $currency, 1);
     $line->discountTotalWithoutCoupon = new DataTypesPrice(500, $currency, 1);
-    $line->discountTotalWithoutCouponIncTax = null;
 
     $cart->discountBreakdown = collect([
         (object) [
@@ -230,20 +234,8 @@ test('handle calculates discount tax using fallback when line discount inc tax i
     $result = runCalculatePipeline($cart);
 
     expect($result->discountTotalWithoutCoupon->value)->toBe(500)
-        ->and($result->discountTotalWithoutCouponIncTax->value)->toBe(625)
+        ->and($result->subTotalDiscountedWithoutCoupon->value)->toBe(1500)
         ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(2375);
-});
-
-test('addTaxValue returns original value when pricing is inclusive', function () {
-    Config::set('lunar.pricing.stored_inclusive_of_tax', true);
-
-    $pipeline = app(Calculate::class);
-    $reflection = new ReflectionClass($pipeline);
-    $method = $reflection->getMethod('addTaxValue');
-
-    $result = $method->invoke($pipeline, 1000, 0.20);
-
-    expect($result)->toBe(1000);
 });
 
 test('taxes the aggregate coupon once so per-line rounding never drifts', function () {
@@ -268,10 +260,10 @@ test('taxes the aggregate coupon once so per-line rounding never drifts', functi
     foreach ($cart->lines as $line) {
         $line->subTotal = new DataTypesPrice(1000, $currency, 1);
         $line->subTotalDiscounted = new DataTypesPrice(997, $currency, 1);
+        $line->subTotalDiscountedWithoutCoupon = new DataTypesPrice(1000, $currency, 1);
         $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(1200, $currency, 1);
         $line->discountTotal = new DataTypesPrice(3, $currency, 1);
         $line->discountTotalWithoutCoupon = new DataTypesPrice(0, $currency, 1);
-        $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(0, $currency, 1);
     }
 
     $cart->discountBreakdown = collect([
@@ -280,24 +272,14 @@ test('taxes the aggregate coupon once so per-line rounding never drifts', functi
             'price' => new DataTypesPrice(6, $currency, 1),
         ],
     ]);
+    $cart->shippingSubTotal = new DataTypesPrice(0, $currency, 1);
     $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+    $cart->taxTotal = new DataTypesPrice(399, $currency, 1);
 
     $result = runCalculatePipeline($cart);
 
     expect($result->couponTotal->value)->toBe(6)
-        ->and($result->couponTotalIncTax->value)->toBe(7)
+        ->and($result->subTotalDiscountedWithoutCoupon->value)->toBe(2000)
         ->and($result->subTotalDiscountedWithoutCouponIncTax->value)->toBe(2400)
         ->and($result->total->value)->toBe(2393);
-});
-
-test('addTaxValue adds tax when pricing is not inclusive', function () {
-    Config::set('lunar.pricing.stored_inclusive_of_tax', false);
-
-    $pipeline = app(Calculate::class);
-    $reflection = new ReflectionClass($pipeline);
-    $method = $reflection->getMethod('addTaxValue');
-
-    $result = $method->invoke($pipeline, 1000, 0.20);
-
-    expect($result)->toBe(1200);
 });
