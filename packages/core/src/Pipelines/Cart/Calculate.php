@@ -48,13 +48,20 @@ class Calculate
         $cart->couponTotal = new Price($couponDiscountTotal, $cart->currency, 1);
         $cart->discountTotalWithoutCoupon = new Price($discountTotalWithoutCoupon, $cart->currency, 1);
 
-        $cartTotalsIncTax = $this->calculateTotalsIncTax($cart);
+        $cart->subTotalDiscountedWithoutCoupon = new Price(
+            $cart->lines->sum(fn ($line) => $line->subTotalDiscountedWithoutCoupon?->value ?? 0),
+            $cart->currency,
+            1
+        );
 
-        $cart->subTotalDiscountedWithoutCouponIncTax = new Price($cartTotalsIncTax['subTotalWithoutCouponIncTax'], $cart->currency, 1);
-        $cart->couponTotalIncTax = new Price($cartTotalsIncTax['couponIncTax'], $cart->currency, 1);
-        $cart->discountTotalWithoutCouponIncTax = new Price($cartTotalsIncTax['discountWithoutCouponIncTax'], $cart->currency, 1);
+        $cart->subTotalDiscountedWithoutCouponIncTax = new Price($this->calculateTotalsIncTax($cart), $cart->currency, 1);
 
-        $cart->total = new Price($cart->subTotalDiscountedWithoutCouponIncTax?->value + $cart->shippingTotal?->value - $cart->couponTotalIncTax?->value, $cart->currency);
+        $taxTotal = config('lunar.pricing.stored_inclusive_of_tax', false) ? 0 : $cart->taxTotal?->value;
+
+        $cart->total = new Price(
+            $cart->subTotalDiscountedWithoutCoupon?->value + $cart->shippingSubTotal?->value - $cart->couponTotal?->value + $taxTotal,
+            $cart->currency
+        );
 
         return $next($cart);
     }
@@ -62,43 +69,10 @@ class Calculate
     /**
      * Calculate cart-level inc tax totals by aggregating line-specific figures.
      */
-    protected function calculateTotalsIncTax(Cart $cart): array
+    protected function calculateTotalsIncTax(Cart $cart): int
     {
-        $subTotalWithoutCouponIncTax = 0;
-        $discountWithoutCouponIncTax = 0;
-        $couponIncTax = 0;
-
-        foreach ($cart->lines as $line) {
-            $taxRate = $line?->purchasable?->getTaxRate() ?? 0.0;
-
-            $subTotalWithoutCouponIncTax += $line->subTotalDiscountedWithoutCouponIncTax?->value ?? 0;
-
-            $discountWithoutCouponIncTax += $line->discountTotalWithoutCouponIncTax?->value
-                ?? $this->addTaxValue($line->discountTotalWithoutCoupon?->value ?? 0, $taxRate);
-
-            $lineCouponValue = max(($line->discountTotal?->value ?? 0) - ($line->discountTotalWithoutCoupon?->value ?? 0), 0);
-
-            if ($lineCouponValue > 0) {
-                $couponIncTax += $this->addTaxValue($lineCouponValue, $taxRate);
-            }
-        }
-
-        return [
-            'subTotalWithoutCouponIncTax' => $subTotalWithoutCouponIncTax,
-            'discountWithoutCouponIncTax' => $discountWithoutCouponIncTax,
-            'couponIncTax' => $couponIncTax,
-        ];
-    }
-
-    /**
-     * Add tax to a given value based on the provided tax rate.
-     */
-    protected function addTaxValue(int $value, float $taxRate): int
-    {
-        if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
-            return $value;
-        }
-
-        return (int) ($value * (1 + $taxRate));
+        return $cart->lines->sum(function ($line) {
+            return $line->subTotalDiscountedWithoutCouponIncTax?->value ?? 0;
+        });
     }
 }

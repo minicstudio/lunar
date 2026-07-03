@@ -292,16 +292,7 @@ class DiscountResource extends BaseResource
         foreach ($currencies as $currency) {
             $currencyInputs[] = Forms\Components\TextInput::make(
                 'data.fixed_values.'.$currency->code
-            )->label($currency->name)->afterStateHydrated(function (Forms\Components\TextInput $component, $state) use ($currencies) {
-                $currencyCode = last(explode('.', $component->getStatePath()));
-                $currency = $currencies->first(
-                    fn ($currency) => $currency->code == $currencyCode
-                );
-
-                if ($currency) {
-                    $component->state($state / $currency->factor);
-                }
-            });
+            )->label($currency->name);
         }
 
         return [
@@ -309,6 +300,9 @@ class DiscountResource extends BaseResource
                 ->live()
                 ->label(
                     __('lunarpanel::discount.form.fixed_value.label')
+                )
+                ->helperText(
+                    __('lunarpanel::discount.form.fixed_value.helper_text')
                 ),
             Forms\Components\TextInput::make('data.percentage')->visible(
                 fn (Forms\Get $get) => ! $get('data.fixed_value')
