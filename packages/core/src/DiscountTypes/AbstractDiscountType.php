@@ -81,7 +81,6 @@ abstract class AbstractDiscountType implements DiscountTypeInterface
 
         $lines = $this->getEligibleLines($cart);
 
-        // Use the subtotal after automatic (non-coupon) discounts, or the raw subtotal if none applied yet.
         $cartValue = $lines->sum(function ($line) {
             return $line->subTotalDiscounted?->value ?? $line->subTotal?->value;
         });

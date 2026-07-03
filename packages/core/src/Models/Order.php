@@ -229,7 +229,6 @@ class Order extends BaseModel implements Contracts\Order
 
         foreach ($couponBreakdowns as $breakdown) {
             if ($breakdown->discount->data->fixed_value ?? false) {
-                // Fixed-value discounts store the breakdown in the stored pricing basis.
                 $couponNet = 0;
                 $taxRate = 0.0;
 

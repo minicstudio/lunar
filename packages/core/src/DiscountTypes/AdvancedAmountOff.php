@@ -225,7 +225,6 @@ class AdvancedAmountOff extends AbstractDiscountType
         $currency = $cart->currency;
 
         $decimal = ($this->discount->data['fixed_values'][$currency->code] ?? 0) / $currency->factor;
-        // The configured fixed value is expressed in the stored pricing basis.
         $value = (int) bcmul($decimal, $currency->factor);
 
         $lines = $this->getEligibleLines($cart);
