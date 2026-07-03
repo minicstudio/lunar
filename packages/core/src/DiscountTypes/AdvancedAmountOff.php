@@ -145,8 +145,6 @@ class AdvancedAmountOff extends AbstractDiscountType
             return $cart;
         }
 
-        // DiscountManager::apply() calls this method directly for coupons, so the
-        // fixed-value dispatch must live here (not only in apply()).
         if ($data['fixed_value'] ?? false) {
             return $this->applyFixedValueForCart($cart);
         }
@@ -217,18 +215,10 @@ class AdvancedAmountOff extends AbstractDiscountType
     }
 
     /**
-     * Apply a fixed value discount to the cart.
-     *
-     * The configured amount is expressed in the stored pricing basis (net when
-     * config('lunar.pricing.stored_inclusive_of_tax') is false, gross when true), so it is
-     * distributed across the eligible lines proportionally to each line's stored subtotal
-     * with no tax conversion. Any rounding remainder is spread over the lines that still have
-     * a balance so the per-line amounts sum to exactly the configured value, and the breakdown
-     * total keeps that value so the order reports exactly the configured fixed value. The
-     * *IncTax display-mirror fields are still derived once via convertToIncTax for the
-     * frontend (a no-op when prices are already stored gross). Mirrors
-     * Lunar\DiscountTypes\AmountOff, but also maintains the *WithoutCoupon* tracking fields
-     * used by the frontend display.
+     * Apply a fixed value discount, splitting the configured amount across
+     * eligible lines in proportion to their subtotal (any rounding remainder
+     * is added back on top, see below). Mirrors Lunar\DiscountTypes\AmountOff,
+     * but also maintains the *WithoutCoupon fields used for cart/order display.
      */
     public function applyFixedValueForCart(CartContract $cart): CartContract
     {
@@ -314,8 +304,6 @@ class AdvancedAmountOff extends AbstractDiscountType
             });
         }
 
-        // Record the coupon amount removed from each line (discount total minus the
-        // pre-coupon/automatic portion) so order-level accessors can read it back.
         foreach ($lines as $line) {
             $lineCoupon = ($line->discountTotal?->value ?? 0) - ($line->discountTotalWithoutCoupon?->value ?? 0);
 

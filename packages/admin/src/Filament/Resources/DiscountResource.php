@@ -290,11 +290,6 @@ class DiscountResource extends BaseResource
         $currencyInputs = [];
 
         foreach ($currencies as $currency) {
-            // NB: the stored-value -> display-value conversion is handled once in
-            // EditDiscount::mutateFormDataBeforeFill(). It must NOT be done here via
-            // afterStateHydrated because this method builds a second, identical set of
-            // inputs for the AdvancedAmountOff section bound to the same state path,
-            // which would divide the value by the currency factor twice (e.g. 5000 -> 0.5).
             $currencyInputs[] = Forms\Components\TextInput::make(
                 'data.fixed_values.'.$currency->code
             )->label($currency->name);

@@ -68,11 +68,6 @@ class EditDiscount extends BaseEditRecord
             }
         }
 
-        // Convert the stored integer amounts back to their decimal display values.
-        // This is done here (once) rather than in the form component's
-        // afterStateHydrated because the fixed_values inputs are rendered twice
-        // (AmountOff + AdvancedAmountOff sections) on the same state path, which
-        // would otherwise divide by the currency factor twice.
         $currencies = Currency::enabled()->get();
 
         foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $value) {

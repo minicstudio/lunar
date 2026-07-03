@@ -81,10 +81,7 @@ abstract class AbstractDiscountType implements DiscountTypeInterface
 
         $lines = $this->getEligibleLines($cart);
 
-        // Measure the cart in the stored pricing basis (net when prices are stored
-        // exclusive of tax, gross when inclusive): the subtotal after automatic
-        // (non-coupon) discounts, falling back to the raw subtotal. The min_prices
-        // condition is configured in the same basis, so this compares like with like.
+        // Use the subtotal after automatic (non-coupon) discounts, or the raw subtotal if none applied yet.
         $cartValue = $lines->sum(function ($line) {
             return $line->subTotalDiscounted?->value ?? $line->subTotal?->value;
         });
