@@ -3,6 +3,9 @@
 return [
     'plural_label' => 'Kedvezmények',
     'label' => 'Kedvezmény',
+    'notifications' => [
+        'fixed_value_requires_coupon' => 'A fix összegű kedvezményhez kuponkód szükséges. Kérjük, mentés előtt adjon meg egy kupont.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Feltételek',
@@ -93,6 +96,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Fix összeg',
+            'helper_text' => 'A fix összegű változatot csak kuponkóddal együtt használja.',
         ],
         'percentage' => [
             'label' => 'Százalék',

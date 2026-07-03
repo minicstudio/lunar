@@ -119,6 +119,19 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
                     return new PriceDataType((int) (($this->total->value - $taxTotal) / $this->quantity), $this->order->currency, 1);
                 }
 
+                // Fixed-value coupons have no percentage to reverse, so instead add this
+                // line's recorded coupon amount back onto the net line total. Lines the
+                // coupon didn't touch (no matching breakdown line) get 0.
+                if ($breakdown->discount->data->fixed_value ?? false) {
+                    $breakdownLine = $breakdown->lines->first(fn ($lineData) => $lineData->line?->id === $this->id);
+
+                    $couponAmount = $breakdownLine ? ($breakdownLine->amount?->value ?? 0) : 0;
+
+                    $value = (($this->total->value - $taxTotal) + $couponAmount) / $this->quantity;
+
+                    return new PriceDataType((int) $value, $this->order->currency);
+                }
+
                 $percentage = $breakdown->discount->data->percentage;
 
                 // We need to calculate the original price without the percentage discount applied.
@@ -149,19 +162,31 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
     }
 
     /**
+     * Get the price (subtotal) excluding tax before coupon discount.
+     */
+    protected function priceWithoutCoupon(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $priceExcTax = $this->unit_price_without_coupon->value * $this->quantity;
+
+                return new PriceDataType((int) $priceExcTax, $this->order->currency);
+            },
+        );
+    }
+
+    /**
      * Get the unit price including tax before coupon discount.
      */
     protected function priceWithoutCouponIncTax(): Attribute
     {
         return Attribute::make(
             get: function () {
-                $priceExcTax = $this->unit_price_without_coupon->value * $this->quantity;
-
                 if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
-                    return new PriceDataType((int) ($priceExcTax), $this->order->currency);
+                    return $this->price_without_coupon;
                 }
 
-                $priceIncTax = $priceExcTax * (1 + $this->tax_rate);
+                $priceIncTax = $this->price_without_coupon->value * (1 + $this->tax_rate);
 
                 return new PriceDataType((int) $priceIncTax, $this->order->currency);
             },

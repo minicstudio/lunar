@@ -52,7 +52,7 @@ class ManageShippingRates extends ManageRelatedRecords
                     $pricesIncTax = config('lunar.pricing.stored_inclusive_of_tax', false);
 
                     if ($pricesIncTax) {
-                        return __('lunarpanel.shipping::relationmanagers.shipping_rates.notices.prices_inc_tax');
+                        return __('lunarpanel.shipping::relationmanagers.shipping_rates.notices.prices_incl_tax');
                     }
 
                     return __('lunarpanel.shipping::relationmanagers.shipping_rates.notices.prices_excl_tax');
