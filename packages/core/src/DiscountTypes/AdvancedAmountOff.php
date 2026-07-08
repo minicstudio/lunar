@@ -28,6 +28,10 @@ class AdvancedAmountOff extends AbstractDiscountType
             return $cart;
         }
 
+        if ($this->discount->data['fixed_value'] ?? false) {
+            return $this->applyFixedValueForCart($cart);
+        }
+
         return $this->applyCouponForCart($cart);
     }
 
@@ -95,7 +99,6 @@ class AdvancedAmountOff extends AbstractDiscountType
             $cart->currency,
             1
         );
-        $cartLine->discountTotalWithoutCouponIncTax = $this->convertToIncTax($cartLine, $cartLine->discountTotalWithoutCoupon);
 
         $cartLine->subTotalDiscounted = new Price(
             $subTotal - $amount,
@@ -103,11 +106,13 @@ class AdvancedAmountOff extends AbstractDiscountType
             1
         );
 
-        $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($cartLine, new Price($subTotal - $amount, $cart->currency, 1));
+        $cartLine->subTotalDiscountedWithoutCoupon = new Price($subTotal - $amount, $cart->currency, 1);
+        $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($cartLine, $cartLine->subTotalDiscountedWithoutCoupon);
 
         $affectedLines->push(new DiscountBreakdownLine(
             line: $cartLine,
-            quantity: $cartLine->quantity
+            quantity: $cartLine->quantity,
+            amount: new Price($amount, $cart->currency, 1),
         ));
 
         if (! $cart->discounts) {
@@ -140,6 +145,10 @@ class AdvancedAmountOff extends AbstractDiscountType
             return $cart;
         }
 
+        if ($data['fixed_value'] ?? false) {
+            return $this->applyFixedValueForCart($cart);
+        }
+
         $lines = $this->getEligibleLines($cart);
 
         $affectedLines = collect();
@@ -169,7 +178,6 @@ class AdvancedAmountOff extends AbstractDiscountType
                 $cart->currency,
                 1
             );
-            $line->discountTotalWithoutCouponIncTax = $this->convertToIncTax($line, $line->discountTotalWithoutCoupon);
 
             $line->subTotalDiscounted = new Price(
                 $subTotal - $amount,
@@ -177,17 +185,143 @@ class AdvancedAmountOff extends AbstractDiscountType
                 1
             );
 
-            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, new Price($subTotal, $cart->currency, 1));
+            $line->subTotalDiscountedWithoutCoupon = new Price($subTotal, $cart->currency, 1);
+            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, $line->subTotalDiscountedWithoutCoupon);
 
             $affectedLines->push(new DiscountBreakdownLine(
                 line: $line,
-                quantity: $line->quantity
+                quantity: $line->quantity,
+                amount: new Price($amount, $cart->currency, 1),
             ));
         }
 
         if (! $cart->discounts) {
             $cart->discounts = collect();
         }
+
+        if ($totalDiscount <= 0) {
+            return $cart;
+        }
+
+        $cart->discounts->push($this);
+
+        $this->addDiscountBreakdown($cart, new DiscountBreakdown(
+            price: new Price($totalDiscount, $cart->currency, 1),
+            lines: $affectedLines,
+            discount: $this->discount,
+        ));
+
+        return $cart;
+    }
+
+    /**
+     * Apply a fixed value discount, splitting the configured amount across
+     * eligible lines in proportion to their subtotal (any rounding remainder
+     * is added back on top, see below). Mirrors Lunar\DiscountTypes\AmountOff,
+     * but also maintains the *WithoutCoupon fields used for cart/order display.
+     */
+    public function applyFixedValueForCart(CartContract $cart): CartContract
+    {
+        $currency = $cart->currency;
+
+        $decimal = ($this->discount->data['fixed_values'][$currency->code] ?? 0) / $currency->factor;
+        $value = (int) bcmul($decimal, $currency->factor);
+
+        $lines = $this->getEligibleLines($cart);
+
+        $linesSubtotal = $lines->sum(function ($line) {
+            return ($line->subTotalDiscounted ?? $line->subTotal)->value;
+        });
+
+        if (! $value || $linesSubtotal < $value) {
+            return $cart;
+        }
+
+        $divisionalAmount = $value / $linesSubtotal;
+        $remaining = $value;
+
+        $affectedLines = collect();
+
+        foreach ($lines as $line) {
+            $source = $line->subTotalDiscounted ?? $line->subTotal;
+            $subTotal = $source->value;
+            $lineDiscount = $line->discountTotal?->value ?: 0;
+
+            $amount = (int) floor($subTotal * $divisionalAmount);
+
+            if ($amount > $subTotal) {
+                $amount = $subTotal;
+            }
+
+            $remaining -= $amount;
+
+            $line->discountTotal = new Price(
+                $lineDiscount + $amount,
+                $cart->currency,
+                1
+            );
+
+            $line->discountTotalWithoutCoupon = new Price(
+                $lineDiscount,
+                $cart->currency,
+                1
+            );
+
+            $line->subTotalDiscounted = new Price(
+                $subTotal - $amount,
+                $cart->currency,
+                1
+            );
+
+            $line->subTotalDiscountedWithoutCoupon = new Price($subTotal, $cart->currency, 1);
+            $line->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($line, $line->subTotalDiscountedWithoutCoupon);
+        }
+
+        // Spread any rounding remainder over the lines that still have a balance.
+        if ($remaining > 0) {
+            $lines->filter(function ($line) {
+                return $line->subTotalDiscounted->value > 0;
+            })->each(function ($line) use ($cart, &$remaining) {
+                if ($remaining <= 0) {
+                    return;
+                }
+
+                $take = min($line->subTotalDiscounted->value, $remaining);
+                $remaining -= $take;
+
+                $line->discountTotal = new Price(
+                    $line->discountTotal->value + $take,
+                    $cart->currency,
+                    1
+                );
+
+                $line->subTotalDiscounted = new Price(
+                    $line->subTotalDiscounted->value - $take,
+                    $cart->currency,
+                    1
+                );
+            });
+        }
+
+        foreach ($lines as $line) {
+            $lineCoupon = ($line->discountTotal?->value ?? 0) - ($line->discountTotalWithoutCoupon?->value ?? 0);
+
+            if ($lineCoupon <= 0) {
+                continue;
+            }
+
+            $affectedLines->push(new DiscountBreakdownLine(
+                line: $line,
+                quantity: $line->quantity,
+                amount: new Price($lineCoupon, $cart->currency, 1),
+            ));
+        }
+
+        if (! $cart->discounts) {
+            $cart->discounts = collect();
+        }
+
+        $totalDiscount = $value - $remaining;
 
         if ($totalDiscount <= 0) {
             return $cart;

@@ -3,6 +3,9 @@
 return [
     'plural_label' => 'Reduceri',
     'label' => 'Reducere',
+    'notifications' => [
+        'fixed_value_requires_coupon' => 'O reducere cu valoare fixă necesită un cod de cupon. Vă rugăm să setați un cupon înainte de salvare.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Condiții',
@@ -93,6 +96,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Valoare fixă',
+            'helper_text' => 'Utilizați versiunea cu valoare fixă doar împreună cu un cod de cupon.',
         ],
         'percentage' => [
             'label' => 'Procent',

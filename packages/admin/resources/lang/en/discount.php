@@ -3,6 +3,9 @@
 return [
     'plural_label' => 'Discounts',
     'label' => 'Discount',
+    'notifications' => [
+        'fixed_value_requires_coupon' => 'A fixed value discount requires a coupon code. Please set a coupon before saving.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Conditions',
@@ -93,6 +96,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Fixed value',
+            'helper_text' => 'Only use the fixed value version together with a coupon code.',
         ],
         'percentage' => [
             'label' => 'Percentage',
