@@ -39,6 +39,12 @@ return [
             'name' => [
                 'label' => 'Name',
             ],
+            'swatch' => [
+                'label' => 'Swatch',
+            ],
+            'multicolor' => [
+                'label' => 'Multicolor',
+            ],
         ],
         'table' => [
             'name' => [
@@ -46,6 +52,9 @@ return [
             ],
             'position' => [
                 'label' => 'Position',
+            ],
+            'swatch' => [
+                'label' => 'Swatch',
             ],
             'actions' => [
                 'create' => [

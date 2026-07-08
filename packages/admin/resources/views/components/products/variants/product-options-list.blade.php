@@ -1,4 +1,4 @@
-@props(['items', 'group', 'statePath', 'context' => 'options', 'optionKey' => null])
+@props(['items', 'group', 'statePath', 'context' => 'options', 'optionKey' => null, 'multicolorImageUrl' => '', 'optionValue' => 'is_color_option'])
 <div
   class="space-y-4"
   x-ref="sortableOptionList"
@@ -85,6 +85,8 @@
               state-path="configuredOptions.{{ $itemIndex }}.option_values"
               :can-add-values="!$item['readonly']"
               :readonly="$item['readonly']"
+              :option-value="$optionValue"
+              :multicolor-image-url="$multicolorImageUrl"
             />
           </div>
         </div>
