@@ -44,10 +44,9 @@
                   </x-filament-tables::cell>
                   <x-filament-tables::cell>
                     <div class="fi-ta-text grid w-full gap-y-1 px-3 py-4">
-                      @php $enabledValues = collect($option['option_values'])->filter(fn ($v) => $v['enabled']); @endphp
-                      @if($enabledValues->first()[$this->optionValue] ?? false)
+                      @if($this->showsColorSwatchesForOption($option))
                         <div class="flex flex-wrap gap-1.5 items-center">
-                          @foreach($enabledValues as $colorValue)
+                          @foreach($this->enabledOptionValues($option) as $colorValue)
                             @if($colorValue['multicolor'] ?? false)
                               <img
                                 src="{{ $this->multicolorImageUrl() }}"
@@ -66,7 +65,7 @@
                         </div>
                       @else
                         <span class="fi-ta-text-item-label text-sm leading-6 text-gray-950 dark:text-white">
-                          {{ $enabledValues->map(fn ($v) => $v['value'])->join(', ') }}
+                          {{ $this->enabledOptionValuesLabel($option) }}
                         </span>
                       @endif
                     </div>

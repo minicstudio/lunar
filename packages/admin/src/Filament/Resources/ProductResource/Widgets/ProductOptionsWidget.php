@@ -483,6 +483,44 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
     }
 
     /**
+     * Get the enabled option values for the option
+     *
+     * @param  array<string, mixed>  $option
+     * @return array<int, array<string, mixed>>
+     */
+    public function enabledOptionValues(array $option): array
+    {
+        return collect($option['option_values'] ?? [])
+            ->filter(fn (array $value): bool => (bool) ($value['enabled'] ?? false))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Check if the option shows color swatches
+     *
+     * @param  array<string, mixed>  $option
+     */
+    public function showsColorSwatchesForOption(array $option): bool
+    {
+        $enabledValues = $this->enabledOptionValues($option);
+
+        return (bool) ($enabledValues[0][$this->optionValue] ?? false);
+    }
+
+    /**
+     * Get the label for the enabled option values
+     *
+     * @param  array<string, mixed>  $option
+     */
+    public function enabledOptionValuesLabel(array $option): string
+    {
+        return collect($this->enabledOptionValues($option))
+            ->pluck('value')
+            ->join(', ');
+    }
+
+    /**
      * Check if the option is a color option
      *
      * @param string|null $handle
