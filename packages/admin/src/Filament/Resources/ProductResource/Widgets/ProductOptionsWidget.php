@@ -474,8 +474,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
 
     /**
      * Get the URL of the multicolor image
-     *
-     * @return string
      */
     public function multicolorImageUrl(): string
     {
@@ -522,8 +520,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
 
     /**
      * Check if the option is a color option
-     *
-     * @param string|null $handle
      */
     public function isColorOptionHandle(?string $handle): bool
     {
