@@ -1,4 +1,4 @@
-@props(['items', 'statePath', 'key', 'canAddValues', 'readonly' => false, 'optionValue' => 'is_color_option', 'multicolorImageUrl' => ''])
+@props(['items', 'statePath', 'key', 'canAddValues', 'readonly' => false])
 <div>
   <div
    class="space-y-2"
@@ -56,27 +56,13 @@
               'opacity-50' => !$valueItem['enabled']
             ])
           >
-            <div class="flex items-center gap-2">
-              @if(($valueItem[$optionValue] ?? false) && ($valueItem['multicolor'] ?? false))
-                <img
-                  src="{{ $multicolorImageUrl }}"
-                  title="{{ $valueItem['value'] }}"
-                  style="width: 24px; height: 24px; min-width: 24px; border-radius: 50%; object-fit: cover;"
-                />
-              @elseif(($valueItem[$optionValue] ?? false) && ($valueItem['color'] ?? null))
-                <div
-                  title="{{ $valueItem['value'] }}"
-                  style="background-color: {{ $valueItem['color'] }}; width: 24px; height: 24px; min-width: 24px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15);"
-                ></div>
-              @endif
-              <x-filament::input.wrapper class="grow" :valid="!$errors->has($statePath.'.'.$itemIndex.'.value')">
-                <x-filament::input
-                  type="text"
-                  wire:model="{{ $statePath }}.{{ $itemIndex }}.value"
-                  :disabled="$readonly"
-                />
-              </x-filament::input.wrapper>
-            </div>
+            <x-filament::input.wrapper :valid="!$errors->has($statePath.'.'.$itemIndex.'.value')">
+              <x-filament::input
+                type="text"
+                wire:model="{{ $statePath }}.{{ $itemIndex }}.value"
+                :disabled="$readonly"
+              />
+            </x-filament::input.wrapper>
           </div>
           <div>
             @if(!$readonly)

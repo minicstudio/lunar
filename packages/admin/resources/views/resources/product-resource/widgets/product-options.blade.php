@@ -44,30 +44,14 @@
                   </x-filament-tables::cell>
                   <x-filament-tables::cell>
                     <div class="fi-ta-text grid w-full gap-y-1 px-3 py-4">
-                      @if($this->showsColorSwatchesForOption($option))
-                        <div class="flex flex-wrap gap-1.5 items-center">
-                          @foreach($this->enabledOptionValues($option) as $colorValue)
-                            @if($colorValue['multicolor'] ?? false)
-                              <img
-                                src="{{ $this->multicolorImageUrl() }}"
-                                title="{{ $colorValue['value'] }}"
-                                style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;"
-                              />
-                            @elseif($colorValue['color'] ?? null)
-                              <div
-                                title="{{ $colorValue['value'] }}"
-                                style="background-color: {{ $colorValue['color'] }}; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15);"
-                              ></div>
-                            @else
-                              <span class="fi-ta-text-item-label text-sm leading-6 text-gray-950 dark:text-white">{{ $colorValue['value'] }}</span>
-                            @endif
-                          @endforeach
-                        </div>
-                      @else
-                        <span class="fi-ta-text-item-label text-sm leading-6 text-gray-950 dark:text-white">
-                          {{ $this->enabledOptionValuesLabel($option) }}
-                        </span>
-                      @endif
+                      <span class="fi-ta-text-item-label text-sm leading-6 text-gray-950 dark:text-white  ">
+                      {{ collect($option['option_values'])
+                        ->filter(
+                            fn ($value) => $value['enabled']
+                        )->map(
+                          fn ($value) => $value['value']
+                      )->join(', ') }}
+                      </span>
                     </div>
                   </x-filament-tables::cell>
                 </x-filament-tables::row>
@@ -227,8 +211,6 @@
             :items="$configuredOptions"
             group="product_options"
             state-path="configuredOptions"
-            :multicolor-image-url="$this->multicolorImageUrl()"
-            :option-value="$this->optionValue"
           />
         </div>
       @endif

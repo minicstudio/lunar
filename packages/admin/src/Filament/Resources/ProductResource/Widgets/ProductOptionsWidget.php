@@ -31,8 +31,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
     use InteractsWithActions;
     use InteractsWithForms;
 
-    public string $optionValue = 'is_color_option';
-
     protected static string $view = 'lunarpanel::resources.product-resource.widgets.product-options';
 
     public ?Model $record;
@@ -97,7 +95,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                 $this->configuredOptions[] = $this->mapOption(
                     $productOption,
                     $productOption->values->map(
-                        fn ($value) => $this->mapOptionValue($value, $data['preselect'] ?? false, $productOption->handle)
+                        fn ($value) => $this->mapOptionValue($value, $data['preselect'] ?? false)
                     )->toArray()
                 );
             })->after(
@@ -124,13 +122,13 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
         $options = [];
 
         foreach ($productOptions as $productOption) {
-            $values = $productOption->values->count() ? $productOption->values->map(function ($value) use ($productOption) {
-                return $this->mapOptionValue($value, true, $productOption->handle);
+            $values = $productOption->values->count() ? $productOption->values->map(function ($value) {
+                return $this->mapOptionValue($value, true);
             })->merge(
                 $disabledSharedOptionValues->filter(
                     fn ($value) => $value->product_option_id == $productOption->id
                 )->map(
-                    fn ($value) => $this->mapOptionValue($value, false, $productOption->handle)
+                    fn ($value) => $this->mapOptionValue($value, false)
                 )
             )->sortBy('position')->values()->toArray() : [];
 
@@ -162,7 +160,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
     {
         $this->configuredOptions[] = [
             'id' => null,
-            'handle' => null,
             'value' => '',
             'position' => count($this->configuredOptions) + 1,
             'readonly' => false,
@@ -172,9 +169,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                     'value' => '',
                     'position' => 1,
                     'enabled' => true,
-                    'color' => null,
-                    'multicolor' => false,
-                    $this->optionValue => false,
                 ],
             ],
         ];
@@ -228,9 +222,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             'position' => count($this->configuredOptions[$path]['option_values']) + 1,
             'readonly' => false,
             'enabled' => true,
-            'color' => null,
-            'multicolor' => false,
-            $this->optionValue => $this->isColorOptionHandle($option['handle'] ?? null),
         ];
     }
 
@@ -472,62 +463,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             );
     }
 
-    /**
-     * Get the URL of the multicolor image
-     */
-    public function multicolorImageUrl(): string
-    {
-        return asset('vendor/lunarpanel/multicolor.webp');
-    }
-
-    /**
-     * Get the enabled option values for the option
-     *
-     * @param  array<string, mixed>  $option
-     * @return array<int, array<string, mixed>>
-     */
-    public function enabledOptionValues(array $option): array
-    {
-        return collect($option['option_values'] ?? [])
-            ->filter(fn (array $value): bool => (bool) ($value['enabled'] ?? false))
-            ->values()
-            ->all();
-    }
-
-    /**
-     * Check if the option shows color swatches
-     *
-     * @param  array<string, mixed>  $option
-     */
-    public function showsColorSwatchesForOption(array $option): bool
-    {
-        $enabledValues = $this->enabledOptionValues($option);
-
-        return (bool) ($enabledValues[0][$this->optionValue] ?? false);
-    }
-
-    /**
-     * Get the label for the enabled option values
-     *
-     * @param  array<string, mixed>  $option
-     */
-    public function enabledOptionValuesLabel(array $option): string
-    {
-        return collect($this->enabledOptionValues($option))
-            ->pluck('value')
-            ->join(', ');
-    }
-
-    /**
-     * Check if the option is a color option
-     */
-    public function isColorOptionHandle(?string $handle): bool
-    {
-        return Str::of($handle ?? '')
-            ->lower()
-            ->is(['color', 'coloare', 'szín']);
-    }
-
     public function getVariantLink($variantId)
     {
         return ProductVariantResource::getUrl('edit', [
@@ -536,7 +471,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
         ]);
     }
 
-    protected function mapOptionValue(ProductOptionValueContract $value, bool $enabled = true, ?string $optionHandle = null): array
+    protected function mapOptionValue(ProductOptionValueContract $value, bool $enabled = true)
     {
         /** @var ProductOptionValue $value */
         return [
@@ -544,9 +479,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             'enabled' => $enabled,
             'value' => $value->translate('name'),
             'position' => $value->position,
-            'color' => data_get($value, 'meta.color'),
-            'multicolor' => (bool) data_get($value, 'meta.multicolor'),
-            $this->optionValue => $this->isColorOptionHandle($optionHandle),
         ];
     }
 
@@ -557,7 +489,6 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             'id' => $option->id,
             'key' => "option_{$option->id}",
             'value' => $option->translate('name'),
-            'handle' => $option->handle,
             'position' => $option->pivot?->position ?: count($this->configuredOptions) + 1,
             'readonly' => $option->shared,
             'option_values' => $values,
