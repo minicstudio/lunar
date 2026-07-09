@@ -33,6 +33,47 @@ return [
         ],
     ],
 
+    'values' => [
+        'title' => 'Valori',
+        'form' => [
+            'name' => [
+                'label' => 'Nume',
+            ],
+            'swatch' => [
+                'label' => 'Mostră',
+            ],
+            'multicolor' => [
+                'label' => 'Multicolor',
+            ],
+        ],
+        'table' => [
+            'name' => [
+                'label' => 'Nume',
+            ],
+            'position' => [
+                'label' => 'Poziție',
+            ],
+            'swatch' => [
+                'label' => 'Mostră',
+            ],
+            'actions' => [
+                'create' => [
+                    'label' => 'Valoare nouă opțiune produs',
+                    'heading' => 'Creare valoare opțiune produs',
+                ],
+                'edit' => [
+                    'heading' => 'Editare valoare opțiune produs',
+                ],
+                'delete' => [
+                    'heading' => 'Ștergere valoare opțiune produs',
+                    'bulk' => [
+                        'heading' => 'Ștergere valori selectate ale opțiunilor de produs',
+                    ],
+                ],
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [

@@ -39,6 +39,12 @@ return [
             'name' => [
                 'label' => 'Név',
             ],
+            'swatch' => [
+                'label' => 'Mintaszín',
+            ],
+            'multicolor' => [
+                'label' => 'Többszínű',
+            ],
         ],
         'table' => [
             'name' => [
@@ -46,6 +52,9 @@ return [
             ],
             'position' => [
                 'label' => 'Pozíció',
+            ],
+            'swatch' => [
+                'label' => 'Mintaszín',
             ],
             'actions' => [
                 'create' => [
