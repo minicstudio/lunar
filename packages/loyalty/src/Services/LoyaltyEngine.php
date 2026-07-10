@@ -243,6 +243,11 @@ final class LoyaltyEngine
 
     /**
      * Claw back earned points when a previously completed order is cancelled.
+     *
+     * We cap to `remaining_points` on the earn lot because the customer may have
+     * already spent some of those points on a different order. Reversing the full
+     * original earn amount would decrement the balance below what was actually
+     * removed from the lot, causing a permanent negative drift.
      */
     public function reverseEarnForCancelledOrder(Order $order): void
     {
@@ -256,11 +261,17 @@ final class LoyaltyEngine
             return;
         }
 
+        $pointsToReverse = min($earnTransaction->points, (int) ($earnTransaction->remaining_points ?? 0));
+
+        if ($pointsToReverse <= 0) {
+            return;
+        }
+
         $account = $this->accountManager->firstOrCreateForCustomer($order->customer);
 
         $this->ledger->adjust(
             $account,
-            -$earnTransaction->points,
+            -$pointsToReverse,
             LoyaltyEventKey::orderCancelEarn($order->id),
             [
                 'reference' => $order,

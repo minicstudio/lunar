@@ -29,8 +29,16 @@ class NotifyExpiringLoyaltyPointsCommand extends Command
         $mailableClass = config('lunar.loyalty.expiration.notification_mailable');
         $notified = 0;
 
-        foreach ($windows as $days => $token) {
-            $lots = $expirationService->findLotsExpiringWithinDays((int) $days);
+        // Sort windows ascending by days so we can derive a non-overlapping lower bound
+        // for each window: the 30-day window becomes (7, 30] and the 7-day window [0, 7].
+        // This prevents a lot expiring in 3 days from matching the 30-day window first.
+        $sortedDays = array_keys($windows);
+        sort($sortedDays);
+
+        foreach ($sortedDays as $index => $days) {
+            $token = $windows[$days];
+            $afterDays = $index > 0 ? $sortedDays[$index - 1] : 0;
+            $lots = $expirationService->findLotsExpiringWithinDays((int) $days, (int) $afterDays);
 
             foreach ($lots as $lot) {
                 $notifications = $lot->meta['notifications'] ?? [];
