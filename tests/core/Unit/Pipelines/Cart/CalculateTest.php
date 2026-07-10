@@ -128,6 +128,36 @@ test('handle calculates cart totals with coupon discount', function () {
         ->and($result->total->value)->toBe(1080);
 });
 
+test('coupon inc tax ignores post coupon discount inflation on line totals', function () {
+    [$cart, $currency] = createCalculateCartWithLine(1000, 1, 20);
+
+    $couponDiscount = Discount::factory()->create([
+        'coupon' => 'CARTCOUPON',
+    ]);
+
+    $line = $cart->lines->first();
+    $line->subTotal = new DataTypesPrice(1000, $currency, 1);
+    $line->subTotalDiscounted = new DataTypesPrice(800, $currency, 1);
+    $line->subTotalDiscountedWithoutCouponIncTax = new DataTypesPrice(1200, $currency, 1);
+    $line->discountTotal = new DataTypesPrice(200, $currency, 1);
+    $line->discountTotalWithoutCoupon = new DataTypesPrice(0, $currency, 1);
+    $line->discountTotalWithoutCouponIncTax = new DataTypesPrice(0, $currency, 1);
+
+    $cart->discountBreakdown = collect([
+        (object) [
+            'discount' => $couponDiscount,
+            'price' => new DataTypesPrice(100, $currency, 1),
+        ],
+    ]);
+    $cart->shippingTotal = new DataTypesPrice(0, $currency, 1);
+
+    $result = runCalculatePipeline($cart);
+
+    expect($result->couponTotal->value)->toBe(100)
+        ->and($result->couponTotalIncTax->value)->toBe(120)
+        ->and($result->total->value)->toBe(1080);
+});
+
 test('handle calculates cart totals with non coupon discount', function () {
     [$cart, $currency] = createCalculateCartWithLine(1000, 2, 20);
 

@@ -168,6 +168,12 @@ return [
         'discount_total' => [
             'label' => 'Discount Total',
         ],
+        'discount_breakdown' => [
+            'coupon' => 'Coupon',
+            'coupon_with_name' => 'Coupon (:name)',
+            'discount' => 'Discount',
+            'named' => 'Discount :name',
+        ],
         'total' => [
             'label' => 'Total',
         ],

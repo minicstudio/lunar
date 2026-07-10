@@ -1,0 +1,41 @@
+{
+    "name": "lunarphp/loyalty",
+    "description": "Loyalty Score Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "loyalty"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lunar",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Loyalty\\": "src",
+            "Lunar\\Loyalty\\Database\\Factories\\": "database/factories",
+            "Lunar\\Loyalty\\Database\\State\\": "database/state"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Loyalty"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Loyalty\\LoyaltyServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version"
+    }
+}

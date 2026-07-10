@@ -149,6 +149,11 @@ class Cart extends BaseModel implements Contracts\Cart
     public ?Price $discountTotalWithoutCouponIncTax = null;
 
     /**
+     * Loyalty redemption including tax, set during cart calculation.
+     */
+    public ?Price $loyaltyTotalIncTax = null;
+
+    /**
      * Cart total including tax (lines + shipping).
      */
     public ?Price $totalIncTax = null;

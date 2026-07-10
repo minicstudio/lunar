@@ -74,6 +74,9 @@
             "Lunar\\Database\\State\\": "packages/core/database/state",
             "Lunar\\ERP\\": "packages/ERP/src/",
             "Lunar\\Locations\\Database\\Seeders\\": "packages/locations/database/seeders",
+            "Lunar\\Loyalty\\": "packages/loyalty/src",
+            "Lunar\\Loyalty\\Database\\Factories\\": "packages/loyalty/database/factories",
+            "Lunar\\Loyalty\\Database\\State\\": "packages/loyalty/database/state",
             "Lunar\\Mailchimp\\": "packages/mailchimp/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
@@ -106,7 +109,8 @@
             "Lunar\\Tests\\ERP\\": "tests/ERP",
             "Lunar\\Tests\\Review\\": "tests/review",
             "Lunar\\Tests\\ShippingAddon\\": "tests/shipping-addon",
-            "Lunar\\Tests\\Mailchimp\\": "tests/mailchimp"
+            "Lunar\\Tests\\Mailchimp\\": "tests/mailchimp",
+            "Lunar\\Tests\\Loyalty\\": "tests/loyalty"
         }
     },
     "extra": {
@@ -116,6 +120,7 @@
                 "ERP",
                 "Mailchimp",
                 "Locations",
+                "Loyalty",
                 "Review",
                 "Table Rate Shipping",
                 "Shipping",
@@ -139,6 +144,7 @@
                 "Lunar\\Locations\\LocationsServiceProvider",
                 "Lunar\\ERP\\ErpServiceProvider",
                 "Lunar\\Review\\ReviewServiceProvider",
+                "Lunar\\Loyalty\\LoyaltyServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\Mailchimp\\MailchimpServiceProvider",
                 "Lunar\\LunarServiceProvider"
@@ -159,6 +165,7 @@
         "lunarphp/locations": "self.version",
         "lunarphp/stripe": "self.version",
         "lunarphp/table-rate-shipping": "self.version",
+        "lunarphp/loyalty": "self.version",
         "lunarphp/mailchimp": "self.version"
     },
     "scripts": {
