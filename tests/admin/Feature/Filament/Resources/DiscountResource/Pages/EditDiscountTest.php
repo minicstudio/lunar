@@ -62,6 +62,7 @@ it('requires a minimum cart amount for fixed value discounts', function () {
         'coupon' => 'FIXED10',
         'data.fixed_value' => true,
         'data.fixed_values.'.$currency->code => 10,
+        'data.min_prices.'.$currency->code => null,
     ])->call('save')
         ->assertNotified(__('lunarpanel::discount.notifications.fixed_value_requires_minimum_cart_amount'));
 
@@ -141,11 +142,14 @@ it('only shows one toast per problem category across multiple currencies', funct
         'data.fixed_value' => true,
         'data.fixed_values.'.$usd->code => 10,
         'data.fixed_values.'.$gbp->code => 10,
-    ])->call('save')
-        ->assertNotified(__('lunarpanel::discount.notifications.fixed_value_requires_minimum_cart_amount'));
+        'data.min_prices.'.$usd->code => null,
+        'data.min_prices.'.$gbp->code => null,
+    ])->call('save');
 
     $notificationsComponent = new \Filament\Notifications\Livewire\Notifications;
     $notificationsComponent->mount();
 
     expect($notificationsComponent->notifications)->toHaveCount(1);
+    expect($notificationsComponent->notifications->first()->getTitle())
+        ->toBe(__('lunarpanel::discount.notifications.fixed_value_requires_minimum_cart_amount'));
 });
