@@ -5,6 +5,8 @@ return [
     'label' => 'Discount',
     'notifications' => [
         'fixed_value_requires_coupon' => 'A fixed value discount requires a coupon code. Please set a coupon before saving.',
+        'fixed_value_requires_minimum_cart_amount' => 'A fixed value discount requires a minimum cart amount. Please set a minimum cart amount before saving.',
+        'minimum_cart_amount_below_fixed_value' => 'The minimum cart amount cannot be lower than the fixed value discount amount.',
     ],
     'form' => [
         'conditions' => [
