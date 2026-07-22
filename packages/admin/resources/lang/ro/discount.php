@@ -5,6 +5,8 @@ return [
     'label' => 'Reducere',
     'notifications' => [
         'fixed_value_requires_coupon' => 'O reducere cu valoare fixă necesită un cod de cupon. Vă rugăm să setați un cupon înainte de salvare.',
+        'fixed_value_requires_minimum_cart_amount' => 'O reducere cu valoare fixă necesită o valoare minimă a coșului. Vă rugăm să setați o valoare minimă a coșului înainte de salvare.',
+        'minimum_cart_amount_below_fixed_value' => 'Valoarea minimă a coșului nu poate fi mai mică decât valoarea fixă a reducerii.',
     ],
     'form' => [
         'conditions' => [

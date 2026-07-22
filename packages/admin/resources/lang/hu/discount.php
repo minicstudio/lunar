@@ -5,6 +5,8 @@ return [
     'label' => 'Kedvezmény',
     'notifications' => [
         'fixed_value_requires_coupon' => 'A fix összegű kedvezményhez kuponkód szükséges. Kérjük, mentés előtt adjon meg egy kupont.',
+        'fixed_value_requires_minimum_cart_amount' => 'A fix összegű kedvezményhez meg kell adni a minimum kosárértéket.',
+        'minimum_cart_amount_below_fixed_value' => 'A minimum kosárérték nem lehet kisebb, mint a fix összegű kedvezmény értéke.',
     ],
     'form' => [
         'conditions' => [
