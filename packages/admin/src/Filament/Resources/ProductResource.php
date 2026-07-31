@@ -323,7 +323,7 @@ class ProductResource extends BaseResource
                         return '-';
                     }
 
-                    $price = $variant->getCurrentPricesIncTax()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
+                    $price = $variant->getOriginalPricesIncTax()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
 
                     return $price ? $price->formatted() : '-';
                 })
@@ -337,7 +337,7 @@ class ProductResource extends BaseResource
                         return '-';
                     }
 
-                    $price = $variant->getCurrentPrices()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
+                    $price = $variant->getOriginalPrices()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
 
                     return $price ? $price->formatted() : '-';
                 })
@@ -446,7 +446,8 @@ class ProductResource extends BaseResource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ])
+            ->with(['variants.prices.currency']);
     }
 
     public static function getGlobalSearchEloquentQuery(): Builder
