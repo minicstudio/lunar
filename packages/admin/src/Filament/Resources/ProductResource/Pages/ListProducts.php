@@ -6,10 +6,14 @@ use Filament\Actions;
 use Filament\Forms\Components\Grid;
 use Filament\Resources\Components\Tab;
 use Filament\Support\Enums\MaxWidth;
+use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Pages\BaseListRecords;
+use Lunar\Base\DiscountManagerInterface;
 use Lunar\Facades\DB;
 use Lunar\Models\Attribute;
 use Lunar\Models\Currency;
@@ -19,6 +23,24 @@ use Lunar\Models\TaxClass;
 class ListProducts extends BaseListRecords
 {
     protected static string $resource = ProductResource::class;
+
+    /**
+     * Preload discounts for the purchasables on the current page before rendering the table.
+     */
+    public function getTableRecords(): Collection|Paginator|CursorPaginator
+    {
+        $records = parent::getTableRecords();
+
+        $products = $records instanceof Collection
+            ? $records
+            : collect($records->items());
+
+        app(DiscountManagerInterface::class)->preloadDiscountsForPurchasables(
+            $products->flatMap(fn (Model $product) => $product->variants)
+        );
+
+        return $records;
+    }
 
     protected function getDefaultHeaderActions(): array
     {
