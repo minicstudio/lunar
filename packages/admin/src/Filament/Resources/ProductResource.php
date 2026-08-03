@@ -323,7 +323,7 @@ class ProductResource extends BaseResource
                         return '-';
                     }
 
-                    $price = $variant->getOriginalPricesIncTax()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
+                    $price = $variant->getCurrentPricesIncTax()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
 
                     return $price ? $price->formatted() : '-';
                 })
@@ -337,7 +337,7 @@ class ProductResource extends BaseResource
                         return '-';
                     }
 
-                    $price = $variant->getOriginalPrices()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
+                    $price = $variant->getCurrentPrices()->firstWhere('currency.id', StorefrontSession::getCurrency()->id);
 
                     return $price ? $price->formatted() : '-';
                 })

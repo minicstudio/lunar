@@ -40,6 +40,14 @@ class DiscountManager implements DiscountManagerInterface
     protected ?Collection $discounts = null;
 
     /**
+     * Per-purchasable memoized result of getDiscountForPurchasable(), keyed by
+     * "<purchasable class>:<purchasable id>".
+     *
+     * @var array<string, ?Discount>
+     */
+    protected array $discountForPurchasableCache = [];
+
+    /**
      * The available discount types
      *
      * @var array
@@ -186,6 +194,74 @@ class DiscountManager implements DiscountManagerInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function preloadDiscountsForPurchasables(iterable $purchasables): Collection
+    {
+        $purchasables = collect($purchasables)->filter();
+
+        $productIds = $purchasables
+            ->filter(fn ($purchasable) => $purchasable instanceof Product)
+            ->pluck('id')
+            ->merge(
+                $purchasables
+                    ->filter(fn ($purchasable) => $purchasable instanceof ProductVariant)
+                    ->pluck('product_id')
+            )
+            ->filter()
+            ->unique()
+            ->values();
+
+        $variantIds = $purchasables
+            ->filter(fn ($purchasable) => $purchasable instanceof ProductVariant)
+            ->pluck('id')
+            ->unique()
+            ->values();
+
+        if ($this->channels->isEmpty() && $defaultChannel = Channel::getDefault()) {
+            $this->channel($defaultChannel);
+        }
+
+        if ($this->customerGroups->isEmpty() && $defaultGroup = CustomerGroup::getDefault()) {
+            $this->customerGroup($defaultGroup);
+        }
+
+        $this->discounts = Discount::active()
+            ->usable()
+            ->channel($this->channels)
+            ->customerGroup($this->customerGroups)
+            ->withCount(['discountables', 'collections'])
+            ->with([
+                'discountables' => function ($query) use ($productIds, $variantIds) {
+                    $query->where(
+                        fn ($query) => $query->whereIn('discountable_id', $productIds)
+                            ->where('discountable_type', Product::morphName())
+                    )->orWhere(
+                        fn ($query) => $query->whereIn('discountable_id', $variantIds)
+                            ->where('discountable_type', ProductVariant::morphName())
+                    );
+                },
+                'collections',
+            ])
+            ->orderBy('priority', 'desc')
+            ->orderBy('id')
+            ->get()
+            ->filter(function ($discount) {
+                // IMPORTANT: Skip discounts which has no data or data is empty
+                // can be a case after creation until the user updates the discount
+                if (! $discount->data || empty($discount->data)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+        $this->discountForPurchasableCache = [];
+
+        return $this->discounts;
+    }
+
+    /**
      * Return the applied customer groups.
      */
     public function getCustomerGroups(): Collection
@@ -294,7 +370,7 @@ class DiscountManager implements DiscountManagerInterface
                 $collectionDiscounts->push($discount);
             }
             // Priority 4: Any other applicable discounts which has no discountables or collections attached
-            elseif (! $discount->discountables->count() && ! $discount->collections->count()) {
+            elseif (! ($discount->discountables_count ?? $discount->discountables->count()) && ! ($discount->collections_count ?? $discount->collections->count())) {
                 $otherDiscounts->push($discount);
             }
         }
@@ -325,13 +401,23 @@ class DiscountManager implements DiscountManagerInterface
      */
     public function getDiscountForPurchasable(null|Product|ProductVariant $purchasable = null): ?Discount
     {
-        $discounts = $this->getDiscounts(null);
-
-        if ($discounts->isEmpty()) {
+        if (! $purchasable) {
             return null;
         }
 
-        return $this->filterDiscountsByPriority($discounts, $purchasable)->first();
+        $cacheKey = get_class($purchasable).':'.$purchasable->getKey();
+
+        if (array_key_exists($cacheKey, $this->discountForPurchasableCache)) {
+            return $this->discountForPurchasableCache[$cacheKey];
+        }
+
+        $discounts = $this->getDiscounts(null);
+
+        if ($discounts->isEmpty()) {
+            return $this->discountForPurchasableCache[$cacheKey] = null;
+        }
+
+        return $this->discountForPurchasableCache[$cacheKey] = $this->filterDiscountsByPriority($discounts, $purchasable)->first();
     }
 
     /**
