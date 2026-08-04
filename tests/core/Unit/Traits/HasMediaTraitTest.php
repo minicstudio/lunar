@@ -28,6 +28,12 @@ test('conversions are loaded', function () {
     expect($image->hasGeneratedConversion('medium'))->toBeTrue();
     expect($image->hasGeneratedConversion('large'))->toBeTrue();
     expect($image->hasGeneratedConversion('zoom'))->toBeTrue();
+
+    expect($image->getPath('small'))->toEndWith('.webp');
+    expect($image->getUrl('small'))->toContain('.webp');
+    expect($image->getUrl('medium'))->toContain('.webp');
+    expect($image->getUrl('large'))->toContain('.webp');
+    expect($image->getUrl('zoom'))->toContain('.webp');
 });
 
 test('custom conversions are loaded', function () {
