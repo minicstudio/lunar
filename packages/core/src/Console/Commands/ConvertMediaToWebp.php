@@ -35,9 +35,6 @@ class ConvertMediaToWebp extends Command
         Product::class,
         Brand::class,
         Collection::class,
-        ProductOption::class,
-        ProductOptionValue::class,
-        Asset::class,
     ];
 
     /**
