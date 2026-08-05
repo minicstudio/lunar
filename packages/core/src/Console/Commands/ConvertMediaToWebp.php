@@ -4,12 +4,9 @@ namespace Lunar\Console\Commands;
 
 use Illuminate\Console\Command;
 use Lunar\Jobs\Media\ConvertMediaToWebp as ConvertMediaToWebpJob;
-use Lunar\Models\Asset;
 use Lunar\Models\Brand;
 use Lunar\Models\Collection;
 use Lunar\Models\Product;
-use Lunar\Models\ProductOption;
-use Lunar\Models\ProductOptionValue;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class ConvertMediaToWebp extends Command
@@ -63,7 +60,10 @@ class ConvertMediaToWebp extends Command
 
             $query = Media::query()
                 ->where('model_type', $modelType)
-                ->whereRaw('LOWER(file_name) NOT LIKE ?', ['%.webp'])
+                ->where(function ($query): void {
+                    $query->where('mime_type', '!=', 'image/webp')
+                        ->orWhereNull('mime_type');
+                })
                 ->orderBy('id');
 
             if ($ids = $this->option('ids')) {

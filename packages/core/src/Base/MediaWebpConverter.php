@@ -62,7 +62,7 @@ class MediaWebpConverter
     {
         $extension = Str::lower(File::extension($media->file_name));
 
-        if ($extension === 'webp') {
+        if ($media->mime_type === 'image/webp' || $extension === 'webp') {
             return false;
         }
 

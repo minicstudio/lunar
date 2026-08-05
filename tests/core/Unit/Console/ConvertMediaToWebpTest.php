@@ -40,6 +40,26 @@ it('does not dispatch jobs for media already converted to webp', function () {
     $media = $product->addMedia(UploadedFile::fake()->image('avatar.webp'))
         ->toMediaCollection(config('lunar.media.collection'));
 
+    expect($media->mime_type)->toBe('image/webp');
+
+    $this->artisan(ConvertMediaToWebp::class, [
+        '--ids' => [$media->id],
+    ])->assertSuccessful();
+
+    Bus::assertNotDispatched(ConvertMediaToWebpJob::class);
+});
+
+it('does not dispatch jobs when mime_type is webp even if file_name is not', function () {
+    Bus::fake([ConvertMediaToWebpJob::class]);
+
+    $product = Product::factory()->create();
+    $media = $product->addMedia(UploadedFile::fake()->image('avatar.jpg'))
+        ->toMediaCollection(config('lunar.media.collection'));
+
+    $media->update([
+        'mime_type' => 'image/webp',
+    ]);
+
     $this->artisan(ConvertMediaToWebp::class, [
         '--ids' => [$media->id],
     ])->assertSuccessful();
