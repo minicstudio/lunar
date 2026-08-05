@@ -4,7 +4,6 @@ return [
     'plural_label' => 'Kedvezmények',
     'label' => 'Kedvezmény',
     'notifications' => [
-        'fixed_value_requires_coupon' => 'A fix összegű kedvezményhez kuponkód szükséges. Kérjük, mentés előtt adjon meg egy kupont.',
         'fixed_value_requires_minimum_cart_amount' => 'A fix összegű kedvezményhez meg kell adni a minimum kosárértéket.',
         'minimum_cart_amount_below_fixed_value' => 'A minimum kosárérték nem lehet kisebb, mint a fix összegű kedvezmény értéke.',
     ],
@@ -98,7 +97,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Fix összeg',
-            'helper_text' => 'A fix összegű változatot csak kuponkóddal együtt használja.',
+            'helper_text' => 'Kuponkóddal a kedvezmény kosár szinten van kezelve. Kuponkód nélkül minden érintett tételből automatikusan levonódik az összeg — de csak akkor, ha a levonás után is megmarad legalább a beállított minimum százalék az árból; egyébként a kedvezmény egyáltalán nem alkalmazódik.',
         ],
         'percentage' => [
             'label' => 'Százalék',

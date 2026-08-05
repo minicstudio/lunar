@@ -87,6 +87,16 @@ class Price
     }
 
     /**
+     * Format the value with the currency, omitting the decimals when they are exactly zero.
+     */
+    public function formattedWithoutZeroDecimals(?string $locale = null): string
+    {
+        $decimalPlaces = fmod($this->decimal(), 1) === 0.0 ? 0 : null;
+
+        return (string) $this->formatted($locale, decimalPlaces: $decimalPlaces);
+    }
+
+    /**
      * Format the unit value with the currency.
      *
      * @return string
