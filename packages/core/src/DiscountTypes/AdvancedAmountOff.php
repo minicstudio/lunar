@@ -39,10 +39,18 @@ class AdvancedAmountOff extends AbstractDiscountType
      * Static method to calculate discounted price.
      * This can be used dynamically by other classes.
      */
-    public static function calculateDiscountedPrice(Price $price, array $data): int
+    public static function calculateDiscountedPrice(Price $price, array $data, ?string $coupon = null): int
     {
         if ($data['fixed_value']) {
-            return (int) ($price->value - $data['fixed_values'][$price->currency->code]);
+            $fixedValue = (int) ($data['fixed_values'][$price->currency->code] ?? 0);
+
+            if (blank($coupon)) {
+                $remaining = static::eligibleFixedValueRemaining($price->value, $fixedValue);
+
+                return $remaining ?? $price->value;
+            }
+
+            return max(0, (int) ($price->value - $fixedValue));
         }
 
         return (int) ($price->value - round($price->value * $data['percentage'] / 100));
@@ -135,6 +143,129 @@ class AdvancedAmountOff extends AbstractDiscountType
     }
 
     /**
+     * Apply a fixed value discount directly to a single cart line (used when
+     * the discount has no coupon code). Deducts the configured amount per
+     * unit (fixed value * quantity), capped by a configurable percentage of
+     * the line's subtotal so it can never go negative.
+     */
+    public function applyFixedValueForLine(CartContract $cart, CartLineContract $cartLine): CartContract
+    {
+        if (! $this->checkDiscountConditions($cart)) {
+            return $cart;
+        }
+
+        $amount = $this->estimateFixedValueAmountForLine($cartLine);
+
+        if ($amount <= 0) {
+            return $cart;
+        }
+
+        $unitPrice = $cartLine->unitPrice->value;
+        $subTotal = $cartLine->subTotal->value;
+        $subTotalDiscounted = $cartLine->subTotalDiscounted?->value ?: 0;
+        $lineDiscount = $cartLine->discountTotal?->value ?: 0;
+
+        if ($subTotalDiscounted) {
+            $subTotal = $subTotalDiscounted;
+        }
+
+        $cartLine->unitPriceWithoutCoupon = new Price(
+            (int) round($unitPrice - ($amount / $cartLine->quantity)),
+            $cart->currency,
+            1
+        );
+        $cartLine->unitPriceWithoutCouponIncTax = $this->convertToIncTax($cartLine, $cartLine->unitPriceWithoutCoupon);
+
+        $cartLine->discountTotal = new Price(
+            $lineDiscount + $amount,
+            $cart->currency,
+            1
+        );
+
+        $cartLine->discountTotalWithoutCoupon = new Price(
+            $lineDiscount + $amount,
+            $cart->currency,
+            1
+        );
+
+        $cartLine->subTotalDiscounted = new Price(
+            $subTotal - $amount,
+            $cart->currency,
+            1
+        );
+
+        $cartLine->subTotalDiscountedWithoutCoupon = new Price($subTotal - $amount, $cart->currency, 1);
+        $cartLine->subTotalDiscountedWithoutCouponIncTax = $this->convertToIncTax($cartLine, $cartLine->subTotalDiscountedWithoutCoupon);
+
+        $affectedLines = collect([
+            new DiscountBreakdownLine(
+                line: $cartLine,
+                quantity: $cartLine->quantity,
+                amount: new Price($amount, $cart->currency, 1),
+            ),
+        ]);
+
+        if (! $cart->discounts) {
+            $cart->discounts = collect();
+        }
+
+        $cart->discounts->push($this);
+
+        $this->addDiscountBreakdown($cart, new DiscountBreakdown(
+            price: new Price($amount, $cart->currency, 1),
+            lines: $affectedLines,
+            discount: $this->discount,
+        ));
+
+        return $cart;
+    }
+
+    /**
+     * Estimate the fixed value discount amount for this line. Returns 0 if
+     * not eligible (never partially applied/capped).
+     */
+    public function estimateFixedValueAmountForLine(CartLineContract $cartLine): int
+    {
+        $currency = $cartLine->unitPrice->currency;
+
+        $fixedValuePerUnit = (int) ($this->discount->data['fixed_values'][$currency->code] ?? 0);
+
+        if (! $fixedValuePerUnit) {
+            return 0;
+        }
+
+        $subTotal = $cartLine->subTotalDiscounted?->value ?? $cartLine->subTotal->value;
+
+        $rawAmount = $fixedValuePerUnit * $cartLine->quantity;
+
+        $remaining = static::eligibleFixedValueRemaining($subTotal, $rawAmount);
+
+        return $remaining === null ? 0 : $rawAmount;
+    }
+
+    /**
+     * Returns the remaining amount if the deduction is eligible (within the
+     * base amount and the minimum remaining %), otherwise null.
+     */
+    protected static function eligibleFixedValueRemaining(int $baseAmount, int $fixedValue): ?int
+    {
+        $remaining = $baseAmount - $fixedValue;
+
+        if ($remaining < 0) {
+            return null;
+        }
+
+        $minRemainingPercentage = config('lunar.discounts.fixed_value_minimum_remaining_percentage', 10);
+        $minRemaining = (int) round($baseAmount * $minRemainingPercentage / 100);
+
+        if ($remaining < $minRemaining) {
+            return null;
+        }
+
+        return $remaining;
+    }
+
+    /**
      * Apply the percentage to the cart line. Code was taken from the lunar core package.
      */
     public function applyCouponForCart(CartContract $cart): CartContract
@@ -224,8 +355,7 @@ class AdvancedAmountOff extends AbstractDiscountType
     {
         $currency = $cart->currency;
 
-        $decimal = ($this->discount->data['fixed_values'][$currency->code] ?? 0) / $currency->factor;
-        $value = (int) bcmul($decimal, $currency->factor);
+        $value = (int) ($this->discount->data['fixed_values'][$currency->code] ?? 0);
 
         $lines = $this->getEligibleLines($cart);
 

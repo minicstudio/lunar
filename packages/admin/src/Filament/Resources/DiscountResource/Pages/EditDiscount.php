@@ -87,52 +87,47 @@ class EditDiscount extends BaseEditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         if ($data['data']['fixed_value'] ?? false) {
-            if (blank($data['coupon'] ?? null)) {
-                Notification::make()
-                    ->danger()
-                    ->title(__('lunarpanel::discount.notifications.fixed_value_requires_coupon'))
-                    ->send();
+            $hasCoupon = filled($data['coupon'] ?? null);
 
-                $this->halt();
-            }
+            if ($hasCoupon) {
+                $missingMinimumCartAmount = false;
+                $minimumCartAmountBelowFixedValue = false;
 
-            $missingMinimumCartAmount = false;
-            $minimumCartAmountBelowFixedValue = false;
+                foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $fixedValue) {
+                    if (blank($fixedValue)) {
+                        continue;
+                    }
 
-            foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $fixedValue) {
-                if (blank($fixedValue)) {
-                    continue;
+                    $minPrice = $data['data']['min_prices'][$currencyCode] ?? null;
+
+                    if (blank($minPrice)) {
+                        $missingMinimumCartAmount = true;
+
+                        continue;
+                    }
+
+                    if ((float) $minPrice < (float) $fixedValue) {
+                        $minimumCartAmountBelowFixedValue = true;
+                    }
                 }
 
-                $minPrice = $data['data']['min_prices'][$currencyCode] ?? null;
-
-                if (blank($minPrice)) {
-                    $missingMinimumCartAmount = true;
-
-                    continue;
+                if ($missingMinimumCartAmount) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('lunarpanel::discount.notifications.fixed_value_requires_minimum_cart_amount'))
+                        ->send();
                 }
 
-                if ((float) $minPrice < (float) $fixedValue) {
-                    $minimumCartAmountBelowFixedValue = true;
+                if ($minimumCartAmountBelowFixedValue) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('lunarpanel::discount.notifications.minimum_cart_amount_below_fixed_value'))
+                        ->send();
                 }
-            }
 
-            if ($missingMinimumCartAmount) {
-                Notification::make()
-                    ->danger()
-                    ->title(__('lunarpanel::discount.notifications.fixed_value_requires_minimum_cart_amount'))
-                    ->send();
-            }
-
-            if ($minimumCartAmountBelowFixedValue) {
-                Notification::make()
-                    ->danger()
-                    ->title(__('lunarpanel::discount.notifications.minimum_cart_amount_below_fixed_value'))
-                    ->send();
-            }
-
-            if ($missingMinimumCartAmount || $minimumCartAmountBelowFixedValue) {
-                $this->halt();
+                if ($missingMinimumCartAmount || $minimumCartAmountBelowFixedValue) {
+                    $this->halt();
+                }
             }
         }
 

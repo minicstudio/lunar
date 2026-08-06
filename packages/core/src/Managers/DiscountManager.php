@@ -8,9 +8,11 @@ use Lunar\Base\DataTransferObjects\CartDiscount;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\Validation\CouponValidator;
 use Lunar\DiscountTypes\AdvancedAmountOff;
+use Lunar\Facades\StorefrontSession;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Contracts\Cart as CartContract;
+use Lunar\Models\Contracts\CartLine as CartLineContract;
 use Lunar\Models\Contracts\Channel as ChannelContract;
 use Lunar\Models\Contracts\CustomerGroup as CustomerGroupContract;
 use Lunar\Models\CustomerGroup;
@@ -304,13 +306,17 @@ class DiscountManager implements DiscountManagerInterface
         // Apply automatically applied discounts
         foreach ($cart->lines as $line) {
             // Get the best discount for the line and push it, if it isn't already in the collection
-            $discount = $this->filterDiscountsByPriority($this->discounts, $line->purchasable)->first();
+            $discount = $this->filterDiscountsByPriority($this->discounts, $line->purchasable, $line)->first();
 
             if (! $discount) {
                 continue;
             }
 
-            $discount->getType()->applyPercentageForLine($cart, $line);
+            if ($discount->data['fixed_value'] ?? false) {
+                $discount->getType()->applyFixedValueForLine($cart, $line);
+            } else {
+                $discount->getType()->applyPercentageForLine($cart, $line);
+            }
         }
 
         // Apply manually applied coupon discount
@@ -343,7 +349,7 @@ class DiscountManager implements DiscountManagerInterface
      * Filter discounts based on priority: variant, product, collection, anything left, exclude coupons
      * Returns the discount with the highest value within each priority level
      */
-    public function filterDiscountsByPriority($availableDiscounts, null|Product|ProductVariant $purchasable = null): Collection
+    public function filterDiscountsByPriority($availableDiscounts, null|Product|ProductVariant $purchasable = null, ?CartLineContract $cartLine = null): Collection
     {
         $productVariantDiscounts = collect();
         $productDiscounts = collect();
@@ -377,19 +383,19 @@ class DiscountManager implements DiscountManagerInterface
 
         // Return the highest value discount from the highest priority category
         if ($productVariantDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($productVariantDiscounts)]);
+            return collect([$this->getHighestValueDiscount($productVariantDiscounts, $cartLine, $purchasable)]);
         }
 
         if ($productDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($productDiscounts)]);
+            return collect([$this->getHighestValueDiscount($productDiscounts, $cartLine, $purchasable)]);
         }
 
         if ($collectionDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($collectionDiscounts)]);
+            return collect([$this->getHighestValueDiscount($collectionDiscounts, $cartLine, $purchasable)]);
         }
 
         if ($otherDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($otherDiscounts)]);
+            return collect([$this->getHighestValueDiscount($otherDiscounts, $cartLine, $purchasable)]);
         }
 
         // No discounts found
@@ -421,9 +427,11 @@ class DiscountManager implements DiscountManagerInterface
     }
 
     /**
-     * Get the discount with the highest value from a collection
+     * Return the discount with the highest estimated monetary value from a
+     * collection. Estimates against the cart line if provided, otherwise
+     * against the purchasable's original price.
      */
-    protected function getHighestValueDiscount($discounts)
+    protected function getHighestValueDiscount($discounts, ?CartLineContract $cartLine = null, null|Product|ProductVariant $purchasable = null)
     {
         $bestDiscount = null;
         $highestDiscountValue = 0;
@@ -431,13 +439,68 @@ class DiscountManager implements DiscountManagerInterface
         foreach ($discounts as $discount) {
             $data = $discount->data;
 
-            if ($data['percentage'] && $data['percentage'] > $highestDiscountValue) {
-                $highestDiscountValue = $data['percentage'];
+            $value = $cartLine
+                ? $this->estimateDiscountAmountPerUnitForLine($discount, $data, $cartLine)
+                : $this->estimateDiscountValueForPurchasable($discount, $data, $purchasable);
+
+            if ($value > $highestDiscountValue) {
+                $highestDiscountValue = $value;
                 $bestDiscount = $discount;
             }
         }
 
         return $bestDiscount;
+    }
+
+    /**
+     * Estimate the per-unit monetary amount a discount would deduct from a
+     * given cart line, regardless of whether it's a percentage or fixed-value
+     * discount.
+     */
+    protected function estimateDiscountAmountPerUnitForLine($discount, array $data, CartLineContract $cartLine): float
+    {
+        $quantity = max(1, $cartLine->quantity);
+
+        if ($data['fixed_value'] ?? false) {
+            return (float) $discount->getType()->estimateFixedValueAmountForLine($cartLine) / $quantity;
+        }
+
+        $subTotal = $cartLine->subTotalDiscounted?->value ?? $cartLine->subTotal->value;
+
+        return ($subTotal * (($data['percentage'] ?? 0) / 100)) / $quantity;
+    }
+
+    /**
+     * Estimate the monetary amount a discount would deduct from a purchasable's
+     * original price, for the purposes of ranking mixed-type candidates when no
+     * specific cart line is available (e.g. catalog/product listing context).
+     */
+    protected function estimateDiscountValueForPurchasable($discount, array $data, null|Product|ProductVariant $purchasable = null): float
+    {
+        if (! $purchasable) {
+            return 0.0;
+        }
+
+        $originalPrices = prices_inc_tax()
+            ? $purchasable->getOriginalPricesIncTax()
+            : $purchasable->getOriginalPrices();
+
+        $price = $originalPrices->firstWhere('currency.id', StorefrontSession::getCurrency()?->id)
+            ?? $originalPrices->first();
+
+        if (! $price) {
+            return 0.0;
+        }
+
+        if (! is_string($discount->type) || ! class_exists($discount->type) || ! method_exists($discount->type, 'calculateDiscountedPrice')) {
+            return 0.0;
+        }
+
+        $discountType = $discount->type;
+
+        $discountedPrice = $discountType::calculateDiscountedPrice($price, $data, $discount->coupon ?? null);
+
+        return (float) max(0, $price->value - $discountedPrice);
     }
 
     /**

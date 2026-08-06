@@ -1,6 +1,6 @@
 # Pricing and Discounts — Software Design Document (Engine)
 
-Last verified: 2026-06-03 against `lunarphp/lunar-minic` at repository HEAD.
+Last verified: 2026-07-31 against `lunarphp/lunar-minic` at repository HEAD.
 
 ## Purpose and scope
 
@@ -67,7 +67,9 @@ Tax **amounts** on carts are computed later in `CalculateTax` via `TaxManager` /
 
 ### Catalog display pricing
 
-`HasDiscount` on purchasables exposes `getOriginalPrices()`, `getDiscountedPrices()`, and inc-tax variants for **storefront/catalog display**, using the same `DiscountManager::getDiscountForPurchasable()` priority rules and `AdvancedAmountOff::calculateDiscountedPrice()` for preview amounts. This path is separate from cart recalculation but shares discount selection logic.
+`HasDiscount` on purchasables exposes `getOriginalPrices()`, `getDiscountedPrices()`, `getDiscountAmounts()`, and inc-tax variants of each for **storefront/catalog display**, using the same `DiscountManager::getDiscountForPurchasable()` priority rules and `AdvancedAmountOff::calculateDiscountedPrice()` for preview amounts. This path is separate from cart recalculation but shares discount selection logic.
+
+`getDiscountLabels()` builds the badge text. A percentage discount is labelled `"10%"`. A fixed-value discount is labelled from the **computed inc-tax saving** (`getDiscountAmountsIncTax()`), *not* from the raw `data.fixed_values` entry, because that raw value follows the storage basis (`lunar.pricing.stored_inclusive_of_tax`) while storefronts display inc-tax prices — a £100 off a net-stored price is a £121 saving to the shopper at 21% tax. Deriving the label from the computed amount also means no label is emitted when the discount was not actually granted (e.g. rejected by `fixed_value_minimum_remaining_percentage`). Labels use `Price::formattedWithoutZeroDecimals()`, which omits the decimals when they are exactly zero (`-£121`, but `-£121.50` kept); the global `DefaultPriceFormatter` output is unchanged.
 
 ---
 
@@ -108,6 +110,8 @@ Responsibilities:
 
 Configurable: `lunar.discounts.coupon_validator` (default `CouponValidator`). The storefront package may add validation rules (e.g. `CouponIsCorrect`, `MaxUsesPerUser` in `lunar-frontend`) before `cart.coupon_code` is set; core `CouponValidator` still governs `Discounts::validateCoupon()`.
 
+Also configurable: `lunar.discounts.fixed_value_minimum_remaining_percentage` (default `10`) — the minimum percentage of a cart line's subtotal that must remain after a **coupon-less** fixed-value discount is deducted; if it would leave less (or exceed the subtotal entirely), the discount is not applied at all — never partially applied/capped (see "Automatic line reward" below).
+
 ### Conditions and rewards (`AdvancedAmountOff` + `AbstractDiscountType`)
 
 **Conditions** (`checkDiscountConditions`):
@@ -120,11 +124,15 @@ Configurable: `lunar.discounts.coupon_validator` (default `CouponValidator`). Th
 | Max uses | Global `uses < max_uses` when `max_uses` set |
 | Max uses per user | Requires cart user; compares pivot use count |
 
-**Automatic line reward:** percentage of line subtotal only (`applyPercentageForLine`); uses `subTotalDiscounted` as base if already reduced. Admin (`DiscountResource`) can configure `data.fixed_value`, but cart application and `getHighestValueDiscount` do not use fixed amounts for automatic selection.
+**Automatic line reward:** two shapes, selected by `data.fixed_value`:
+- **Percentage** (`applyPercentageForLine`): percentage of the line subtotal; uses `subTotalDiscounted` as base if already reduced.
+- **Fixed value, no coupon** (`applyFixedValueForLine`): deducts the configured amount **per unit** (`fixed_values[currency] * quantity`) directly from that line, independently of other lines — this does **not** distribute/share the amount across the cart the way the coupon path does. The discount is only eligible when what remains after deduction is at least `lunar.discounts.fixed_value_minimum_remaining_percentage` (default 10%) of the line's own subtotal (and never when the deduction would exceed the subtotal outright); otherwise it is **not applied at all** — it is never partially applied/capped (e.g. a 3.00 line against a 10.00 fixed discount at a 10% minimum-remaining setting is rejected outright, not reduced to a 2.70 deduction). Limitations/exclusions (product, variant, collection) apply exactly as they do for percentage discounts, via the same `filterDiscountsByPriority` tier selection — no separate filtering logic.
+
+`getHighestValueDiscount` ranks candidates within a priority tier by the **actual monetary amount** each would deduct from the specific line in question (percentage-of-subtotal, or the fixed-value amount via `estimateFixedValueAmountForLine`, which is `0` when the discount is rejected), so mixed batches of percentage and fixed-value automatic discounts are compared fairly, and a rejected fixed-value discount naturally loses to any other applicable discount in its tier (or to none, if it was the only candidate). When no cart line is available (catalog preview via `getDiscountForPurchasable()`), `estimateDiscountValueForPurchasable` ranks by the same real monetary amount via `calculateDiscountedPrice()`, so fixed-value and percentage discounts are compared fairly there too.
 
 **Coupon reward:** percentage applied only to **eligible lines** from `getEligibleLines()` (collection/brand/product limitation and exclusion filters). Coupon portion is separated in totals via `discountTotal` vs `discountTotalWithoutCoupon`.
 
-**Static helper:** `calculateDiscountedPrice()` supports percentage or fixed amount per currency — used for **catalog preview** (`HasDiscount`), not for cart line application.
+**Static helper:** `calculateDiscountedPrice()` supports percentage or fixed amount per currency — used for **catalog preview** (`HasDiscount`), not for cart line application. It now also accepts the discount's `coupon` value; when a fixed-value discount has no coupon, the same minimum-remaining-percentage eligibility check used in cart application is applied here too, returning the **unchanged original price** (i.e. no discount) when the discount is rejected, so the previewed "was/now" price and discount badge never imply a discount that wasn't actually granted. Coupon-bound fixed-value discounts keep the uncapped preview (an approximation, since their real per-line result depends on the whole cart via proportional distribution).
 
 **Usage recording:** `markAsUsed()` increments `uses` and attaches the user pivot. Cart `apply()` does not call it. The host marks discounts used after payment (e.g. `MarkDiscountsAsUsed` in `lunar-frontend`); not invoked by core `CreateOrder` or cart pipelines.
 
@@ -184,12 +192,15 @@ flowchart TD
   Load --> Filter[Drop discounts with empty data]
   Filter --> Auto[For each cart line]
   Auto --> Priority[filterDiscountsByPriority - skip coupon discounts]
-  Priority --> One[Pick highest percentage in winning tier]
-  One --> LineApply[applyPercentageForLine]
+  Priority --> One[Pick highest actual line amount in winning tier]
+  One --> Fixed{data.fixed_value?}
+  Fixed -->|yes| FixedLineApply[applyFixedValueForLine - per unit, reject if below min %]
+  Fixed -->|no| LineApply[applyPercentageForLine]
   Filter --> Coupon{cart.coupon_code set?}
   Coupon -->|yes| Match[Find discount with matching coupon]
   Match --> CartApply[applyCouponForCart on eligible lines]
   LineApply --> Next[Continue pipeline]
+  FixedLineApply --> Next
   CartApply --> Next
 ```
 
@@ -215,7 +226,7 @@ flowchart TD
 
 | Layer | Rule |
 | --- | --- |
-| **Per line (automatic)** | At most **one** non-coupon discount: highest **priority tier**, then highest **`percentage`** within tier |
+| **Per line (automatic)** | At most **one** non-coupon discount: highest **priority tier**, then highest **actual monetary amount for that line** within tier (percentage-of-subtotal or fixed-value, `0` if the fixed-value discount is rejected by the minimum-remaining-percentage check) |
 | **Priority tiers** | 1) variant discountable → 2) product → 3) collection → 4) “global” (no discountables/collections) |
 | **Coupons** | Separate pass; can stack on top of line automatic discounts; only lines passing `getEligibleLines()` |
 | **Coupon codes** | Only one `cart.coupon_code`; first matching discount in loaded set wins |
@@ -237,7 +248,8 @@ Rules verified in code that change runtime behavior:
 6. **Tax** is calculated on post-discount line subtotals (`subTotalDiscounted`) where present.
 7. **Cart `total`** uses inc-tax subtotal excluding coupon, plus shipping, minus coupon inc-tax component (fork formula in `Calculate`).
 8. **Table-rate `ShipBy`** thresholds use `subTotalDiscountedWithoutCouponIncTax` per line (fallback `subTotal`). Tier **qualification** runs inside `ShippingManifest::getOptions()` (shipping-modifier pipeline), which is separate from cart `recalculate()`. Within one `recalculate()`, `ApplyShipping` runs before `ApplyDiscounts`; that stage applies an already-selected option—it does not re-run tier resolution. Host UIs should call `getOptions()` after `recalculate()` so automatic discounts are reflected in quoted rates.
-9. **Automatic discount winner** uses **percentage only** in `getHighestValueDiscount`. Admin may set `fixed_value`, but cart automatic/coupon application paths use percentage only; fixed amounts affect catalog preview via `calculateDiscountedPrice()`.
+9. **Automatic discount winner** compares candidates by the actual monetary amount they'd deduct (`getHighestValueDiscount`), covering both percentage and coupon-less fixed-value discounts — with a line context (cart application) or against the purchasable's original price (catalog preview via `getDiscountForPurchasable()`); a discount that estimates to `0` (e.g. a rejected fixed-value discount) never wins.
+9a. **Coupon-less fixed-value discounts** are applied per line via `applyFixedValueForLine`: the configured amount is deducted **per unit** (`fixed_values[currency] * quantity`) directly from that line — not distributed across the cart. The discount only applies when at least `lunar.discounts.fixed_value_minimum_remaining_percentage` (default 10%) of the line's subtotal remains afterwards (and never when the deduction would exceed the subtotal); otherwise it is skipped entirely — never partially applied. A `0%` setting allows the full price to be deducted, making the line free. Fixed-value discounts **with** a coupon are unaffected: `applyFixedValueForCart` still distributes the amount proportionally across all eligible lines, exactly as before.
 10. **Discounts without `data`** never apply (filtered at load).
 11. **Coupon validation** — core `CouponValidator` checks active discounts (including disabled types `AmountOff` / `BuyXGetY` in its query). Per-user limits are enforced in `checkDiscountConditions` at apply time; hosts may add pre-apply validation before setting `cart.coupon_code`.
 12. **Product channel visibility** is independent of price rows — unavailable products should be excluded before pricing via `Product::scopeAvailable()`, not `PricingManager`.
