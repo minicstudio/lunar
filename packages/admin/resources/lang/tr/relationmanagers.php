@@ -109,11 +109,11 @@ return [
             'view' => [
                 'label' => 'Görüntüle',
             ],
-            'confirm_non_webp' => [
-                'heading' => '💡 İpucu: WebP formatında görseller kullanın!',
-                'description' => 'Seçilen görsel WebP formatında değil. WebP, JPEG ve PNG\'ye kıyasla kalite kaybı olmadan daha küçük dosyalar sağlar, bu da daha hızlı yükleme ve daha iyi SEO anlamına gelir. Görsellerinizi dönüştürmenizi öneririz!',
-                'confirm' => 'Yüklemeye devam et',
-                'cancel' => 'İptal',
+        ],
+        'notifications' => [
+            'webp_conversion' => [
+                'title' => 'Görsel WebP’ye dönüştürüldü',
+                'body' => 'Yüklenen görsel, daha iyi performans ve SEO için WebP’ye dönüştürüldü.',
             ],
         ],
         'form' => [
