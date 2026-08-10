@@ -3,6 +3,7 @@
 namespace Lunar\Mailchimp\Services;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Lunar\Exceptions\SilentException;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Requests\CreateCartRequest;
@@ -321,7 +322,7 @@ class MailchimpEcommerceService
             'order_total' => $cartTotal,
             'tax_total' => $taxTotal,
             'lines' => $lines,
-            'checkout_url' => route('lfp.checkout.details'),
+            'checkout_url' => $this->resolveCheckoutUrl(),
         ];
 
         $storeId = $this->mailchimp->getStoreId();
@@ -354,6 +355,24 @@ class MailchimpEcommerceService
         }
 
         return $response->json();
+    }
+
+    /**
+     * Resolve the storefront checkout URL for abandoned cart emails.
+     *
+     * The named checkout route is registered by the host storefront (lunar-frontend),
+     * not this package. It may be locale-prefixed (`lfp.{locale}.checkout.details`)
+     * for localized stores, or unprefixed (`lfp.checkout.details`) otherwise.
+     */
+    private function resolveCheckoutUrl(): string
+    {
+        $localizedRouteName = 'lfp.'.app()->getLocale().'.checkout.details';
+
+        if (Route::has($localizedRouteName)) {
+            return route($localizedRouteName);
+        }
+
+        return route('lfp.checkout.details');
     }
 
     /**
