@@ -4,15 +4,16 @@ namespace Lunar\Admin\Support\RelationManagers;
 
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Livewire\Features\SupportFileUploads\FileUploadConfiguration;
 use Lunar\Admin\Events\ModelMediaUpdated;
 use Lunar\Admin\Rules\SecureMediaUploadRule;
+use Lunar\Base\MediaWebpConverter;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MediaRelationManager extends BaseRelationManager
@@ -23,53 +24,9 @@ class MediaRelationManager extends BaseRelationManager
 
     public string $mediaCollection = 'default';
 
-    public ?string $pendingMediaFilename = null;
-
-    public ?string $pendingMediaName = null;
-
-    public ?string $pendingMediaCustomName = null;
-
-    public ?bool $pendingMediaPrimary = null;
-
     public function isReadOnly(): bool
     {
         return false;
-    }
-
-    public function confirmNonWebpUpload(): void
-    {
-        $this->getOwnerRecord()
-            ->addMediaFromDisk(
-                FileUploadConfiguration::path($this->pendingMediaFilename, false),
-                FileUploadConfiguration::disk()
-            )
-            ->usingFileName($this->pendingMediaName)
-            ->withCustomProperties([
-                'name' => $this->pendingMediaCustomName,
-                'primary' => $this->pendingMediaPrimary,
-            ])
-            ->preservingOriginal()
-            ->toMediaCollection($this->mediaCollection);
-
-        $this->pendingMediaFilename = null;
-        $this->pendingMediaName = null;
-        $this->pendingMediaCustomName = null;
-        $this->pendingMediaPrimary = null;
-
-        ModelMediaUpdated::dispatch($this->getOwnerRecord());
-
-        $this->dispatch('close-modal', id: 'media-non-webp-warning');
-        $this->unmountTableAction();
-    }
-
-    public function cancelNonWebpUpload(): void
-    {
-        $this->pendingMediaFilename = null;
-        $this->pendingMediaName = null;
-        $this->pendingMediaCustomName = null;
-        $this->pendingMediaPrimary = null;
-
-        $this->dispatch('close-modal', id: 'media-non-webp-warning');
     }
 
     public function getDefaultForm(Form $form): Form
@@ -137,30 +94,30 @@ class MediaRelationManager extends BaseRelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->label(__('lunarpanel::relationmanagers.medias.actions.create.label'))
-                    ->before(function (array $data, Tables\Actions\CreateAction $action) {
-                        $ext = strtolower(pathinfo($data['media']->getClientOriginalName(), PATHINFO_EXTENSION));
-
-                        if ($ext !== 'webp') {
-                            $this->pendingMediaFilename = $data['media']->getFilename();
-                            $this->pendingMediaName = $data['media']->getClientOriginalName();
-                            $this->pendingMediaCustomName = $data['custom_properties']['name'] ?? null;
-                            $this->pendingMediaPrimary = $data['custom_properties']['primary'] ?? false;
-
-                            $this->dispatch('open-modal', id: 'media-non-webp-warning');
-                            $action->halt();
-                        }
-                    })
                     ->using(function (array $data, string $model): Model {
-                        return $this->getOwnerRecord()->addMediaFromString($data['media']->get())
-                            ->usingFileName(
-                                $data['media']->getClientOriginalName()
-                            )
+                        $converted = MediaWebpConverter::convertUpload(
+                            $data['media']->get(),
+                            $data['media']->getClientOriginalName()
+                        );
+
+                        $media = $this->getOwnerRecord()->addMediaFromString($converted['contents'])
+                            ->usingFileName($converted['file_name'])
                             ->withCustomProperties([
                                 'name' => $data['custom_properties']['name'],
                                 'primary' => $data['custom_properties']['primary'],
                             ])
                             ->preservingOriginal()
                             ->toMediaCollection($this->mediaCollection);
+
+                        if ($converted['converted']) {
+                            Notification::make()
+                                ->title(__('lunarpanel::relationmanagers.medias.notifications.webp_conversion.title'))
+                                ->body(__('lunarpanel::relationmanagers.medias.notifications.webp_conversion.body'))
+                                ->success()
+                                ->send();
+                        }
+
+                        return $media;
                     })->after(
                         fn () => ModelMediaUpdated::dispatch(
                             $this->getOwnerRecord()

@@ -113,11 +113,11 @@ return [
             'view' => [
                 'label' => 'Ver',
             ],
-            'confirm_non_webp' => [
-                'heading' => '💡 Consejo: ¡Use imágenes en formato WebP!',
-                'description' => 'La imagen seleccionada no está en formato WebP. WebP proporciona archivos más pequeños que JPEG y PNG sin pérdida de calidad, lo que resulta en carga más rápida y mejor SEO. ¡Recomendamos convertir sus imágenes!',
-                'confirm' => 'Continuar subida',
-                'cancel' => 'Cancelar',
+        ],
+        'notifications' => [
+            'webp_conversion' => [
+                'title' => 'Imagen convertida a WebP',
+                'body' => 'La imagen subida se convirtió a WebP para mejorar el rendimiento y el SEO.',
             ],
         ],
         'form' => [
