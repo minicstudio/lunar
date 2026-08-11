@@ -26,27 +26,14 @@ class ReviewMediaDefinitions extends StandardMediaDefinitions
      */
     protected function registerCollectionConversions(MediaCollection $collection, HasMedia $model): void
     {
-        $conversions = [
-            'small' => [
-                'width' => 124,
-                'height' => 92,
-            ],
-            'full' => [
-                'width' => 1920,
-                'height' => 1920,
-            ],
-        ];
+        $collection->registerMediaConversions(function (Media $media) use ($model) {
+            $model->addMediaConversion('small')
+                ->fit(Fit::Crop, 124, 92)
+                ->nonQueued();
 
-        $collection->registerMediaConversions(function (Media $media) use ($model, $conversions) {
-            foreach ($conversions as $key => $conversion) {
-                $model->addMediaConversion($key)
-                    ->fit(
-                        Fit::Crop,
-                        $conversion['width'],
-                        $conversion['height']
-                    )
-                    ->nonQueued();
-            }
+            $model->addMediaConversion('full')
+                ->fit(Fit::Max, 1920, 1920)
+                ->nonQueued();
         });
     }
 
