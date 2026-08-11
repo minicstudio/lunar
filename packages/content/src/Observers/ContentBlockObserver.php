@@ -31,6 +31,7 @@ class ContentBlockObserver
             'hero' => Cache::forget('content.heroes'),
             'menu_item' => Cache::forget('content.menu_items'),
             'faq_item' => Cache::forget('content.faq_items'),
+            'contact_info' => Cache::forget('content.contact_info'),
             default => null,
         };
     }
