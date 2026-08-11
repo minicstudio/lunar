@@ -7,12 +7,14 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Content\Filament\Resources\MenuItemResource\Pages\CreateMenuItem;
@@ -72,7 +74,7 @@ class MenuItemResource extends BaseResource
     /**
      * Scope the base Eloquent query to only menu item blocks.
      */
-    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->where('type', 'menu_item');
     }
@@ -181,7 +183,11 @@ class MenuItemResource extends BaseResource
                     ->boolean(),
             ])
             ->defaultSort('sort_order')
+            ->paginated(false)
             ->reorderable('sort_order')
+            ->reorderRecordsTriggerAction(
+                fn (Action $action, bool $isReordering): Action => $action->button()
+            )
             ->actions([
                 EditAction::make(),
             ])
