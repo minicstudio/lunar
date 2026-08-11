@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Infolists\Concerns\InteractsWithInfolists;
@@ -68,6 +69,33 @@ describe('activity feed component', function () {
         ])
             ->assertStatus(200)
             ->assertSeeLivewire(ActivityLogFeed::class);
+    });
+
+    test('orders tied same-second status activities by id, not arbitrarily', function () {
+        Carbon::setTestNow('2024-01-01 12:00:00');
+
+        $this->subject->update(['status' => 'payment-received']);
+        $this->subject->update(['status' => 'invalid-address']);
+
+        Carbon::setTestNow();
+
+        $statusActivities = $this->subject->activities()->whereEvent('status-update')->get();
+
+        expect($statusActivities)->toHaveCount(2)
+            ->and($statusActivities->pluck('created_at')->unique())->toHaveCount(1);
+
+        $component = Livewire::test(ActivityLogFeed::class, [
+            'subject' => $this->subject,
+        ])->assertStatus(200);
+
+        $orderedStatusLogs = $component->instance()->activityLog->getCollection()
+            ->flatMap(fn ($day) => $day['items'])
+            ->pluck('log')
+            ->filter(fn ($log) => $log->event === 'status-update')
+            ->values();
+
+        expect($orderedStatusLogs->first()->getExtraProperty('new'))->toBe('invalid-address')
+            ->and($orderedStatusLogs->last()->getExtraProperty('new'))->toBe('payment-received');
     });
 
 });

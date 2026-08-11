@@ -296,3 +296,27 @@ test('can delete an order', function () {
         'id' => $order->id,
     ]);
 });
+
+test('getActivitiesByStatuses orders same-second activities by id, not arbitrarily', function () {
+    activity()->enableLogging();
+
+    $order = Order::factory()->create([
+        'user_id' => null,
+        'status' => 'awaiting-payment',
+    ]);
+
+    $order->update(['status' => 'payment-received']);
+    $order->update(['status' => 'invalid-address']);
+
+    $statusActivities = $order->activities()->where('event', 'status-update')->get();
+
+    expect($statusActivities)->toHaveCount(2)
+        ->and($statusActivities->pluck('created_at')->unique())->toHaveCount(1);
+
+    $ordered = $order->getActivitiesByStatuses(['payment-received', 'invalid-address']);
+
+    expect($ordered->first()->getExtraProperty('new'))->toBe('invalid-address')
+        ->and($ordered->last()->getExtraProperty('new'))->toBe('payment-received');
+
+    activity()->disableLogging();
+});

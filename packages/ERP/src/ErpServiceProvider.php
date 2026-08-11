@@ -73,6 +73,8 @@ class ErpServiceProvider extends ServiceProvider
         if (! config('lunar.database.disable_migrations', false)) {
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
+
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunarpanel.erp');
     }
 
     /**
