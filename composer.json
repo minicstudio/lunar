@@ -88,7 +88,8 @@
             "Lunar\\Addons\\Shipping\\": "packages/shipping/src",
             "Lunar\\Shipping\\": "packages/table-rate-shipping/src",
             "Lunar\\Shipping\\Database\\Factories\\": "packages/table-rate-shipping/database/factories",
-            "Lunar\\Stripe\\": "packages/stripe/src/"
+            "Lunar\\Stripe\\": "packages/stripe/src/",
+            "Lunar\\Content\\": "packages/content/src"
         }
     },
     "autoload-dev": {
@@ -141,6 +142,7 @@
                 "Lunar\\ERP\\ErpServiceProvider",
                 "Lunar\\Review\\ReviewServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
+                "Lunar\\Content\\ContentServiceProvider",
                 "Lunar\\Mailchimp\\MailchimpServiceProvider",
                 "Lunar\\LunarServiceProvider"
             ]
