@@ -9,7 +9,7 @@ return [
     |--------------------------------------------------------------------------
     | Announcement cache TTL (seconds)
     |--------------------------------------------------------------------------
-    | How long active announcements / heroes / popups / menu items are cached in the storefront.
+    | How long active announcements / heroes / popups / menu items / FAQ items are cached in the storefront.
     */
     'announcement_cache_ttl' => 300,
 
