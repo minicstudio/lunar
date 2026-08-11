@@ -6,6 +6,8 @@ use Filament\Contracts\Plugin;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Lunar\Content\Filament\Resources\AnnouncementResource;
+use Lunar\Content\Filament\Resources\HeroResource;
+use Lunar\Content\Filament\Resources\MenuItemResource;
 use Lunar\Content\Filament\Resources\PopupResource;
 
 class ContentPlugin implements Plugin
@@ -29,6 +31,8 @@ class ContentPlugin implements Plugin
                 ),
         ])->resources([
             AnnouncementResource::class,
+            HeroResource::class,
+            MenuItemResource::class,
             PopupResource::class,
         ]);
     }

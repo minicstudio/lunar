@@ -1,23 +1,23 @@
 <?php
 
-namespace Lunar\Content\Filament\Resources\AnnouncementResource\Pages;
+namespace Lunar\Content\Filament\Resources\MenuItemResource\Pages;
 
 use Filament\Actions\DeleteAction;
 use Illuminate\Contracts\Support\Htmlable;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
-use Lunar\Content\Filament\Resources\AnnouncementResource;
+use Lunar\Content\Filament\Resources\MenuItemResource;
 use Lunar\Content\Models\ContentBlock;
 
-class EditAnnouncement extends BaseEditRecord
+class EditMenuItem extends BaseEditRecord
 {
-    protected static string $resource = AnnouncementResource::class;
+    protected static string $resource = MenuItemResource::class;
 
     /**
      * Get the page title.
      */
     public function getTitle(): string|Htmlable
     {
-        return __('lunarpanel.content::announcement.edit.label');
+        return __('lunarpanel.content::menu_item.edit.label');
     }
 
     /**
@@ -31,27 +31,24 @@ class EditAnnouncement extends BaseEditRecord
     }
 
     /**
-     * Hydrate the virtual closable toggle from the JSON payload.
+     * Wrap legacy plain-string labels into locale maps for the form.
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $data['is_closable'] = (bool) ($data['data']['is_closable'] ?? false);
         $data['data'] = ContentBlock::wrapPlainStringsAsTranslations(
             $data['data'] ?? [],
-            ['text', 'link_label']
+            ['label']
         );
 
         return parent::mutateFormDataBeforeFill($data);
     }
 
     /**
-     * Persist the virtual closable toggle back into the JSON payload.
+     * Drop fields that do not apply to the selected link type.
      */
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $data['data'] ??= [];
-        $data['data']['is_closable'] = (bool) ($data['is_closable'] ?? false);
-        unset($data['is_closable']);
+        $data['data'] = CreateMenuItem::normalizeLinkPayload($data['data'] ?? []);
 
         return parent::mutateFormDataBeforeSave($data);
     }

@@ -28,6 +28,8 @@ class ContentBlockObserver
         match ($block->type) {
             'announcement' => Cache::forget('content.announcements'),
             'popup' => Cache::forget('content.popups'),
+            'hero' => Cache::forget('content.heroes'),
+            'menu_item' => Cache::forget('content.menu_items'),
             default => null,
         };
     }

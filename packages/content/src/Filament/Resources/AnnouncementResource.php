@@ -15,6 +15,7 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Content\Filament\Resources\AnnouncementResource\Pages\CreateAnnouncement;
 use Lunar\Content\Filament\Resources\AnnouncementResource\Pages\EditAnnouncement;
@@ -85,7 +86,7 @@ class AnnouncementResource extends BaseResource
             ->schema([
                 Section::make(__('lunarpanel.content::announcement.sections.content'))
                     ->schema([
-                        TextInput::make('data.text')
+                        TranslatedText::make('data.text')
                             ->label(__('lunarpanel.content::announcement.form.text.label'))
                             ->required()
                             ->maxLength(255),
@@ -97,7 +98,7 @@ class AnnouncementResource extends BaseResource
                                     ->url()
                                     ->maxLength(2048),
 
-                                TextInput::make('data.link_label')
+                                TranslatedText::make('data.link_label')
                                     ->label(__('lunarpanel.content::announcement.form.link_label.label'))
                                     ->maxLength(100),
                             ]),
@@ -163,11 +164,13 @@ class AnnouncementResource extends BaseResource
     {
         return $table
             ->columns([
-                TextColumn::make('data.text')
+                TextColumn::make('text')
                     ->label(__('lunarpanel.content::announcement.table.text.label'))
+                    ->getStateUsing(fn (ContentBlock $record): ?string => $record->translateData('text'))
                     ->limit(60)
-                    ->searchable(query: fn ($query, $search) => $query->whereJsonContains('data->text', $search))
-                    ->sortable(),
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where('data->text', 'like', "%{$search}%");
+                    }),
 
                 IconColumn::make('is_active')
                     ->label(__('lunarpanel.content::announcement.table.is_active.label'))

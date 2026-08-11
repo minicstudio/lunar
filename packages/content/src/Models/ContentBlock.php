@@ -4,10 +4,16 @@ namespace Lunar\Content\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Lunar\Base\Traits\HasMedia;
+use Lunar\Models\Language;
+use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
-class ContentBlock extends Model
+class ContentBlock extends Model implements SpatieHasMedia
 {
+    use HasMedia;
+
     protected $fillable = [
         'type',
         'key',
@@ -60,5 +66,81 @@ class ContentBlock extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('id');
+    }
+
+    /**
+     * Translate a locale-keyed value stored inside the data JSON column.
+     */
+    public function translateData(string $key, ?string $locale = null): ?string
+    {
+        $values = Arr::get($this->data ?? [], $key);
+
+        if (is_string($values)) {
+            return $values;
+        }
+
+        if (! $values) {
+            return null;
+        }
+
+        $locale = $locale ?: app()->getLocale();
+
+        $value = Arr::accessible($values)
+            ? Arr::get($values, $locale)
+            : (get_object_vars($values)[$locale] ?? null);
+
+        if (filled($value)) {
+            return (string) $value;
+        }
+
+        $fallback = Arr::get($values, app()->getLocale(), Arr::first(Arr::wrap($values)));
+
+        return filled($fallback) ? (string) $fallback : null;
+    }
+
+    /**
+     * Convert legacy plain-string data fields into locale maps for admin forms.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<string>  $keys
+     * @return array<string, mixed>
+     */
+    public static function wrapPlainStringsAsTranslations(array $data, array $keys): array
+    {
+        $locale = Language::getDefault()?->code ?? app()->getLocale();
+
+        foreach ($keys as $key) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+
+            if (is_string($data[$key])) {
+                $data[$key] = [$locale => $data[$key]];
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Resolve the storefront URL for the hero image.
+     */
+    public function heroImageUrl(?string $conversion = null): ?string
+    {
+        $media = $this->getFirstMedia('heroes');
+
+        if (! $media) {
+            return null;
+        }
+
+        if ($conversion && $media->hasGeneratedConversion($conversion)) {
+            return $media->getUrl($conversion);
+        }
+
+        if (! $conversion && $media->hasGeneratedConversion('large')) {
+            return $media->getUrl('large');
+        }
+
+        return $media->getUrl();
     }
 }

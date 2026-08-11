@@ -6,7 +6,6 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
@@ -16,6 +15,7 @@ use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Content\Filament\Resources\PopupResource\Pages\CreatePopup;
 use Lunar\Content\Filament\Resources\PopupResource\Pages\EditPopup;
@@ -86,14 +86,13 @@ class PopupResource extends BaseResource
             ->schema([
                 Section::make(__('lunarpanel.content::popup.sections.content'))
                     ->schema([
-                        TextInput::make('data.title')
+                        TranslatedText::make('data.title')
                             ->label(__('lunarpanel.content::popup.form.title.label'))
                             ->required()
                             ->maxLength(255),
 
-                        Textarea::make('data.body')
+                        TranslatedText::make('data.body')
                             ->label(__('lunarpanel.content::popup.form.body.label'))
-                            ->rows(4)
                             ->maxLength(2000),
 
                         TextInput::make('data.discount_code')
@@ -103,7 +102,7 @@ class PopupResource extends BaseResource
 
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('data.cta_label')
+                                TranslatedText::make('data.cta_label')
                                     ->label(__('lunarpanel.content::popup.form.cta_label.label'))
                                     ->maxLength(100),
 
@@ -171,10 +170,13 @@ class PopupResource extends BaseResource
     {
         return $table
             ->columns([
-                TextColumn::make('data.title')
+                TextColumn::make('title')
                     ->label(__('lunarpanel.content::popup.table.title.label'))
+                    ->getStateUsing(fn (ContentBlock $record): ?string => $record->translateData('title'))
                     ->limit(60)
-                    ->searchable(query: fn ($query, $search) => $query->where('data->title', 'like', "%{$search}%")),
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where('data->title', 'like', "%{$search}%");
+                    }),
 
                 TextColumn::make('data.delay_seconds')
                     ->label(__('lunarpanel.content::popup.table.delay_seconds.label'))

@@ -24,6 +24,7 @@ class ContentServiceProvider extends ServiceProvider
         $this->loadPackageAssets();
         $this->publishAssets();
         $this->registerObservers();
+        $this->registerMediaDefinitions();
     }
 
     /**
@@ -50,5 +51,20 @@ class ContentServiceProvider extends ServiceProvider
     protected function registerObservers(): void
     {
         ContentBlock::observe(ContentBlockObserver::class);
+    }
+
+    /**
+     * Register media definitions for the ContentBlock model.
+     *
+     * Only sets the definition if not already configured by the user.
+     */
+    protected function registerMediaDefinitions(): void
+    {
+        $definitions = config('lunar.media.definitions', []);
+
+        if (! isset($definitions['content_block'])) {
+            $definitions['content_block'] = config('lunar.content.media_definitions');
+            config(['lunar.media.definitions' => $definitions]);
+        }
     }
 }

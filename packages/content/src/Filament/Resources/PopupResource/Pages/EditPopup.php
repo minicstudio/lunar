@@ -6,6 +6,7 @@ use Filament\Actions\DeleteAction;
 use Illuminate\Contracts\Support\Htmlable;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
 use Lunar\Content\Filament\Resources\PopupResource;
+use Lunar\Content\Models\ContentBlock;
 
 class EditPopup extends BaseEditRecord
 {
@@ -35,6 +36,10 @@ class EditPopup extends BaseEditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['show_once'] = (bool) ($data['data']['show_once'] ?? true);
+        $data['data'] = ContentBlock::wrapPlainStringsAsTranslations(
+            $data['data'] ?? [],
+            ['title', 'body', 'cta_label']
+        );
 
         return parent::mutateFormDataBeforeFill($data);
     }
