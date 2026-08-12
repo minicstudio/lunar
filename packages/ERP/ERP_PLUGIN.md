@@ -146,6 +146,33 @@ Default schedules:
 - Localities: weekly on Sunday at 00:00
 - Attributes: every 9 minutes
 
+## Order Sync Retry, Failure & Manual Resend
+
+`Lunar\ERP\Listeners\SendOrderToERP` is a queued listener on `OrderPlacedEvent` (registered by the host app's `listeners.php`). It retries transparently before surfacing a failure to admins:
+
+- `tries = 3`, `backoff = [60, 300, 900]` seconds (1 min, 5 min, 15 min).
+- On final failure (`failed()`), the order is stashed and moved to `status = failed-erp-sync`:
+  - `status_before_erp_failure` is saved to `order.meta` — the last "real" status before any `invalid-address`/`failed-erp-sync` chain (found via `Order::getActivitiesByStatuses()`), so a later resend can restore it.
+  - The exception is reported (`report($exception)`).
+
+### Manual resend
+
+When an order is `failed-erp-sync`, the Filament order view shows a **"Resend to ERP"** action (`Lunar\ERP\Filament\Actions\ResendOrderToErpAction`, added by `ShippingExtension::headerActions()`):
+
+1. Re-validates the shipping address against seeded localities (`Lunar\Locations\Support\LocalityValidator` — see `packages/locations/README.md`). If invalid, the order is set to `invalid-address` then `failed-erp-sync` again, with a notification asking the admin to correct the address first.
+2. Otherwise, calls `ErpService::sendOrder()` for each enabled provider.
+   - **Success:** restores `order.meta['status_before_erp_failure']` as the order status (falls back to `confirmed`), clears the stashed meta key, shows a success notification.
+   - **Failure:** stays/returns to `failed-erp-sync`, shows a failure notification. Exceptions are caught and reported, not thrown to the UI.
+
+### Related order statuses
+
+Both statuses are defined in `packages/core/config/orders.php` and are **not** included in the host app's customer-visible status list — the storefront resolves the order-history display back to the last customer-visible status instead of showing these internal ones.
+
+| Status | Meaning |
+|--------|---------|
+| `invalid-address` | Shipping city/county doesn't match a seeded locality (see `packages/locations`) |
+| `failed-erp-sync` | `SendOrderToERP` exhausted its retries, or a manual resend failed |
+
 ## Invoice Generation
 
 Invoices are generated when an order status changes to a status listed in the provider config. For Smartbill, this is controlled by `generate_invoice`:
@@ -210,3 +237,5 @@ The package creates the following tables and columns:
 - Localities sync expects Romania (`countries.iso2 = RO`) to exist in the database.
 - County and Locality models are provided by `lunarphp/locations` (`Lunar\\Locations\\Models\\County`, `Lunar\\Locations\\Models\\Locality`).
 - Attributes sync creates product options and option values using the `ro` locale.
+- Magister's `INVOICE_COUNTRY_CODE`/`DELIVERY_COUNTRY_CODE` use the order's actual billing/shipping address country (falling back to `RO`) rather than being hard-coded.
+- `Order::getActivitiesByStatuses()` and the admin `ActivityLogFeed` order by `created_at` then `id` (both descending), so same-second status changes (e.g. a resend that fails immediately) sort deterministically instead of by insertion order.
