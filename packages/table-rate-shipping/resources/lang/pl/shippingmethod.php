@@ -11,7 +11,7 @@ return [
             'label' => 'Opis',
         ],
         'code' => [
-            'label' => 'Kod',
+            'label' => 'Dostawca',
         ],
         'cutoff' => [
             'label' => 'Czas realizacji',

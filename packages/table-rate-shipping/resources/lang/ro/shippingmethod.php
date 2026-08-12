@@ -11,7 +11,7 @@ return [
             'label' => 'Descriere',
         ],
         'code' => [
-            'label' => 'Cod',
+            'label' => 'Furnizor',
         ],
         'cutoff' => [
             'label' => 'Termen limită',

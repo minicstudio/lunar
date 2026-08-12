@@ -11,7 +11,7 @@ return [
             'label' => 'Descripción',
         ],
         'code' => [
-            'label' => 'Código',
+            'label' => 'Proveedor',
         ],
         'cutoff' => [
             'label' => 'Corte',
