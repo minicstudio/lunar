@@ -31,6 +31,8 @@ class LocalityValidator
 
         return Locality::where('name', $city)
             ->whereHas('county', fn ($query) => $query->where('name', $county))
-            ->exists();
+            ->with('county')
+            ->get()
+            ->contains(fn (Locality $locality) => $locality->name === $city && $locality->county->name === $county);
     }
 }
