@@ -11,7 +11,7 @@ return [
             'label' => 'Description',
         ],
         'code' => [
-            'label' => 'Code',
+            'label' => 'Provider',
         ],
         'cutoff' => [
             'label' => 'Cutoff',

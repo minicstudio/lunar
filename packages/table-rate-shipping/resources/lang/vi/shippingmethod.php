@@ -11,7 +11,7 @@ return [
             'label' => 'Mô tả',
         ],
         'code' => [
-            'label' => 'Mã',
+            'label' => 'Nhà cung cấp',
         ],
         'cutoff' => [
             'label' => 'Thời hạn',

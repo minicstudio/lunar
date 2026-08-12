@@ -11,7 +11,7 @@ return [
             'label' => 'Açıklama',
         ],
         'code' => [
-            'label' => 'Kod',
+            'label' => 'Sağlayıcı',
         ],
         'cutoff' => [
             'label' => 'Son Sipariş Saati',
