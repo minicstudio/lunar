@@ -101,6 +101,8 @@ class ContentBlock extends Model implements SpatieHasMedia
     /**
      * Convert legacy plain-string data fields into locale maps for admin forms.
      *
+     * Keys may be dotted paths (e.g. `address.street`) for nested JSON.
+     *
      * @param  array<string, mixed>  $data
      * @param  list<string>  $keys
      * @return array<string, mixed>
@@ -110,12 +112,10 @@ class ContentBlock extends Model implements SpatieHasMedia
         $locale = Language::getDefault()?->code ?? app()->getLocale();
 
         foreach ($keys as $key) {
-            if (! array_key_exists($key, $data)) {
-                continue;
-            }
+            $value = Arr::get($data, $key);
 
-            if (is_string($data[$key])) {
-                $data[$key] = [$locale => $data[$key]];
+            if (is_string($value)) {
+                Arr::set($data, $key, [$locale => $value]);
             }
         }
 

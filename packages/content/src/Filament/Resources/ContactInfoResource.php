@@ -12,6 +12,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Content\Filament\Resources\ContactInfoResource\Pages\CreateContactInfo;
@@ -127,14 +128,14 @@ class ContactInfoResource extends BaseResource
 
                 Section::make(__('lunarpanel.content::contact_info.sections.address'))
                     ->schema([
-                        TextInput::make('data.address.street')
+                        TranslatedText::make('data.address.street')
                             ->label(__('lunarpanel.content::contact_info.form.street.label'))
                             ->maxLength(255)
                             ->columnSpanFull(),
 
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('data.address.city')
+                                TranslatedText::make('data.address.city')
                                     ->label(__('lunarpanel.content::contact_info.form.city.label'))
                                     ->maxLength(100),
 
@@ -145,7 +146,7 @@ class ContactInfoResource extends BaseResource
 
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('data.address.country')
+                                TranslatedText::make('data.address.country')
                                     ->label(__('lunarpanel.content::contact_info.form.country.label'))
                                     ->maxLength(100),
 
@@ -176,11 +177,11 @@ class ContactInfoResource extends BaseResource
             ->columns([
                 TextColumn::make('email')
                     ->label(__('lunarpanel.content::contact_info.table.email.label'))
-                    ->getStateUsing(fn (ContentBlock $record): ?string => $record->data['email'] ?? null),
+                    ->getStateUsing(fn (ContentBlock $record): ?string => Arr::get($record->data, 'email')),
 
                 TextColumn::make('phone')
                     ->label(__('lunarpanel.content::contact_info.table.phone.label'))
-                    ->getStateUsing(fn (ContentBlock $record): ?string => $record->data['phone'] ?? null),
+                    ->getStateUsing(fn (ContentBlock $record): ?string => Arr::get($record->data, 'phone')),
 
                 IconColumn::make('is_active')
                     ->label(__('lunarpanel.content::contact_info.table.is_active.label'))

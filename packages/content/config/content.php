@@ -7,6 +7,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin resources
+    |--------------------------------------------------------------------------
+    | Toggle which Content items appear in the Filament admin navigation.
+    | Disabled resources are not registered (no nav item and no admin routes).
+    | Storefront helpers are unchanged — they still read DB rows when present.
+    | Missing keys default to enabled.
+    */
+    'resources' => [
+        'announcement' => true,
+        'hero' => true,
+        'menu_item' => true,
+        'popup' => true,
+        'faq_item' => true,
+        'contact_info' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Announcement cache TTL (seconds)
     |--------------------------------------------------------------------------
     | How long active announcements / heroes / popups / menu items / FAQ / contact details are cached in the storefront.

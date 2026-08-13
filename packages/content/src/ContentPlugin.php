@@ -26,19 +26,43 @@ class ContentPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
+        $resources = $this->enabledResources();
+
+        if ($resources === []) {
+            return;
+        }
+
         $panel->navigationGroups([
             NavigationGroup::make('content')
                 ->label(
                     fn () => __('lunarpanel.content::plugin.navigation.group')
                 ),
-        ])->resources([
-            AnnouncementResource::class,
-            HeroResource::class,
-            MenuItemResource::class,
-            PopupResource::class,
-            FaqItemResource::class,
-            ContactInfoResource::class,
-        ]);
+        ])->resources($resources);
+    }
+
+    /**
+     * Filament resources enabled via `lunar.content.resources`.
+     *
+     * @return array<int, class-string>
+     */
+    protected function enabledResources(): array
+    {
+        $map = [
+            'announcement' => AnnouncementResource::class,
+            'hero' => HeroResource::class,
+            'menu_item' => MenuItemResource::class,
+            'popup' => PopupResource::class,
+            'faq_item' => FaqItemResource::class,
+            'contact_info' => ContactInfoResource::class,
+        ];
+
+        $enabled = config('lunar.content.resources', []);
+
+        return array_values(array_filter(
+            $map,
+            fn (string $class, string $key): bool => (bool) ($enabled[$key] ?? true),
+            ARRAY_FILTER_USE_BOTH
+        ));
     }
 
     public static function make(): static

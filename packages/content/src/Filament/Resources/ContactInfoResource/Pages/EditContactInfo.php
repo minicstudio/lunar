@@ -31,13 +31,18 @@ class EditContactInfo extends BaseEditRecord
     }
 
     /**
-     * Wrap legacy plain-string intro into a locale map for the form.
+     * Wrap legacy plain-string contact fields into locale maps for the form.
      */
     protected function mutateFormDataBeforeFill(array $data): array
     {
         $data['data'] = ContentBlock::wrapPlainStringsAsTranslations(
             $data['data'] ?? [],
-            ['intro']
+            [
+                'intro',
+                'address.street',
+                'address.city',
+                'address.country',
+            ]
         );
 
         return parent::mutateFormDataBeforeFill($data);
