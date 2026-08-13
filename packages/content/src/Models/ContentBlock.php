@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Lunar\Base\Traits\HasMedia;
+use Lunar\Base\Traits\HasTranslations;
 use Lunar\Models\Language;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
 class ContentBlock extends Model implements SpatieHasMedia
 {
     use HasMedia;
+    use HasTranslations;
 
     protected $fillable = [
         'type',
@@ -69,33 +71,21 @@ class ContentBlock extends Model implements SpatieHasMedia
     }
 
     /**
-     * Translate a locale-keyed value stored inside the data JSON column.
+     * Translate a locale-keyed value nested in the `data` JSON column.
+     *
+     * `HasTranslations::translate()` reads a model column; translatable copy
+     * lives under keys inside `data` (including dotted paths like `address.street`).
      */
     public function translateData(string $key, ?string $locale = null): ?string
     {
-        $values = Arr::get($this->data ?? [], $key);
+        $instance = $this->newInstance();
+        $instance->setRawAttributes([
+            'value' => Arr::get($this->data ?? [], $key),
+        ]);
 
-        if (is_string($values)) {
-            return $values;
-        }
+        $translated = $instance->translate('value', $locale);
 
-        if (! $values) {
-            return null;
-        }
-
-        $locale = $locale ?: app()->getLocale();
-
-        $value = Arr::accessible($values)
-            ? Arr::get($values, $locale)
-            : (get_object_vars($values)[$locale] ?? null);
-
-        if (filled($value)) {
-            return (string) $value;
-        }
-
-        $fallback = Arr::get($values, app()->getLocale(), Arr::first(Arr::wrap($values)));
-
-        return filled($fallback) ? (string) $fallback : null;
+        return filled($translated) ? (string) $translated : null;
     }
 
     /**

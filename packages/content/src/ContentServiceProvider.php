@@ -35,21 +35,29 @@ class ContentServiceProvider extends ServiceProvider
     }
 
     /**
-     * Load package assets like translations.
+     * Load package assets like migrations and translations.
      */
     protected function loadPackageAssets(): void
     {
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunarpanel.content');
+
+        if (! config('lunar.database.disable_migrations', false)) {
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        }
     }
 
     /**
-     * Publish package config.
+     * Publish package config and migrations.
      */
     protected function publishAssets(): void
     {
         $this->publishes([
             __DIR__.'/../config/content.php' => config_path('lunar/content.php'),
         ], 'lunar.content.config');
+
+        $this->publishesMigrations([
+            __DIR__.'/../database/migrations' => database_path('migrations'),
+        ], 'lunar.content.migrations');
     }
 
     /**
