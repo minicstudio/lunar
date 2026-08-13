@@ -32,12 +32,9 @@ class MenuItemResource extends BaseResource
     protected static ?string $slug = 'content/menu-items';
 
     /**
-     * Determine if the current user has permission to access this resource.
+     * The permission required to access this resource.
      */
-    protected static function hasPermission(): bool
-    {
-        return true;
-    }
+    protected static ?string $permission = 'content:manage';
 
     /**
      * Get the label for the resource.

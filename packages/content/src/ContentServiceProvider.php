@@ -2,7 +2,12 @@
 
 namespace Lunar\Content;
 
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Database\Events\MigrationsStarted;
+use Illuminate\Database\Events\NoPendingMigrations;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Lunar\Content\Database\State\EnsureContentPermissions;
 use Lunar\Content\Models\ContentBlock;
 use Lunar\Content\Observers\ContentBlockObserver;
 
@@ -25,6 +30,8 @@ class ContentServiceProvider extends ServiceProvider
         $this->publishAssets();
         $this->registerObservers();
         $this->registerMediaDefinitions();
+        $this->registerPermissionTranslations();
+        $this->registerStateListeners();
     }
 
     /**
@@ -66,5 +73,58 @@ class ContentServiceProvider extends ServiceProvider
             $definitions['content_block'] = config('lunar.content.media_definitions');
             config(['lunar.media.definitions' => $definitions]);
         }
+    }
+
+    /**
+     * Merge Content permission labels into the Lunar Panel auth translations.
+     *
+     * Load `lunarpanel::auth` first. `Translator::addLines()` marks the group as
+     * loaded, so calling it too early would skip the admin language files and
+     * Access Control would fall back to permission handles.
+     */
+    protected function registerPermissionTranslations(): void
+    {
+        $this->app->booted(function (): void {
+            $translator = $this->app['translator'];
+
+            foreach (['en', 'hu', 'ro'] as $locale) {
+                $path = __DIR__."/../resources/lang/vendor/lunarpanel/{$locale}/auth.php";
+
+                if (! is_file($path)) {
+                    continue;
+                }
+
+                $lines = [];
+
+                foreach (require $path as $key => $value) {
+                    if (! is_string($key) || ! is_string($value)) {
+                        continue;
+                    }
+
+                    $lines['auth.'.$key] = $value;
+                }
+
+                $translator->load('lunarpanel', 'auth', $locale);
+                $translator->addLines($lines, $locale, 'lunarpanel');
+            }
+        });
+    }
+
+    /**
+     * Register state listeners for migration events.
+     */
+    protected function registerStateListeners(): void
+    {
+        $state = new EnsureContentPermissions;
+
+        Event::listen(
+            [MigrationsStarted::class],
+            [$state, 'prepare']
+        );
+
+        Event::listen(
+            [MigrationsEnded::class, NoPendingMigrations::class],
+            [$state, 'run']
+        );
     }
 }
