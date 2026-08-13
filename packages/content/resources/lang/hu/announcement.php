@@ -16,6 +16,7 @@ return [
     'form' => [
         'text' => [
             'label' => 'Banner szöveg',
+            'helper' => 'Sortörés, félkövér, dőlt és aláhúzott szöveg támogatott.',
         ],
         'link_url' => [
             'label' => 'Link URL',

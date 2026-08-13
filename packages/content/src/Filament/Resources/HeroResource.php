@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
@@ -162,11 +163,6 @@ class HeroResource extends BaseResource
                             ->label(__('lunarpanel.content::hero.form.is_active.label'))
                             ->default(true),
 
-                        TextInput::make('sort_order')
-                            ->label(__('lunarpanel.content::hero.form.sort_order.label'))
-                            ->numeric()
-                            ->default(0),
-
                         Grid::make(2)
                             ->schema([
                                 DateTimePicker::make('starts_at')
@@ -206,10 +202,6 @@ class HeroResource extends BaseResource
                     ->label(__('lunarpanel.content::hero.table.is_active.label'))
                     ->boolean(),
 
-                TextColumn::make('sort_order')
-                    ->label(__('lunarpanel.content::hero.table.sort_order.label'))
-                    ->sortable(),
-
                 TextColumn::make('starts_at')
                     ->label(__('lunarpanel.content::hero.table.starts_at.label'))
                     ->dateTime()
@@ -221,6 +213,11 @@ class HeroResource extends BaseResource
                     ->sortable(),
             ])
             ->defaultSort('sort_order')
+            ->paginated(false)
+            ->reorderable('sort_order')
+            ->reorderRecordsTriggerAction(
+                fn (Action $action, bool $isReordering): Action => $action->button()
+            )
             ->actions([
                 EditAction::make(),
             ])

@@ -88,8 +88,16 @@ class AnnouncementResource extends BaseResource
                     ->schema([
                         TranslatedText::make('data.text')
                             ->label(__('lunarpanel.content::announcement.form.text.label'))
-                            ->required()
-                            ->maxLength(255),
+                            ->helperText(__('lunarpanel.content::announcement.form.text.helper'))
+                            ->optionRichtext(true)
+                            ->richtextToolbarButtons([
+                                'bold',
+                                'italic',
+                                'underline',
+                                'undo',
+                                'redo',
+                            ])
+                            ->required(),
 
                         Grid::make(2)
                             ->schema([
@@ -166,7 +174,11 @@ class AnnouncementResource extends BaseResource
             ->columns([
                 TextColumn::make('text')
                     ->label(__('lunarpanel.content::announcement.table.text.label'))
-                    ->getStateUsing(fn (ContentBlock $record): ?string => $record->translateData('text'))
+                    ->getStateUsing(function (ContentBlock $record): ?string {
+                        $text = $record->translateData('text');
+
+                        return filled($text) ? strip_tags($text) : null;
+                    })
                     ->limit(60)
                     ->searchable(query: function ($query, string $search) {
                         $query->where('data->text', 'like', "%{$search}%");

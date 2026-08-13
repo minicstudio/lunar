@@ -16,6 +16,7 @@ return [
     'form' => [
         'text' => [
             'label' => 'Text banner',
+            'helper' => 'Suportă întreruperi de linie, text îngroșat, cursiv și subliniat.',
         ],
         'link_url' => [
             'label' => 'URL link',

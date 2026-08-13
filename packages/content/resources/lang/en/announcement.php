@@ -16,6 +16,7 @@ return [
     'form' => [
         'text' => [
             'label' => 'Banner Text',
+            'helper' => 'Supports line breaks, bold, italic, and underline.',
         ],
         'link_url' => [
             'label' => 'Link URL',

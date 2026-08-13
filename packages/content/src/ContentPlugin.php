@@ -36,7 +36,8 @@ class ContentPlugin implements Plugin
             NavigationGroup::make('content')
                 ->label(
                     fn () => __('lunarpanel.content::plugin.navigation.group')
-                ),
+                )
+                ->collapsed(),
         ])->resources($resources);
     }
 
