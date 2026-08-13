@@ -387,6 +387,7 @@ class Order extends BaseModel implements Contracts\Order
             ->where('description', 'status-update')
             ->whereIn('properties->new', $statuses)
             ->latest('created_at')
+            ->latest('id')
             ->get();
     }
 }

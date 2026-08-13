@@ -9,6 +9,7 @@ use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Events\OrderPlacedEvent;
 use Lunar\ERP\Listeners\SendOrderToERP;
 use Lunar\ERP\Services\ErpService;
+use Lunar\ERP\Support\OrderStatusUpdater;
 use Lunar\Models\Order;
 
 beforeEach(function () {
@@ -60,4 +61,60 @@ it('sends the order to each enabled provider', function () {
     app()->instance(ErpService::class, $service);
 
     (new SendOrderToERP)->handle(new OrderPlacedEvent($order));
+});
+
+test('the listener retries a limited number of times with backoff', function () {
+    $listener = new SendOrderToERP;
+
+    expect($listener->tries)->toBe(3)
+        ->and($listener->backoff)->toBe([60, 300, 900]);
+});
+
+it('marks the order as failed-erp-sync once all attempts are exhausted', function () {
+    $order = Order::factory()->create();
+
+    (new SendOrderToERP)->failed(new OrderPlacedEvent($order), new Exception('ERP unreachable'));
+
+    $order->refresh();
+    expect($order->status)->toBe('failed-erp-sync')
+        ->and($order->meta['status_before_erp_failure'])->toBe('awaiting-payment')
+        // Regression guard: meta must stay flat (no Collection object stored in place of an array).
+        ->and(collect($order->meta->getArrayCopy())->every(fn ($value) => ! is_array($value)))->toBeTrue();
+});
+
+it('stashes the status from before the order was flagged invalid-address, not invalid-address itself', function () {
+    activity()->enableLogging();
+
+    $order = Order::factory()->create();
+
+    (new OrderStatusUpdater)->handle($order, [
+        'status' => 'invalid-address',
+    ]);
+
+    (new SendOrderToERP)->failed(new OrderPlacedEvent($order), new Exception('ERP unreachable'));
+
+    $order->refresh();
+    expect($order->status)->toBe('failed-erp-sync')
+        ->and($order->meta['status_before_erp_failure'])->toBe('awaiting-payment');
+
+    activity()->disableLogging();
+});
+
+it('stashes the status from before the most recent invalid-address/failed-erp-sync chain when the order bounced between statuses more than once', function () {
+    activity()->enableLogging();
+
+    $order = Order::factory()->create();
+
+    // awaiting-payment -> invalid-address -> payment-received -> invalid-address
+    (new OrderStatusUpdater)->handle($order, ['status' => 'invalid-address']);
+    (new OrderStatusUpdater)->handle($order, ['status' => 'payment-received']);
+    (new OrderStatusUpdater)->handle($order, ['status' => 'invalid-address']);
+
+    (new SendOrderToERP)->failed(new OrderPlacedEvent($order), new Exception('ERP unreachable'));
+
+    $order->refresh();
+    expect($order->status)->toBe('failed-erp-sync')
+        ->and($order->meta['status_before_erp_failure'])->toBe('payment-received');
+
+    activity()->disableLogging();
 });

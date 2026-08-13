@@ -222,6 +222,46 @@ it('sendOrder payload contains expected offline fields and customer/company when
     });
 });
 
+it('sendOrder payload uses the billing/shipping addresses\' real country codes, not a hardcoded RO', function () {
+    $mock = new MockClient([
+        SendOrderRequest::class => MockResponse::make(['success' => true], 200),
+    ]);
+    $api = new MagisterApiClient;
+    $api->withMockClient($mock);
+
+    $billingCountry = Country::factory()->create(['iso2' => 'HU']);
+    $shippingCountry = Country::factory()->create(['iso2' => 'DE']);
+
+    $order = Order::factory()
+        ->has(OrderAddress::factory()->state([
+            'type' => 'billing',
+            'city' => 'Budapest',
+            'country_id' => $billingCountry->id,
+        ]), 'billingAddress')
+        ->has(OrderAddress::factory()->state([
+            'type' => 'shipping',
+            'city' => 'Berlin',
+            'country_id' => $shippingCountry->id,
+        ]), 'shippingAddress')
+        ->create([
+            'meta' => [
+                'payment_option' => 'cash-on-delivery',
+            ],
+        ]);
+
+    $api->sendOrder($order);
+
+    $mock->assertSent(function ($request, $response) {
+        if (! $request instanceof SendOrderRequest) {
+            return false;
+        }
+        $body = $response->getPendingRequest()->body()->all();
+
+        return $body['INVOICE_COUNTRY_CODE'] === 'HU'
+            && $body['DELIVERY_COUNTRY_CODE'] === 'DE';
+    });
+});
+
 it('getModifiedOrders returns JSON', function () {
     $mock = new MockClient([
         GetModifiedDeliveryOrderRequest::class => MockResponse::make(['result' => [['DATASET' => []]]], 200),

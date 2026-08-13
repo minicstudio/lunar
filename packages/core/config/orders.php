@@ -78,6 +78,22 @@ return [
             'favourite' => true,
         ],
 
+        'invalid-address' => [
+            'label' => 'Invalid Address',
+            'color' => '#f0ad4e',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+        ],
+
+        'failed-erp-sync' => [
+            'label' => 'Failed to Send to ERP',
+            'color' => '#fa5633',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+        ],
+
         'payment-received' => [
             'label' => 'Payment Received',
             'color' => '#6a67ce',
