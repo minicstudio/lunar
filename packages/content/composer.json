@@ -1,0 +1,34 @@
+{
+    "name": "lunarphp/content",
+    "description": "Content Management Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "content",
+        "cms"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Content\\": "src"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Content"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Content\\ContentServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version"
+    }
+}
