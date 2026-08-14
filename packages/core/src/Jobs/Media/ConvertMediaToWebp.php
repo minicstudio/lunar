@@ -26,17 +26,17 @@ class ConvertMediaToWebp implements ShouldQueue
     /**
      * The number of times the job may be attempted.
      */
-    protected int $tries = 3;
+    public int $tries = 3;
 
     /**
      * Create a new job instance.
      *
-     * @param  list<string>  $onlyConversions
+     * @param  list<string>  $onlyConversions  Conversions to regenerate, empty regenerates every registered conversion.
      */
     public function __construct(
         public Media $media,
         public bool $onlyMissing = false,
-        public array $onlyConversions = ['small', 'medium', 'large', 'zoom'],
+        public array $onlyConversions = [],
     ) {
         if ($queue = config('media-library.queue_name')) {
             $this->onQueue($queue);

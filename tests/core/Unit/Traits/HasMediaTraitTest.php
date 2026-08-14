@@ -3,11 +3,18 @@
 uses(\Lunar\Tests\Core\TestCase::class);
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Storage;
 use Lunar\Base\StandardMediaDefinitions;
 use Lunar\Models\Product;
 use Lunar\Tests\Core\Stubs\TestStandardMediaDefinitions;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+
+beforeEach(function () {
+    Storage::fake(config('media-library.disk_name'));
+
+    config()->set('media-library.queue_connection_name', 'sync');
+});
 
 test('conversions are loaded', function () {
     $definitions = config('lunar.media.definitions');
@@ -28,6 +35,15 @@ test('conversions are loaded', function () {
     expect($image->hasGeneratedConversion('medium'))->toBeTrue();
     expect($image->hasGeneratedConversion('large'))->toBeTrue();
     expect($image->hasGeneratedConversion('zoom'))->toBeTrue();
+});
+
+test('conversions keep the format of the original', function () {
+    $product = Product::factory()->create();
+
+    $product->addMedia(UploadedFile::fake()->image('avatar.webp'))
+        ->toMediaCollection(config('lunar.media.collection'));
+
+    $image = $product->images->first();
 
     expect($image->getPath('small'))->toEndWith('.webp');
     expect($image->getUrl('small'))->toContain('.webp');
