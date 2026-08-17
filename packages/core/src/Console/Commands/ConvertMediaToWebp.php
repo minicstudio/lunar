@@ -17,6 +17,7 @@ class ConvertMediaToWebp extends Command
     protected $signature = 'lunar:media:convert-webp
         {--ids=* : Only convert the given media IDs}
         {--only-missing : Only regenerate missing conversions after converting the original}
+        {--conversions=* : Only regenerate the given conversions, defaults to every registered conversion}
         {--starting-from-id= : Convert media with an id equal to or higher than the provided value}
         {--chunk=100 : Number of media records to load per chunk when dispatching jobs}';
 
@@ -35,22 +36,13 @@ class ConvertMediaToWebp extends Command
     ];
 
     /**
-     * @var list<string>
-     */
-    protected array $conversions = [
-        'small',
-        'medium',
-        'large',
-        'zoom',
-    ];
-
-    /**
      * Dispatch WebP conversion jobs for media that is not yet WebP.
      */
     public function handle(): int
     {
         $dispatched = 0;
         $onlyMissing = (bool) $this->option('only-missing');
+        $conversions = (array) $this->option('conversions');
         $chunkSize = max(1, (int) $this->option('chunk'));
 
         foreach ($this->modelTypes as $modelClass) {
@@ -60,6 +52,7 @@ class ConvertMediaToWebp extends Command
 
             $query = Media::query()
                 ->where('model_type', $modelType)
+                ->whereHasMorph('model', [$modelClass])
                 ->where(function ($query): void {
                     $query->where('mime_type', '!=', 'image/webp')
                         ->orWhereNull('mime_type');
@@ -74,12 +67,12 @@ class ConvertMediaToWebp extends Command
                 $query->where('id', '>=', $startingFromId);
             }
 
-            $query->chunkById($chunkSize, function ($mediaItems) use (&$dispatched, $onlyMissing): void {
+            $query->chunkById($chunkSize, function ($mediaItems) use (&$dispatched, $onlyMissing, $conversions): void {
                 foreach ($mediaItems as $media) {
                     ConvertMediaToWebpJob::dispatch(
                         $media,
                         $onlyMissing,
-                        $this->conversions,
+                        $conversions,
                     );
 
                     $dispatched++;

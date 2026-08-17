@@ -29,8 +29,59 @@ it('dispatches a job per media item', function () {
     Bus::assertDispatched(ConvertMediaToWebpJob::class, function (ConvertMediaToWebpJob $job) use ($media) {
         return $job->media->is($media)
             && $job->onlyMissing === false
-            && $job->onlyConversions === ['small', 'medium', 'large', 'zoom'];
+            && $job->onlyConversions === [];
     });
+});
+
+it('passes the requested conversions to the job', function () {
+    Bus::fake([ConvertMediaToWebpJob::class]);
+
+    $product = Product::factory()->create();
+    $media = $product->addMedia(UploadedFile::fake()->image('avatar.jpg'))
+        ->toMediaCollection(config('lunar.media.collection'));
+
+    $this->artisan(ConvertMediaToWebp::class, [
+        '--ids' => [$media->id],
+        '--conversions' => ['small'],
+    ])->assertSuccessful();
+
+    Bus::assertDispatched(ConvertMediaToWebpJob::class, function (ConvertMediaToWebpJob $job) {
+        return $job->onlyConversions === ['small'];
+    });
+});
+
+it('does not dispatch jobs for media belonging to a soft deleted product', function () {
+    Bus::fake([ConvertMediaToWebpJob::class]);
+
+    $product = Product::factory()->create();
+    $media = $product->addMedia(UploadedFile::fake()->image('avatar.jpg'))
+        ->toMediaCollection(config('lunar.media.collection'));
+
+    $product->delete();
+
+    expect($product->fresh()->trashed())->toBeTrue();
+
+    $this->artisan(ConvertMediaToWebp::class, [
+        '--ids' => [$media->id],
+    ])->assertSuccessful();
+
+    Bus::assertNotDispatched(ConvertMediaToWebpJob::class);
+});
+
+it('does not dispatch jobs for media whose model no longer exists', function () {
+    Bus::fake([ConvertMediaToWebpJob::class]);
+
+    $product = Product::factory()->create();
+    $media = $product->addMedia(UploadedFile::fake()->image('avatar.jpg'))
+        ->toMediaCollection(config('lunar.media.collection'));
+
+    $product->forceDelete();
+
+    $this->artisan(ConvertMediaToWebp::class, [
+        '--ids' => [$media->id],
+    ])->assertSuccessful();
+
+    Bus::assertNotDispatched(ConvertMediaToWebpJob::class);
 });
 
 it('does not dispatch jobs for media already converted to webp', function () {

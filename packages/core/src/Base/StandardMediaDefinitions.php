@@ -18,7 +18,7 @@ class StandardMediaDefinitions implements MediaDefinitionsInterface
             ->border(0, BorderType::Overlay, color: '#FFF')
             ->background('#FFF')
             ->sharpen(10)
-            ->format('webp');
+            ->keepOriginalImageFormat();
     }
 
     public function registerMediaCollections(HasMedia $model): void
@@ -71,7 +71,7 @@ class StandardMediaDefinitions implements MediaDefinitionsInterface
                     )
                     ->border(0, BorderType::Overlay, color: '#FFF')
                     ->background('#FFF')
-                    ->format('webp');
+                    ->keepOriginalImageFormat();
             }
         });
     }
