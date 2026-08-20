@@ -21,6 +21,7 @@ use Lunar\Content\Filament\Resources\PopupResource\Pages\CreatePopup;
 use Lunar\Content\Filament\Resources\PopupResource\Pages\EditPopup;
 use Lunar\Content\Filament\Resources\PopupResource\Pages\ListPopups;
 use Lunar\Content\Models\ContentBlock;
+use Lunar\Content\Support\ContentRichtext;
 use Lunar\Content\Support\PopupDisplayPages;
 
 class PopupResource extends BaseResource
@@ -88,9 +89,10 @@ class PopupResource extends BaseResource
                             ->required()
                             ->maxLength(255),
 
-                        TranslatedText::make('data.body')
-                            ->label(__('lunarpanel.content::popup.form.body.label'))
-                            ->maxLength(2000),
+                        ContentRichtext::configure(
+                            TranslatedText::make('data.body')
+                                ->label(__('lunarpanel.content::popup.form.body.label'))
+                        ),
 
                         TextInput::make('data.discount_code')
                             ->label(__('lunarpanel.content::popup.form.discount_code.label'))
@@ -126,6 +128,16 @@ class PopupResource extends BaseResource
                             ->numeric()
                             ->minValue(0)
                             ->default(5)
+                            ->required(),
+
+                        TextInput::make('data.width_percentage')
+                            ->label(__('lunarpanel.content::popup.form.width_percentage.label'))
+                            ->helperText(__('lunarpanel.content::popup.form.width_percentage.helper'))
+                            ->numeric()
+                            ->minValue(30)
+                            ->maxValue(100)
+                            ->default(60)
+                            ->suffix('%')
                             ->required(),
 
                         Toggle::make('show_once')
