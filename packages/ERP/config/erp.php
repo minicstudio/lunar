@@ -24,6 +24,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Queue
+    |--------------------------------------------------------------------------
+    |
+    | Queued ERP work (product create/update jobs, SendOrderToERP listener)
+    | is pushed to this queue. Set `connection` to a non-cloud driver
+    | (e.g. database) when the default QUEUE_CONNECTION is Laravel Cloud
+    | managed queues, so an App-cluster `queue:work` can process them.
+    |
+    */
+    'queue' => [
+        'name' => env('ERP_QUEUE', 'erp'),
+        'connection' => env('ERP_QUEUE_CONNECTION'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Sync Schedule Configuration
     |--------------------------------------------------------------------------
     |

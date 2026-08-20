@@ -22,6 +22,22 @@ class SendOrderToERP implements ShouldQueue
     public array $backoff = [60, 300, 900];
 
     /**
+     * Get the name of the queue the job should be sent to.
+     */
+    public function viaQueue(): ?string
+    {
+        return config('lunar.erp.queue.name') ?: null;
+    }
+
+    /**
+     * Get the name of the connection the job should be sent to.
+     */
+    public function viaConnection(): ?string
+    {
+        return config('lunar.erp.queue.connection') ?: null;
+    }
+
+    /**
      * Handle the event.
      */
     public function handle(OrderPlacedEvent $event): void
