@@ -48,6 +48,10 @@ return [
             'label' => 'Delay (seconds)',
             'helper' => 'How long to wait after page load before showing the popup.',
         ],
+        'width_percentage' => [
+            'label' => 'Popup Width',
+            'helper' => 'Popup width as a percentage of the viewport (30-100%).',
+        ],
         'show_once' => [
             'label' => 'Show Once',
             'helper' => 'When enabled, dismissed popups stay hidden for this visitor.',

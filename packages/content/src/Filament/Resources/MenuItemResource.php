@@ -4,6 +4,7 @@ namespace Lunar\Content\Filament\Resources;
 
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -91,6 +92,7 @@ class MenuItemResource extends BaseResource
                                 'collection' => __('lunarpanel.content::menu_item.form.link_type.options.collection'),
                                 'cms_page' => __('lunarpanel.content::menu_item.form.link_type.options.cms_page'),
                                 'contact' => __('lunarpanel.content::menu_item.form.link_type.options.contact'),
+                                'custom_url' => __('lunarpanel.content::menu_item.form.link_type.options.custom_url'),
                             ])
                             ->required()
                             ->live()
@@ -130,6 +132,13 @@ class MenuItemResource extends BaseResource
                             ->visible(fn (Get $get): bool => $get('data.link_type') === 'cms_page')
                             ->native(false),
 
+                        TextInput::make('data.custom_url')
+                            ->label(__('lunarpanel.content::menu_item.form.custom_url.label'))
+                            ->helperText(__('lunarpanel.content::menu_item.form.custom_url.helper'))
+                            ->required(fn (Get $get): bool => $get('data.link_type') === 'custom_url')
+                            ->visible(fn (Get $get): bool => $get('data.link_type') === 'custom_url')
+                            ->maxLength(2048),
+
                         TranslatedText::make('data.label')
                             ->label(__('lunarpanel.content::menu_item.form.label.label'))
                             ->helperText(__('lunarpanel.content::menu_item.form.label.helper'))
@@ -167,6 +176,7 @@ class MenuItemResource extends BaseResource
                         'collection' => __('lunarpanel.content::menu_item.form.link_type.options.collection'),
                         'cms_page' => __('lunarpanel.content::menu_item.form.link_type.options.cms_page'),
                         'contact' => __('lunarpanel.content::menu_item.form.link_type.options.contact'),
+                        'custom_url' => __('lunarpanel.content::menu_item.form.link_type.options.custom_url'),
                         default => $record->data['link_type'] ?? null,
                     }),
 
@@ -232,6 +242,7 @@ class MenuItemResource extends BaseResource
             'collection' => static::collectionLabel($record->data['collection_id'] ?? null),
             'cms_page' => MenuItemPages::options()[$record->data['cms_page'] ?? ''] ?? ($record->data['cms_page'] ?? null),
             'contact' => __('lunarpanel.content::menu_item.form.link_type.options.contact'),
+            'custom_url' => $record->data['custom_url'] ?? null,
             default => null,
         };
     }

@@ -19,6 +19,7 @@ use Lunar\Content\Filament\Resources\ContactInfoResource\Pages\CreateContactInfo
 use Lunar\Content\Filament\Resources\ContactInfoResource\Pages\EditContactInfo;
 use Lunar\Content\Filament\Resources\ContactInfoResource\Pages\ListContactInfos;
 use Lunar\Content\Models\ContentBlock;
+use Lunar\Content\Support\ContentRichtext;
 
 class ContactInfoResource extends BaseResource
 {
@@ -104,9 +105,11 @@ class ContactInfoResource extends BaseResource
             ->schema([
                 Section::make(__('lunarpanel.content::contact_info.sections.content'))
                     ->schema([
-                        TranslatedText::make('data.intro')
-                            ->label(__('lunarpanel.content::contact_info.form.intro.label'))
-                            ->helperText(__('lunarpanel.content::contact_info.form.intro.helper'))
+                        ContentRichtext::configure(
+                            TranslatedText::make('data.intro')
+                                ->label(__('lunarpanel.content::contact_info.form.intro.label'))
+                                ->helperText(__('lunarpanel.content::contact_info.form.intro.helper'))
+                        )
                             ->columnSpanFull(),
 
                         Grid::make(2)

@@ -48,6 +48,10 @@ return [
             'label' => 'Întârziere (secunde)',
             'helper' => 'Cât timp să aștepte după încărcarea paginii înainte de a afișa popup-ul.',
         ],
+        'width_percentage' => [
+            'label' => 'Lățime popup',
+            'helper' => 'Lățimea popup-ului ca procent din viewport (30-100%).',
+        ],
         'show_once' => [
             'label' => 'Afișare o singură dată',
             'helper' => 'Dacă este activat, popup-urile închise rămân ascunse pentru acest vizitator.',

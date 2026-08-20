@@ -18,6 +18,7 @@ class CreatePopup extends BaseCreateRecord
         $data['data'] ??= [];
         $data['data']['show_once'] = (bool) ($data['show_once'] ?? true);
         $data['data']['delay_seconds'] = (int) ($data['data']['delay_seconds'] ?? 5);
+        $data['data']['width_percentage'] = min(100, max(30, (int) ($data['data']['width_percentage'] ?? 60)));
         $data['data']['display_on'] = array_values($data['data']['display_on'] ?? []);
         unset($data['show_once']);
 

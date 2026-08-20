@@ -50,6 +50,14 @@ class CreateMenuItem extends BaseCreateRecord
             unset($payload['cms_page']);
         }
 
+        if ($linkType !== 'custom_url') {
+            unset($payload['custom_url']);
+        }
+
+        if ($linkType === 'custom_url' && isset($payload['custom_url']) && is_string($payload['custom_url'])) {
+            $payload['custom_url'] = trim($payload['custom_url']);
+        }
+
         return $payload;
     }
 }

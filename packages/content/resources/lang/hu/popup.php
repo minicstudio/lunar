@@ -48,6 +48,10 @@ return [
             'label' => 'Késleltetés (másodperc)',
             'helper' => 'Mennyi ideig várjon az oldal betöltése után a felugró megjelenítése előtt.',
         ],
+        'width_percentage' => [
+            'label' => 'Felugró szélessége',
+            'helper' => 'A felugró szélessége a nézetablak százalékában (30-100%).',
+        ],
         'show_once' => [
             'label' => 'Csak egyszer',
             'helper' => 'Ha be van kapcsolva, az elutasított felugró ablak rejtve marad ennél a látogatónál.',

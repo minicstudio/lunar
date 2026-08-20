@@ -19,6 +19,7 @@ use Lunar\Content\Filament\Resources\FaqItemResource\Pages\CreateFaqItem;
 use Lunar\Content\Filament\Resources\FaqItemResource\Pages\EditFaqItem;
 use Lunar\Content\Filament\Resources\FaqItemResource\Pages\ListFaqItems;
 use Lunar\Content\Models\ContentBlock;
+use Lunar\Content\Support\ContentRichtext;
 
 class FaqItemResource extends BaseResource
 {
@@ -85,10 +86,11 @@ class FaqItemResource extends BaseResource
                             ->required()
                             ->maxLength(500),
 
-                        TranslatedText::make('data.answer')
-                            ->label(__('lunarpanel.content::faq_item.form.answer.label'))
-                            ->helperText(__('lunarpanel.content::faq_item.form.answer.helper'))
-                            ->optionRichtext(true)
+                        ContentRichtext::configure(
+                            TranslatedText::make('data.answer')
+                                ->label(__('lunarpanel.content::faq_item.form.answer.label'))
+                                ->helperText(__('lunarpanel.content::faq_item.form.answer.helper'))
+                        )
                             ->required(),
                     ]),
 

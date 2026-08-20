@@ -20,6 +20,7 @@ return [
                 'collection' => 'Kollekció',
                 'cms_page' => 'CMS oldal',
                 'contact' => 'Kapcsolat',
+                'custom_url' => 'Egyedi URL',
             ],
         ],
         'collection_id' => [
@@ -38,7 +39,11 @@ return [
         ],
         'label' => [
             'label' => 'Felirat',
-            'helper' => 'Opcionális. Ha üresen hagyod, a kollekció neve, a CMS oldal címe vagy a „Kapcsolat” jelenik meg.',
+            'helper' => 'Opcionális. Ha üresen hagyod, a kollekció neve, a CMS oldal címe, a „Kapcsolat” vagy az egyedi URL jelenik meg.',
+        ],
+        'custom_url' => [
+            'label' => 'Egyedi URL',
+            'helper' => 'Adj meg teljes külső URL-t (https://...) vagy relatív útvonalat (/sajat-oldal).',
         ],
         'is_active' => [
             'label' => 'Aktív',
