@@ -44,6 +44,14 @@ class CreateProductsAndVariantsJob implements ShouldQueue
     {
         $this->article = $article;
         $this->relatedSmartcashVariants = $relatedSmartcashVariants;
+
+        if ($queue = config('lunar.erp.queue.name')) {
+            $this->onQueue($queue);
+        }
+
+        if ($connection = config('lunar.erp.queue.connection')) {
+            $this->onConnection($connection);
+        }
     }
 
     /**

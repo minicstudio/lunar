@@ -70,6 +70,16 @@ test('the listener retries a limited number of times with backoff', function () 
         ->and($listener->backoff)->toBe([60, 300, 900]);
 });
 
+test('the listener routes to the configured ERP queue and connection', function () {
+    Config::set('lunar.erp.queue.name', 'erp');
+    Config::set('lunar.erp.queue.connection', 'database');
+
+    $listener = new SendOrderToERP;
+
+    expect($listener->viaQueue())->toBe('erp')
+        ->and($listener->viaConnection())->toBe('database');
+});
+
 it('marks the order as failed-erp-sync once all attempts are exhausted', function () {
     $order = Order::factory()->create();
 

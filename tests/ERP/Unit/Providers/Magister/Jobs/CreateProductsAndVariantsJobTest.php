@@ -39,6 +39,28 @@ beforeEach(function () {
     }
 });
 
+test('job is routed to the configured ERP queue and connection', function () {
+    config([
+        'lunar.erp.queue.name' => 'erp',
+        'lunar.erp.queue.connection' => 'database',
+    ]);
+
+    $article = ErpSyncTemp::create([
+        'erp_id' => 'ERP-QUEUE',
+        'name' => 'Queued Product',
+        'sku' => 'QUEUE-001',
+        'price' => 1000,
+        'stock' => 0,
+        'provider_data' => ['article_kind' => 0],
+        'attributes' => [],
+    ]);
+
+    $job = new CreateProductsAndVariantsJob($article, Collection::make());
+
+    expect($job->queue)->toBe('erp')
+        ->and($job->connection)->toBe('database');
+});
+
 test('handle creates standard product and variant when missing', function () {
     $article = ErpSyncTemp::create([
         'erp_id' => 'ERP-1',

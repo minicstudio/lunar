@@ -148,6 +148,26 @@ Default schedules:
 
 ## Order Sync Retry, Failure & Manual Resend
 
+### Queue routing
+
+Queued ERP work (`CreateProductsAndVariantsJob`, `SendOrderToERP`) uses:
+
+```php
+// config/lunar/erp.php
+'queue' => [
+    'name' => env('ERP_QUEUE', 'erp'),
+    'connection' => env('ERP_QUEUE_CONNECTION'), // null = default QUEUE_CONNECTION
+],
+```
+
+When the app default is Laravel Cloud managed queues (`QUEUE_CONNECTION=cloud`), set `ERP_QUEUE_CONNECTION=database` (or `redis`) and run a background process on the App cluster:
+
+```bash
+php artisan queue:work database --queue=erp
+```
+
+Scheduled sync Artisan commands (`erp:sync-*`) still run via the scheduler; only the jobs they dispatch (and the order listener) use this queue.
+
 `Lunar\ERP\Listeners\SendOrderToERP` is a queued listener on `OrderPlacedEvent` (registered by the host app's `listeners.php`). It retries transparently before surfacing a failure to admins:
 
 - `tries = 3`, `backoff = [60, 300, 900]` seconds (1 min, 5 min, 15 min).
