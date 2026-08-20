@@ -21,6 +21,7 @@ use Lunar\Content\Filament\Resources\AnnouncementResource\Pages\CreateAnnounceme
 use Lunar\Content\Filament\Resources\AnnouncementResource\Pages\EditAnnouncement;
 use Lunar\Content\Filament\Resources\AnnouncementResource\Pages\ListAnnouncements;
 use Lunar\Content\Models\ContentBlock;
+use Lunar\Content\Support\ContentRichtext;
 use Lunar\Content\Support\StorefrontColors;
 
 class AnnouncementResource extends BaseResource
@@ -83,10 +84,11 @@ class AnnouncementResource extends BaseResource
             ->schema([
                 Section::make(__('lunarpanel.content::announcement.sections.content'))
                     ->schema([
-                        TranslatedText::make('data.text')
-                            ->label(__('lunarpanel.content::announcement.form.text.label'))
-                            ->helperText(__('lunarpanel.content::announcement.form.text.helper'))
-                            ->optionRichtext(true)
+                        ContentRichtext::configure(
+                            TranslatedText::make('data.text')
+                                ->label(__('lunarpanel.content::announcement.form.text.label'))
+                                ->helperText(__('lunarpanel.content::announcement.form.text.helper'))
+                        )
                             ->richtextToolbarButtons([
                                 'bold',
                                 'italic',

@@ -49,6 +49,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Content Rich Text Attachments
+    |--------------------------------------------------------------------------
+    | Disk and directory for inline images uploaded via TranslatedText rich editors
+    | in the Content admin resources (contact intro, FAQ answers, announcements).
+    */
+    'richtext_attachments_disk' => env('CONTENT_RICHTEXT_ATTACHMENTS_DISK', env('CONTENT_UPLOAD_DISK', env('MEDIA_DISK', 's3'))),
+    'richtext_attachments_directory' => env('CONTENT_RICHTEXT_ATTACHMENTS_DIRECTORY', 'content/richtext'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default announcement background color
     |--------------------------------------------------------------------------
     | Optional override for the admin ColorPicker default. When null, falls

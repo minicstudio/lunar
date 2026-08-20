@@ -20,6 +20,7 @@ return [
                 'collection' => 'Collection',
                 'cms_page' => 'CMS Page',
                 'contact' => 'Contact',
+                'custom_url' => 'Custom URL',
             ],
         ],
         'collection_id' => [
@@ -38,7 +39,11 @@ return [
         ],
         'label' => [
             'label' => 'Label',
-            'helper' => 'Optional. Leave empty to use the collection name, CMS page title, or “Contact”.',
+            'helper' => 'Optional. Leave empty to use the collection name, CMS page title, “Contact”, or the custom URL.',
+        ],
+        'custom_url' => [
+            'label' => 'Custom URL',
+            'helper' => 'Enter a full external URL (https://...) or a relative path (/my-page).',
         ],
         'is_active' => [
             'label' => 'Active',

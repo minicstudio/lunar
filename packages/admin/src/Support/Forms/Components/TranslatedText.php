@@ -37,8 +37,6 @@ class TranslatedText extends TextInput
 
     public Language $defaultLanguage;
 
-    public Collection $components;
-
     public Collection $languages;
 
     public function setUp(): void
@@ -50,16 +48,34 @@ class TranslatedText extends TextInput
         $this->default(static function (TranslatedText $component): array {
             return $component->getLanguageDefaults();
         });
+
+        $this->childComponents(function (TranslatedText $component): array {
+            return $component->getLanguages()
+                ->map(fn (Language $language) => $component->makeLocaleComponent($language->code))
+                ->all();
+        });
     }
 
-    public function prepareChildComponents()
+    /**
+     * Build the per-locale input/editor child component.
+     */
+    public function makeLocaleComponent(string $langCode): TranslatedTextInput|TranslatedRichEditor
     {
-        $this->components = collect(
-            $this->getLanguages()->map(fn ($lang) => $this->getOptionRichtext() ?
-                $this->getTranslatedRichEditorComponent($lang->code) :
-                $this->getTranslatedTextComponent($lang->code)
-            )
-        );
+        $component = $this->getOptionRichtext()
+            ? $this->getTranslatedRichEditorComponent($langCode)
+            : $this->getTranslatedTextComponent($langCode);
+
+        $component->required($this->isRequired() && $langCode === $this->getDefaultLanguage()->code);
+
+        return $component;
+    }
+
+    /**
+     * @deprecated Child components are registered via {@see childComponents()}.
+     */
+    public function prepareChildComponents(): void
+    {
+        //
     }
 
     protected function getTranslatedRichEditorComponent(string $langCode): TranslatedRichEditor
@@ -141,29 +157,13 @@ class TranslatedText extends TextInput
         return $component;
     }
 
-    public function prepareTranslateLocaleComponent(Component $component, string $locale)
-    {
-        $localeComponent = clone $component;
-
-        $localeComponent->name($component->getName());
-
-        $localeComponent->statePath($localeComponent->getName());
-
-        $localeComponent->required($this->isRequired && $locale == $this->getDefaultLanguage()->code);
-
-        return $localeComponent;
-    }
-
     public function getComponentByLanguage(Language $language): ComponentContainer
     {
-        $this->prepareChildComponents();
-
         return ComponentContainer::make($this->getLivewire())
             ->parentComponent($this)
             ->components(
-                $this->components
-                    ->filter(fn ($component): bool => $component->getName() == $language->code)
-                    ->map(fn ($component) => $this->prepareTranslateLocaleComponent($component, $language->code))
+                collect($this->getChildComponents())
+                    ->filter(fn (Component $component): bool => $component->getName() === $language->code)
                     ->all()
             )
             ->getClone();

@@ -20,6 +20,7 @@ return [
                 'collection' => 'Colecție',
                 'cms_page' => 'Pagină CMS',
                 'contact' => 'Contact',
+                'custom_url' => 'URL personalizat',
             ],
         ],
         'collection_id' => [
@@ -38,7 +39,11 @@ return [
         ],
         'label' => [
             'label' => 'Etichetă',
-            'helper' => 'Opțional. Lasă gol pentru a folosi numele colecției, titlul paginii CMS sau „Contact”.',
+            'helper' => 'Opțional. Lasă gol pentru a folosi numele colecției, titlul paginii CMS, „Contact” sau URL-ul personalizat.',
+        ],
+        'custom_url' => [
+            'label' => 'URL personalizat',
+            'helper' => 'Introdu un URL extern complet (https://...) sau o cale relativă (/pagina-mea).',
         ],
         'is_active' => [
             'label' => 'Activ',
