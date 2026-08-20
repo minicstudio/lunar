@@ -3,7 +3,9 @@
 uses(\Lunar\Tests\Core\TestCase::class)
     ->group('validation.cart_line');
 
+use Illuminate\Support\Facades\Session;
 use Lunar\Exceptions\Carts\CartException;
+use Lunar\Exceptions\Carts\MinimumQuantityException;
 use Lunar\Models\Cart;
 use Lunar\Models\Currency;
 use Lunar\Validation\CartLine\CartLineQuantity;
@@ -73,7 +75,115 @@ test('can validate minimum quantity', function () {
     );
 
     expect(fn () => $validator->validate())
-        ->toThrow(CartException::class, __('lunar::exceptions.minimum_quantity', ['quantity' => $purchasable->min_quantity]));
+        ->toThrow(MinimumQuantityException::class, __('lunar::exceptions.minimum_quantity', ['quantity' => $purchasable->min_quantity]));
+});
+
+test('can validate minimum quantity when combined with the quantity already in the cart', function () {
+    $currency = Currency::factory()->create();
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    $purchasable = \Lunar\Models\ProductVariant::factory()->create([
+        'min_quantity' => 5,
+    ]);
+
+    $purchasable->prices()->create(
+        \Lunar\Models\Price::factory()->make(['currency_id' => $currency->id])->getAttributes()
+    );
+
+    $cart->lines()->create([
+        'purchasable_type' => \Lunar\Models\ProductVariant::class,
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 3,
+    ]);
+
+    Session::put(config('lunar.cart_session.session_key'), $cart->id);
+
+    $validator = (new CartLineQuantity)->using(
+        cart: $cart,
+        purchasable: $purchasable,
+        quantity: 2,
+        meta: []
+    );
+
+    expect($validator->validate())->toBeTrue();
+});
+
+test('can validate minimum quantity fails when combined with the quantity already in the cart is still below the minimum', function () {
+    $currency = Currency::factory()->create();
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    $purchasable = \Lunar\Models\ProductVariant::factory()->create([
+        'min_quantity' => 5,
+    ]);
+
+    $purchasable->prices()->create(
+        \Lunar\Models\Price::factory()->make(['currency_id' => $currency->id])->getAttributes()
+    );
+
+    $cart->lines()->create([
+        'purchasable_type' => \Lunar\Models\ProductVariant::class,
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 1,
+    ]);
+
+    Session::put(config('lunar.cart_session.session_key'), $cart->id);
+
+    $validator = (new CartLineQuantity)->using(
+        cart: $cart,
+        purchasable: $purchasable,
+        quantity: 2,
+        meta: []
+    );
+
+    expect(fn () => $validator->validate())
+        ->toThrow(MinimumQuantityException::class, __('lunar::exceptions.minimum_quantity', ['quantity' => 5]));
+});
+
+test('does not double count the cart line quantity against itself when validating via cart line id', function () {
+    $currency = Currency::factory()->create();
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    $purchasable = \Lunar\Models\ProductVariant::factory()->create([
+        'min_quantity' => 5,
+    ]);
+
+    $line = $cart->lines()->create([
+        'purchasable_type' => \Lunar\Models\ProductVariant::class,
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 10,
+    ]);
+
+    Session::put(config('lunar.cart_session.session_key'), $cart->id);
+
+    $validator = (new CartLineQuantity)->using(
+        cart: $cart,
+        purchasable: null,
+        cartLineId: $line->id,
+        quantity: 5,
+        meta: []
+    );
+
+    expect($validator->validate())->toBeTrue();
+
+    $validator = (new CartLineQuantity)->using(
+        cart: $cart,
+        purchasable: null,
+        cartLineId: $line->id,
+        quantity: 4,
+        meta: []
+    );
+
+    expect(fn () => $validator->validate())
+        ->toThrow(MinimumQuantityException::class, __('lunar::exceptions.minimum_quantity', ['quantity' => 5]));
 });
 
 test('can validate quantity increment quantity', function (array $quantities, int $increment) {

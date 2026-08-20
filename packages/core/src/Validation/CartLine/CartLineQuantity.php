@@ -2,6 +2,10 @@
 
 namespace Lunar\Validation\CartLine;
 
+use Lunar\Base\Purchasable;
+use Lunar\Exceptions\Carts\MinimumQuantityException;
+use Lunar\Facades\CartSession;
+use Lunar\Models\CartLine;
 use Lunar\Validation\BaseValidator;
 
 class CartLineQuantity extends BaseValidator
@@ -40,13 +44,22 @@ class CartLineQuantity extends BaseValidator
             );
         }
 
-        if ($purchasable && $quantity < $purchasable->min_quantity) {
-            $this->fail(
-                'cart',
-                __('lunar::exceptions.minimum_quantity', [
-                    'quantity' => $purchasable->min_quantity,
-                ])
-            );
+        if ($purchasable) {
+            $minCheckQuantity = $quantity;
+
+            if (! $cartLineId && $currentLine = $this->getCurrentCartLine($purchasable)) {
+                $minCheckQuantity += $currentLine->quantity;
+            }
+
+            if ($minCheckQuantity < $purchasable->min_quantity) {
+                $this->fail(
+                    'cart',
+                    __('lunar::exceptions.minimum_quantity', [
+                        'quantity' => $purchasable->min_quantity,
+                    ]),
+                    MinimumQuantityException::class
+                );
+            }
         }
 
         if ($purchasable && ($quantity % ($purchasable->quantity_increment ?? 1)) !== 0) {
@@ -60,5 +73,14 @@ class CartLineQuantity extends BaseValidator
         }
 
         return $this->pass();
+    }
+
+    /**
+     * Get the current cart line for the given purchasable.
+     */
+    protected function getCurrentCartLine(Purchasable $purchasable): ?CartLine
+    {
+        return CartSession::current()?->lines
+            ?->first(fn ($line) => $line->purchasable->is($purchasable));
     }
 }
