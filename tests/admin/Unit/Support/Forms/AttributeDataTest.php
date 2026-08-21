@@ -37,6 +37,38 @@ describe('attribute data test', function () {
         $inputComponent = \Lunar\Admin\Support\Facades\AttributeData::getFilamentComponent($attribute);
         expect($inputComponent)->toBeInstanceOf(\Filament\Forms\Components\RichEditor::class);
     });
+
+    test('dehydrates translated text array state into field type with values', function () {
+        $attribute = \Lunar\Models\Attribute::factory()->create([
+            'type' => \Lunar\FieldTypes\TranslatedText::class,
+            'handle' => 'collection-meta-keywords',
+        ]);
+
+        $component = \Lunar\Admin\Support\Facades\AttributeData::getFilamentComponent($attribute);
+
+        $result = $component->mutateDehydratedState([
+            'ro' => 'carte, cadou',
+            'hu' => 'konyv, ajandek',
+        ]);
+
+        expect($result)->toBeInstanceOf(\Lunar\FieldTypes\TranslatedText::class)
+            ->and($result->getValue()->get('ro')->getValue())->toBe('carte, cadou')
+            ->and($result->getValue()->get('hu')->getValue())->toBe('konyv, ajandek');
+    });
+
+    test('dehydrates empty translated text state without error', function () {
+        $attribute = \Lunar\Models\Attribute::factory()->create([
+            'type' => \Lunar\FieldTypes\TranslatedText::class,
+            'handle' => 'collection-meta-description',
+        ]);
+
+        $component = \Lunar\Admin\Support\Facades\AttributeData::getFilamentComponent($attribute);
+
+        $result = $component->mutateDehydratedState(null);
+
+        expect($result)->toBeInstanceOf(\Lunar\FieldTypes\TranslatedText::class)
+            ->and($result->getValue())->toBeEmpty();
+    });
 });
 
 class TestFieldType extends Lunar\FieldTypes\Text {}
