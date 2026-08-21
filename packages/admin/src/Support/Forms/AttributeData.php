@@ -13,6 +13,7 @@ use Lunar\Admin\Support\FieldTypes\Toggle;
 use Lunar\Admin\Support\FieldTypes\TranslatedText;
 use Lunar\Admin\Support\FieldTypes\Vimeo;
 use Lunar\Admin\Support\FieldTypes\YouTube;
+use Lunar\Base\FieldType;
 use Lunar\FieldTypes\Dropdown as DrodownFieldType;
 use Lunar\FieldTypes\File as FileFieldType;
 use Lunar\FieldTypes\ListField as ListFieldFieldType;
@@ -52,38 +53,17 @@ class AttributeData
                 $attribute->translate('name')
             )
             ->formatStateUsing(function ($state) use ($attribute) {
-                if (
-                    ! $state ||
-                    (get_class($state) != $attribute->type)
-                ) {
-                    return new $attribute->type;
-                }
-
-                return $state;
+                return $this->resolveFieldTypeState($attribute, $state);
             })
             ->mutateStateForValidationUsing(function ($state) {
-                if ($state instanceof \Lunar\Base\FieldType) {
+                if ($state instanceof FieldType) {
                     return $state->getValue();
                 }
 
                 return $state;
             })
-            ->mutateDehydratedStateUsing(function ($state) use ($attribute, $fieldType) {
-                if ($fieldType::isFileField()) {
-                    $instance = new $attribute->type;
-                    $instance->setValue($state);
-
-                    return $instance;
-                }
-
-                if (
-                    ! $state ||
-                    (get_class($state) != $attribute->type)
-                ) {
-                    return new $attribute->type;
-                }
-
-                return $state;
+            ->mutateDehydratedStateUsing(function ($state) use ($attribute) {
+                return $this->resolveFieldTypeState($attribute, $state);
             })
             ->required($attribute->required)
             ->default($attribute->default_value);
@@ -113,5 +93,28 @@ class AttributeData
         foreach ($this->fieldTypes as $fieldType) {
             $fieldType::synthesize();
         }
+    }
+
+    /**
+     * Convert raw Filament/Livewire state into the attribute's FieldType instance.
+     *
+     * Translated text inputs dehydrate as locale => string arrays. Calling get_class()
+     * on those arrays throws; empty instances without setValue() would also drop edits.
+     */
+    protected function resolveFieldTypeState(Attribute $attribute, mixed $state): FieldType
+    {
+        if ($state instanceof $attribute->type) {
+            return $state;
+        }
+
+        $instance = new $attribute->type;
+
+        if ($state === null || $state === '') {
+            return $instance;
+        }
+
+        $instance->setValue($state);
+
+        return $instance;
     }
 }
