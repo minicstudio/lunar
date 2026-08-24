@@ -87,6 +87,7 @@ class CartLineQuantity extends BaseValidator
             return null;
         }
 
+        // If new keys are ever stored in meta, check whether they should affect this cart line match.
         $currentLine = app(
             config('lunar.cart.actions.get_existing_cart_line', GetExistingCartLine::class)
         )->execute(
