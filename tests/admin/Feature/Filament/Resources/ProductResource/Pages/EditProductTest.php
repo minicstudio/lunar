@@ -128,3 +128,96 @@ it('can save attributes', function () {
 
     expect($record->refresh()->attr('name'))->toBe('New Product Name');
 });
+
+it('preserves translated richtext attributes when saving a product', function () {
+    \Lunar\Models\Language::factory()->create([
+        'code' => 'en',
+        'default' => true,
+    ]);
+
+    \Lunar\Models\TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $record = \Lunar\Models\Product::factory()->create([
+        'attribute_data' => collect([
+            'name' => new \Lunar\FieldTypes\TranslatedText([
+                'en' => 'Existing Product',
+            ]),
+            'description' => new \Lunar\FieldTypes\TranslatedText([
+                'en' => '<p>Keep this description</p>',
+            ]),
+            'product-short-description' => new \Lunar\FieldTypes\TranslatedText([
+                'en' => '<p>Keep this short description</p>',
+            ]),
+        ]),
+    ]);
+
+    \Lunar\Models\ProductVariant::factory()->create([
+        'product_id' => $record->id,
+    ]);
+
+    $group = \Lunar\Models\AttributeGroup::factory()->create([
+        'attributable_type' => 'product',
+        'name' => [
+            'en' => 'Details',
+        ],
+        'handle' => 'details',
+        'position' => 1,
+    ]);
+
+    foreach ([
+        ['handle' => 'name', 'name' => 'Name', 'position' => 1, 'richtext' => false],
+        ['handle' => 'description', 'name' => 'Description', 'position' => 2, 'richtext' => true],
+        ['handle' => 'product-short-description', 'name' => 'Short Description', 'position' => 3, 'richtext' => true],
+    ] as $attributeData) {
+        $attribute = \Lunar\Models\Attribute::factory()->create([
+            'attribute_type' => 'product',
+            'attribute_group_id' => $group->id,
+            'position' => $attributeData['position'],
+            'name' => [
+                'en' => $attributeData['name'],
+            ],
+            'handle' => $attributeData['handle'],
+            'section' => 'main',
+            'type' => \Lunar\FieldTypes\TranslatedText::class,
+            'required' => false,
+            'system' => false,
+            'searchable' => false,
+            'configuration' => [
+                'richtext' => $attributeData['richtext'],
+            ],
+        ]);
+
+        \Illuminate\Support\Facades\DB::table('lunar_attributables')->insert([
+            'attribute_id' => $attribute->id,
+            'attributable_type' => 'product_type',
+            'attributable_id' => $record->productType->id,
+        ]);
+    }
+
+    $this->asStaff(admin: true);
+
+    \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\ProductResource\Pages\EditProduct::class, [
+        'record' => $record->getRouteKey(),
+        'pageClass' => 'productEdit',
+    ])->fillForm([
+        'attribute_data' => [
+            'name' => new \Lunar\FieldTypes\TranslatedText([
+                'en' => 'Existing Product updated',
+            ]),
+            'description' => new \Lunar\FieldTypes\TranslatedText([
+                'en' => '<p>Keep this description</p>',
+            ]),
+            'product-short-description' => new \Lunar\FieldTypes\TranslatedText([
+                'en' => '<p>Keep this short description</p>',
+            ]),
+        ],
+    ])->call('save')->assertHasNoFormErrors();
+
+    $record->refresh();
+
+    expect($record->attr('name'))->toBe('Existing Product updated')
+        ->and($record->attr('description'))->toBe('<p>Keep this description</p>')
+        ->and($record->attr('product-short-description'))->toBe('<p>Keep this short description</p>');
+});
