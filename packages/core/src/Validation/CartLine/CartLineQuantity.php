@@ -2,6 +2,7 @@
 
 namespace Lunar\Validation\CartLine;
 
+use Lunar\Actions\Carts\GetExistingCartLine;
 use Lunar\Base\Purchasable;
 use Lunar\Exceptions\Carts\MinimumQuantityException;
 use Lunar\Facades\CartSession;
@@ -80,7 +81,21 @@ class CartLineQuantity extends BaseValidator
      */
     protected function getCurrentCartLine(Purchasable $purchasable): ?CartLine
     {
-        return CartSession::current()?->lines
-            ?->first(fn ($line) => $line->purchasable->is($purchasable));
+        $cart = $this->parameters['cart'] ?? CartSession::current();
+
+        if (! $cart) {
+            return null;
+        }
+
+        // If new keys are ever stored in meta, check whether they should affect this cart line match.
+        $currentLine = app(
+            config('lunar.cart.actions.get_existing_cart_line', GetExistingCartLine::class)
+        )->execute(
+            cart: $cart,
+            purchasable: $purchasable,
+            meta: (array) ($this->parameters['meta'] ?? [])
+        );
+
+        return $currentLine instanceof CartLine ? $currentLine : null;
     }
 }

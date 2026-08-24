@@ -94,9 +94,10 @@ test('can validate minimum quantity when combined with the quantity already in t
     );
 
     $cart->lines()->create([
-        'purchasable_type' => \Lunar\Models\ProductVariant::class,
+        'purchasable_type' => $purchasable->getMorphClass(),
         'purchasable_id' => $purchasable->id,
         'quantity' => 3,
+        'meta' => ['personalization' => 'asd'],
     ]);
 
     Session::put(config('lunar.cart_session.session_key'), $cart->id);
@@ -105,10 +106,45 @@ test('can validate minimum quantity when combined with the quantity already in t
         cart: $cart,
         purchasable: $purchasable,
         quantity: 2,
-        meta: []
+        meta: ['personalization' => 'asd']
     );
 
     expect($validator->validate())->toBeTrue();
+});
+
+test('minimum quantity excludes cart lines with different meta', function () {
+    $currency = Currency::factory()->create();
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    $purchasable = \Lunar\Models\ProductVariant::factory()->create([
+        'min_quantity' => 5,
+    ]);
+
+    $purchasable->prices()->create(
+        \Lunar\Models\Price::factory()->make(['currency_id' => $currency->id])->getAttributes()
+    );
+
+    $cart->lines()->create([
+        'purchasable_type' => $purchasable->getMorphClass(),
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 5,
+        'meta' => ['personalization' => 'asd'],
+    ]);
+
+    Session::put(config('lunar.cart_session.session_key'), $cart->id);
+
+    $validator = (new CartLineQuantity)->using(
+        cart: $cart,
+        purchasable: $purchasable,
+        quantity: 1,
+        meta: ['personalization' => 'asddddd']
+    );
+
+    expect(fn () => $validator->validate())
+        ->toThrow(MinimumQuantityException::class, __('lunar::exceptions.minimum_quantity', ['quantity' => 5]));
 });
 
 test('can validate minimum quantity fails when combined with the quantity already in the cart is still below the minimum', function () {
