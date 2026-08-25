@@ -27,10 +27,13 @@ class DiscountBreakdown implements CastsAttributes
             json_decode($value, false)
         )->map(function ($breakdown) use ($currency) {
             $breakdown->total = new Price($breakdown->total, $currency, 1);
-            $breakdown->lines = collect($breakdown->lines)->map(function ($line) {
+            $breakdown->lines = collect($breakdown->lines)->map(function ($line) use ($currency) {
                 return (object) [
                     'quantity' => $line->qty,
                     'line' => OrderLine::find($line->id),
+                    'amount' => isset($line->amount) && ! is_null($line->amount)
+                        ? new Price($line->amount, $currency, 1)
+                        : null,
                 ];
             });
 
@@ -57,6 +60,7 @@ class DiscountBreakdown implements CastsAttributes
                         return [
                             'id' => $orderLine->line->id,
                             'qty' => $orderLine->quantity,
+                            'amount' => $orderLine->amount?->value,
                         ];
                     })->values(),
                     'total' => $discountLine->total->value,

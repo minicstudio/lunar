@@ -8,9 +8,11 @@ use Lunar\Base\DataTransferObjects\CartDiscount;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\Validation\CouponValidator;
 use Lunar\DiscountTypes\AdvancedAmountOff;
+use Lunar\Facades\StorefrontSession;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Contracts\Cart as CartContract;
+use Lunar\Models\Contracts\CartLine as CartLineContract;
 use Lunar\Models\Contracts\Channel as ChannelContract;
 use Lunar\Models\Contracts\CustomerGroup as CustomerGroupContract;
 use Lunar\Models\CustomerGroup;
@@ -38,6 +40,14 @@ class DiscountManager implements DiscountManagerInterface
      * The available discounts
      */
     protected ?Collection $discounts = null;
+
+    /**
+     * Per-purchasable memoized result of getDiscountForPurchasable(), keyed by
+     * "<purchasable class>:<purchasable id>".
+     *
+     * @var array<string, ?Discount>
+     */
+    protected array $discountForPurchasableCache = [];
 
     /**
      * The available discount types
@@ -186,6 +196,74 @@ class DiscountManager implements DiscountManagerInterface
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function preloadDiscountsForPurchasables(iterable $purchasables): Collection
+    {
+        $purchasables = collect($purchasables)->filter();
+
+        $productIds = $purchasables
+            ->filter(fn ($purchasable) => $purchasable instanceof Product)
+            ->pluck('id')
+            ->merge(
+                $purchasables
+                    ->filter(fn ($purchasable) => $purchasable instanceof ProductVariant)
+                    ->pluck('product_id')
+            )
+            ->filter()
+            ->unique()
+            ->values();
+
+        $variantIds = $purchasables
+            ->filter(fn ($purchasable) => $purchasable instanceof ProductVariant)
+            ->pluck('id')
+            ->unique()
+            ->values();
+
+        if ($this->channels->isEmpty() && $defaultChannel = Channel::getDefault()) {
+            $this->channel($defaultChannel);
+        }
+
+        if ($this->customerGroups->isEmpty() && $defaultGroup = CustomerGroup::getDefault()) {
+            $this->customerGroup($defaultGroup);
+        }
+
+        $this->discounts = Discount::active()
+            ->usable()
+            ->channel($this->channels)
+            ->customerGroup($this->customerGroups)
+            ->withCount(['discountables', 'collections'])
+            ->with([
+                'discountables' => function ($query) use ($productIds, $variantIds) {
+                    $query->where(
+                        fn ($query) => $query->whereIn('discountable_id', $productIds)
+                            ->where('discountable_type', Product::morphName())
+                    )->orWhere(
+                        fn ($query) => $query->whereIn('discountable_id', $variantIds)
+                            ->where('discountable_type', ProductVariant::morphName())
+                    );
+                },
+                'collections',
+            ])
+            ->orderBy('priority', 'desc')
+            ->orderBy('id')
+            ->get()
+            ->filter(function ($discount) {
+                // IMPORTANT: Skip discounts which has no data or data is empty
+                // can be a case after creation until the user updates the discount
+                if (! $discount->data || empty($discount->data)) {
+                    return false;
+                }
+
+                return true;
+            });
+
+        $this->discountForPurchasableCache = [];
+
+        return $this->discounts;
+    }
+
+    /**
      * Return the applied customer groups.
      */
     public function getCustomerGroups(): Collection
@@ -228,13 +306,17 @@ class DiscountManager implements DiscountManagerInterface
         // Apply automatically applied discounts
         foreach ($cart->lines as $line) {
             // Get the best discount for the line and push it, if it isn't already in the collection
-            $discount = $this->filterDiscountsByPriority($this->discounts, $line->purchasable)->first();
+            $discount = $this->filterDiscountsByPriority($this->discounts, $line->purchasable, $line)->first();
 
             if (! $discount) {
                 continue;
             }
 
-            $discount->getType()->applyPercentageForLine($cart, $line);
+            if ($discount->data['fixed_value'] ?? false) {
+                $discount->getType()->applyFixedValueForLine($cart, $line);
+            } else {
+                $discount->getType()->applyPercentageForLine($cart, $line);
+            }
         }
 
         // Apply manually applied coupon discount
@@ -267,7 +349,7 @@ class DiscountManager implements DiscountManagerInterface
      * Filter discounts based on priority: variant, product, collection, anything left, exclude coupons
      * Returns the discount with the highest value within each priority level
      */
-    public function filterDiscountsByPriority($availableDiscounts, null|Product|ProductVariant $purchasable = null): Collection
+    public function filterDiscountsByPriority($availableDiscounts, null|Product|ProductVariant $purchasable = null, ?CartLineContract $cartLine = null): Collection
     {
         $productVariantDiscounts = collect();
         $productDiscounts = collect();
@@ -294,26 +376,26 @@ class DiscountManager implements DiscountManagerInterface
                 $collectionDiscounts->push($discount);
             }
             // Priority 4: Any other applicable discounts which has no discountables or collections attached
-            elseif (! $discount->discountables->count() && ! $discount->collections->count()) {
+            elseif (! ($discount->discountables_count ?? $discount->discountables->count()) && ! ($discount->collections_count ?? $discount->collections->count())) {
                 $otherDiscounts->push($discount);
             }
         }
 
         // Return the highest value discount from the highest priority category
         if ($productVariantDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($productVariantDiscounts)]);
+            return collect([$this->getHighestValueDiscount($productVariantDiscounts, $cartLine, $purchasable)]);
         }
 
         if ($productDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($productDiscounts)]);
+            return collect([$this->getHighestValueDiscount($productDiscounts, $cartLine, $purchasable)]);
         }
 
         if ($collectionDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($collectionDiscounts)]);
+            return collect([$this->getHighestValueDiscount($collectionDiscounts, $cartLine, $purchasable)]);
         }
 
         if ($otherDiscounts->isNotEmpty()) {
-            return collect([$this->getHighestValueDiscount($otherDiscounts)]);
+            return collect([$this->getHighestValueDiscount($otherDiscounts, $cartLine, $purchasable)]);
         }
 
         // No discounts found
@@ -325,19 +407,31 @@ class DiscountManager implements DiscountManagerInterface
      */
     public function getDiscountForPurchasable(null|Product|ProductVariant $purchasable = null): ?Discount
     {
-        $discounts = $this->getDiscounts(null);
-
-        if ($discounts->isEmpty()) {
+        if (! $purchasable) {
             return null;
         }
 
-        return $this->filterDiscountsByPriority($discounts, $purchasable)->first();
+        $cacheKey = get_class($purchasable).':'.$purchasable->getKey();
+
+        if (array_key_exists($cacheKey, $this->discountForPurchasableCache)) {
+            return $this->discountForPurchasableCache[$cacheKey];
+        }
+
+        $discounts = $this->getDiscounts(null);
+
+        if ($discounts->isEmpty()) {
+            return $this->discountForPurchasableCache[$cacheKey] = null;
+        }
+
+        return $this->discountForPurchasableCache[$cacheKey] = $this->filterDiscountsByPriority($discounts, $purchasable)->first();
     }
 
     /**
-     * Get the discount with the highest value from a collection
+     * Return the discount with the highest estimated monetary value from a
+     * collection. Estimates against the cart line if provided, otherwise
+     * against the purchasable's original price.
      */
-    protected function getHighestValueDiscount($discounts)
+    protected function getHighestValueDiscount($discounts, ?CartLineContract $cartLine = null, null|Product|ProductVariant $purchasable = null)
     {
         $bestDiscount = null;
         $highestDiscountValue = 0;
@@ -345,13 +439,68 @@ class DiscountManager implements DiscountManagerInterface
         foreach ($discounts as $discount) {
             $data = $discount->data;
 
-            if ($data['percentage'] && $data['percentage'] > $highestDiscountValue) {
-                $highestDiscountValue = $data['percentage'];
+            $value = $cartLine
+                ? $this->estimateDiscountAmountPerUnitForLine($discount, $data, $cartLine)
+                : $this->estimateDiscountValueForPurchasable($discount, $data, $purchasable);
+
+            if ($value > $highestDiscountValue) {
+                $highestDiscountValue = $value;
                 $bestDiscount = $discount;
             }
         }
 
         return $bestDiscount;
+    }
+
+    /**
+     * Estimate the per-unit monetary amount a discount would deduct from a
+     * given cart line, regardless of whether it's a percentage or fixed-value
+     * discount.
+     */
+    protected function estimateDiscountAmountPerUnitForLine($discount, array $data, CartLineContract $cartLine): float
+    {
+        $quantity = max(1, $cartLine->quantity);
+
+        if ($data['fixed_value'] ?? false) {
+            return (float) $discount->getType()->estimateFixedValueAmountForLine($cartLine) / $quantity;
+        }
+
+        $subTotal = $cartLine->subTotalDiscounted?->value ?? $cartLine->subTotal->value;
+
+        return ($subTotal * (($data['percentage'] ?? 0) / 100)) / $quantity;
+    }
+
+    /**
+     * Estimate the monetary amount a discount would deduct from a purchasable's
+     * original price, for the purposes of ranking mixed-type candidates when no
+     * specific cart line is available (e.g. catalog/product listing context).
+     */
+    protected function estimateDiscountValueForPurchasable($discount, array $data, null|Product|ProductVariant $purchasable = null): float
+    {
+        if (! $purchasable) {
+            return 0.0;
+        }
+
+        $originalPrices = prices_inc_tax()
+            ? $purchasable->getOriginalPricesIncTax()
+            : $purchasable->getOriginalPrices();
+
+        $price = $originalPrices->firstWhere('currency.id', StorefrontSession::getCurrency()?->id)
+            ?? $originalPrices->first();
+
+        if (! $price) {
+            return 0.0;
+        }
+
+        if (! is_string($discount->type) || ! class_exists($discount->type) || ! method_exists($discount->type, 'calculateDiscountedPrice')) {
+            return 0.0;
+        }
+
+        $discountType = $discount->type;
+
+        $discountedPrice = $discountType::calculateDiscountedPrice($price, $data, $discount->coupon ?? null);
+
+        return (float) max(0, $price->value - $discountedPrice);
     }
 
     /**

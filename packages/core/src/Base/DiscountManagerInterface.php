@@ -47,4 +47,12 @@ interface DiscountManagerInterface
      * Get the best discount for the purchasable only.
      */
     public function getDiscountForPurchasable(null|Product|ProductVariant $purchasable = null): ?Discount;
+
+    /**
+     * Preload discounts for a known, small set of purchasables, scoping the
+     * discountables eager load instead of loading every discountable row.
+     *
+     * @param  iterable<Product|ProductVariant>  $purchasables
+     */
+    public function preloadDiscountsForPurchasables(iterable $purchasables): Collection;
 }

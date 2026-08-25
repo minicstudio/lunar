@@ -11,7 +11,7 @@ return [
             'label' => 'Descrição',
         ],
         'code' => [
-            'label' => 'Código',
+            'label' => 'Fornecedor',
         ],
         'cutoff' => [
             'label' => 'Horário limite',

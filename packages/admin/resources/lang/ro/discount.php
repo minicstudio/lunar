@@ -3,6 +3,10 @@
 return [
     'plural_label' => 'Reduceri',
     'label' => 'Reducere',
+    'notifications' => [
+        'fixed_value_requires_minimum_cart_amount' => 'O reducere cu valoare fixă necesită o valoare minimă a coșului. Vă rugăm să setați o valoare minimă a coșului înainte de salvare.',
+        'minimum_cart_amount_below_fixed_value' => 'Valoarea minimă a coșului nu poate fi mai mică decât valoarea fixă a reducerii.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Condiții',
@@ -93,6 +97,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Valoare fixă',
+            'helper_text' => 'Cu un cod de cupon, reducerea este aplicată la nivelul coșului. Fără cod de cupon, suma este scăzută automat din fiecare linie eligibilă — dar numai dacă rămâne cel puțin procentul minim configurat din preț; altfel reducerea nu se aplică deloc.',
         ],
         'percentage' => [
             'label' => 'Procent',

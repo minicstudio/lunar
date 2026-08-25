@@ -101,6 +101,7 @@ class ActivityLogFeed extends Component implements HasActions, HasForms
     {
         $activities = $this->subject->activities()
             ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
             ->with(['causer', 'subject'])
             ->paginate(10, ['*'], $this->pageName);
 

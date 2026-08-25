@@ -124,6 +124,11 @@ class Cart extends BaseModel implements Contracts\Cart
     public ?Price $discountTotal = null;
 
     /**
+     * Subtotal discounted without coupon applied
+     */
+    public ?Price $subTotalDiscountedWithoutCoupon = null;
+
+    /**
      * Subtotal discounted including tax without coupon applied
      */
     public ?Price $subTotalDiscountedWithoutCouponIncTax = null;
@@ -134,7 +139,7 @@ class Cart extends BaseModel implements Contracts\Cart
     public ?Price $couponTotal = null;
 
     /**
-     * Sum of coupon discounts including tax (only one can be applied at the moment)
+     * Sum of coupon discounts including tax.
      */
     public ?Price $couponTotalIncTax = null;
 

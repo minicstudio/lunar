@@ -3,6 +3,7 @@
 namespace Lunar\Admin\Filament\Resources\DiscountResource\Pages;
 
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationGroup;
 use Lunar\Admin\Base\LunarPanelDiscountInterface;
 use Lunar\Admin\Events\DiscountDeleted;
@@ -67,11 +68,69 @@ class EditDiscount extends BaseEditRecord
             }
         }
 
+        $currencies = Currency::enabled()->get();
+
+        foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $value) {
+            $currency = $currencies->first(
+                fn ($currency) => $currency->code == $currencyCode
+            );
+
+            if (! $currency) {
+                continue;
+            }
+            $data['data']['fixed_values'][$currencyCode] = $value / $currency->factor;
+        }
+
         return $data;
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        if ($data['data']['fixed_value'] ?? false) {
+            $hasCoupon = filled($data['coupon'] ?? null);
+
+            if ($hasCoupon) {
+                $missingMinimumCartAmount = false;
+                $minimumCartAmountBelowFixedValue = false;
+
+                foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $fixedValue) {
+                    if (blank($fixedValue)) {
+                        continue;
+                    }
+
+                    $minPrice = $data['data']['min_prices'][$currencyCode] ?? null;
+
+                    if (blank($minPrice)) {
+                        $missingMinimumCartAmount = true;
+
+                        continue;
+                    }
+
+                    if ((float) $minPrice < (float) $fixedValue) {
+                        $minimumCartAmountBelowFixedValue = true;
+                    }
+                }
+
+                if ($missingMinimumCartAmount) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('lunarpanel::discount.notifications.fixed_value_requires_minimum_cart_amount'))
+                        ->send();
+                }
+
+                if ($minimumCartAmountBelowFixedValue) {
+                    Notification::make()
+                        ->danger()
+                        ->title(__('lunarpanel::discount.notifications.minimum_cart_amount_below_fixed_value'))
+                        ->send();
+                }
+
+                if ($missingMinimumCartAmount || $minimumCartAmountBelowFixedValue) {
+                    $this->halt();
+                }
+            }
+        }
+
         if (class_exists($data['type'])) {
             $type = new $data['type'];
 

@@ -127,8 +127,8 @@ test('sets default discount values on cart lines', function () {
         ->and($line->unitPriceWithoutCouponIncTax)->toBeInstanceOf(DataTypesPrice::class)
         ->and($line->discountTotalWithoutCoupon)->toBeInstanceOf(DataTypesPrice::class)
         ->and($line->discountTotalWithoutCoupon->value)->toBe(0)
-        ->and($line->discountTotalWithoutCouponIncTax)->toBeInstanceOf(DataTypesPrice::class)
-        ->and($line->discountTotalWithoutCouponIncTax->value)->toBe(0)
+        ->and($line->subTotalDiscountedWithoutCoupon)->toBeInstanceOf(DataTypesPrice::class)
+        ->and($line->subTotalDiscountedWithoutCoupon->value)->toBe($line->subTotalDiscounted->value)
         ->and($line->subTotalDiscountedWithoutCouponIncTax)->toBeInstanceOf(DataTypesPrice::class)
         ->and($line->subTotalDiscountedWithoutCouponIncTax->value)->toBeGreaterThan($line->subTotalDiscounted->value);
 });
@@ -167,6 +167,7 @@ test('returns original prices when pricing is inclusive of tax', function () {
     $line = $result->lines->first();
 
     expect($line->unitPriceWithoutCoupon->value)->toBe($line->unitPriceWithoutCouponIncTax->value)
+        ->and($line->subTotalDiscountedWithoutCoupon->value)->toBe($line->subTotalDiscounted->value)
         ->and($line->subTotalDiscountedWithoutCouponIncTax->value)->toBe($line->subTotalDiscounted->value);
 });
 
@@ -290,7 +291,7 @@ test('processes multiple cart lines correctly', function () {
         expect($line->unitPriceWithoutCoupon)->toBeInstanceOf(DataTypesPrice::class)
             ->and($line->unitPriceWithoutCouponIncTax)->toBeInstanceOf(DataTypesPrice::class)
             ->and($line->discountTotalWithoutCoupon)->toBeInstanceOf(DataTypesPrice::class)
-            ->and($line->discountTotalWithoutCouponIncTax)->toBeInstanceOf(DataTypesPrice::class)
+            ->and($line->subTotalDiscountedWithoutCoupon)->toBeInstanceOf(DataTypesPrice::class)
             ->and($line->subTotalDiscountedWithoutCouponIncTax)->toBeInstanceOf(DataTypesPrice::class);
     }
 });

@@ -112,4 +112,16 @@ return [
     'home_shipping_id' => env('SAMEDAY_HOME_SHIPPING_ID', 7), // Default service ID for home shipping
 
     'locker_shipping_id' => env('SAMEDAY_LOCKER_SHIPPING_ID', 15), // Default service ID for locker shipping
+
+    /*
+    |--------------------------------------------------------------------------
+    | Locker Support
+    |--------------------------------------------------------------------------
+    |
+    | Whether this provider offers a locker (easybox) delivery variant. Used
+    | to expose a "<provider>-locker" option in the shipping method provider
+    | dropdown, in addition to the base provider option.
+    |
+    */
+    'supports_locker' => true,
 ];

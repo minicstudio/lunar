@@ -29,6 +29,9 @@ return [
             'visible' => [
                 'label' => 'Visible',
             ],
+            'display_in_header' => [
+                'label' => 'Afficher dans l\'en-tête',
+            ],
             'purchasable' => [
                 'label' => 'Achetable',
             ],
@@ -49,6 +52,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Visible',
+            ],
+            'display_in_header' => [
+                'label' => 'Afficher dans l\'en-tête',
             ],
             'purchasable' => [
                 'label' => 'Achetable',
@@ -107,11 +113,11 @@ return [
             'view' => [
                 'label' => 'Voir',
             ],
-            'confirm_non_webp' => [
-                'heading' => '💡 Conseil : Utilisez des images au format WebP !',
-                'description' => "L'image sélectionnée n'est pas au format WebP. WebP offre des fichiers plus petits que JPEG et PNG sans perte de qualité, ce qui accélère le chargement et améliore le SEO. Nous recommandons de convertir vos images !",
-                'confirm' => "Continuer l'envoi",
-                'cancel' => 'Annuler',
+        ],
+        'notifications' => [
+            'webp_conversion' => [
+                'title' => 'Image convertie en WebP',
+                'body' => 'L\'image téléversée a été convertie en WebP pour de meilleures performances et un meilleur SEO.',
             ],
         ],
         'form' => [

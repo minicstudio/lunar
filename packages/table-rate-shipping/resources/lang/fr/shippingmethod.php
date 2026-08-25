@@ -11,7 +11,7 @@ return [
             'label' => 'Description',
         ],
         'code' => [
-            'label' => 'Code',
+            'label' => 'Fournisseur',
         ],
         'cutoff' => [
             'label' => 'Date limite',

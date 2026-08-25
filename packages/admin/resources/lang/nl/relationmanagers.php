@@ -29,6 +29,9 @@ return [
             'visible' => [
                 'label' => 'Zichtbaar',
             ],
+            'display_in_header' => [
+                'label' => 'Weergeven in header',
+            ],
             'purchasable' => [
                 'label' => 'Koopbaar',
             ],
@@ -49,6 +52,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Zichtbaar',
+            ],
+            'display_in_header' => [
+                'label' => 'Weergeven in header',
             ],
             'purchasable' => [
                 'label' => 'Koopbaar',
@@ -107,11 +113,11 @@ return [
             'view' => [
                 'label' => 'Bekijken',
             ],
-            'confirm_non_webp' => [
-                'heading' => '💡 Tip: Gebruik afbeeldingen in WebP-formaat!',
-                'description' => 'De geselecteerde afbeelding is niet in WebP-formaat. WebP levert kleinere bestanden op dan JPEG en PNG zonder kwaliteitsverlies, wat resulteert in snellere laadtijden en betere SEO. We raden aan uw afbeeldingen te converteren!',
-                'confirm' => 'Upload doorgaan',
-                'cancel' => 'Annuleren',
+        ],
+        'notifications' => [
+            'webp_conversion' => [
+                'title' => 'Afbeelding geconverteerd naar WebP',
+                'body' => 'De geüploade afbeelding is geconverteerd naar WebP voor betere prestaties en SEO.',
             ],
         ],
         'form' => [

@@ -40,11 +40,15 @@ class ReviewRequestEmailCommand extends Command
         $firstDelay = config('lunar.review.first_reminder_delay_minutes');
         $secondDelay = config('lunar.review.second_reminder_delay_minutes');
 
+        // Matches the command's hourly schedule, so each order falls into exactly
+        // one run's window instead of needing minute-level cron precision.
+        $windowMinutes = 60;
+
         $firstReminderFrom = Carbon::now()->subMinutes($firstDelay);
-        $firstReminderTo = Carbon::now()->subMinutes($firstDelay - 1);
+        $firstReminderTo = Carbon::now()->subMinutes($firstDelay - $windowMinutes);
 
         $secondReminderFrom = Carbon::now()->subMinutes($secondDelay);
-        $secondReminderTo = Carbon::now()->subMinutes($secondDelay - 1);
+        $secondReminderTo = Carbon::now()->subMinutes($secondDelay - $windowMinutes);
 
         $orders = Order::with('user')
             ->where('status', $targetStatus)

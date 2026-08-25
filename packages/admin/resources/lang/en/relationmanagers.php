@@ -29,6 +29,9 @@ return [
             'visible' => [
                 'label' => 'Visible',
             ],
+            'display_in_header' => [
+                'label' => 'Display in header',
+            ],
             'purchasable' => [
                 'label' => 'Purchasable',
             ],
@@ -49,6 +52,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Visible',
+            ],
+            'display_in_header' => [
+                'label' => 'Display in header',
             ],
             'purchasable' => [
                 'label' => 'Purchasable',
@@ -113,11 +119,11 @@ return [
             'view' => [
                 'label' => 'View',
             ],
-            'confirm_non_webp' => [
-                'heading' => '💡 Tip: Use WebP format images!',
-                'description' => 'The selected image is not in WebP format. WebP provides smaller file sizes compared to JPEG and PNG without quality loss, resulting in faster loading and better SEO. We recommend converting!',
-                'confirm' => 'Continue Upload',
-                'cancel' => 'Cancel',
+        ],
+        'notifications' => [
+            'webp_conversion' => [
+                'title' => 'Image converted to WebP',
+                'body' => 'The uploaded image was converted to WebP for better performance and SEO.',
             ],
         ],
         'form' => [

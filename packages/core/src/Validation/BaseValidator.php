@@ -29,8 +29,9 @@ abstract class BaseValidator
      *
      * @param  string  $where
      * @param  string  $reason
+     * @param  string  $exception  The CartException class to throw.
      */
-    public function fail($where, $reason): bool
+    public function fail($where, $reason, string $exception = CartException::class): bool
     {
         $messages = new MessageBag(
             is_array($reason) ? $reason : [
@@ -40,7 +41,7 @@ abstract class BaseValidator
 
         throw_if(
             $messages->isNotEmpty(),
-            CartException::class,
+            $exception,
             $messages
         );
 

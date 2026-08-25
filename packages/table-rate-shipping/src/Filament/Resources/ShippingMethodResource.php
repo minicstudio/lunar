@@ -11,6 +11,7 @@ use Filament\Support\Facades\FilamentIcon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages;
 use Lunar\Shipping\Models\Contracts\ShippingMethod;
@@ -101,8 +102,18 @@ class ShippingMethodResource extends BaseResource
 
     public static function getCodeFormComponent(): Component
     {
-        return Forms\Components\TextInput::make('code')
+        return Forms\Components\Select::make('code')
             ->label(__('lunarpanel.shipping::shippingmethod.form.code.label'))
+            ->options(fn () => collect(config('lunar.shipping.providers', []))
+                ->flatMap(function (string $provider) {
+                    $options = [$provider => Str::headline($provider)];
+
+                    if (config("lunar.shipping.{$provider}.supports_locker", false)) {
+                        $options["{$provider}-locker"] = Str::headline("{$provider}-locker");
+                    }
+
+                    return $options;
+                }))
             ->required()
             ->unique(ignoreRecord: true);
     }

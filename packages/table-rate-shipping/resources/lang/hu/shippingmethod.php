@@ -11,7 +11,7 @@ return [
             'label' => 'Leírás',
         ],
         'code' => [
-            'label' => 'Kód',
+            'label' => 'Szolgáltató',
         ],
         'cutoff' => [
             'label' => 'Határidő',

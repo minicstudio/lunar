@@ -42,6 +42,7 @@ use Lunar\Base\TelemetryInsights;
 use Lunar\Base\TelemetryService;
 use Lunar\Base\TelemetryServiceInterface;
 use Lunar\Console\Commands\AddonsDiscover;
+use Lunar\Console\Commands\ConvertMediaToWebp;
 use Lunar\Console\Commands\Import\AddressData;
 use Lunar\Console\Commands\MigrateGetCandy;
 use Lunar\Console\Commands\Orders\SyncNewCustomerOrders;
@@ -254,6 +255,7 @@ class LunarServiceProvider extends ServiceProvider
                 MigrateGetCandy::class,
                 SyncNewCustomerOrders::class,
                 PruneCarts::class,
+                ConvertMediaToWebp::class,
             ]);
 
             if (config('lunar.cart.prune_tables.enabled', false)) {

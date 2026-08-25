@@ -199,38 +199,85 @@ class Order extends BaseModel implements Contracts\Order
     protected function couponTotal(): EloquentAttribute
     {
         return EloquentAttribute::make(
-            get: function () {
-                $total = 0;
+            get: fn () => new PriceDataType($this->couponDiscountTotals()['inc_tax'], $this->currency, 1),
+        );
+    }
 
-                $couponBreakdowns = $this->discount_breakdown->filter(function ($breakdown) {
-                    return $breakdown->discount->coupon !== null;
-                });
+    /**
+     * Sum of coupon discounts excluding tax.
+     */
+    protected function couponTotalWithoutTax(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: fn () => new PriceDataType($this->couponDiscountTotals()['net'], $this->currency, 1),
+        );
+    }
 
-                foreach ($couponBreakdowns as $breakdown) {
-                    $percentage = $breakdown->discount->data->percentage;
+    /**
+     * Calculate the coupon discount total, both excluding and including tax.
+     *
+     * @return array{net: int, inc_tax: int}
+     */
+    protected function couponDiscountTotals(): array
+    {
+        $net = 0;
+        $incTax = 0;
 
-                    foreach ($breakdown->lines as $lineData) {
-                        $orderLine = $lineData->line;
+        $couponBreakdowns = $this->discount_breakdown->filter(function ($breakdown) {
+            return $breakdown->discount->coupon !== null;
+        });
 
-                        if ($orderLine) {
-                            $unitPriceExcTax = $orderLine->unit_price_without_coupon->value;
+        foreach ($couponBreakdowns as $breakdown) {
+            if ($breakdown->discount->data->fixed_value ?? false) {
+                $couponNet = 0;
+                $taxRate = 0.0;
 
-                            $discountAmount = ($unitPriceExcTax * $lineData->quantity) * ($percentage / 100);
+                foreach ($breakdown->lines as $lineData) {
+                    $amount = (int) ($lineData->amount?->value ?? 0);
 
-                            $discountAmountIncTax = $discountAmount;
-
-                            if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
-                                $discountAmountIncTax = $discountAmount * (1 + $orderLine->tax_rate);
-                            }
-
-                            $total += (int) $discountAmountIncTax;
-                        }
+                    if ($amount <= 0) {
+                        continue;
                     }
+
+                    $couponNet += $amount;
+                    $taxRate = $lineData->line?->tax_rate ?? 0.0;
                 }
 
-                return new PriceDataType((int) $total, $this->currency, 1);
-            },
-        );
+                $net += $couponNet;
+
+                $incTax += config('lunar.pricing.stored_inclusive_of_tax', false)
+                    ? $couponNet
+                    : (int) round($couponNet * (1 + $taxRate));
+
+                continue;
+            }
+
+            $percentage = $breakdown->discount->data->percentage;
+
+            foreach ($breakdown->lines as $lineData) {
+                $orderLine = $lineData->line;
+
+                if (! $orderLine) {
+                    continue;
+                }
+
+                $unitPriceExcTax = $orderLine->unit_price_without_coupon->value;
+
+                $discountAmount = ($unitPriceExcTax * $lineData->quantity) * ($percentage / 100);
+
+                $net += (int) $discountAmount;
+
+                $discountAmountIncTax = $discountAmount;
+
+                if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
+                    $discountAmountIncTax = $discountAmount * (1 + $orderLine->tax_rate);
+                }
+
+                $incTax += (int) $discountAmountIncTax;
+            }
+        }
+
+        return ['net' => $net, 'inc_tax' => $incTax];
     }
 
     /**
@@ -250,6 +297,18 @@ class Order extends BaseModel implements Contracts\Order
     }
 
     /**
+     * Get the subtotal discounted without coupon, excluding tax.
+     */
+    protected function subTotalDiscountedWithoutCoupon(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: function () {
+                return new PriceDataType($this->sub_total->value - $this->discount_total_without_coupon->value, $this->currency, 1);
+            },
+        );
+    }
+
+    /**
      * Get the subtotal discounted without coupon including tax.
      */
     protected function subTotalDiscountedWithoutCouponIncTax(): EloquentAttribute
@@ -257,7 +316,7 @@ class Order extends BaseModel implements Contracts\Order
         return EloquentAttribute::make(
             get: function () {
                 if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
-                    return new PriceDataType($this->sub_total->value - $this->discount_total_without_coupon->value, $this->currency, 1);
+                    return $this->sub_total_discounted_without_coupon;
                 }
 
                 $total = $this->productLines->sum(function ($line) {
@@ -265,6 +324,18 @@ class Order extends BaseModel implements Contracts\Order
                 });
 
                 return new PriceDataType((int) $total, $this->currency, 1);
+            },
+        );
+    }
+
+    /**
+     * Get the shipping subtotal excluding tax.
+     */
+    protected function shippingSubTotal(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: function () {
+                return new PriceDataType((int) $this->shipping_breakdown->items->sum('price.value'), $this->currency, 1);
             },
         );
     }
@@ -316,6 +387,7 @@ class Order extends BaseModel implements Contracts\Order
             ->where('description', 'status-update')
             ->whereIn('properties->new', $statuses)
             ->latest('created_at')
+            ->latest('id')
             ->get();
     }
 }

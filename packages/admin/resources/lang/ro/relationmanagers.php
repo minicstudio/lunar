@@ -24,6 +24,9 @@ return [
             'visible' => [
                 'label' => 'Vizibil',
             ],
+            'display_in_header' => [
+                'label' => 'Afișează în antet',
+            ],
             'purchasable' => [
                 'label' => 'Achiziționabil',
             ],
@@ -44,6 +47,9 @@ return [
             ],
             'visible' => [
                 'label' => 'Vizibil',
+            ],
+            'display_in_header' => [
+                'label' => 'Afișează în antent',
             ],
             'purchasable' => [
                 'label' => 'Achiziționabil',
@@ -103,11 +109,11 @@ return [
             'view' => [
                 'label' => 'Vezi',
             ],
-            'confirm_non_webp' => [
-                'heading' => '💡 Sfat: Folosiți imagini în format WebP!',
-                'description' => 'Imaginea selectată nu este în format WebP. WebP oferă fișiere mai mici decât JPEG și PNG fără pierderi de calitate, rezultând în încărcare mai rapidă și SEO mai bun. Vă recomandăm să convertiți imaginile!',
-                'confirm' => 'Continuați încărcarea',
-                'cancel' => 'Anulați',
+        ],
+        'notifications' => [
+            'webp_conversion' => [
+                'title' => 'Imagine convertită în WebP',
+                'body' => 'Imaginea încărcată a fost convertită în WebP pentru performanță și SEO mai bune.',
             ],
         ],
         'form' => [

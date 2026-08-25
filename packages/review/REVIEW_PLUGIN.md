@@ -110,9 +110,15 @@ class ReviewReminderMail extends Mailable
 ```php
 protected function schedule(Schedule $schedule)
 {
-    $schedule->command('review:request-email')->everyMinute();
+    $schedule->command('review:request-email')->hourly();
 }
 ```
+
+The command matches orders in a 1-hour window aligned to the configured delay, so
+it must be scheduled `hourly()` (not `everyMinute()`) to catch every eligible order
+exactly once. Running it more often than hourly (e.g. every minute) is unnecessary
+and, on hosts with scale-to-zero/sleep behavior (like Laravel Cloud), will prevent
+the environment from ever going idle.
 
 ## Features
 
@@ -412,9 +418,12 @@ Add this command to your task scheduler in `app/Console/Kernel.php`:
 ```php
 protected function schedule(Schedule $schedule)
 {
-    $schedule->command('review:request-email')->everyMinute();
+    $schedule->command('review:request-email')->hourly();
 }
 ```
+
+The command must be scheduled `hourly()`, since it matches orders in a 1-hour
+window aligned to the configured delay.
 
 If no mailer is configured, the command will skip execution with an informational message.
 

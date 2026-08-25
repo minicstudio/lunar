@@ -19,6 +19,8 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v2
       - name: Install dependencies
+        env:
+          COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.COMPOSER_PRIVATE_REPO_TOKEN }}"}}'
         run: |
           composer install --no-interaction
       - name: Run Pint

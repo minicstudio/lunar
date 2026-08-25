@@ -31,6 +31,7 @@
         "lunarphp/filament3-2fa": "^2.1.0",
         "lunarphp/lunar": "self.version",
         "meilisearch/meilisearch-php": "^1.10",
+        "minic/laravel-ai-assistant": "^1.0.0",
         "php": "^8.2",
         "saloonphp/saloon": "^4.0",
         "spatie/laravel-activitylog": "^4.10.1",
@@ -90,7 +91,8 @@
             "Lunar\\Addons\\Shipping\\": "packages/shipping/src",
             "Lunar\\Shipping\\": "packages/table-rate-shipping/src",
             "Lunar\\Shipping\\Database\\Factories\\": "packages/table-rate-shipping/database/factories",
-            "Lunar\\Stripe\\": "packages/stripe/src/"
+            "Lunar\\Stripe\\": "packages/stripe/src/",
+            "Lunar\\Content\\": "packages/content/src"
         }
     },
     "autoload-dev": {
@@ -146,6 +148,7 @@
                 "Lunar\\Review\\ReviewServiceProvider",
                 "Lunar\\Loyalty\\LoyaltyServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
+                "Lunar\\Content\\ContentServiceProvider",
                 "Lunar\\Mailchimp\\MailchimpServiceProvider",
                 "Lunar\\LunarServiceProvider"
             ]
@@ -184,5 +187,11 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": {
+        "laravel-ai-assistant": {
+            "type": "git",
+            "url": "git@github.com:minicstudio/laravel-ai-assistant.git"
+        }
+    }
 }

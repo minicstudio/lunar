@@ -3,6 +3,10 @@
 return [
     'plural_label' => 'Discounts',
     'label' => 'Discount',
+    'notifications' => [
+        'fixed_value_requires_minimum_cart_amount' => 'A fixed value discount requires a minimum cart amount. Please set a minimum cart amount before saving.',
+        'minimum_cart_amount_below_fixed_value' => 'The minimum cart amount cannot be lower than the fixed value discount amount.',
+    ],
     'form' => [
         'conditions' => [
             'heading' => 'Conditions',
@@ -93,6 +97,7 @@ return [
         ],
         'fixed_value' => [
             'label' => 'Fixed value',
+            'helper_text' => 'If a coupon code is set, the discount is applied at the cart level. If left without a coupon, the amount is deducted from every eligible cart line automatically — but only if what remains is still at least the configured minimum percentage of the price; otherwise it is not applied at all.',
         ],
         'percentage' => [
             'label' => 'Percentage',

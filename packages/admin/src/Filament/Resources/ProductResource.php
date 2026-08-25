@@ -446,7 +446,8 @@ class ProductResource extends BaseResource
         return parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
-            ]);
+            ])
+            ->with(['variants.prices.currency']);
     }
 
     public static function getGlobalSearchEloquentQuery(): Builder
