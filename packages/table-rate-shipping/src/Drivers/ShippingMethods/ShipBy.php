@@ -128,9 +128,9 @@ class ShipBy implements ShippingRateInterface
         }
 
         $shippingRate->loadMissing('prices');
-        foreach ($shippingRate->prices as $price) {
-            $price->setRelation('priceable', $shippingRate);
-        }
+        collect($shippingRate->prices)->each(
+            fn ($price) => $price->setRelation('priceable', $shippingRate)
+        );
 
         // Do we have a suitable tier price?
         $pricing = Pricing::for($shippingRate)->customerGroups($customerGroups)->qty($tier)->get();
