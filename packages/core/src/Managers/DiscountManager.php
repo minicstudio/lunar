@@ -19,6 +19,7 @@ use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Spatie\LaravelBlink\BlinkFacade as Blink;
 
 class DiscountManager implements DiscountManagerInterface
 {
@@ -143,56 +144,71 @@ class DiscountManager implements DiscountManagerInterface
             $this->channel($defaultChannel);
         }
 
-        if ($cart && $customerGroups = $cart->customer?->customerGroups) {
-            $this->customerGroup($customerGroups);
+        if ($cart && $customer = $cart->customer) {
+            $customerGroups = Blink::once('customer_groups_'.$customer->id, function () use ($customer) {
+                $customer->loadMissing('customerGroups');
+
+                return $customer->customerGroups;
+            });
+
+            if ($customerGroups?->isNotEmpty()) {
+                $this->customerGroup($customerGroups);
+            }
         }
 
         if ($this->customerGroups->isEmpty() && $defaultGroup = CustomerGroup::getDefault()) {
             $this->customerGroup($defaultGroup);
         }
 
-        return Discount::active()
-            ->usable()
-            ->channel($this->channels)
-            ->customerGroup($this->customerGroups)
-            ->with([
-                'discountables',
-                'collections',
-            ])
-            ->when(
-                $cart,
-                function ($query, $value) {
-                    return $query->where(function ($query) use ($value) {
+        $cacheKey = 'lunar_discounts_'.
+            $this->channels->pluck('id')->sort()->implode(',').'_'.
+            $this->customerGroups->pluck('id')->sort()->implode(',').'_'.
+            ($cart?->id ?? 'none');
 
-                        return $query->where(fn ($query) => $query->products(
-                            $value->lines->pluck('purchasable.product_id')->filter()->values(),
-                            ['condition', 'limitation']
-                        )
-                        )
-                            ->orWhere(fn ($query) => $query->productVariants(
-                                $value->lines->pluck('purchasable.id')->filter()->values(),
+        return $this->discounts = Blink::once($cacheKey, function () use ($cart) {
+            return Discount::active()
+                ->usable()
+                ->channel($this->channels)
+                ->customerGroup($this->customerGroups)
+                ->with([
+                    'discountables',
+                    'collections',
+                ])
+                ->when(
+                    $cart,
+                    function ($query, $value) {
+                        return $query->where(function ($query) use ($value) {
+
+                            return $query->where(fn ($query) => $query->products(
+                                $value->lines->pluck('purchasable.product_id')->filter()->values(),
                                 ['condition', 'limitation']
                             )
                             )
-                            ->orWhere(fn ($query) => $query->collections(
-                                $value->lines->map(fn ($line) => $line->purchasable->product->collections->pluck('id'))->flatten()->filter()->values(),
-                                ['condition']
-                            )
-                            );
-                    });
-                }
-            )->orderBy('priority', 'desc')
-            ->orderBy('id')
-            ->get()
-            ->filter(function ($discount) {
-                // IMPORTANT: Skip discounts which has no data or data is empty
-                // can be a case after creation until the user updates the discount
-                if (! $discount->data || empty($discount->data)) {
-                    return false;
-                }
+                                ->orWhere(fn ($query) => $query->productVariants(
+                                    $value->lines->pluck('purchasable.id')->filter()->values(),
+                                    ['condition', 'limitation']
+                                )
+                                )
+                                ->orWhere(fn ($query) => $query->collections(
+                                    $value->lines->map(fn ($line) => $line->purchasable->product->collections->pluck('id'))->flatten()->filter()->values(),
+                                    ['condition']
+                                )
+                                );
+                        });
+                    }
+                )->orderBy('priority', 'desc')
+                ->orderBy('id')
+                ->get()
+                ->filter(function ($discount) {
+                    // IMPORTANT: Skip discounts which has no data or data is empty
+                    // can be a case after creation until the user updates the discount
+                    if (! $discount->data || empty($discount->data)) {
+                        return false;
+                    }
 
-                return true;
-            });
+                    return true;
+                });
+        });
     }
 
     /**
