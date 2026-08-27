@@ -21,7 +21,7 @@ class KlaviyoService
 
         $this->connector = new KlaviyoConnector(
             apiKey: $apiKey,
-            revision: (string) config('lunar.klaviyo.api_revision', '2024-10-15'),
+            revision: (string) config('lunar.klaviyo.api_revision', '2026-01-15'),
         );
     }
 
@@ -30,9 +30,22 @@ class KlaviyoService
         return $this->connector;
     }
 
+    /**
+     * Double opt-in list for ExplicitOptIn.
+     */
     public function getListId(): ?string
     {
         $listId = config('lunar.klaviyo.list_id');
+
+        return $listId ? (string) $listId : null;
+    }
+
+    /**
+     * Single opt-in list for CustomerRegistration / automatic order subscribe.
+     */
+    public function getAutomaticListId(): ?string
+    {
+        $listId = config('lunar.klaviyo.automatic_list_id');
 
         return $listId ? (string) $listId : null;
     }

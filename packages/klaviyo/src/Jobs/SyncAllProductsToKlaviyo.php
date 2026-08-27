@@ -8,7 +8,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Enums\ProductEventType;
+use Lunar\Facades\StorefrontSession;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
+use Lunar\Models\Channel;
+use Lunar\Models\CustomerGroup;
 use Lunar\Models\Product;
 
 class SyncAllProductsToKlaviyo implements ShouldQueue
@@ -37,6 +40,18 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
             'chunk_size' => $this->chunkSize,
         ]);
 
+        $channel = Channel::getDefault();
+
+        if ($channel) {
+            StorefrontSession::setChannel($channel);
+        }
+
+        $customerGroup = CustomerGroup::getDefault();
+
+        if ($customerGroup) {
+            StorefrontSession::setCustomerGroups(collect([$customerGroup]));
+        }
+
         $dispatched = 0;
         $skippedUnavailable = 0;
         $scanned = 0;
@@ -55,7 +70,7 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
                     $scanned++;
 
                     if ($product->isAvailable()) {
-                        SyncProductToKlaviyo::dispatch($product, ProductEventType::UPDATE);
+                        dispatch(SyncProductToKlaviyo::fromProduct($product, ProductEventType::UPDATE));
                         $dispatched++;
                     } else {
                         $skippedUnavailable++;

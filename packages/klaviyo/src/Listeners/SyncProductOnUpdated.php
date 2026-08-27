@@ -33,6 +33,6 @@ class SyncProductOnUpdated
             'product_id' => $event->product->id,
         ]);
 
-        SyncProductToKlaviyo::dispatch($event->product, ProductEventType::UPDATE);
+        dispatch(SyncProductToKlaviyo::fromProduct($event->product, ProductEventType::UPDATE));
     }
 }

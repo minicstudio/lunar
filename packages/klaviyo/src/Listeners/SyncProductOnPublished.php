@@ -24,6 +24,6 @@ class SyncProductOnPublished
             'product_id' => $event->product->id,
         ]);
 
-        SyncProductToKlaviyo::dispatch($event->product, ProductEventType::CREATE);
+        dispatch(SyncProductToKlaviyo::fromProduct($event->product, ProductEventType::CREATE));
     }
 }

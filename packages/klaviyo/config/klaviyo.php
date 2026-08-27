@@ -23,19 +23,32 @@ return [
     |--------------------------------------------------------------------------
     | API Revision
     |--------------------------------------------------------------------------
-    | Pin a Klaviyo API revision header value.
+    | Pin a current GA revision with remaining support.
+    | Forbidden default: 2024-10-15 (retires 2026-10-15).
     */
 
-    'api_revision' => env('KLAVIYO_API_REVISION', '2024-10-15'),
+    'api_revision' => env('KLAVIYO_API_REVISION', '2026-01-15'),
 
     /*
     |--------------------------------------------------------------------------
-    | List ID
+    | List ID (Explicit Opt-In / Double Opt-In)
     |--------------------------------------------------------------------------
-    | Optional; required when subscribing profiles to a list.
+    | Required for ExplicitOptIn (footer, registration checkbox, checkout newsletter).
+    | Must be configured as a double opt-in list in Klaviyo so confirmation email is sent.
     */
 
     'list_id' => env('KLAVIYO_LIST_ID'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Automatic List ID (Customer Registration / Single Opt-In)
+    |--------------------------------------------------------------------------
+    | Required for CustomerRegistration (automatic registration or order policy).
+    | Must be configured as a single opt-in list in Klaviyo for immediate subscribe.
+    | Never use historical_import on the DOI list as a substitute.
+    */
+
+    'automatic_list_id' => env('KLAVIYO_AUTOMATIC_LIST_ID'),
 
     /*
     |--------------------------------------------------------------------------
@@ -95,11 +108,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Placed Order Metric Name
+    | Order Metric Names
     |--------------------------------------------------------------------------
     */
 
     'placed_order_metric' => env('KLAVIYO_PLACED_ORDER_METRIC', 'Placed Order'),
+
+    'ordered_product_metric' => env('KLAVIYO_ORDERED_PRODUCT_METRIC', 'Ordered Product'),
 
     /*
     |--------------------------------------------------------------------------

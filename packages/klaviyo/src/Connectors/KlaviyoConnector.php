@@ -4,15 +4,12 @@ namespace Lunar\Klaviyo\Connectors;
 
 use Saloon\Http\Auth\HeaderAuthenticator;
 use Saloon\Http\Connector;
-use Saloon\Traits\Plugins\AcceptsJson;
 
 class KlaviyoConnector extends Connector
 {
-    use AcceptsJson;
-
     public function __construct(
         protected string $apiKey = '',
-        protected string $revision = '2024-10-15',
+        protected string $revision = '2026-01-15',
     ) {}
 
     public function resolveBaseUrl(): string
@@ -23,8 +20,8 @@ class KlaviyoConnector extends Connector
     protected function defaultHeaders(): array
     {
         return [
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json',
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
             'revision' => $this->revision,
         ];
     }

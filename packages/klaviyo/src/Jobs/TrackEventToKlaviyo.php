@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
+use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Services\KlaviyoProfileService;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
@@ -63,10 +64,13 @@ class TrackEventToKlaviyo implements ShouldQueue
         ]);
 
         try {
+            $properties = app(KlaviyoCatalogService::class)
+                ->mapEventProductIdentifiers($this->properties);
+
             app(KlaviyoProfileService::class)->trackEvent(
                 email: $this->email,
                 eventName: $this->eventName,
-                properties: $this->properties,
+                properties: $properties,
                 eventId: $this->eventId,
             );
 

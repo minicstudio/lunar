@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Lunar\Admin\Events\CollectionProductAttached;
 use Lunar\Admin\Events\CollectionProductDetached;
+use Lunar\Admin\Events\ProductCollectionsUpdated;
 use Lunar\Admin\Filament\Resources\CollectionResource;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Pages\BaseManageRelatedRecords;
@@ -83,9 +84,10 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
                 ->modalHeading(
                     __('lunarpanel::collection.pages.products.actions.detach.modal.heading')
                 )
-                ->after(
-                    fn () => CollectionProductDetached::dispatch($this->getOwnerRecord())
-                ),
+                ->after(function (Model $record): void {
+                    CollectionProductDetached::dispatch($this->getOwnerRecord());
+                    ProductCollectionsUpdated::dispatch($record);
+                }),
             Tables\Actions\EditAction::make()->url(
                 fn (Model $record) => ProductResource::getUrl('edit', [
                     'record' => $record,
@@ -123,6 +125,7 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
                     ]);
 
                     CollectionProductAttached::dispatch($this->getOwnerRecord());
+                    ProductCollectionsUpdated::dispatch($product);
 
                     $product->searchable();
                 }),

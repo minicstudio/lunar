@@ -2,11 +2,12 @@
 
 namespace Lunar\Klaviyo\Services;
 
-use DateTimeInterface;
-use Illuminate\Support\Carbon;
 use Lunar\Enums\Marketing\MarketingSubscriptionMode;
+use Lunar\Exceptions\SilentException;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
+use Lunar\Klaviyo\Exceptions\MissingKlaviyoConfigurationException;
 use Lunar\Klaviyo\Requests\CreateEventRequest;
+use Lunar\Klaviyo\Requests\GetProfilesRequest;
 use Lunar\Klaviyo\Requests\SubscribeProfilesRequest;
 use Lunar\Klaviyo\Requests\UpsertProfileRequest;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
@@ -14,6 +15,17 @@ use Lunar\Models\Customer;
 
 class KlaviyoProfileService
 {
+    /**
+     * Suppression reasons that must not be cleared by automatic Bulk Subscribe.
+     *
+     * @var list<string>
+     */
+    private const BLOCKING_SUPPRESSION_REASONS = [
+        'UNSUBSCRIBE',
+        'SPAM_REPORT',
+        'USER_SUPPRESSED',
+    ];
+
     public function __construct(protected KlaviyoService $klaviyo) {}
 
     /**
@@ -23,6 +35,7 @@ class KlaviyoProfileService
      * @return array<string, mixed>
      *
      * @throws FailedKlaviyoSyncException
+     * @throws MissingKlaviyoConfigurationException
      */
     public function subscribe(
         string $email,
@@ -249,18 +262,28 @@ class KlaviyoProfileService
      * @return array<string, mixed>
      *
      * @throws FailedKlaviyoSyncException
+     * @throws MissingKlaviyoConfigurationException
      */
     protected function subscribeProfiles(
         string $email,
         MarketingSubscriptionMode $subscriptionMode,
         array $context = [],
     ): array {
-        $listId = $this->klaviyo->getListId();
+        $listId = $this->resolveListIdForMode($subscriptionMode);
 
-        if (! $listId) {
-            throw new FailedKlaviyoSyncException(
-                'Missing Klaviyo list_id. Set KLAVIYO_LIST_ID to subscribe profiles to a list.'
-            );
+        if ($subscriptionMode === MarketingSubscriptionMode::CustomerRegistration
+            && ! $this->mayAutomaticallySubscribe($email)) {
+            KlaviyoLogger::warning('Automatic subscribe skipped — profile suppressed or previously opted out', [
+                'email' => $email,
+                'subscription_mode' => $subscriptionMode->value,
+                'list_id' => $listId,
+            ]);
+
+            report(new SilentException(
+                "Klaviyo automatic subscribe skipped for {$email}: profile is suppressed or previously opted out."
+            ));
+
+            return ['skipped' => true, 'reason' => 'suppressed_or_unsubscribed'];
         }
 
         $profileAttributes = [
@@ -285,13 +308,10 @@ class KlaviyoProfileService
             ],
         ];
 
-        // ExplicitOptIn: respect list double opt-in (confirmation email). Never historical_import.
-        // CustomerRegistration: immediate consented subscribe (Mailchimp status_if_new=subscribed parity).
-        if ($subscriptionMode === MarketingSubscriptionMode::CustomerRegistration) {
-            $consentedAt = $this->resolvePastConsentedAt($context);
+        $customSource = $context['custom_source'] ?? $context['source'] ?? null;
 
-            $jobAttributes['historical_import'] = true;
-            $jobAttributes['profiles']['data'][0]['attributes']['subscriptions']['email']['marketing']['consented_at'] = $consentedAt;
+        if (is_string($customSource) && $customSource !== '') {
+            $jobAttributes['custom_source'] = $customSource;
         }
 
         $payload = [
@@ -334,32 +354,89 @@ class KlaviyoProfileService
     }
 
     /**
-     * Klaviyo requires historical_import consented_at to be clearly in the past.
-     * Near-now stamps (e.g. subSecond) are rejected due to clock skew — keep a buffer.
+     * @throws MissingKlaviyoConfigurationException
      */
-    private const HISTORICAL_CONSENTED_AT_MIN_AGE_MINUTES = 5;
+    protected function resolveListIdForMode(MarketingSubscriptionMode $subscriptionMode): string
+    {
+        if ($subscriptionMode === MarketingSubscriptionMode::CustomerRegistration) {
+            $listId = $this->klaviyo->getAutomaticListId();
+
+            if (! $listId) {
+                throw new MissingKlaviyoConfigurationException(
+                    'Missing Klaviyo automatic_list_id. Set KLAVIYO_AUTOMATIC_LIST_ID to a single opt-in list for CustomerRegistration subscribe.'
+                );
+            }
+
+            return $listId;
+        }
+
+        $listId = $this->klaviyo->getListId();
+
+        if (! $listId) {
+            throw new MissingKlaviyoConfigurationException(
+                'Missing Klaviyo list_id. Set KLAVIYO_LIST_ID to a double opt-in list for ExplicitOptIn subscribe.'
+            );
+        }
+
+        return $listId;
+    }
 
     /**
-     * @param  array<string, mixed>  $context
+     * Automatic paths must not Bulk Subscribe when the profile is already
+     * unsubscribed, spam-suppressed, or user-suppressed (Bulk Subscribe removes those).
+     * New / never-subscribed profiles are eligible.
      */
-    protected function resolvePastConsentedAt(array $context): string
+    protected function mayAutomaticallySubscribe(string $email): bool
     {
-        $raw = $context['consented_at'] ?? null;
+        $response = $this->klaviyo->getConnector()->send(new GetProfilesRequest([
+            'filter' => 'equals(email,"'.$email.'")',
+            'additional-fields' => [
+                'profile' => 'subscriptions',
+            ],
+        ]));
 
-        if ($raw instanceof DateTimeInterface) {
-            $timestamp = Carbon::instance($raw);
-        } elseif (is_string($raw) && $raw !== '') {
-            $timestamp = Carbon::parse($raw);
-        } else {
-            $timestamp = now()->subMinutes(self::HISTORICAL_CONSENTED_AT_MIN_AGE_MINUTES);
+        if (! $response->successful()) {
+            KlaviyoLogger::warning('Could not verify profile eligibility for automatic subscribe — skipping', [
+                'email' => $email,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return false;
         }
 
-        $latestAllowed = now()->subMinutes(self::HISTORICAL_CONSENTED_AT_MIN_AGE_MINUTES);
+        $profiles = $response->json('data') ?? [];
 
-        if ($timestamp->greaterThan($latestAllowed)) {
-            $timestamp = $latestAllowed;
+        if ($profiles === []) {
+            return true;
         }
 
-        return $timestamp->utc()->format('Y-m-d\TH:i:s\Z');
+        $marketing = $profiles[0]['attributes']['subscriptions']['email']['marketing'] ?? null;
+
+        if (! is_array($marketing)) {
+            return true;
+        }
+
+        $consent = $marketing['consent'] ?? null;
+
+        if (is_string($consent) && strtoupper($consent) === 'UNSUBSCRIBED') {
+            return false;
+        }
+
+        $suppressions = $marketing['suppression'] ?? [];
+
+        if (! is_array($suppressions)) {
+            return true;
+        }
+
+        foreach ($suppressions as $suppression) {
+            $reason = strtoupper((string) ($suppression['reason'] ?? ''));
+
+            if (in_array($reason, self::BLOCKING_SUPPRESSION_REASONS, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
