@@ -51,6 +51,12 @@
                         </span>
                     </p>
                 @endif
+
+                @if ($wallet = $walletLabel($transaction))
+                    <x-filament::badge color="gray">
+                        {{ __('Paid via :wallet', ['wallet' => $wallet]) }}
+                    </x-filament::badge>
+                @endif
             </div>
 
             <strong
