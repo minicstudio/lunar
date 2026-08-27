@@ -17,7 +17,8 @@ class SubscribeCustomerOnMarketingConsentGranted
 
         match ($event->subscriptionMode) {
             MarketingSubscriptionMode::CustomerRegistration => $this->dispatchCustomerRegistration($event),
-            MarketingSubscriptionMode::ExplicitOptIn => SubscribeEmailToMailchimp::dispatch($event->email),
+            MarketingSubscriptionMode::ExplicitOptIn => SubscribeEmailToMailchimp::dispatch($event->email)
+                ->onConnection(config('lunar.mailchimp.queue_connection', 'deferred')),
         };
     }
 
@@ -27,6 +28,7 @@ class SubscribeCustomerOnMarketingConsentGranted
             return;
         }
 
-        SyncSubscriberToMailchimp::dispatch($event->customer);
+        SyncSubscriberToMailchimp::dispatch($event->customer)
+            ->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'));
     }
 }

@@ -128,6 +128,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Queue Connection
+    |--------------------------------------------------------------------------
+    | Used for profiles, subscribe, events, orders, and single-product catalog
+    | sync from product/variant/admin lifecycle. Default: Laravel "deferred"
+    | (process after the HTTP response). Batch backfill and discount-driven
+    | re-syncs use the application default queue (bare dispatch).
+    */
+
+    'queue_connection' => env('KLAVIYO_QUEUE_CONNECTION', 'deferred'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Retry Configuration
     |--------------------------------------------------------------------------
     */

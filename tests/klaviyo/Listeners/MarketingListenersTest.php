@@ -43,11 +43,18 @@ beforeEach(function () {
     Config::set('lunar.klaviyo.sync_subscribers', true);
     Config::set('lunar.klaviyo.track_events', true);
     Config::set('lunar.klaviyo.profile_attributes.language', 'language');
+    Config::set('lunar.klaviyo.queue_connection', 'deferred');
 });
 
 test('default api_revision is not the retiring 2024-10-15 pin', function () {
     expect(config('lunar.klaviyo.api_revision'))->not->toBe('2024-10-15')
         ->and(config('lunar.klaviyo.api_revision'))->toBe('2026-01-15');
+});
+
+test('package config defaults queue_connection to deferred', function () {
+    $config = require dirname(__DIR__, 3).'/packages/klaviyo/config/klaviyo.php';
+
+    expect($config['queue_connection'])->toBe('deferred');
 });
 
 test('connector sends JSON:API media types', function () {
@@ -59,7 +66,7 @@ test('connector sends JSON:API media types', function () {
         ->and($headers['revision'] ?? null)->toBe('2026-01-15');
 });
 
-test('consent listener dispatches SubscribeProfileToKlaviyo when enabled', function () {
+test('consent listener dispatches SubscribeProfileToKlaviyo on deferred connection', function () {
     $event = new CustomerMarketingConsentGranted(
         email: 'a@example.com',
         source: MarketingConsentSource::Newsletter,
@@ -70,7 +77,8 @@ test('consent listener dispatches SubscribeProfileToKlaviyo when enabled', funct
 
     Queue::assertPushed(SubscribeProfileToKlaviyo::class, function (SubscribeProfileToKlaviyo $job) {
         return $job->email === 'a@example.com'
-            && $job->subscriptionMode === MarketingSubscriptionMode::ExplicitOptIn;
+            && $job->subscriptionMode === MarketingSubscriptionMode::ExplicitOptIn
+            && $job->connection === 'deferred';
     });
 });
 
@@ -100,7 +108,9 @@ test('profile listener dispatches SyncProfileToKlaviyo when sync_subscribers ena
 
     (new SyncProfileOnMarketingProfileUpdated)->handle($event);
 
-    Queue::assertPushed(SyncProfileToKlaviyo::class);
+    Queue::assertPushed(SyncProfileToKlaviyo::class, function (SyncProfileToKlaviyo $job) {
+        return $job->connection === 'deferred';
+    });
 });
 
 test('storefront listener passes stable eventId to TrackEventToKlaviyo', function () {
@@ -114,7 +124,8 @@ test('storefront listener passes stable eventId to TrackEventToKlaviyo', functio
     (new TrackEventOnStorefrontMarketingEventOccurred)->handle($event);
 
     Queue::assertPushed(TrackEventToKlaviyo::class, function (TrackEventToKlaviyo $job) {
-        return $job->eventId === 'begin_checkout:cart:1';
+        return $job->eventId === 'begin_checkout:cart:1'
+            && $job->connection === 'deferred';
     });
 });
 

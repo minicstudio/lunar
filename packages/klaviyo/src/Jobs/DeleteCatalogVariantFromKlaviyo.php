@@ -47,9 +47,9 @@ class DeleteCatalogVariantFromKlaviyo implements ShouldBeUnique, ShouldQueueAfte
                 $product = \Lunar\Models\Product::query()->withCount('variants')->find($this->productId);
 
                 if ($product && $product->variants_count === 0) {
-                    dispatch(SyncProductToKlaviyo::fromProduct($product, \Lunar\Enums\ProductEventType::DELETE));
+                    dispatch(SyncProductToKlaviyo::fromProduct($product, \Lunar\Enums\ProductEventType::DELETE))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
                 } elseif ($product) {
-                    dispatch(SyncProductToKlaviyo::fromProduct($product, \Lunar\Enums\ProductEventType::UPDATE));
+                    dispatch(SyncProductToKlaviyo::fromProduct($product, \Lunar\Enums\ProductEventType::UPDATE))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
                 }
             }
         } catch (Exception $e) {

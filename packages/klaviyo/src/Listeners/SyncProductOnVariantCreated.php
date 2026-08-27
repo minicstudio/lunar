@@ -35,6 +35,6 @@ class SyncProductOnVariantCreated
             'variant_id' => $variant->id,
         ]);
 
-        dispatch(SyncProductToKlaviyo::fromProduct($product, ProductEventType::UPDATE));
+        dispatch(SyncProductToKlaviyo::fromProduct($product, ProductEventType::UPDATE))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

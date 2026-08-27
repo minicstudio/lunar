@@ -71,10 +71,21 @@ flowchart LR
 | `sync_orders` | `MAILCHIMP_SYNC_ORDERS` | Order sync on placement / bulk command |
 | `sync_carts` | `MAILCHIMP_SYNC_CARTS` | Abandoned-cart ecommerce carts |
 | `track_events` | `MAILCHIMP_TRACK_EVENTS` | Custom member events (default **true** in config) |
+| `queue_connection` | `MAILCHIMP_QUEUE_CONNECTION` | Default **`deferred`** for carts, orders, subscribe/subscriber, and single-product catalog from host lifecycle. Batch backfill uses the app default queue (bare `dispatch()`) |
 | `merge_fields`, `option_fields` | — | Tag mapping; `option_fields` drives custom merge fields from variant options |
 | `retry.max_attempts`, `retry.backoff` | `MAILCHIMP_MAX_ATTEMPTS` | Job retries (default 4; backoff 60s, 300s, 3600s) |
 
 Ecommerce operations call `MailchimpService::ensureStoreIdIsSet()` — set `MAILCHIMP_STORE_ID` or run `php artisan mailchimp:create-store`.
+
+## Queue connections
+
+| Path | Connection |
+|------|------------|
+| Carts, orders, consent/profile subscribe | `lunar.mailchimp.queue_connection` (default `deferred`) via `::dispatch(...)->onConnection(...)` |
+| Host single-product catalog (`SyncProductToMailchimp`) | same — host callers should use `onConnection(...)` |
+| `SyncAllProductsToMailchimp` + nested per-product jobs | application default queue (bare `dispatch()`) |
+
+`MailchimpServiceProvider` registers `queue.connections.deferred` when missing (same pattern as lunar-frontend GTM / Klaviyo).
 
 ## Services
 
@@ -138,7 +149,8 @@ All sync jobs use `retry` config for `$tries` and `$backoff`. Failures wrap in `
 5. **Guest orders** — email from `order.billingAddress.contact_email` when no `user_id`.
 6. **Product/cart/order 400 handling** — existing pattern: sync missing products, retry POST, then PATCH for carts.
 7. **Event tracking** — failures in host/Livewire should use `SilentException` + `report()` (see `TrackRemoveFromCart`); subscriber 404 auto-sync is in `trackEvent`.
-8. **Avoid widening package scope** — storefront UX and listener registration belong in lunar-frontend unless explicitly moving wiring into this repo.
+8. **Queue connection** — request-path jobs use `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))`; batch backfill must stay on bare `dispatch()`. No helper dispatcher class.
+9. **Avoid widening package scope** — storefront UX and listener registration belong in lunar-frontend unless explicitly moving wiring into this repo.
 
 ## Testing
 
@@ -146,8 +158,8 @@ Follow `.ai/skills/pest-testing/SKILL.md` for general rules. Mailchimp-specific:
 
 - Never hit the real Mailchimp API.
 - Fake Saloon with `MockClient` / `MockResponse` on the connector (see `tests/mailchimp/Services/MailchimpServiceTest.php`).
-- Set config in `beforeEach`: `lunar.mailchimp.api_key`, `list_id`, `store_id`, `server`.
-- Assert dispatched jobs, request payloads, and config guards — not live API responses.
+- Set config in `beforeEach`: `lunar.mailchimp.api_key`, `list_id`, `store_id`, `server`; set `queue_connection` to `deferred` when asserting listener dispatches.
+- Assert dispatched jobs (including `$job->connection === 'deferred'` for request-path paths), request payloads, and config guards — not live API responses.
 - When adding substantial tests, register a `mailchimp` testsuite in `phpunit.xml` and CI (see `docs/system/TESTING.md`).
 
 ## Exceptions

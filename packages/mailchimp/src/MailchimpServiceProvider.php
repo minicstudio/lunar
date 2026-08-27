@@ -29,6 +29,7 @@ class MailchimpServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/mailchimp.php', 'lunar.mailchimp');
+        $this->registerDeferredQueueConnection();
     }
 
     /**
@@ -40,6 +41,19 @@ class MailchimpServiceProvider extends ServiceProvider
         $this->publishAssets();
         $this->registerObservers();
         $this->registerListeners();
+    }
+
+    /**
+     * Register Laravel's deferred queue connection for host applications
+     * whose queue configuration predates the deferred driver.
+     */
+    protected function registerDeferredQueueConnection(): void
+    {
+        if (config('queue.connections.deferred') === null) {
+            config()->set('queue.connections.deferred', [
+                'driver' => 'deferred',
+            ]);
+        }
     }
 
     /**

@@ -9,13 +9,17 @@ use Lunar\Enums\Marketing\MarketingSubscriptionMode;
 use Lunar\Events\Marketing\CustomerMarketingConsentGranted;
 use Lunar\Events\Marketing\CustomerMarketingProfileUpdated;
 use Lunar\Events\Marketing\StorefrontMarketingEventOccurred;
+use Lunar\ERP\Events\OrderPlacedEvent;
 use Lunar\Mailchimp\Jobs\SubscribeEmailToMailchimp;
+use Lunar\Mailchimp\Jobs\SyncOrderToMailchimp;
 use Lunar\Mailchimp\Jobs\SyncSubscriberToMailchimp;
 use Lunar\Mailchimp\Listeners\SubscribeCustomerOnMarketingConsentGranted;
 use Lunar\Mailchimp\Listeners\SyncCustomerOnMarketingProfileUpdated;
+use Lunar\Mailchimp\Listeners\SyncOrderOnPlacement;
 use Lunar\Mailchimp\Listeners\TrackEventOnStorefrontMarketingEventOccurred;
 use Lunar\Mailchimp\Services\MailchimpSubscriberService;
 use Lunar\Models\Customer;
+use Lunar\Models\Order;
 
 beforeEach(function () {
     Queue::fake();
@@ -23,6 +27,13 @@ beforeEach(function () {
     Config::set('lunar.mailchimp.enabled', true);
     Config::set('lunar.mailchimp.track_events', true);
     Config::set('lunar.mailchimp.merge_fields.language', 'LANGUAGE');
+    Config::set('lunar.mailchimp.queue_connection', 'deferred');
+});
+
+test('package config defaults queue_connection to deferred', function () {
+    $config = require dirname(__DIR__, 3).'/packages/mailchimp/config/mailchimp.php';
+
+    expect($config['queue_connection'])->toBe('deferred');
 });
 
 test('consent listener dispatches SyncSubscriberToMailchimp for CustomerRegistration', function () {
@@ -37,7 +48,9 @@ test('consent listener dispatches SyncSubscriberToMailchimp for CustomerRegistra
 
     (new SubscribeCustomerOnMarketingConsentGranted)->handle($event);
 
-    Queue::assertPushed(SyncSubscriberToMailchimp::class);
+    Queue::assertPushed(SyncSubscriberToMailchimp::class, function (SyncSubscriberToMailchimp $job) {
+        return $job->connection === 'deferred';
+    });
     Queue::assertNotPushed(SubscribeEmailToMailchimp::class);
 });
 
@@ -51,7 +64,8 @@ test('consent listener dispatches SubscribeEmailToMailchimp for ExplicitOptIn', 
     (new SubscribeCustomerOnMarketingConsentGranted)->handle($event);
 
     Queue::assertPushed(SubscribeEmailToMailchimp::class, function (SubscribeEmailToMailchimp $job) {
-        return $job->email === 'optin@example.com';
+        return $job->email === 'optin@example.com'
+            && $job->connection === 'deferred';
     });
     Queue::assertNotPushed(SyncSubscriberToMailchimp::class);
 });
@@ -81,7 +95,28 @@ test('profile listener maps language-only to languageOnly job', function () {
     (new SyncCustomerOnMarketingProfileUpdated)->handle($event);
 
     Queue::assertPushed(SyncSubscriberToMailchimp::class, function (SyncSubscriberToMailchimp $job) {
-        return $job->languageOnly === true;
+        return $job->languageOnly === true
+            && $job->connection === 'deferred';
+    });
+});
+
+test('order placement listener dispatches SyncOrderToMailchimp on deferred connection', function () {
+    Config::set('lunar.mailchimp.sync_orders', true);
+
+    $order = Mockery::mock(Order::class);
+    $order->shouldReceive('getAttribute')->with('id')->andReturn(99);
+    $order->shouldReceive('offsetExists')->andReturn(false);
+    $order->shouldReceive('getQueueableId')->andReturn(99);
+    $order->shouldReceive('getQueueableRelations')->andReturn([]);
+    $order->shouldReceive('getQueueableConnection')->andReturn(null);
+    $order->shouldReceive('getMorphClass')->andReturn(Order::class);
+
+    $event = new OrderPlacedEvent($order);
+
+    (new SyncOrderOnPlacement)->handle($event);
+
+    Queue::assertPushed(SyncOrderToMailchimp::class, function (SyncOrderToMailchimp $job) {
+        return $job->connection === 'deferred';
     });
 });
 

@@ -15,12 +15,13 @@ class SyncCustomerOnMarketingProfileUpdated
 
         $properties = $event->properties;
         $languageOnly = array_keys($properties) === ['language'];
+        $connection = config('lunar.mailchimp.queue_connection', 'deferred');
 
         if ($languageOnly) {
             SyncSubscriberToMailchimp::dispatch(
                 user: $event->customer,
                 languageOnly: true,
-            );
+            )->onConnection($connection);
 
             return;
         }
@@ -30,7 +31,7 @@ class SyncCustomerOnMarketingProfileUpdated
         SyncSubscriberToMailchimp::dispatch(
             user: $event->customer,
             mergeFields: $mergeFields,
-        );
+        )->onConnection($connection);
     }
 
     /**

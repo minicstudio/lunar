@@ -27,9 +27,9 @@ class SyncProfileOnMarketingProfileUpdated
             'properties' => array_keys($event->properties),
         ]);
 
-        SyncProfileToKlaviyo::dispatch(
+        dispatch(new SyncProfileToKlaviyo(
             customer: $event->customer,
             properties: $event->properties,
-        );
+        ))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

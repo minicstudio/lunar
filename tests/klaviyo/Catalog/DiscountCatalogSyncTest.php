@@ -30,6 +30,7 @@ beforeEach(function () {
     Config::set('lunar.klaviyo.enabled', true);
     Config::set('lunar.klaviyo.api_key', 'pk_test');
     Config::set('lunar.klaviyo.sync_products', true);
+    Config::set('lunar.klaviyo.queue_connection', 'deferred');
 });
 
 test('discount updated syncs limited product ids', function () {
@@ -55,10 +56,14 @@ test('discount updated syncs limited product ids', function () {
 
     Queue::assertPushed(SyncProductToKlaviyo::class, 2);
     Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product1) {
-        return $job->productId === $product1->id && $job->eventType === ProductEventType::UPDATE;
+        return $job->productId === $product1->id
+            && $job->eventType === ProductEventType::UPDATE
+            && $job->connection !== 'deferred';
     });
     Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product2) {
-        return $job->productId === $product2->id && $job->eventType === ProductEventType::UPDATE;
+        return $job->productId === $product2->id
+            && $job->eventType === ProductEventType::UPDATE
+            && $job->connection !== 'deferred';
     });
     Queue::assertNotPushed(SyncAllProductsToKlaviyo::class);
 });
@@ -71,7 +76,9 @@ test('discount updated dispatches full sync when discount is global', function (
 
     (new SyncProductsOnDiscountUpdated)->handle(new DiscountUpdatedEvent($discount));
 
-    Queue::assertPushed(SyncAllProductsToKlaviyo::class);
+    Queue::assertPushed(SyncAllProductsToKlaviyo::class, function (SyncAllProductsToKlaviyo $job) {
+        return $job->connection !== 'deferred';
+    });
     Queue::assertNotPushed(SyncProductToKlaviyo::class);
 });
 

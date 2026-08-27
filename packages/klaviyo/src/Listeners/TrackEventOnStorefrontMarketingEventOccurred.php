@@ -29,11 +29,11 @@ class TrackEventOnStorefrontMarketingEventOccurred
             'event_id' => $event->eventId,
         ]);
 
-        TrackEventToKlaviyo::dispatch(
+        dispatch(new TrackEventToKlaviyo(
             email: $event->email,
             eventName: $event->eventName,
             properties: $event->properties,
             eventId: $event->eventId,
-        );
+        ))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

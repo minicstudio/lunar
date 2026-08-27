@@ -44,11 +44,11 @@ class SyncProductOnDeleted
             'additional_external_ids' => $additional,
         ]);
 
-        SyncProductToKlaviyo::dispatch(
+        dispatch(new SyncProductToKlaviyo(
             productId: $product->id,
             eventType: ProductEventType::DELETE,
             itemExternalId: $itemExternalId,
             additionalExternalIds: $additional,
-        );
+        ))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

@@ -25,6 +25,6 @@ class SyncOrderOnPlacement
             'order_id' => $event->order->id,
         ]);
 
-        SyncOrderToKlaviyo::dispatch($event->order);
+        dispatch(new SyncOrderToKlaviyo($event->order))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

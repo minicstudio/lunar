@@ -14,8 +14,9 @@ Codified from the existing `lunarphp/mailchimp` package. Describes current behav
 - Track custom member events (e.g. `remove_from_cart`) for automations when event tracking is enabled.
 - Provide Artisan commands for store creation, merge-field setup, and bulk backfill of users, languages, orders, and products.
 - Process sync work asynchronously via queued jobs with configurable retries and backoff.
+- Dispatch request-path sync jobs on Laravel’s `deferred` queue connection by default (process after the HTTP response; mirror lunar-frontend GTM and `packages/klaviyo`), with `lunar.mailchimp.queue_connection` as the configurable base value. Keep batch catalog backfill on the application default queue.
 - Isolate HTTP details in Saloon request classes; expose domain operations through services only.
-- Leave storefront-specific triggers (email verification, OAuth, Livewire checkout/product-view tracking, `OrderPlacedEvent` listener registration) to the host application (`lunar-frontend`); this package supplies services, jobs, observer, listener class, and commands.
+- Leave storefront-specific triggers (email verification, OAuth, Livewire checkout/product-view tracking) to the host application (`lunar-frontend`); this package supplies services, jobs, observer, marketing listeners, and commands. Host product catalog listeners still dispatch `SyncProductToMailchimp` directly and must honor `queue_connection`.
 
 ## Entities
 
@@ -29,6 +30,8 @@ classDiagram
         +registerConsoleCommands()
         +publishAssets()
         +registerObservers()
+        +registerListeners()
+        +registerDeferredQueueConnection()
     }
 
     class MailchimpConnector {
@@ -162,10 +165,25 @@ classDiagram
 | `track_events` | `MAILCHIMP_TRACK_EVENTS` | `true` |
 | `merge_fields` | static map | FNAME, LNAME, PHONE, ADDRESS, PREFCAT, PREFSUBCAT, LANGUAGE |
 | `option_fields` | static map | empty by default; tag → `{handle, name, type, ...}` |
+| `queue_connection` | `MAILCHIMP_QUEUE_CONNECTION` | **`deferred`** — carts, orders, subscribe/subscriber sync, and single-product catalog sync from host lifecycle. Override to `redis` / `database` / `sync` when ops wants workers. Batch backfill ignores this and uses bare `dispatch()` |
 | `retry.max_attempts` | `MAILCHIMP_MAX_ATTEMPTS` | `4` |
 | `retry.backoff` | static | `[60, 300, 3600]` |
 
 Note: `SyncCustomerToMailchimp` also reads `lunar.mailchimp.sync_customers.enabled`, which is **not** present in the packaged default config.
+
+### Queue connections
+
+| Path | Connection |
+|------|------------|
+| Carts (`CartLineObserver` → `SyncCartToMailchimp`) | `lunar.mailchimp.queue_connection` (default `deferred`) via `::dispatch(...)->onConnection(config(...))` |
+| Orders (`SyncOrderOnPlacement` → `SyncOrderToMailchimp`) | same — `onConnection(...)` |
+| Consent / profile (`SubscribeEmailToMailchimp`, `SyncSubscriberToMailchimp`) | same — `onConnection(...)` |
+| Single-product catalog from host product/variant/admin lifecycle (`SyncProductToMailchimp`) | same — callers must use `onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))` |
+| `SyncCustomerToMailchimp` when dispatched from request path | same — `onConnection(...)` |
+| `SyncAllProductsToMailchimp` + nested per-product jobs | application default queue (`::dispatch()` / bare `dispatch()`) |
+| Bulk Artisan user/order/language commands | synchronous service calls (not queued) |
+
+`MailchimpServiceProvider` registers `queue.connections.deferred` when missing (same pattern as lunar-frontend GTM and `KlaviyoServiceProvider`).
 
 ### Saloon request inventory
 
@@ -200,10 +218,11 @@ Note: `SyncCustomerToMailchimp` also reads `lunar.mailchimp.sync_customers.enabl
 - **HTTP client**: Saloon connector with Basic auth (username `anystring`, password = API key) against `https://{server}.api.mailchimp.com/3.0/`.
 - **Layering**: Provider / observer / listener / commands → queued jobs → services → Saloon requests → Mailchimp API.
 - **Service split**: Thin `MailchimpService` (credentials, connector, store helpers, email→customer ID hashing); `MailchimpEcommerceService` (products, customers, carts, orders, preference calculation); `MailchimpSubscriberService` (audience members, events, merge fields).
-- **Async boundary**: Model/observer and host events enqueue jobs; bulk user/order commands call services synchronously in chunks; product bulk command dispatches a fan-out job.
+- **Async boundary**: Model/observer and marketing listeners enqueue jobs; bulk user/order commands call services synchronously in chunks; product bulk command dispatches a fan-out job.
+- **Deferred vs default queue (split)**: Request-path jobs (carts, orders, subscribe/subscriber, single-product catalog from host lifecycle) dispatch with `::dispatch(...)->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))` — process after the HTTP response (mirror lunar-frontend GTM / Klaviyo; no helper dispatcher class). Batch backfill (`SyncAllProductsToMailchimp` + nested `SyncProductToMailchimp`) stays on the **application default queue** (bare `dispatch()`, no `onConnection`). Putting batch work on `deferred` is a specification violation.
 - **Idempotent ecommerce upserts**: Products and customers use PUT; orders use PUT; carts try POST then product-heal retry then PATCH on continued 400.
 - **Customer identity**: Ecommerce customer IDs are always `md5(strtolower(trim(email)))` so guest and registered users with the same email share one Mailchimp customer.
-- **Host/engine split**: Package registers only `CartLineObserver` and Artisan commands. `SyncOrderOnPlacement` exists in-package but must be registered by the host on `OrderPlacedEvent`. Subscriber signup and most event tracking are invoked from the host.
+- **Host/engine split**: Package registers `CartLineObserver`, Artisan commands, and marketing listeners (`CustomerMarketingConsentGranted`, `CustomerMarketingProfileUpdated`, `StorefrontMarketingEventOccurred`, `OrderPlacedEvent`). Host product/variant/admin listeners still dispatch `SyncProductToMailchimp` directly (catalog remains Mailchimp-owned at the host). Storefront-specific UX stays in `lunar-frontend`.
 - **Feature flags**: Jobs and observer early-return when master or capability flags are off; failed syncs do not run when disabled.
 
 ### Known divergences
@@ -223,7 +242,7 @@ flowchart TB
     subgraph package [packages/mailchimp]
         SP[MailchimpServiceProvider]
         CLO[CartLineObserver]
-        LIS[SyncOrderOnPlacement]
+        LIS[Marketing Listeners]
         CMD[Artisan Commands]
         JOBS[Sync* Jobs]
         SVC[Services]
@@ -231,6 +250,7 @@ flowchart TB
         CONN[MailchimpConnector]
         SP --> CLO
         SP --> CMD
+        SP --> LIS
         CLO --> JOBS
         LIS --> JOBS
         CMD --> SVC
@@ -242,12 +262,13 @@ flowchart TB
 
     subgraph host [lunar-frontend host]
         OPE[OrderPlacedEvent]
+        MKT[Marketing core events]
         LW[Livewire / OAuth / verify email]
-        LISTENERS[listeners.php]
-        OPE --> LISTENERS
-        LISTENERS --> LIS
-        LW --> JOBS
-        LW --> SVC
+        CAT[Product catalog listeners]
+        OPE --> LIS
+        MKT --> LIS
+        LW --> MKT
+        CAT --> JOBS
     end
 
     CONN --> API[Mailchimp API 3.0]
@@ -260,21 +281,23 @@ flowchart TB
 3. `MailchimpSubscriberService` → `MailchimpService`
 4. `MailchimpEcommerceService` → `MailchimpService` + `MailchimpSubscriberService`
 5. Jobs / Commands / Observer / Listener / Trait → services
-6. Provider wires config merge, command registration, CartLine observer
+6. Provider wires config merge, deferred queue registration, command registration, CartLine observer, marketing listeners
 
 ### Package registration
 
 - Config merged as `lunar.mailchimp`; publishable tag `lunar.mailchimp.config` → `config/lunar/mailchimp.php`
 - Commands registered only when `runningInConsole()`
-- No event listener registration inside the provider
+- Marketing event listeners registered inside the provider (`registerListeners`)
+- `register()` also calls `registerDeferredQueueConnection()` so `queue.connections.deferred` exists when the host’s `queue.php` predates the deferred driver
 
 ## Operations
 
 ### MailchimpServiceProvider
 
-- Responsibility: bootstrap package config, commands, and CartLine observer.
-- `register`: merge `config/mailchimp.php` into `lunar.mailchimp`.
-- `boot`: register console commands, publish config, observe `CartLine` with `CartLineObserver`.
+- Responsibility: bootstrap package config, deferred queue connection, commands, CartLine observer, and marketing listeners.
+- `register`: merge `config/mailchimp.php` into `lunar.mailchimp`; call `registerDeferredQueueConnection()`.
+- `registerDeferredQueueConnection`: if `config('queue.connections.deferred')` is null, set it to `['driver' => 'deferred']` (same defensive registration as lunar-frontend GTM / Klaviyo).
+- `boot`: register console commands, publish config, observe `CartLine` with `CartLineObserver`, register marketing listeners.
 
 ### MailchimpConnector
 
@@ -386,13 +409,29 @@ flowchart TB
 ### CartLineObserver
 
 - Implements `ShouldHandleEventsAfterCommit`.
-- On created/updated/deleted: if `enabled` and `sync_carts`, and cart has `user_id`, dispatch `SyncCartToMailchimp`.
+- On created/updated/deleted: if `enabled` and `sync_carts`, and cart has `user_id`, dispatch `SyncCartToMailchimp` with `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))`.
+
+### SubscribeCustomerOnMarketingConsentGranted
+
+- Sync listener for `CustomerMarketingConsentGranted` (registered by provider).
+- If `enabled`: `CustomerRegistration` → `SyncSubscriberToMailchimp::dispatch($customer)->onConnection(...)`; `ExplicitOptIn` → `SubscribeEmailToMailchimp::dispatch($email)->onConnection(...)`.
+- Connection: `config('lunar.mailchimp.queue_connection', 'deferred')`.
+
+### SyncCustomerOnMarketingProfileUpdated
+
+- Sync listener for `CustomerMarketingProfileUpdated` (registered by provider).
+- If `enabled`: map properties to merge-field tags; language-only → `SyncSubscriberToMailchimp` with `languageOnly`; else pass mapped merge fields.
+- Dispatch with `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))`.
 
 ### SyncOrderOnPlacement
 
-- Queued listener for `OrderPlacedEvent`.
-- If `enabled` and `sync_orders`, dispatch `SyncOrderToMailchimp` with event order.
-- **Not** registered by package provider — host must wire it.
+- Sync listener for `OrderPlacedEvent` (registered by provider) — thin adapter, not itself `ShouldQueue` (job carries the deferred/async boundary).
+- If `enabled` and `sync_orders`, dispatch `SyncOrderToMailchimp` with `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))`.
+
+### TrackEventOnStorefrontMarketingEventOccurred
+
+- Sync listener for `StorefrontMarketingEventOccurred` (registered by provider).
+- If `enabled` and `track_events`, calls `MailchimpSubscriberService::trackEvent` inline (no queued job today — out of deferred-queue scope).
 
 ### TrackRemoveFromCart (trait)
 
@@ -402,12 +441,18 @@ flowchart TB
 
 ### Jobs
 
+Dispatch rule (all sites):
+
+- **Deferred:** cart, order, subscribe/subscriber, request-path customer, and single-product catalog from host lifecycle — `Job::dispatch(...)->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))` (or `dispatch(new Job(...))->onConnection(...)`). No helper dispatcher class.
+- **Application default queue:** `SyncAllProductsToMailchimp` (Artisan `mailchimp:sync-all-products`) and every nested `SyncProductToMailchimp` it spawns — bare `dispatch()` / `::dispatch()` without `onConnection`.
+
 #### SyncCartToMailchimp
 
 - Tries/backoff from retry config.
 - Guards: `enabled`, `sync_carts` (job default true if config missing), requires `user_id`.
 - Empty lines: attempt `deleteCart`, swallow exceptions, return.
 - Else `syncCart`; wrap failures in `FailedMailchimpSyncException`.
+- Dispatched on `queue_connection` default `deferred` from `CartLineObserver`.
 
 #### SyncOrderToMailchimp
 
@@ -415,27 +460,39 @@ flowchart TB
 - Guards: `enabled`, `sync_orders`.
 - `syncOrder` then `deleteCart` for `order.cart_id` when set.
 - Failures wrapped in `FailedMailchimpSyncException`.
+- Dispatched on `queue_connection` default `deferred` from `SyncOrderOnPlacement`.
 
 #### SyncProductToMailchimp
 
 - Guards: `enabled`, `sync_products`.
 - CREATE/UPDATE → `syncProduct`; DELETE → `deleteProduct`.
+- Host product/variant/admin lifecycle callers must use `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))`.
+- Nested dispatches from `SyncAllProductsToMailchimp` must use bare `::dispatch()` (application default queue).
 
 #### SyncSubscriberToMailchimp
 
 - Guards: `enabled` only.
 - `languageOnly` true → `syncSubscriberLanguage`; else `syncSubscriber` with optional merge fields.
 - Constructor parameter typed `Customer` named `$user`.
+- Dispatched on `queue_connection` default `deferred` from consent/profile listeners (and any host BC direct dispatch should do the same).
+
+#### SubscribeEmailToMailchimp
+
+- Guards: `enabled` (via listener).
+- Delegates to `MailchimpSubscriberService::subscribe` (double opt-in `pending` path).
+- Dispatched on `queue_connection` default `deferred` from `SubscribeCustomerOnMarketingConsentGranted` (`ExplicitOptIn`).
 
 #### SyncCustomerToMailchimp
 
 - Guards: `enabled` and `sync_customers.enabled` (default false / undefined).
 - Delegates to `syncCustomer`.
+- When dispatched from a request path, use `queue_connection` default `deferred`.
 
 #### SyncAllProductsToMailchimp
 
 - Fixed `$tries = 3` (does not use mailchimp retry config).
-- Chunks products that have stock > 0 or backorder; for each available product dispatches `SyncProductToMailchimp` with UPDATE.
+- Chunks products that have stock > 0 or backorder; for each available product dispatches `SyncProductToMailchimp` with UPDATE via bare `::dispatch()` (application default queue — must **not** use deferred).
+- Parent job itself dispatched via bare `::dispatch()` from `mailchimp:sync-all-products`.
 
 ### Artisan commands
 
@@ -446,7 +503,7 @@ flowchart TB
 | `mailchimp:sync-all-users` | Requires enabled; chunks all Customers; syncs each via `syncSubscriber` synchronously; confirms before run |
 | `mailchimp:sync-user-languages` | Requires enabled; customers with non-empty user locale; `syncSubscriberLanguage`; tracks skipped/null |
 | `mailchimp:sync-all-orders` | Requires enabled + `sync_orders`; filters `status = completed`; synchronous `syncOrder` in chunks |
-| `mailchimp:sync-all-products` | Requires enabled + `sync_products`; dispatches `SyncAllProductsToMailchimp` job only |
+| `mailchimp:sync-all-products` | Requires enabled + `sync_products`; dispatches `SyncAllProductsToMailchimp` on the application default queue (no deferred); nested per-product jobs also bare `dispatch()` |
 
 ### Exceptions
 
@@ -460,6 +517,8 @@ flowchart TB
 - HTTP: one Saloon `Request` class per endpoint; JSON body via `HasJsonBody` where applicable; no direct HTTP from controllers in this package.
 - Services resolved via Laravel container (`app(Service::class)` in jobs; constructor injection in ecommerce/subscriber services and commands).
 - Jobs implement `ShouldQueue`; use `Dispatchable`, `InteractsWithQueue`, `Queueable`, `SerializesModels`; most read tries/backoff from config in constructor.
+- Request-path job dispatches use `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))` inline at the call site (mirror GTMEventHandler / Klaviyo — **no** `MailchimpDispatcher` helper). Batch backfill uses bare `dispatch()`.
+- Marketing listeners are sync thin adapters; the deferred/async boundary lives on the job connection (do not also queue the listener unless translation work is expensive).
 - Feature-flag early returns rather than throwing when disabled.
 - API failures typically throw `FailedMailchimpSyncException` with response body text; product heal paths log warnings and continue.
 - Non-fatal UX paths use `SilentException` + `report()`.
@@ -493,13 +552,17 @@ flowchart TB
 ### Integration
 
 - Checkout URL depends on host-registered named routes; localized route preferred when present.
-- Order placement Mailchimp sync depends on host registering `SyncOrderOnPlacement` for `OrderPlacedEvent`.
+- Order placement Mailchimp sync is registered by the package provider on `OrderPlacedEvent` (host must not also register it — duplicate sync).
+- Host product/variant/admin catalog listeners that dispatch `SyncProductToMailchimp` must use the package `queue_connection` (default `deferred`) so catalog sync does not block the admin/storefront response; batch Artisan backfill must not.
 - Cart/product/order 400 handling assumes missing products may be the cause and heals by syncing referenced products before retry.
 - Subscriber event tracking auto-heals missing members only when a Customer with matching user email exists.
 
 ### Performance / reliability
 
 - Job retries: default 4 attempts with backoff 60s, 300s, 3600s (except `SyncAllProductsToMailchimp` tries=3).
+- Request-path carts/orders/subscribe/subscriber/single-product catalog use `deferred` by default so work runs after the HTTP response without a long-running worker.
+- Batch catalog backfill (`SyncAllProductsToMailchimp` + nested jobs) must stay on the application default queue — deferred must not run large fan-out in-process after a single response.
+- Missing host `deferred` connection must be registered by `MailchimpServiceProvider::registerDeferredQueueConnection()`.
 - Bulk commands chunk (users/languages default 100, orders default 50, products chunk option forwarded to job).
 - Product sync-on-heal swallows per-product exceptions as warnings to avoid failing entire cart/order heal loop on one bad product.
 - Event tracking and remove-from-cart trait failures must not break the storefront request (silent report).

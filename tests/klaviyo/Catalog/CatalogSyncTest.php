@@ -60,17 +60,19 @@ beforeEach(function () {
     Config::set('lunar.klaviyo.catalog.default_category_external_id', 'uncategorized');
     Config::set('lunar.klaviyo.retry.max_attempts', 4);
     Config::set('lunar.klaviyo.retry.backoff', [60, 300, 3600]);
+    Config::set('lunar.klaviyo.queue_connection', 'deferred');
     Config::set('app.url', 'https://shop.test');
 });
 
-test('published listener dispatches SyncProductToKlaviyo with CREATE', function () {
+test('published listener dispatches SyncProductToKlaviyo with CREATE on deferred', function () {
     $product = Product::factory()->create(['status' => 'published']);
 
     (new SyncProductOnPublished)->handle(new ProductPublished($product));
 
     Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product) {
         return $job->productId === $product->id
-            && $job->eventType === ProductEventType::CREATE;
+            && $job->eventType === ProductEventType::CREATE
+            && $job->connection === 'deferred';
     });
 });
 
@@ -605,7 +607,8 @@ test('klaviyo:sync-all-products dispatches SyncAllProductsToKlaviyo', function (
         ->assertSuccessful();
 
     Queue::assertPushed(SyncAllProductsToKlaviyo::class, function (SyncAllProductsToKlaviyo $job) {
-        return $job->chunkSize === 50;
+        return $job->chunkSize === 50
+            && $job->connection !== 'deferred';
     });
 });
 

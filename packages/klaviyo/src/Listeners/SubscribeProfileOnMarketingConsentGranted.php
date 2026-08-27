@@ -26,11 +26,11 @@ class SubscribeProfileOnMarketingConsentGranted
             'customer_id' => $event->customer?->id,
         ]);
 
-        SubscribeProfileToKlaviyo::dispatch(
+        dispatch(new SubscribeProfileToKlaviyo(
             email: $event->email,
             subscriptionMode: $event->subscriptionMode,
             customer: $event->customer,
             context: $event->context,
-        );
+        ))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

@@ -34,9 +34,9 @@ class SyncProductOnVariantDeleted
             'variant_id' => $variant->id,
         ]);
 
-        DeleteCatalogVariantFromKlaviyo::dispatch(
+        dispatch(new DeleteCatalogVariantFromKlaviyo(
             variantExternalId: $variantExternalId,
             productId: $productId,
-        );
+        ))->onConnection(config('lunar.klaviyo.queue_connection', 'deferred'));
     }
 }

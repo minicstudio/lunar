@@ -45,6 +45,7 @@ class KlaviyoServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/klaviyo.php', 'lunar.klaviyo');
+        $this->registerDeferredQueueConnection();
     }
 
     public function boot(): void
@@ -52,6 +53,19 @@ class KlaviyoServiceProvider extends ServiceProvider
         $this->registerConsoleCommands();
         $this->publishAssets();
         $this->registerListeners();
+    }
+
+    /**
+     * Register Laravel's deferred queue connection for host applications
+     * whose queue configuration predates the deferred driver.
+     */
+    protected function registerDeferredQueueConnection(): void
+    {
+        if (config('queue.connections.deferred') === null) {
+            config()->set('queue.connections.deferred', [
+                'driver' => 'deferred',
+            ]);
+        }
     }
 
     protected function publishAssets(): void

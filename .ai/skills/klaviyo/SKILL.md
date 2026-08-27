@@ -22,6 +22,7 @@ Activate this skill when:
 | Connector | `Connectors/KlaviyoConnector.php` (Saloon, JSON:API media types + `revision`) |
 | Requests | `Requests/*` — UpsertProfile, GetProfiles, SubscribeProfiles, CreateEvent, Catalog category/item/variant |
 | Services | `KlaviyoService`, `KlaviyoProfileService`, `KlaviyoOrderService`, `KlaviyoCatalogService` |
+| Support | `Support/CatalogExternalIdStore`, `KlaviyoLogger` |
 | Jobs | `SubscribeProfileToKlaviyo`, `SyncProfileToKlaviyo`, `TrackEventToKlaviyo`, `SyncOrderToKlaviyo`, `SyncProductToKlaviyo`, `DeleteCatalogVariantFromKlaviyo`, `SyncAllProductsToKlaviyo` |
 | Listeners | Registered in `KlaviyoServiceProvider` on core marketing events + `OrderPlacedEvent` + product/variant lifecycle + optional admin pricing/options/collections/media/urls/discounts |
 | Commands | `klaviyo:sync-all-products` |
@@ -87,8 +88,21 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 | `sync_products` | `KLAVIYO_SYNC_PRODUCTS` | Catalog sync |
 | `catalog.default_category_external_id` | `KLAVIYO_CATALOG_DEFAULT_CATEGORY` | Fallback category |
 | `track_events` | `KLAVIYO_TRACK_EVENTS` | Behavioral events (default true) |
+| `queue_connection` | `KLAVIYO_QUEUE_CONNECTION` | Default **`deferred`** for profiles, subscribe, events, orders, and single-product catalog lifecycle sync. Batch backfill / discount re-syncs use the app default queue (bare `dispatch()`) |
 | `profile_attributes` | — | Neutral property → Klaviyo attribute map |
 | `retry.*` | | Same shape as Mailchimp |
+
+## Queue connections
+
+| Path | Connection |
+|------|------------|
+| Profiles, subscribe, storefront events, orders | `lunar.klaviyo.queue_connection` (default `deferred`) via `dispatch(...)->onConnection(config(...))` |
+| Single-product catalog from product/variant/admin lifecycle | same — `dispatch(...)->onConnection(...)` |
+| `SyncAllProductsToKlaviyo` + nested per-product jobs | application default queue (`dispatch()`) |
+| Discount-driven `ResolvesDiscountables` re-syncs | application default queue (`dispatch()`) |
+| Catalog wipe (`klaviyo:delete-all-products`) | sync Saloon `BulkDeleteCatalogItemsRequest` in command (not a Laravel queue job) |
+
+`KlaviyoServiceProvider` registers `queue.connections.deferred` when missing (same pattern as lunar-frontend GTM).
 
 ## Idempotency
 

@@ -52,7 +52,7 @@ class CartLineObserver implements ShouldHandleEventsAfterCommit
             return;
         }
 
-        // Dispatch async job to sync cart to Mailchimp
-        SyncCartToMailchimp::dispatch($cart);
+        SyncCartToMailchimp::dispatch($cart)
+            ->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'));
     }
 }
