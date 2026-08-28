@@ -2,19 +2,21 @@
 
 namespace Lunar\Klaviyo\Services;
 
+use Illuminate\Support\Collection;
 use Lunar\Exceptions\SilentException;
 use Lunar\Facades\StorefrontSession;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
+use Lunar\Klaviyo\Requests\BulkCreateCatalogItemsRequest;
+use Lunar\Klaviyo\Requests\BulkCreateCatalogVariantsRequest;
 use Lunar\Klaviyo\Requests\BulkDeleteCatalogItemsRequest;
+use Lunar\Klaviyo\Requests\BulkUpdateCatalogItemsRequest;
+use Lunar\Klaviyo\Requests\BulkUpdateCatalogVariantsRequest;
 use Lunar\Klaviyo\Requests\CreateCatalogCategoryRequest;
-use Lunar\Klaviyo\Requests\CreateCatalogItemRequest;
-use Lunar\Klaviyo\Requests\CreateCatalogVariantRequest;
 use Lunar\Klaviyo\Requests\DeleteCatalogItemRequest;
 use Lunar\Klaviyo\Requests\DeleteCatalogVariantRequest;
+use Lunar\Klaviyo\Requests\GetBulkCreateCatalogItemsJobRequest;
 use Lunar\Klaviyo\Requests\GetCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\GetCatalogItemVariantIdsRequest;
-use Lunar\Klaviyo\Requests\UpdateCatalogItemRequest;
-use Lunar\Klaviyo\Requests\UpdateCatalogVariantRequest;
 use Lunar\Klaviyo\Support\CatalogExternalIdStore;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Channel;
@@ -26,12 +28,12 @@ use Saloon\Http\Response;
 
 class KlaviyoCatalogService
 {
+    private const BULK_RESOURCE_LIMIT = 100;
+
     public function __construct(protected KlaviyoService $klaviyo) {}
 
     /**
-     * Upsert a product as a Klaviyo catalog item + variants.
-     * Unavailable / unpublished products are deleted from the remote catalog.
-     * Availability-check exceptions are rethrown (never coerced to delete).
+     * Upsert a single product via Klaviyo bulk catalog jobs (batch size 1).
      *
      * @return array<string, mixed>
      *
@@ -39,79 +41,160 @@ class KlaviyoCatalogService
      */
     public function syncProduct(Product $product): array
     {
+        $results = $this->syncProductsBulk(collect([$product]));
+
+        return $results[0] ?? [];
+    }
+
+    /**
+     * Upsert many products via Klaviyo async bulk catalog jobs (≤100 resources per request).
+     * Unavailable / unpublished products are deleted from the remote catalog.
+     * Availability-check exceptions are rethrown (never coerced to delete).
+     *
+     * @param  iterable<int, Product>|Collection<int, Product>  $products
+     * @return list<array<string, mixed>>
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function syncProductsBulk(iterable $products): array
+    {
         $this->ensureCatalogStorefrontContext();
 
-        $product->loadMissing(['variants', 'collections', 'brand', 'media']);
+        $products = $products instanceof Collection ? $products : collect($products);
 
-        $isPublished = $product->status === 'published';
-
-        if ($isPublished) {
-            // Exceptions must fail/retry the job — never treat as unavailable + delete.
-            $isAvailable = $product->isAvailable();
-        } else {
-            $isAvailable = false;
+        if ($products->isEmpty()) {
+            return [];
         }
 
-        KlaviyoLogger::info('Catalog sync started', [
-            'product_id' => $product->id,
-            'status' => $product->status,
-            'is_published' => $isPublished,
-            'is_available' => $isAvailable,
-            'variant_count' => $product->variants->count(),
-            'collection_count' => $product->collections->count(),
-            'title' => $product->translateAttribute('name'),
-        ]);
+        $products->each(fn (Product $product) => $product->loadMissing(['variants', 'collections', 'brand', 'media']));
 
-        if (! $isPublished || $isAvailable !== true) {
-            KlaviyoLogger::warning('Catalog sync will DELETE remote item (not published or not available)', [
+        $itemsToCreate = [];
+        $itemsToUpdate = [];
+        $variantsToCreate = [];
+        $variantsToUpdate = [];
+        /** @var list<array{product: Product, item_external_id: string, expected_variant_external_ids: list<string>}> $orphanCleanup */
+        $orphanCleanup = [];
+        $jobResults = [];
+        /** @var list<array<string, mixed>> $itemCreateJobResponses */
+        $itemCreateJobResponses = [];
+
+        foreach ($products as $product) {
+            $isPublished = $product->status === 'published';
+
+            if ($isPublished) {
+                $isAvailable = $product->isAvailable();
+            } else {
+                $isAvailable = false;
+            }
+
+            KlaviyoLogger::info('Catalog sync started', [
                 'product_id' => $product->id,
                 'status' => $product->status,
                 'is_published' => $isPublished,
                 'is_available' => $isAvailable,
-                'reason' => ! $isPublished ? 'not_published' : 'not_available',
+                'variant_count' => $product->variants->count(),
+                'collection_count' => $product->collections->count(),
+                'title' => $product->translateAttribute('name'),
             ]);
 
-            $this->deleteProductByExternalIds($this->captureExternalIdsForProduct($product));
+            if (! $isPublished || $isAvailable !== true) {
+                KlaviyoLogger::warning('Catalog sync will DELETE remote item (not published or not available)', [
+                    'product_id' => $product->id,
+                    'status' => $product->status,
+                    'is_published' => $isPublished,
+                    'is_available' => $isAvailable,
+                    'reason' => ! $isPublished ? 'not_published' : 'not_available',
+                ]);
 
-            return [];
-        }
+                $this->deleteProductByExternalIds($this->captureExternalIdsForProduct($product));
 
-        $categoryIds = $this->ensureCategoriesForProduct($product);
-        $item = $this->upsertCatalogItem($product, $categoryIds);
+                continue;
+            }
 
-        $variantResults = [];
-        $expectedVariantExternalIds = [];
+            $categoryIds = $this->ensureCategoriesForProduct($product);
+            $itemExternalId = $this->resolveItemExternalId($product);
+            $syncContext = $this->resolveCatalogItemSyncContext($product->id, $itemExternalId);
+            $useUpdate = $syncContext['use_update'];
+            $remoteVariantExternalIds = $syncContext['remote_variant_external_ids'];
 
-        foreach ($product->variants as $variant) {
-            $expectedVariantExternalIds[] = (string) $variant->id;
-            $variantResults[] = [
-                'variant_id' => $variant->id,
-                'sku' => $variant->sku,
-                'result' => $this->upsertCatalogVariant($product, $variant) ? 'ok' : 'failed',
+            if ($useUpdate) {
+                $itemsToUpdate[] = $this->buildCatalogItemUpdateResource($product, $categoryIds, $itemExternalId);
+            } else {
+                $itemsToCreate[] = $this->buildCatalogItemCreateResource($product, $categoryIds, $itemExternalId);
+            }
+
+            $expectedVariantExternalIds = [];
+
+            foreach ($product->variants as $variant) {
+                $variantExternalId = $this->resolveVariantExternalId($variant);
+                $expectedVariantExternalIds[] = $variantExternalId;
+
+                if ($useUpdate && isset($remoteVariantExternalIds[$variantExternalId])) {
+                    $variantsToUpdate[] = $this->buildCatalogVariantUpdateResource(
+                        $product,
+                        $variant,
+                        $itemExternalId,
+                        $variantExternalId,
+                    );
+                } else {
+                    $variantsToCreate[] = $this->buildCatalogVariantCreateResource(
+                        $product,
+                        $variant,
+                        $itemExternalId,
+                        $variantExternalId,
+                    );
+                }
+            }
+
+            $orphanCleanup[] = [
+                'product' => $product,
+                'item_external_id' => $itemExternalId,
+                'expected_variant_external_ids' => $expectedVariantExternalIds,
             ];
         }
 
-        $itemExternalId = $this->resolveItemExternalId($product);
-        $orphansRemoved = $this->deleteOrphanCatalogVariants(
-            $this->compoundId($itemExternalId),
-            $expectedVariantExternalIds,
-        );
+        foreach (array_chunk($itemsToCreate, self::BULK_RESOURCE_LIMIT) as $chunk) {
+            $response = $this->submitCatalogItemBulkCreate($chunk);
+            $itemCreateJobResponses[] = $response;
+            $jobResults[] = $response;
+        }
 
-        CatalogExternalIdStore::remember($product->id, $itemExternalId);
+        foreach (array_chunk($itemsToUpdate, self::BULK_RESOURCE_LIMIT) as $chunk) {
+            $jobResults[] = $this->submitCatalogItemBulkUpdate($chunk);
+        }
 
-        $catalogItemId = $item['data']['id'] ?? $this->compoundId($itemExternalId);
+        if ($itemCreateJobResponses !== []) {
+            $this->waitForBulkCatalogItemCreateJobs($itemCreateJobResponses);
+        }
 
-        KlaviyoLogger::info('Catalog sync completed', [
-            'product_id' => $product->id,
-            'item_external_id' => $itemExternalId,
-            'klaviyo_catalog_item_id' => $catalogItemId,
-            'category_ids' => $categoryIds,
-            'variant_count' => $product->variants->count(),
-            'variants' => $variantResults,
-            'orphan_variants_removed' => $orphansRemoved,
-        ]);
+        foreach (array_chunk($variantsToCreate, self::BULK_RESOURCE_LIMIT) as $chunk) {
+            $jobResults[] = $this->submitCatalogVariantBulkCreate($chunk);
+        }
 
-        return $item;
+        foreach (array_chunk($variantsToUpdate, self::BULK_RESOURCE_LIMIT) as $chunk) {
+            $jobResults[] = $this->submitCatalogVariantBulkUpdate($chunk);
+        }
+
+        foreach ($orphanCleanup as $entry) {
+            $product = $entry['product'];
+            $itemExternalId = $entry['item_external_id'];
+            $orphansRemoved = $this->deleteOrphanCatalogVariants(
+                $this->compoundId($itemExternalId),
+                $entry['expected_variant_external_ids'],
+            );
+
+            CatalogExternalIdStore::remember($product->id, $itemExternalId);
+
+            KlaviyoLogger::info('Catalog sync completed', [
+                'product_id' => $product->id,
+                'item_external_id' => $itemExternalId,
+                'klaviyo_catalog_item_id' => $this->compoundId($itemExternalId),
+                'variant_count' => $product->variants->count(),
+                'orphan_variants_removed' => $orphansRemoved,
+            ]);
+        }
+
+        return $jobResults;
     }
 
     /**
@@ -304,9 +387,9 @@ class KlaviyoCatalogService
 
     /**
      * Delete remote catalog variants attached to an item that are not in the expected set.
-     * Prevents duplicate SKUs when Lunar variant ids change but the item external_id (SKU) stays the same.
+     * Prevents stale remote variants when Lunar SKUs change but the item external_id stays the same.
      *
-     * @param  list<string>  $expectedVariantExternalIds  Lunar variant ids as strings
+     * @param  list<string>  $expectedVariantExternalIds  Sanitized variant SKUs (legacy DB ids are removed as orphans)
      * @return list<string> Deleted variant external ids
      *
      * @throws FailedKlaviyoSyncException
@@ -348,6 +431,26 @@ class KlaviyoCatalogService
      */
     public function listCatalogItemVariantExternalIds(string $catalogItemCompoundId): array
     {
+        $remoteState = $this->fetchRemoteCatalogItemState($catalogItemCompoundId);
+
+        if (! $remoteState['exists']) {
+            KlaviyoLogger::info('Catalog item has no remote variants (item absent)', [
+                'klaviyo_catalog_item_id' => $catalogItemCompoundId,
+            ]);
+
+            return [];
+        }
+
+        return $remoteState['variant_external_ids'];
+    }
+
+    /**
+     * @return array{exists: bool, variant_external_ids: list<string>}
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    protected function fetchRemoteCatalogItemState(string $catalogItemCompoundId): array
+    {
         $externalIds = [];
         $cursor = null;
 
@@ -365,6 +468,13 @@ class KlaviyoCatalogService
             );
 
             if (! $response->successful()) {
+                if ($response->status() === 404) {
+                    return [
+                        'exists' => false,
+                        'variant_external_ids' => [],
+                    ];
+                }
+
                 KlaviyoLogger::error('Catalog list item variants API failed', [
                     'klaviyo_catalog_item_id' => $catalogItemCompoundId,
                     'http_status' => $response->status(),
@@ -391,11 +501,14 @@ class KlaviyoCatalogService
             $cursor = $this->extractPageCursor($json['links']['next'] ?? null);
         } while ($cursor !== null);
 
-        return array_values(array_unique($externalIds));
+        return [
+            'exists' => true,
+            'variant_external_ids' => array_values(array_unique($externalIds)),
+        ];
     }
 
     /**
-     * Delete a single catalog variant by its external_id (= Lunar variant id).
+     * Delete a single catalog variant by its external_id (= sanitized variant SKU).
      *
      * @throws FailedKlaviyoSyncException
      */
@@ -524,6 +637,26 @@ class KlaviyoCatalogService
     }
 
     /**
+     * Catalog variant external_id: prefer the variant SKU (sanitized).
+     * Falls back to variant id when no SKU exists.
+     */
+    public function resolveVariantExternalId(ProductVariant $variant): string
+    {
+        $sku = trim((string) ($variant->sku ?? ''));
+
+        if ($sku !== '') {
+            return str_replace('/', '-', $sku);
+        }
+
+        KlaviyoLogger::warning('Catalog variant has no SKU — falling back to variant id', [
+            'product_id' => $variant->product_id,
+            'variant_id' => $variant->id,
+        ]);
+
+        return (string) $variant->id;
+    }
+
+    /**
      * Rewrite storefront event product/variant identifiers to SKU-based values.
      *
      * Neutral events emit Lunar DB ids in `product_id` / `product_id_{n}` / `variant_id`.
@@ -601,7 +734,7 @@ class KlaviyoCatalogService
             return $this->resolveItemExternalId($product);
         }
 
-        return $productIdString;
+        return '';
     }
 
     /**
@@ -640,7 +773,7 @@ class KlaviyoCatalogService
             }
         }
 
-        return $variantIdString;
+        return '';
     }
 
     /**
@@ -704,13 +837,400 @@ class KlaviyoCatalogService
     }
 
     /**
+     * @param  list<array<string, mixed>>  $items
      * @return array<string, mixed>
      *
      * @throws FailedKlaviyoSyncException
      */
-    public function upsertCatalogVariant(Product $product, ProductVariant $variant): array
+    public function submitCatalogItemBulkCreate(array $items): array
     {
-        $externalId = (string) $variant->id;
+        if ($items === []) {
+            return [];
+        }
+
+        $payload = [
+            'data' => [
+                'type' => 'catalog-item-bulk-create-job',
+                'attributes' => [
+                    'items' => [
+                        'data' => $items,
+                    ],
+                ],
+            ],
+        ];
+
+        KlaviyoLogger::info('Catalog item bulk create job starting', [
+            'item_count' => count($items),
+        ]);
+
+        $response = $this->klaviyo->getConnector()->send(new BulkCreateCatalogItemsRequest($payload));
+
+        if (! $response->successful()) {
+            throw new FailedKlaviyoSyncException(
+                'Failed to create Klaviyo catalog item bulk create job: '.$response->body()
+            );
+        }
+
+        $json = $response->json() ?? [];
+
+        KlaviyoLogger::info('Catalog item bulk create job accepted', [
+            'job_id' => $json['data']['id'] ?? null,
+            'item_count' => count($items),
+            'http_status' => $response->status(),
+        ]);
+
+        return $json;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $items
+     * @return array<string, mixed>
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function submitCatalogItemBulkUpdate(array $items): array
+    {
+        if ($items === []) {
+            return [];
+        }
+
+        $payload = [
+            'data' => [
+                'type' => 'catalog-item-bulk-update-job',
+                'attributes' => [
+                    'items' => [
+                        'data' => $items,
+                    ],
+                ],
+            ],
+        ];
+
+        KlaviyoLogger::info('Catalog item bulk update job starting', [
+            'item_count' => count($items),
+        ]);
+
+        $response = $this->klaviyo->getConnector()->send(new BulkUpdateCatalogItemsRequest($payload));
+
+        if (! $response->successful()) {
+            throw new FailedKlaviyoSyncException(
+                'Failed to create Klaviyo catalog item bulk update job: '.$response->body()
+            );
+        }
+
+        $json = $response->json() ?? [];
+
+        KlaviyoLogger::info('Catalog item bulk update job accepted', [
+            'job_id' => $json['data']['id'] ?? null,
+            'item_count' => count($items),
+            'http_status' => $response->status(),
+        ]);
+
+        return $json;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $jobResponses
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function waitForBulkCatalogItemCreateJobs(array $jobResponses): void
+    {
+        foreach ($jobResponses as $jobResponse) {
+            $jobId = $jobResponse['data']['id'] ?? null;
+
+            if (! is_string($jobId) || $jobId === '') {
+                continue;
+            }
+
+            $this->waitForBulkCatalogItemCreateJob($jobId);
+        }
+    }
+
+    /**
+     * @throws FailedKlaviyoSyncException
+     */
+    public function waitForBulkCatalogItemCreateJob(string $jobId, int $maxAttempts = 60, int $sleepSeconds = 1): void
+    {
+        KlaviyoLogger::info('Catalog item bulk create job waiting', [
+            'job_id' => $jobId,
+        ]);
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $response = $this->klaviyo->getConnector()->send(
+                new GetBulkCreateCatalogItemsJobRequest($jobId, [
+                    'fields[catalog-item-bulk-create-job]' => 'status,errors,failed_count,completed_count,total_count',
+                ])
+            );
+
+            if (! $response->successful()) {
+                throw new FailedKlaviyoSyncException(
+                    "Failed to fetch Klaviyo catalog item bulk create job {$jobId}: {$response->body()}"
+                );
+            }
+
+            $attributes = $response->json('data.attributes') ?? [];
+            $status = $attributes['status'] ?? null;
+
+            if ($status === 'complete') {
+                $failedCount = (int) ($attributes['failed_count'] ?? 0);
+                $errors = $attributes['errors'] ?? [];
+
+                if ($failedCount > 0 || $errors !== []) {
+                    KlaviyoLogger::error('Catalog item bulk create job completed with errors', [
+                        'job_id' => $jobId,
+                        'failed_count' => $failedCount,
+                        'errors' => $errors,
+                    ]);
+
+                    throw new FailedKlaviyoSyncException(
+                        "Klaviyo catalog item bulk create job {$jobId} completed with {$failedCount} failure(s)."
+                    );
+                }
+
+                KlaviyoLogger::info('Catalog item bulk create job completed', [
+                    'job_id' => $jobId,
+                    'completed_count' => $attributes['completed_count'] ?? null,
+                    'total_count' => $attributes['total_count'] ?? null,
+                ]);
+
+                return;
+            }
+
+            if ($status === 'cancelled') {
+                throw new FailedKlaviyoSyncException(
+                    "Klaviyo catalog item bulk create job {$jobId} was cancelled."
+                );
+            }
+
+            sleep($sleepSeconds);
+        }
+
+        throw new FailedKlaviyoSyncException(
+            "Timed out waiting for Klaviyo catalog item bulk create job {$jobId} to complete."
+        );
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $variants
+     * @return array<string, mixed>
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function submitCatalogVariantBulkCreate(array $variants): array
+    {
+        if ($variants === []) {
+            return [];
+        }
+
+        $payload = [
+            'data' => [
+                'type' => 'catalog-variant-bulk-create-job',
+                'attributes' => [
+                    'variants' => [
+                        'data' => $variants,
+                    ],
+                ],
+            ],
+        ];
+
+        KlaviyoLogger::info('Catalog variant bulk create job starting', [
+            'variant_count' => count($variants),
+        ]);
+
+        $response = $this->klaviyo->getConnector()->send(new BulkCreateCatalogVariantsRequest($payload));
+
+        if (! $response->successful()) {
+            throw new FailedKlaviyoSyncException(
+                'Failed to create Klaviyo catalog variant bulk create job: '.$response->body()
+            );
+        }
+
+        $json = $response->json() ?? [];
+
+        KlaviyoLogger::info('Catalog variant bulk create job accepted', [
+            'job_id' => $json['data']['id'] ?? null,
+            'variant_count' => count($variants),
+            'http_status' => $response->status(),
+        ]);
+
+        return $json;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $variants
+     * @return array<string, mixed>
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function submitCatalogVariantBulkUpdate(array $variants): array
+    {
+        if ($variants === []) {
+            return [];
+        }
+
+        $payload = [
+            'data' => [
+                'type' => 'catalog-variant-bulk-update-job',
+                'attributes' => [
+                    'variants' => [
+                        'data' => $variants,
+                    ],
+                ],
+            ],
+        ];
+
+        KlaviyoLogger::info('Catalog variant bulk update job starting', [
+            'variant_count' => count($variants),
+        ]);
+
+        $response = $this->klaviyo->getConnector()->send(new BulkUpdateCatalogVariantsRequest($payload));
+
+        if (! $response->successful()) {
+            throw new FailedKlaviyoSyncException(
+                'Failed to create Klaviyo catalog variant bulk update job: '.$response->body()
+            );
+        }
+
+        $json = $response->json() ?? [];
+
+        KlaviyoLogger::info('Catalog variant bulk update job accepted', [
+            'job_id' => $json['data']['id'] ?? null,
+            'variant_count' => count($variants),
+            'http_status' => $response->status(),
+        ]);
+
+        return $json;
+    }
+
+    /**
+     * @param  list<string>  $categoryCompoundIds
+     * @return array<string, mixed>
+     */
+    public function buildCatalogItemCreateResource(Product $product, array $categoryCompoundIds, string $itemExternalId): array
+    {
+        return [
+            'type' => 'catalog-item',
+            'attributes' => $this->buildCatalogItemAttributes($product, $itemExternalId),
+            'relationships' => [
+                'categories' => [
+                    'data' => array_map(
+                        fn (string $id) => [
+                            'type' => 'catalog-category',
+                            'id' => $id,
+                        ],
+                        $categoryCompoundIds
+                    ),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param  list<string>  $categoryCompoundIds
+     * @return array<string, mixed>
+     */
+    public function buildCatalogItemUpdateResource(Product $product, array $categoryCompoundIds, string $itemExternalId): array
+    {
+        $attributes = $this->buildCatalogItemAttributes($product, $itemExternalId);
+
+        return [
+            'type' => 'catalog-item',
+            'id' => $this->compoundId($itemExternalId),
+            'attributes' => collect($attributes)
+                ->except(['external_id', 'integration_type', 'catalog_type'])
+                ->all(),
+            'relationships' => [
+                'categories' => [
+                    'data' => array_map(
+                        fn (string $id) => [
+                            'type' => 'catalog-category',
+                            'id' => $id,
+                        ],
+                        $categoryCompoundIds
+                    ),
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function buildCatalogVariantCreateResource(
+        Product $product,
+        ProductVariant $variant,
+        string $itemExternalId,
+        string $variantExternalId,
+    ): array {
+        return [
+            'type' => 'catalog-variant',
+            'attributes' => $this->buildCatalogVariantAttributes($product, $variant, $variantExternalId),
+            'relationships' => [
+                'item' => [
+                    'data' => [
+                        'type' => 'catalog-item',
+                        'id' => $this->compoundId($itemExternalId),
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function buildCatalogVariantUpdateResource(
+        Product $product,
+        ProductVariant $variant,
+        string $itemExternalId,
+        string $variantExternalId,
+    ): array {
+        return [
+            'type' => 'catalog-variant',
+            'id' => $this->compoundId($variantExternalId),
+            'attributes' => collect($this->buildCatalogVariantAttributes($product, $variant, $variantExternalId))
+                ->except(['external_id'])
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildCatalogItemAttributes(Product $product, string $itemExternalId): array
+    {
+        $title = $product->translateAttribute('name') ?? "Product {$product->id}";
+        $description = strip_tags((string) ($product->translateAttribute('description') ?? $title));
+        $url = $this->resolveProductUrl($product);
+        $imageUrl = $product->getMedia('images', ['primary' => true])->first()?->getUrl('large');
+
+        $attributes = [
+            'external_id' => $itemExternalId,
+            'title' => $title,
+            'description' => $description !== '' ? $description : $title,
+            'url' => $url,
+            'integration_type' => '$custom',
+            'catalog_type' => '$default',
+            'published' => true,
+        ];
+
+        if ($imageUrl) {
+            $attributes['image_full_url'] = $imageUrl;
+            $attributes['image_thumbnail_url'] = $imageUrl;
+            $attributes['images'] = [$imageUrl];
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildCatalogVariantAttributes(
+        Product $product,
+        ProductVariant $variant,
+        string $variantExternalId,
+    ): array {
         $title = $product->translateAttribute('name') ?? "Product {$product->id}";
         $description = strip_tags((string) ($product->translateAttribute('description') ?? $title));
         $url = $this->resolveProductUrl($product);
@@ -722,7 +1242,7 @@ class KlaviyoCatalogService
             ->first();
 
         $attributes = [
-            'external_id' => $externalId,
+            'external_id' => $variantExternalId,
             'title' => $title,
             'description' => $description !== '' ? $description : $title,
             'sku' => $variant->sku ?? (string) $variant->id,
@@ -738,102 +1258,35 @@ class KlaviyoCatalogService
             $attributes['images'] = [$imageUrl];
         }
 
-        $createPayload = [
-            'data' => [
-                'type' => 'catalog-variant',
-                'attributes' => $attributes,
-                'relationships' => [
-                    'item' => [
-                        'data' => [
-                            'type' => 'catalog-item',
-                            'id' => $this->compoundId($this->resolveItemExternalId($product)),
-                        ],
-                    ],
-                ],
-            ],
-        ];
+        return $attributes;
+    }
 
-        KlaviyoLogger::info('Catalog variant create attempt', [
-            'product_id' => $product->id,
-            'variant_id' => $variant->id,
-            'external_id' => $externalId,
-            'sku' => $attributes['sku'],
-            'price' => $attributes['price'],
-            'inventory_quantity' => $attributes['inventory_quantity'],
-        ]);
-
-        $response = $this->klaviyo->getConnector()->send(new CreateCatalogVariantRequest($createPayload));
-
-        if ($response->successful()) {
-            $json = $response->json() ?? [];
-
-            KlaviyoLogger::info('Catalog variant created', [
-                'product_id' => $product->id,
-                'variant_id' => $variant->id,
-                'http_status' => $response->status(),
-                'klaviyo_catalog_variant_id' => $json['data']['id'] ?? $this->compoundId($externalId),
-            ]);
-
-            return $json;
-        }
-
-        if ($this->isDuplicateConflict($response)) {
-            KlaviyoLogger::info('Catalog variant already exists — updating', [
-                'product_id' => $product->id,
-                'variant_id' => $variant->id,
-                'create_http_status' => $response->status(),
-                'create_body' => $this->truncateBody($response->body()),
-            ]);
-
-            $updatePayload = [
-                'data' => [
-                    'type' => 'catalog-variant',
-                    'id' => $this->compoundId($externalId),
-                    'attributes' => collect($attributes)
-                        ->except(['external_id'])
-                        ->all(),
-                ],
+    /**
+     * @return array{use_update: bool, remote_variant_external_ids: array<string, true>}
+     */
+    protected function resolveCatalogItemSyncContext(int $productId, string $itemExternalId): array
+    {
+        if (CatalogExternalIdStore::get($productId) === null) {
+            return [
+                'use_update' => false,
+                'remote_variant_external_ids' => [],
             ];
-
-            $updateResponse = $this->klaviyo->getConnector()->send(
-                new UpdateCatalogVariantRequest($this->compoundId($externalId), $updatePayload)
-            );
-
-            if ($updateResponse->successful()) {
-                $json = $updateResponse->json() ?? [];
-
-                KlaviyoLogger::info('Catalog variant updated', [
-                    'product_id' => $product->id,
-                    'variant_id' => $variant->id,
-                    'http_status' => $updateResponse->status(),
-                    'klaviyo_catalog_variant_id' => $json['data']['id'] ?? $this->compoundId($externalId),
-                ]);
-
-                return $json;
-            }
-
-            KlaviyoLogger::error('Catalog variant update API failed', [
-                'product_id' => $product->id,
-                'variant_id' => $variant->id,
-                'http_status' => $updateResponse->status(),
-                'body' => $this->truncateBody($updateResponse->body()),
-            ]);
-
-            throw new FailedKlaviyoSyncException(
-                "Failed to update Klaviyo catalog variant {$variant->id}: {$updateResponse->body()}"
-            );
         }
 
-        KlaviyoLogger::error('Catalog variant create API failed', [
-            'product_id' => $product->id,
-            'variant_id' => $variant->id,
-            'http_status' => $response->status(),
-            'body' => $this->truncateBody($response->body()),
-        ]);
+        $catalogItemCompoundId = $this->compoundId($itemExternalId);
+        $remoteState = $this->fetchRemoteCatalogItemState($catalogItemCompoundId);
 
-        throw new FailedKlaviyoSyncException(
-            "Failed to create Klaviyo catalog variant {$variant->id}: {$response->body()}"
-        );
+        if (! $remoteState['exists']) {
+            return [
+                'use_update' => false,
+                'remote_variant_external_ids' => [],
+            ];
+        }
+
+        return [
+            'use_update' => true,
+            'remote_variant_external_ids' => array_fill_keys($remoteState['variant_external_ids'], true),
+        ];
     }
 
     /**
@@ -885,134 +1338,6 @@ class KlaviyoCatalogService
         }
 
         return $categories;
-    }
-
-    /**
-     * @param  list<string>  $categoryCompoundIds
-     * @return array<string, mixed>
-     *
-     * @throws FailedKlaviyoSyncException
-     */
-    protected function upsertCatalogItem(Product $product, array $categoryCompoundIds): array
-    {
-        $externalId = $this->resolveItemExternalId($product);
-        $title = $product->translateAttribute('name') ?? "Product {$product->id}";
-        $description = strip_tags((string) ($product->translateAttribute('description') ?? $title));
-        $url = $this->resolveProductUrl($product);
-        $imageUrl = $product->getMedia('images', ['primary' => true])->first()?->getUrl('large');
-
-        $attributes = [
-            'external_id' => $externalId,
-            'title' => $title,
-            'description' => $description !== '' ? $description : $title,
-            'url' => $url,
-            'integration_type' => '$custom',
-            'catalog_type' => '$default',
-            'published' => true,
-        ];
-
-        if ($imageUrl) {
-            $attributes['image_full_url'] = $imageUrl;
-            $attributes['image_thumbnail_url'] = $imageUrl;
-            $attributes['images'] = [$imageUrl];
-        }
-
-        $createPayload = [
-            'data' => [
-                'type' => 'catalog-item',
-                'attributes' => $attributes,
-                'relationships' => [
-                    'categories' => [
-                        'data' => array_map(
-                            fn (string $id) => [
-                                'type' => 'catalog-category',
-                                'id' => $id,
-                            ],
-                            $categoryCompoundIds
-                        ),
-                    ],
-                ],
-            ],
-        ];
-
-        KlaviyoLogger::info('Catalog item create attempt', [
-            'product_id' => $product->id,
-            'external_id' => $externalId,
-            'external_id_source' => $externalId === (string) $product->id ? 'product_id_fallback' : 'sku',
-            'title' => $title,
-            'url' => $url,
-            'has_image' => (bool) $imageUrl,
-            'category_ids' => $categoryCompoundIds,
-        ]);
-
-        $response = $this->klaviyo->getConnector()->send(new CreateCatalogItemRequest($createPayload));
-
-        if ($response->successful()) {
-            $json = $response->json() ?? [];
-
-            KlaviyoLogger::info('Catalog item created', [
-                'product_id' => $product->id,
-                'http_status' => $response->status(),
-                'klaviyo_catalog_item_id' => $json['data']['id'] ?? $this->compoundId($externalId),
-            ]);
-
-            return $json;
-        }
-
-        if ($this->isDuplicateConflict($response)) {
-            KlaviyoLogger::info('Catalog item already exists — updating', [
-                'product_id' => $product->id,
-                'create_http_status' => $response->status(),
-                'create_body' => $this->truncateBody($response->body()),
-            ]);
-
-            $updatePayload = [
-                'data' => [
-                    'type' => 'catalog-item',
-                    'id' => $this->compoundId($externalId),
-                    'attributes' => collect($attributes)
-                        ->except(['external_id', 'integration_type', 'catalog_type'])
-                        ->all(),
-                    'relationships' => $createPayload['data']['relationships'],
-                ],
-            ];
-
-            $updateResponse = $this->klaviyo->getConnector()->send(
-                new UpdateCatalogItemRequest($this->compoundId($externalId), $updatePayload)
-            );
-
-            if ($updateResponse->successful()) {
-                $json = $updateResponse->json() ?? [];
-
-                KlaviyoLogger::info('Catalog item updated', [
-                    'product_id' => $product->id,
-                    'http_status' => $updateResponse->status(),
-                    'klaviyo_catalog_item_id' => $json['data']['id'] ?? $this->compoundId($externalId),
-                ]);
-
-                return $json;
-            }
-
-            KlaviyoLogger::error('Catalog item update API failed', [
-                'product_id' => $product->id,
-                'http_status' => $updateResponse->status(),
-                'body' => $this->truncateBody($updateResponse->body()),
-            ]);
-
-            throw new FailedKlaviyoSyncException(
-                "Failed to update Klaviyo catalog item for product {$product->id}: {$updateResponse->body()}"
-            );
-        }
-
-        KlaviyoLogger::error('Catalog item create API failed', [
-            'product_id' => $product->id,
-            'http_status' => $response->status(),
-            'body' => $this->truncateBody($response->body()),
-        ]);
-
-        throw new FailedKlaviyoSyncException(
-            "Failed to create Klaviyo catalog item for product {$product->id}: {$response->body()}"
-        );
     }
 
     protected function resolveProductUrl(Product $product): string

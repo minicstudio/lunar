@@ -7,8 +7,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Lunar\Enums\ProductEventType;
 use Lunar\Facades\StorefrontSession;
+use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Channel;
 use Lunar\Models\CustomerGroup;
@@ -36,8 +36,10 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
             return;
         }
 
+        $chunkSize = max(1, min(100, $this->chunkSize));
+
         KlaviyoLogger::info('Sync all products job started', [
-            'chunk_size' => $this->chunkSize,
+            'chunk_size' => $chunkSize,
         ]);
 
         $channel = Channel::getDefault();
@@ -52,9 +54,10 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
             StorefrontSession::setCustomerGroups(collect([$customerGroup]));
         }
 
-        $dispatched = 0;
+        $bulkChunksSubmitted = 0;
         $skippedUnavailable = 0;
         $scanned = 0;
+        $catalogService = app(KlaviyoCatalogService::class);
 
         Product::query()
             ->with(['variants', 'collections', 'brand', 'media'])
@@ -65,13 +68,14 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
                         ->orWhere('backorder', true);
                 });
             })
-            ->chunk($this->chunkSize, function ($products) use (&$dispatched, &$skippedUnavailable, &$scanned) {
+            ->chunk($chunkSize, function ($products) use ($catalogService, &$bulkChunksSubmitted, &$skippedUnavailable, &$scanned) {
+                $available = collect();
+
                 foreach ($products as $product) {
                     $scanned++;
 
                     if ($product->isAvailable()) {
-                        dispatch(SyncProductToKlaviyo::fromProduct($product, ProductEventType::UPDATE));
-                        $dispatched++;
+                        $available->push($product);
                     } else {
                         $skippedUnavailable++;
                         KlaviyoLogger::info('Sync all products skipped product (not available)', [
@@ -80,11 +84,18 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
                         ]);
                     }
                 }
+
+                if ($available->isEmpty()) {
+                    return;
+                }
+
+                $catalogService->syncProductsBulk($available);
+                $bulkChunksSubmitted++;
             });
 
-        KlaviyoLogger::info('Sync all products job finished dispatching', [
+        KlaviyoLogger::info('Sync all products job finished', [
             'scanned_published_with_stock' => $scanned,
-            'dispatched' => $dispatched,
+            'bulk_chunks_submitted' => $bulkChunksSubmitted,
             'skipped_unavailable' => $skippedUnavailable,
         ]);
     }

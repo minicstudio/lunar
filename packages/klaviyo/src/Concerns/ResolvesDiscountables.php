@@ -4,9 +4,8 @@ namespace Lunar\Klaviyo\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Lunar\Enums\ProductEventType;
 use Lunar\Klaviyo\Jobs\SyncAllProductsToKlaviyo;
-use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
+use Lunar\Klaviyo\Jobs\SyncProductsBulkToKlaviyo;
 use Lunar\Models\Brand;
 use Lunar\Models\Collection as CollectionModel;
 use Lunar\Models\Discount;
@@ -134,8 +133,10 @@ trait ResolvesDiscountables
      */
     protected function dispatchProductSyncs(iterable $productIds): void
     {
-        foreach (collect($productIds)->unique()->filter() as $productId) {
-            dispatch(new SyncProductToKlaviyo((int) $productId, ProductEventType::UPDATE));
+        $ids = collect($productIds)->unique()->filter()->map(fn ($id) => (int) $id)->values();
+
+        foreach ($ids->chunk(100) as $chunk) {
+            dispatch(new SyncProductsBulkToKlaviyo($chunk->values()->all()));
         }
     }
 

@@ -5,10 +5,9 @@ uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Queue;
-use Lunar\Enums\ProductEventType;
 use Lunar\Events\DiscountUpdatedEvent;
 use Lunar\Klaviyo\Jobs\SyncAllProductsToKlaviyo;
-use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
+use Lunar\Klaviyo\Jobs\SyncProductsBulkToKlaviyo;
 use Lunar\Klaviyo\Listeners\SyncProductsOnDiscountBecameGlobal;
 use Lunar\Klaviyo\Listeners\SyncProductsOnDiscountBecameLimited;
 use Lunar\Klaviyo\Listeners\SyncProductsOnDiscountDeleted;
@@ -54,15 +53,10 @@ test('discount updated syncs limited product ids', function () {
 
     (new SyncProductsOnDiscountUpdated)->handle(new DiscountUpdatedEvent($discount));
 
-    Queue::assertPushed(SyncProductToKlaviyo::class, 2);
-    Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product1) {
-        return $job->productId === $product1->id
-            && $job->eventType === ProductEventType::UPDATE
-            && $job->connection !== 'deferred';
-    });
-    Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product2) {
-        return $job->productId === $product2->id
-            && $job->eventType === ProductEventType::UPDATE
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, 1);
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, function (SyncProductsBulkToKlaviyo $job) use ($product1, $product2) {
+        return in_array($product1->id, $job->productIds, true)
+            && in_array($product2->id, $job->productIds, true)
             && $job->connection !== 'deferred';
     });
     Queue::assertNotPushed(SyncAllProductsToKlaviyo::class);
@@ -79,7 +73,7 @@ test('discount updated dispatches full sync when discount is global', function (
     Queue::assertPushed(SyncAllProductsToKlaviyo::class, function (SyncAllProductsToKlaviyo $job) {
         return $job->connection !== 'deferred';
     });
-    Queue::assertNotPushed(SyncProductToKlaviyo::class);
+    Queue::assertNotPushed(SyncProductsBulkToKlaviyo::class);
 });
 
 test('discount updated no-ops for coupon discounts', function () {
@@ -131,9 +125,8 @@ test('discount limitation attached syncs the product', function () {
 
     (new SyncProductsOnDiscountLimitationChanged)->handle($event);
 
-    Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product) {
-        return $job->productId === $product->id
-            && $job->eventType === ProductEventType::UPDATE;
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, function (SyncProductsBulkToKlaviyo $job) use ($product) {
+        return in_array($product->id, $job->productIds, true);
     });
 });
 
@@ -153,7 +146,11 @@ test('discount limitation attached syncs collection products', function () {
 
     (new SyncProductsOnDiscountLimitationChanged)->handle($event);
 
-    Queue::assertPushed(SyncProductToKlaviyo::class, 2);
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, 1);
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, function (SyncProductsBulkToKlaviyo $job) use ($product1, $product2) {
+        return in_array($product1->id, $job->productIds, true)
+            && in_array($product2->id, $job->productIds, true);
+    });
 });
 
 test('discount limitation attached syncs brand products', function () {
@@ -169,8 +166,8 @@ test('discount limitation attached syncs brand products', function () {
 
     (new SyncProductsOnDiscountLimitationChanged)->handle($event);
 
-    Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product) {
-        return $job->productId === $product->id;
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, function (SyncProductsBulkToKlaviyo $job) use ($product) {
+        return in_array($product->id, $job->productIds, true);
     });
 });
 
@@ -210,9 +207,8 @@ test('discount deleted with related products syncs those products', function () 
 
     (new SyncProductsOnDiscountDeleted)->handle($event);
 
-    Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product) {
-        return $job->productId === $product->id
-            && $job->eventType === ProductEventType::UPDATE;
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, function (SyncProductsBulkToKlaviyo $job) use ($product) {
+        return in_array($product->id, $job->productIds, true);
     });
     Queue::assertNotPushed(SyncAllProductsToKlaviyo::class);
 });
@@ -262,9 +258,8 @@ test('changing ends_at via save dispatches sync through DiscountUpdatedEvent lis
     $discount->ends_at = now()->subDay();
     $discount->save();
 
-    Queue::assertPushed(SyncProductToKlaviyo::class, function (SyncProductToKlaviyo $job) use ($product) {
-        return $job->productId === $product->id
-            && $job->eventType === ProductEventType::UPDATE;
+    Queue::assertPushed(SyncProductsBulkToKlaviyo::class, function (SyncProductsBulkToKlaviyo $job) use ($product) {
+        return in_array($product->id, $job->productIds, true);
     });
 });
 

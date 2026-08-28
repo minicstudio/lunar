@@ -140,7 +140,7 @@ class KlaviyoOrderService
     protected function resolveCatalogVariantId(mixed $purchasable): string
     {
         if ($purchasable instanceof ProductVariant) {
-            return (string) $purchasable->id;
+            return $this->catalogService->resolveVariantExternalId($purchasable);
         }
 
         return '';

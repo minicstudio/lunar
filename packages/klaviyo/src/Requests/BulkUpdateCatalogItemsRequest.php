@@ -7,7 +7,7 @@ use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Traits\Body\HasJsonBody;
 
-class CreateCatalogItemRequest extends Request implements HasBody
+class BulkUpdateCatalogItemsRequest extends Request implements HasBody
 {
     use HasJsonBody;
 
@@ -22,7 +22,7 @@ class CreateCatalogItemRequest extends Request implements HasBody
 
     public function resolveEndpoint(): string
     {
-        return '/catalog-items/';
+        return '/catalog-item-bulk-update-jobs/';
     }
 
     protected function defaultBody(): array

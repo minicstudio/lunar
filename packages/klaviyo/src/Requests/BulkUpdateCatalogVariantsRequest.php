@@ -7,23 +7,22 @@ use Saloon\Enums\Method;
 use Saloon\Http\Request;
 use Saloon\Traits\Body\HasJsonBody;
 
-class UpdateCatalogItemRequest extends Request implements HasBody
+class BulkUpdateCatalogVariantsRequest extends Request implements HasBody
 {
     use HasJsonBody;
 
-    protected Method $method = Method::PATCH;
+    protected Method $method = Method::POST;
 
     /**
      * @param  array<string, mixed>  $data
      */
     public function __construct(
-        protected string $catalogItemId,
         protected array $data,
     ) {}
 
     public function resolveEndpoint(): string
     {
-        return '/catalog-items/'.rawurlencode($this->catalogItemId).'/';
+        return '/catalog-variant-bulk-update-jobs/';
     }
 
     protected function defaultBody(): array
