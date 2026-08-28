@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Geplaatst voor',
         ],
+        'show_draft_orders' => [
+            'label' => 'Niet-voltooide bestellingen tonen',
+        ],
     ],
 
     'form' => [
@@ -233,6 +236,7 @@ return [
             'placeholder' => 'Geen transacties',
         ],
         'alert' => [
+            'draft_order' => 'Deze bestelling is nog niet voltooid.',
             'requires_capture' => 'Deze bestelling moet nog worden geïncasseerd.',
             'partially_refunded' => 'Deze bestelling is gedeeltelijk terugbetaald.',
             'refunded' => 'Deze bestelling is terugbetaald.',

@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Placée avant',
         ],
+        'show_draft_orders' => [
+            'label' => 'Afficher les commandes non finalisées',
+        ],
     ],
 
     'form' => [
@@ -233,6 +236,7 @@ return [
             'placeholder' => 'Aucune transaction',
         ],
         'alert' => [
+            'draft_order' => 'Cette commande n\'a pas encore été finalisée.',
             'requires_capture' => 'Cette commande nécessite toujours que le paiement soit capturé.',
             'partially_refunded' => 'Cette commande a été partiellement remboursée.',
             'refunded' => 'Cette commande a été remboursée.',

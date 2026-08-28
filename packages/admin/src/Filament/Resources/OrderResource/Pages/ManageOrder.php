@@ -206,6 +206,10 @@ class ManageOrder extends BaseViewRecord
                 Infolists\Components\Group::make()
                     ->schema([
                         Infolists\Components\Group::make()->key('shouts')->schema([
+                            ShoutEntry::make('draft_order')
+                                ->type('warning')
+                                ->content(__('lunarpanel::order.infolist.alert.draft_order'))
+                                ->visible(fn () => $this->record->isDraft()),
                             ShoutEntry::make('requires_capture')
                                 ->type('danger')
                                 ->content(__('lunarpanel::order.infolist.alert.requires_capture'))

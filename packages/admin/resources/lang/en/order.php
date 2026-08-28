@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Placed before',
         ],
+        'show_draft_orders' => [
+            'label' => 'Show orders not yet placed',
+        ],
     ],
 
     'form' => [
@@ -233,6 +236,7 @@ return [
             'placeholder' => 'No transactions',
         ],
         'alert' => [
+            'draft_order' => 'This order has not been placed yet.',
             'requires_capture' => 'This order still requires payment to be captured.',
             'partially_refunded' => 'This order has been partially refunded.',
             'refunded' => 'This order has been refunded.',

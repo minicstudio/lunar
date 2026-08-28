@@ -61,6 +61,9 @@ return [
         'placed_before' => [
             'label' => 'Đặt trước',
         ],
+        'show_draft_orders' => [
+            'label' => 'Hiển thị đơn hàng chưa hoàn tất',
+        ],
     ],
 
     'form' => [
@@ -225,6 +228,7 @@ return [
             'placeholder' => 'Không có giao dịch',
         ],
         'alert' => [
+            'draft_order' => 'Đơn hàng này chưa được hoàn tất.',
             'requires_capture' => 'Đơn hàng này vẫn cần thu tiền thanh toán',
             'partially_refunded' => 'Đơn hàng này đã được hoàn tiền một phần',
             'refunded' => 'Đơn hàng này đã được hoàn tiền',
