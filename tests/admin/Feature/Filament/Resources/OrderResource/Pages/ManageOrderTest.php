@@ -160,3 +160,19 @@ it('can update order status', function () {
     expect($this->order->refresh())
         ->status->toBe($status);
 });
+
+it('shows a draft banner for orders that have not been placed', function () {
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSee(__('lunarpanel::order.infolist.alert.draft_order'));
+});
+
+it('does not show a draft banner for placed orders', function () {
+    $this->order->update(['placed_at' => now()]);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertDontSee(__('lunarpanel::order.infolist.alert.draft_order'));
+});

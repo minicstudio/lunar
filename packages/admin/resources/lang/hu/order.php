@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Rendelés ideje előtt',
         ],
+        'show_draft_orders' => [
+            'label' => 'Nem véglegesített rendelések megjelenítése',
+        ],
     ],
 
     'form' => [
@@ -233,6 +236,7 @@ return [
             'placeholder' => 'Nincsenek tranzakciók',
         ],
         'alert' => [
+            'draft_order' => 'Ez a rendelés még nincs véglegesítve.',
             'requires_capture' => 'Ennél a rendelésnél még fizetést kell lekönyvelni.',
             'partially_refunded' => 'Ennél a rendelésnél részleges visszatérítés történt.',
             'refunded' => 'Ennél a rendelésnél visszatérítés történt.',

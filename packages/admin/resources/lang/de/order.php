@@ -58,6 +58,9 @@ return [
         'placed_before' => [
             'label' => 'Plaziert vor',
         ],
+        'show_draft_orders' => [
+            'label' => 'Nicht abgeschlossene Bestellungen anzeigen',
+        ],
     ],
 
     'form' => [
@@ -226,6 +229,7 @@ return [
             'placeholder' => 'Keine Transaktionen',
         ],
         'alert' => [
+            'draft_order' => 'Diese Bestellung wurde noch nicht abgeschlossen.',
             'requires_capture' => 'Diese Bestellung erfordert noch die Erfassung der Zahlung.',
             'partially_refunded' => 'Diese Bestellung wurde teilweise erstattet.',
             'refunded' => 'Diese Bestellung wurde erstattet.',

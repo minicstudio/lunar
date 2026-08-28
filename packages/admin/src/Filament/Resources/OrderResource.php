@@ -147,6 +147,10 @@ class OrderResource extends BaseResource
                 ->options(collect(config('lunar.orders.statuses', []))
                     ->mapWithKeys(fn ($data, $status) => [$status => __($data['label'])]))
                 ->multiple(),
+            Tables\Filters\SelectFilter::make('tags')
+                ->label(__('lunarpanel::order.table.tags.label'))
+                ->multiple()
+                ->relationship('tags', 'value'),
             Tables\Filters\Filter::make('placed_at')
 
                 ->form([
@@ -155,16 +159,28 @@ class OrderResource extends BaseResource
                         ->default(Carbon::now()->subMonths(6)),
                     Forms\Components\DatePicker::make('placed_before')
                         ->label(__('lunarpanel::order.table.placed_before.label')),
+                    Forms\Components\Toggle::make('show_draft_orders')
+                        ->label(__('lunarpanel::order.table.show_draft_orders.label'))
+                        ->default(false)
+                        ->inline(false),
                 ])
                 ->query(function (Builder $query, array $data): Builder {
+                    $placedAfter = $data['placed_after'] ?? null;
+                    $placedBefore = $data['placed_before'] ?? null;
+                    $showDraftOrders = (bool) ($data['show_draft_orders'] ?? false);
+
                     return $query
                         ->when(
-                            $data['placed_after'],
+                            $placedAfter,
                             fn (Builder $query, $date): Builder => $query->whereDate('placed_at', '>=', $date),
                         )
                         ->when(
-                            $data['placed_before'],
+                            $placedBefore,
                             fn (Builder $query, $date): Builder => $query->whereDate('placed_at', '<=', $date),
+                        )
+                        ->when(
+                            ! $showDraftOrders && ! $placedAfter && ! $placedBefore,
+                            fn (Builder $query): Builder => $query->whereNotNull('placed_at'),
                         );
                 })
                 ->indicateUsing(function (array $data): array {
@@ -180,12 +196,17 @@ class OrderResource extends BaseResource
                             ->removeField('placed_before');
                     }
 
+                    if (
+                        ($data['show_draft_orders'] ?? false) &&
+                        ! ($data['placed_after'] ?? null) &&
+                        ! ($data['placed_before'] ?? null)
+                    ) {
+                        $indicators[] = Indicator::make(__('lunarpanel::order.table.show_draft_orders.label'))
+                            ->removeField('show_draft_orders');
+                    }
+
                     return $indicators;
                 }),
-            Tables\Filters\SelectFilter::make('tags')
-                ->label(__('lunarpanel::order.table.tags.label'))
-                ->multiple()
-                ->relationship('tags', 'value'),
         ];
     }
 
