@@ -148,6 +148,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Queue Connection
+    |--------------------------------------------------------------------------
+    | Used for carts, orders, subscribe/subscriber sync, and single-product
+    | catalog sync from host lifecycle. Default: Laravel "deferred"
+    | (process after the HTTP response). Batch backfill uses the application
+    | default queue (bare dispatch).
+    */
+
+    'queue_connection' => env('MAILCHIMP_QUEUE_CONNECTION', 'deferred'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Retry Configuration
     |--------------------------------------------------------------------------
     | Configure retry behavior for failed API requests.

@@ -38,6 +38,12 @@
         <testsuite name="shippingAddon">
             <directory suffix="Test.php">tests/shippingAddon/Unit</directory>
         </testsuite>
+        <testsuite name="mailchimp">
+            <directory suffix="Test.php">tests/mailchimp</directory>
+        </testsuite>
+        <testsuite name="klaviyo">
+            <directory suffix="Test.php">tests/klaviyo</directory>
+        </testsuite>
     </testsuites>
     <php>
         <env name="DB_CONNECTION" value="testing"/>

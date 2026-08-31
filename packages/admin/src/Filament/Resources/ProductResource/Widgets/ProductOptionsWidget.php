@@ -405,11 +405,12 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                     $basePrice = null;
 
                     if (! empty($variantData['variant_id'])) {
+                        // Existing row: update in place. Do not fall through to copied_id —
+                        // Livewire keeps copied_id after the first create, which would
+                        // replicate a new variant (same SKU) on every "Save variants".
                         $variant = ProductVariant::find($variantData['variant_id']);
                         $basePrice = $variant->basePrices->first();
-                    }
-
-                    if (! empty($variantData['copied_id'])) {
+                    } elseif (! empty($variantData['copied_id'])) {
                         $copiedVariant = ProductVariant::find(
                             $variantData['copied_id']
                         );
@@ -433,6 +434,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                     $variant->values()->sync($optionsValues);
 
                     $this->variants[$variantIndex]['variant_id'] = $variant->id;
+                    $this->variants[$variantIndex]['copied_id'] = null;
                 }
 
                 $productOptions = collect($this->configuredOptions)
