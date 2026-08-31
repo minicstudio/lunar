@@ -134,9 +134,7 @@ trait HasDiscount
         }
 
         return (float) Blink::once('purchasable_tax_rate_'.$taxClass->id, function () use ($taxClass) {
-            $taxZone = Blink::once('lunar_default_tax_zone', function () {
-                return TaxZone::where('default', true)->with('taxRates')->first();
-            });
+            $taxZone = $this->resolveDefaultTaxZoneWithRates();
 
             if (! $taxZone) {
                 return 0.0;
@@ -156,6 +154,24 @@ trait HasDiscount
             }
 
             return (float) ($firstTaxRateAmount->percentage / 100);
+        });
+    }
+
+    /**
+     * Resolve the default tax zone with rates loaded, once per request.
+     */
+    protected function resolveDefaultTaxZoneWithRates(): ?TaxZone
+    {
+        return Blink::once('lunar_default_tax_zone_with_tax_rates', function () {
+            $taxZone = TaxZone::getDefault();
+
+            if (! $taxZone) {
+                return null;
+            }
+
+            $taxZone->loadMissing('taxRates');
+
+            return $taxZone;
         });
     }
 
