@@ -4,18 +4,18 @@ namespace Lunar\Klaviyo\Listeners;
 
 use Lunar\ERP\Events\OrderPlacedEvent;
 use Lunar\Klaviyo\Jobs\SyncOrderToKlaviyo;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class SyncOrderOnPlacement
 {
     public function handle(OrderPlacedEvent $event): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_orders', false)) {
+        if (! KlaviyoAvailability::orderSyncEnabled()) {
             KlaviyoLogger::debug('Order listener skipped — enabled or sync_orders off', [
                 'order_id' => $event->order->id,
-                'enabled' => (bool) config('lunar.klaviyo.enabled', false),
-                'sync_orders' => (bool) config('lunar.klaviyo.sync_orders', false),
+                'enabled' => KlaviyoAvailability::enabled(),
+                'sync_orders' => KlaviyoAvailability::syncOrders(),
             ]);
 
             return;

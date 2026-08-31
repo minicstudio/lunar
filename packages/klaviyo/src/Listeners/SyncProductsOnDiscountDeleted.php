@@ -4,6 +4,7 @@ namespace Lunar\Klaviyo\Listeners;
 
 use Illuminate\Support\Collection;
 use Lunar\Klaviyo\Concerns\ResolvesDiscountables;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class SyncProductsOnDiscountDeleted
@@ -12,7 +13,7 @@ class SyncProductsOnDiscountDeleted
 
     public function handle(object $event): void
     {
-        if (! $this->klaviyoCatalogSyncEnabled()) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             return;
         }
 

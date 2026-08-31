@@ -5,14 +5,14 @@ namespace Lunar\Klaviyo\Listeners;
 use Lunar\Enums\ProductEventType;
 use Lunar\Events\ProductUpdatedEvent;
 use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class SyncProductOnUpdated
 {
     public function handle(ProductUpdatedEvent $event): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             KlaviyoLogger::debug('Product updated listener skipped — enabled or sync_products off', [
                 'product_id' => $event->product->id,
             ]);

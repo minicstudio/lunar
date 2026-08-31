@@ -2,6 +2,9 @@
 
 namespace Lunar\Klaviyo;
 
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks;
+use Illuminate\Queue\Connectors\DeferredConnector;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Lunar\ERP\Events\OrderPlacedEvent;
@@ -50,6 +53,7 @@ class KlaviyoServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerDeferredQueueMiddleware();
         $this->registerConsoleCommands();
         $this->publishAssets();
         $this->registerListeners();
@@ -63,9 +67,26 @@ class KlaviyoServiceProvider extends ServiceProvider
     {
         if (config('queue.connections.deferred') === null) {
             config()->set('queue.connections.deferred', [
-                'driver' => 'deferred',
+                'driver' => class_exists(DeferredConnector::class) ? 'deferred' : 'sync',
             ]);
         }
+    }
+
+    /**
+     * Ensure deferred jobs are executed for applications using a custom or
+     * pre-Laravel 12 HTTP kernel configuration.
+     */
+    protected function registerDeferredQueueMiddleware(): void
+    {
+        if (! class_exists(InvokeDeferredCallbacks::class)) {
+            return;
+        }
+
+        $this->app->afterResolving(HttpKernel::class, function (HttpKernel $kernel): void {
+            if (method_exists($kernel, 'pushMiddleware')) {
+                $kernel->pushMiddleware(InvokeDeferredCallbacks::class);
+            }
+        });
     }
 
     protected function publishAssets(): void

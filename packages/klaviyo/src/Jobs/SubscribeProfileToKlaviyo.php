@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Lunar\Enums\Marketing\MarketingSubscriptionMode;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
 use Lunar\Klaviyo\Services\KlaviyoProfileService;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Customer;
 
@@ -37,7 +38,7 @@ class SubscribeProfileToKlaviyo implements ShouldQueue
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)) {
+        if (! KlaviyoAvailability::enabled()) {
             KlaviyoLogger::debug('Subscribe job skipped — klaviyo disabled', [
                 'email' => $this->email,
             ]);

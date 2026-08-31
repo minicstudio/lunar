@@ -12,6 +12,7 @@ use Lunar\Events\ProductUpdatedEvent;
 use Lunar\Events\ProductVariantCreatedEvent;
 use Lunar\Events\ProductVariantDeletedEvent;
 use Lunar\FieldTypes\TranslatedText;
+use Lunar\Klaviyo\Jobs\DeleteAllProductsFromKlaviyo;
 use Lunar\Klaviyo\Jobs\DeleteCatalogVariantFromKlaviyo;
 use Lunar\Klaviyo\Jobs\SyncAllProductsToKlaviyo;
 use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
@@ -23,9 +24,9 @@ use Lunar\Klaviyo\Listeners\SyncProductOnVariantCreated;
 use Lunar\Klaviyo\Listeners\SyncProductOnVariantDeleted;
 use Lunar\Klaviyo\Requests\BulkCreateCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\BulkCreateCatalogVariantsRequest;
+use Lunar\Klaviyo\Requests\BulkDeleteCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\BulkUpdateCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\BulkUpdateCatalogVariantsRequest;
-use Lunar\Klaviyo\Requests\BulkDeleteCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\CreateCatalogCategoryRequest;
 use Lunar\Klaviyo\Requests\CreateEventRequest;
 use Lunar\Klaviyo\Requests\DeleteCatalogItemRequest;
@@ -33,6 +34,8 @@ use Lunar\Klaviyo\Requests\DeleteCatalogVariantRequest;
 use Lunar\Klaviyo\Requests\GetBulkCreateCatalogItemsJobRequest;
 use Lunar\Klaviyo\Requests\GetCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\GetCatalogItemVariantIdsRequest;
+use Lunar\Klaviyo\Requests\UpdateCatalogItemRequest;
+use Lunar\Klaviyo\Requests\UpdateCatalogVariantRequest;
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Services\KlaviyoOrderService;
 use Lunar\Klaviyo\Services\KlaviyoProfileService;
@@ -282,6 +285,7 @@ test('SyncProductToKlaviyo unique ids distinguish upsert vs delete', function ()
 
     expect($upsert->uniqueId())->toBe('klaviyo-product-sync-'.$product->id)
         ->and($delete->uniqueId())->toBe('klaviyo-product-sync-'.$product->id.'-delete')
+        ->and($upsert->uniqueFor)->toBe(7200)
         ->and($upsert->tries)->toBe(4)
         ->and($upsert->backoff)->toBe([60, 300, 3600]);
 });
@@ -442,11 +446,14 @@ test('catalog service upserts item and variants with distinct external ids', fun
             ],
         ], 202),
         GetCatalogItemVariantIdsRequest::class => MockResponse::make([
-            'data' => [
-                ['type' => 'catalog-variant', 'id' => '$custom:::$default:::TEE-1'],
+            'errors' => [
+                [
+                    'status' => 404,
+                    'code' => 'not_found',
+                    'title' => 'Not found.',
+                ],
             ],
-            'links' => ['next' => null],
-        ], 200),
+        ], 404),
     ]);
 
     $klaviyo = new KlaviyoService;
@@ -482,7 +489,7 @@ test('catalog service upserts item and variants with distinct external ids', fun
     });
 });
 
-test('catalog service bulk update omits item relationship on variant resources', function () {
+test('catalog service patches single catalog item on update and omits item relationship on variant resources', function () {
     $currency = Currency::where('default', true)->first();
     $channel = Channel::factory()->create(['default' => true]);
     $customerGroup = CustomerGroup::factory()->create(['default' => true]);
@@ -517,20 +524,22 @@ test('catalog service bulk update omits item relationship on variant resources',
         CreateCatalogCategoryRequest::class => MockResponse::make([
             'data' => ['id' => '$custom:::$default:::uncategorized'],
         ], 201),
-        BulkUpdateCatalogItemsRequest::class => MockResponse::make([
+        UpdateCatalogItemRequest::class => MockResponse::make([
             'data' => [
-                'type' => 'catalog-item-bulk-update-job',
-                'id' => 'item-update-job-1',
-                'attributes' => ['status' => 'queued'],
+                'type' => 'catalog-item',
+                'id' => '$custom:::$default:::TEE-1',
+                'attributes' => [
+                    'title' => 'Catalog Tee',
+                    'description' => 'A nice tee',
+                ],
             ],
-        ], 202),
-        BulkUpdateCatalogVariantsRequest::class => MockResponse::make([
+        ], 200),
+        UpdateCatalogVariantRequest::class => MockResponse::make([
             'data' => [
-                'type' => 'catalog-variant-bulk-update-job',
-                'id' => 'variant-update-job-1',
-                'attributes' => ['status' => 'queued'],
+                'type' => 'catalog-variant',
+                'id' => '$custom:::$default:::TEE-1',
             ],
-        ], 202),
+        ], 200),
         GetCatalogItemVariantIdsRequest::class => MockResponse::make([
             'data' => [
                 ['type' => 'catalog-variant', 'id' => '$custom:::$default:::TEE-1'],
@@ -546,22 +555,104 @@ test('catalog service bulk update omits item relationship on variant resources',
         $product->fresh(['variants', 'collections', 'brand', 'media'])
     );
 
-    $mockClient->assertSent(BulkUpdateCatalogItemsRequest::class);
-    $mockClient->assertSent(BulkUpdateCatalogVariantsRequest::class);
+    $mockClient->assertSent(UpdateCatalogItemRequest::class);
+    $mockClient->assertSent(UpdateCatalogVariantRequest::class);
     $mockClient->assertNotSent(BulkCreateCatalogItemsRequest::class);
     $mockClient->assertNotSent(BulkCreateCatalogVariantsRequest::class);
+    $mockClient->assertNotSent(BulkUpdateCatalogItemsRequest::class);
+    $mockClient->assertNotSent(BulkUpdateCatalogVariantsRequest::class);
 
     $mockClient->assertSent(function ($request) {
-        if (! $request instanceof BulkUpdateCatalogVariantsRequest) {
+        if (! $request instanceof UpdateCatalogItemRequest) {
             return false;
         }
 
         $body = $request->body()->all();
-        $variantResource = $body['data']['attributes']['variants']['data'][0] ?? [];
+        $itemResource = $body['data'] ?? [];
+
+        return ($itemResource['id'] ?? null) === '$custom:::$default:::TEE-1'
+            && ($itemResource['attributes']['title'] ?? null) === 'Catalog Tee'
+            && ($itemResource['attributes']['description'] ?? null) === 'A nice tee'
+            && array_key_exists('categories', $itemResource['relationships'] ?? []);
+    });
+
+    $mockClient->assertSent(function ($request) {
+        if (! $request instanceof UpdateCatalogVariantRequest) {
+            return false;
+        }
+
+        $body = $request->body()->all();
+        $variantResource = $body['data'] ?? [];
 
         return ($variantResource['id'] ?? null) === '$custom:::$default:::TEE-1'
+            && ($variantResource['attributes']['title'] ?? null) === 'Catalog Tee'
             && ! array_key_exists('relationships', $variantResource);
     });
+});
+
+test('catalog service patches item when remote item exists even without store entry', function () {
+    $currency = Currency::where('default', true)->first();
+    $channel = Channel::factory()->create(['default' => true]);
+    $customerGroup = CustomerGroup::factory()->create(['default' => true]);
+
+    \Lunar\Facades\StorefrontSession::setChannel($channel);
+    \Lunar\Facades\StorefrontSession::setCustomerGroups(collect([$customerGroup]));
+
+    $product = Product::factory()->create([
+        'status' => 'published',
+        'attribute_data' => [
+            'name' => new TranslatedText(collect(['en' => 'Catalog Tee'])),
+            'description' => new TranslatedText(collect(['en' => 'A nice tee'])),
+        ],
+    ]);
+
+    $product->scheduleChannel($channel, now()->subDay());
+    $product->scheduleCustomerGroup($customerGroup);
+
+    $variant = ProductVariant::factory()->for($product)->create([
+        'sku' => 'TEE-1',
+        'stock' => 5,
+    ]);
+
+    $variant->prices()->create([
+        'currency_id' => $currency->id,
+        'price' => 1999,
+    ]);
+
+    $mockClient = new MockClient([
+        CreateCatalogCategoryRequest::class => MockResponse::make([
+            'data' => ['id' => '$custom:::$default:::uncategorized'],
+        ], 201),
+        UpdateCatalogItemRequest::class => MockResponse::make([
+            'data' => [
+                'type' => 'catalog-item',
+                'id' => '$custom:::$default:::TEE-1',
+            ],
+        ], 200),
+        UpdateCatalogVariantRequest::class => MockResponse::make([
+            'data' => [
+                'type' => 'catalog-variant',
+                'id' => '$custom:::$default:::TEE-1',
+            ],
+        ], 200),
+        GetCatalogItemVariantIdsRequest::class => MockResponse::make([
+            'data' => [
+                ['type' => 'catalog-variant', 'id' => '$custom:::$default:::TEE-1'],
+            ],
+            'links' => ['next' => null],
+        ], 200),
+    ]);
+
+    $klaviyo = new KlaviyoService;
+    $klaviyo->getConnector()->withMockClient($mockClient);
+
+    (new KlaviyoCatalogService($klaviyo))->syncProduct(
+        $product->fresh(['variants', 'collections', 'brand', 'media'])
+    );
+
+    $mockClient->assertSent(UpdateCatalogItemRequest::class);
+    $mockClient->assertNotSent(BulkCreateCatalogItemsRequest::class);
+    expect(CatalogExternalIdStore::get($product->id))->toBe('TEE-1');
 });
 
 test('catalog service uses bulk create when store entry exists but remote item is absent', function () {
@@ -644,6 +735,7 @@ test('catalog service uses bulk create when store entry exists but remote item i
     $mockClient->assertSent(GetBulkCreateCatalogItemsJobRequest::class);
     $mockClient->assertSent(BulkCreateCatalogVariantsRequest::class);
     $mockClient->assertNotSent(BulkUpdateCatalogItemsRequest::class);
+    $mockClient->assertNotSent(UpdateCatalogItemRequest::class);
     $mockClient->assertNotSent(BulkUpdateCatalogVariantsRequest::class);
 });
 
@@ -682,12 +774,12 @@ test('catalog service bulk creates missing variants when remote item exists with
         CreateCatalogCategoryRequest::class => MockResponse::make([
             'data' => ['id' => '$custom:::$default:::uncategorized'],
         ], 201),
-        BulkUpdateCatalogItemsRequest::class => MockResponse::make([
+        UpdateCatalogItemRequest::class => MockResponse::make([
             'data' => [
-                'type' => 'catalog-item-bulk-update-job',
-                'id' => 'item-update-job-1',
+                'type' => 'catalog-item',
+                'id' => '$custom:::$default:::TEE-1',
             ],
-        ], 202),
+        ], 200),
         BulkCreateCatalogVariantsRequest::class => MockResponse::make([
             'data' => [
                 'type' => 'catalog-variant-bulk-create-job',
@@ -707,7 +799,7 @@ test('catalog service bulk creates missing variants when remote item exists with
         $product->fresh(['variants', 'collections', 'brand', 'media'])
     );
 
-    $mockClient->assertSent(BulkUpdateCatalogItemsRequest::class);
+    $mockClient->assertSent(UpdateCatalogItemRequest::class);
     $mockClient->assertSent(BulkCreateCatalogVariantsRequest::class);
     $mockClient->assertNotSent(BulkUpdateCatalogVariantsRequest::class);
 });
@@ -745,29 +837,18 @@ test('catalog sync deletes orphan remote variants not in the current Lunar set',
         CreateCatalogCategoryRequest::class => MockResponse::make([
             'data' => ['id' => '$custom:::$default:::uncategorized'],
         ], 201),
-        BulkCreateCatalogItemsRequest::class => MockResponse::make([
+        UpdateCatalogItemRequest::class => MockResponse::make([
             'data' => [
-                'type' => 'catalog-item-bulk-create-job',
-                'id' => 'item-job-1',
-            ],
-        ], 202),
-        GetBulkCreateCatalogItemsJobRequest::class => MockResponse::make([
-            'data' => [
-                'type' => 'catalog-item-bulk-create-job',
-                'id' => 'item-job-1',
-                'attributes' => [
-                    'status' => 'complete',
-                    'failed_count' => 0,
-                    'errors' => [],
-                ],
+                'type' => 'catalog-item',
+                'id' => '$custom:::$default:::TEE-1',
             ],
         ], 200),
-        BulkCreateCatalogVariantsRequest::class => MockResponse::make([
+        UpdateCatalogVariantRequest::class => MockResponse::make([
             'data' => [
-                'type' => 'catalog-variant-bulk-create-job',
-                'id' => 'variant-job-1',
+                'type' => 'catalog-variant',
+                'id' => '$custom:::$default:::TEE-1',
             ],
-        ], 202),
+        ], 200),
         GetCatalogItemVariantIdsRequest::class => MockResponse::make([
             'data' => [
                 ['type' => 'catalog-variant', 'id' => '$custom:::$default:::LEGACY-VAR'],
@@ -955,23 +1036,16 @@ test('deleteAllCatalogItems lists pages then spawns bulk delete jobs', function 
     });
 });
 
-test('klaviyo:delete-all-products requires confirmation unless --force', function () {
+test('klaviyo:delete-all-products dispatches DeleteAllProductsFromKlaviyo', function () {
     $this->app->register(\Lunar\Klaviyo\KlaviyoServiceProvider::class);
 
-    $mockClient = new MockClient([
-        GetCatalogItemsRequest::class => MockResponse::make([
-            'data' => [],
-            'links' => ['next' => null],
-        ], 200),
-    ]);
-
-    $klaviyo = new KlaviyoService;
-    $klaviyo->getConnector()->withMockClient($mockClient);
-    $this->app->instance(KlaviyoService::class, $klaviyo);
-    $this->app->instance(KlaviyoCatalogService::class, new KlaviyoCatalogService($klaviyo));
-
-    $this->artisan('klaviyo:delete-all-products', ['--force' => true])
+    $this->artisan('klaviyo:delete-all-products', ['--force' => true, '--page-size' => 50])
         ->assertSuccessful();
+
+    Queue::assertPushed(DeleteAllProductsFromKlaviyo::class, function (DeleteAllProductsFromKlaviyo $job) {
+        return $job->pageSize === 50
+            && $job->connection !== 'deferred';
+    });
 });
 
 test('klaviyo:delete-all-products fails when disabled', function () {
@@ -981,4 +1055,6 @@ test('klaviyo:delete-all-products fails when disabled', function () {
 
     $this->artisan('klaviyo:delete-all-products', ['--force' => true])
         ->assertFailed();
+
+    Queue::assertNotPushed(DeleteAllProductsFromKlaviyo::class);
 });

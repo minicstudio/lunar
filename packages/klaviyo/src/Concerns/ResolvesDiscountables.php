@@ -32,12 +32,6 @@ trait ResolvesDiscountables
         return filled($discount->coupon);
     }
 
-    protected function klaviyoCatalogSyncEnabled(): bool
-    {
-        return config('lunar.klaviyo.enabled', false)
-            && config('lunar.klaviyo.sync_products', false);
-    }
-
     /**
      * @return Builder<\Lunar\Models\Product>
      */

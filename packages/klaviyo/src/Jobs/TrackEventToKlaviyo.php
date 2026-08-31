@@ -11,6 +11,7 @@ use Illuminate\Queue\SerializesModels;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Services\KlaviyoProfileService;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class TrackEventToKlaviyo implements ShouldQueue
@@ -42,14 +43,13 @@ class TrackEventToKlaviyo implements ShouldQueue
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.track_events', true)) {
+        if (! KlaviyoAvailability::eventTrackingEnabled()) {
             KlaviyoLogger::debug('Track event job skipped — enabled or track_events off', [
                 'email' => $this->email,
                 'event_name' => $this->eventName,
                 'event_id' => $this->eventId,
-                'enabled' => (bool) config('lunar.klaviyo.enabled', false),
-                'track_events' => (bool) config('lunar.klaviyo.track_events', true),
+                'enabled' => KlaviyoAvailability::enabled(),
+                'track_events' => KlaviyoAvailability::trackEvents(),
             ]);
 
             return;

@@ -4,6 +4,7 @@ namespace Lunar\Klaviyo\Commands;
 
 use Illuminate\Console\Command;
 use Lunar\Klaviyo\Jobs\SyncAllProductsToKlaviyo;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 
 class SyncAllProductsToKlaviyoCommand extends Command
 {
@@ -20,13 +21,13 @@ class SyncAllProductsToKlaviyoCommand extends Command
 
     public function handle(): int
     {
-        if (! config('lunar.klaviyo.enabled', false)) {
+        if (! KlaviyoAvailability::enabled()) {
             $this->error('Klaviyo integration is not enabled. Set KLAVIYO_ENABLED=true in your .env file.');
 
             return self::FAILURE;
         }
 
-        if (! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::syncProducts()) {
             $this->error('Product catalog sync is not enabled. Set KLAVIYO_SYNC_PRODUCTS=true in your .env file.');
 
             return self::FAILURE;

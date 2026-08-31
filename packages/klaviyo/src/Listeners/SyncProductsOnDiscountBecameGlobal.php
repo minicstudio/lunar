@@ -3,6 +3,7 @@
 namespace Lunar\Klaviyo\Listeners;
 
 use Lunar\Klaviyo\Concerns\ResolvesDiscountables;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Discount;
 
@@ -15,7 +16,7 @@ class SyncProductsOnDiscountBecameGlobal
      */
     public function handle(object $event): void
     {
-        if (! $this->klaviyoCatalogSyncEnabled()) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             return;
         }
 

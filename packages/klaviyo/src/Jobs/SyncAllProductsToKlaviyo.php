@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Facades\StorefrontSession;
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Channel;
 use Lunar\Models\CustomerGroup;
@@ -26,11 +27,10 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             KlaviyoLogger::warning('Sync all products job skipped — enabled or sync_products off', [
-                'enabled' => (bool) config('lunar.klaviyo.enabled', false),
-                'sync_products' => (bool) config('lunar.klaviyo.sync_products', false),
+                'enabled' => KlaviyoAvailability::enabled(),
+                'sync_products' => KlaviyoAvailability::syncProducts(),
             ]);
 
             return;

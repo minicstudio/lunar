@@ -4,6 +4,7 @@ namespace Lunar\Klaviyo\Listeners;
 
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Support\CatalogExternalIdStore;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Product;
 
@@ -16,8 +17,7 @@ class CaptureCatalogIdentityOnProductDeleting
 {
     public function handle(Product $product): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             return;
         }
 

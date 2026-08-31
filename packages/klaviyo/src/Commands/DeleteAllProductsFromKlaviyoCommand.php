@@ -3,8 +3,8 @@
 namespace Lunar\Klaviyo\Commands;
 
 use Illuminate\Console\Command;
-use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
-use Lunar\Klaviyo\Services\KlaviyoCatalogService;
+use Lunar\Klaviyo\Jobs\DeleteAllProductsFromKlaviyo;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 
 class DeleteAllProductsFromKlaviyoCommand extends Command
 {
@@ -18,11 +18,11 @@ class DeleteAllProductsFromKlaviyoCommand extends Command
     /**
      * @var string
      */
-    protected $description = 'Delete all catalog items (and their variants) from the Klaviyo Catalogs API';
+    protected $description = 'Dispatch a background job to delete all catalog items (and their variants) from the Klaviyo Catalogs API';
 
-    public function handle(KlaviyoCatalogService $catalogService): int
+    public function handle(): int
     {
-        if (! config('lunar.klaviyo.enabled', false)) {
+        if (! KlaviyoAvailability::enabled()) {
             $this->error('Klaviyo integration is not enabled. Set KLAVIYO_ENABLED=true in your .env file.');
 
             return self::FAILURE;
@@ -36,19 +36,13 @@ class DeleteAllProductsFromKlaviyoCommand extends Command
 
         $pageSize = max(1, min(100, (int) $this->option('page-size')));
 
-        $this->info('Deleting all catalog items from Klaviyo...');
+        $this->info('Dispatching catalog wipe job to Klaviyo...');
 
-        try {
-            $result = $catalogService->deleteAllCatalogItems($pageSize);
-        } catch (FailedKlaviyoSyncException $e) {
-            $this->error($e->getMessage());
-
-            return self::FAILURE;
-        }
+        DeleteAllProductsFromKlaviyo::dispatch($pageSize);
 
         $this->newLine();
-        $this->info("✓ Queued deletion of {$result['deleted']} catalog item(s) across {$result['jobs']} bulk delete job(s).");
-        $this->comment('Klaviyo processes bulk deletes asynchronously; variants are removed with their parent items.');
+        $this->info('✓ Catalog wipe job dispatched successfully.');
+        $this->comment('The job will list remote catalog items and queue Klaviyo bulk-delete jobs; variants are removed with their parent items.');
 
         return self::SUCCESS;
     }

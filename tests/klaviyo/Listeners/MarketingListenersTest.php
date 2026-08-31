@@ -3,6 +3,8 @@
 uses(\Lunar\Tests\Core\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Queue;
 use Lunar\Enums\Marketing\MarketingConsentSource;
@@ -55,6 +57,13 @@ test('package config defaults queue_connection to deferred', function () {
     $config = require dirname(__DIR__, 3).'/packages/klaviyo/config/klaviyo.php';
 
     expect($config['queue_connection'])->toBe('deferred');
+});
+
+test('package registers middleware that executes deferred jobs', function () {
+    $kernel = app(HttpKernel::class);
+    $middlewareProperty = new ReflectionProperty(\Illuminate\Foundation\Http\Kernel::class, 'middleware');
+
+    expect($middlewareProperty->getValue($kernel))->toContain(InvokeDeferredCallbacks::class);
 });
 
 test('connector sends JSON:API media types', function () {

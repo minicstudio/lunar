@@ -20,10 +20,10 @@ Activate this skill when:
 |------|------|
 | Config | `packages/klaviyo/config/klaviyo.php` → merged as `lunar.klaviyo` |
 | Connector | `Connectors/KlaviyoConnector.php` (Saloon, JSON:API media types + `revision`) |
-| Requests | `Requests/*` — UpsertProfile, GetProfiles, SubscribeProfiles, CreateEvent, Catalog bulk create/update category/item/variant, `GetBulkCreateCatalogItemsJobRequest`, bulk delete, list |
+| Requests | `Requests/*` — UpsertProfile, GetProfiles, SubscribeProfiles, CreateEvent, Catalog bulk create/update category/item/variant, `UpdateCatalogItemRequest`, `GetBulkCreateCatalogItemsJobRequest`, bulk delete, list |
 | Services | `KlaviyoService`, `KlaviyoProfileService`, `KlaviyoOrderService`, `KlaviyoCatalogService` |
-| Support | `Support/CatalogExternalIdStore`, `KlaviyoLogger` |
-| Jobs | `SubscribeProfileToKlaviyo`, `SyncProfileToKlaviyo`, `TrackEventToKlaviyo`, `SyncOrderToKlaviyo`, `SyncProductToKlaviyo`, `SyncProductsBulkToKlaviyo`, `DeleteCatalogVariantFromKlaviyo`, `SyncAllProductsToKlaviyo` |
+| Support | `Support/CatalogExternalIdStore`, `KlaviyoLogger`, `KlaviyoAvailability` |
+| Jobs | `SubscribeProfileToKlaviyo`, `SyncProfileToKlaviyo`, `TrackEventToKlaviyo`, `SyncOrderToKlaviyo`, `SyncProductToKlaviyo`, `SyncProductsBulkToKlaviyo`, `DeleteCatalogVariantFromKlaviyo`, `SyncAllProductsToKlaviyo`, `DeleteAllProductsFromKlaviyo` |
 | Listeners | Registered in `KlaviyoServiceProvider` on core marketing events + `OrderPlacedEvent` + product/variant lifecycle + optional admin pricing/options/collections/media/urls/discounts |
 | Commands | `klaviyo:sync-all-products` |
 | Tests | `tests/klaviyo/` (`klaviyo` testsuite in `phpunit.xml`) |
@@ -66,14 +66,14 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 
 - Item `external_id` = first non-empty variant **SKU** (fallback: product id); variant `external_id` = variant **SKU** (fallback: variant id when no SKU); `/` replaced with `-`.
 - Compound Klaviyo ids: `$custom:::$default:::{external_id}`.
-- **All catalog upserts** use Klaviyo async bulk jobs — single-item create/update HTTP is forbidden in upsert orchestration.
+- **Catalog item updates**: single-item batches use synchronous **PATCH** (`UpdateCatalogItemRequest`); multi-item batches use async bulk update jobs. Creates remain bulk-only.
 - **Bulk update does not insert** missing items or variants. HTTP 202 only means the job was accepted; missing resources are not created by update jobs.
 - **Create vs update routing** uses **Klaviyo remote state**, not `CatalogExternalIdStore` alone:
   - `resolveCatalogItemSyncContext` → GET `/catalog-items/{id}/relationships/variants/` (`fetchRemoteCatalogItemState`)
   - Item **404** → bulk **create** item (+ all variants via create after item job completes)
-  - Item **200** → bulk **update** item; **per variant**: bulk **create** if absent remotely, bulk **update** if present
+  - Item **200** → **PATCH** item (single) or bulk **update** item (multi); **per variant**: bulk **create** if absent remotely, bulk **update** if present
   - `CatalogExternalIdStore` is for **DELETE capture** and remembering identity after sync — insufficient alone for upsert routing
-- **Orchestration order** (`syncProductsBulk`): item bulk create → item bulk update → **poll item bulk create jobs to `complete`** (`GetBulkCreateCatalogItemsJobRequest`) → variant bulk create → variant bulk update → orphan cleanup → `CatalogExternalIdStore::remember`
+- **Orchestration order** (`syncProductsBulk`): item bulk create → item update (PATCH or bulk) → **poll item bulk create jobs to `complete`** (`GetBulkCreateCatalogItemsJobRequest`) → variant bulk create → variant bulk update → orphan cleanup → `CatalogExternalIdStore::remember`
 - **Variant bulk create** payloads include `relationships.item`; **variant bulk update** must **not** include `relationships` (Klaviyo rejects `item` on update).
 - **Orphan cleanup:** after upsert, list remote variants; delete orphans not in current Lunar SKU set. Item **404** during list → skip (no orphans). Do not throw.
 - Behavioral events: `mapEventProductIdentifiers()` rewrites `product_id` / `product_id_{n}` / `variant_id` / `variant_id_{n}` from Lunar DB ids → SKU (called from `TrackEventToKlaviyo`). Never leave raw Lunar DB ids on Klaviyo event properties when a SKU exists.
@@ -81,6 +81,7 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 - DELETE uses captured external id strings — never re-derive SKU after variants are gone; upsert uniqueness must not discard DELETE.
 - Authoritative `isAvailable() === false` may delete; availability exceptions must retry (never coerce to delete).
 - Queue workers pin default channel + customer group before availability checks.
+- Package jobs/listeners gate on `KlaviyoAvailability` (not raw `config('lunar.klaviyo.*')` guards).
 - API key needs `catalogs:write`. HTTP: `Accept` / body `Content-Type` = `application/vnd.api+json`.
 
 ## Configuration (`lunar.klaviyo`)
@@ -109,7 +110,7 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 | Single-product catalog from product/variant/admin lifecycle | same — `dispatch(...)->onConnection(...)` → `SyncProductToKlaviyo` → bulk jobs (size 1) |
 | `SyncAllProductsToKlaviyo` | application default queue — calls `syncProductsBulk` per chunk (no per-product fan-out) |
 | Discount-driven `ResolvesDiscountables` re-syncs | application default queue — `SyncProductsBulkToKlaviyo` in chunks of ≤100 |
-| Catalog wipe (`klaviyo:delete-all-products`) | sync Saloon `BulkDeleteCatalogItemsRequest` in command (not a Laravel queue job) |
+| `DeleteAllProductsFromKlaviyo` | application default queue — lists remote items and submits Klaviyo bulk-delete jobs via `deleteAllCatalogItems()` |
 
 `KlaviyoServiceProvider` registers `queue.connections.deferred` when missing (same pattern as lunar-frontend GTM).
 
@@ -130,7 +131,7 @@ php artisan klaviyo:delete-all-products --force
 ```
 
 `sync-all-products` requires `KLAVIYO_ENABLED=true` and `KLAVIYO_SYNC_PRODUCTS=true`.
-`delete-all-products` requires `KLAVIYO_ENABLED=true`; lists remote catalog items then spawns Klaviyo bulk-delete jobs (variants deleted with parent items).
+`delete-all-products` requires `KLAVIYO_ENABLED=true`; dispatches `DeleteAllProductsFromKlaviyo` on the application default queue (lists remote catalog items then spawns Klaviyo bulk-delete jobs; variants deleted with parent items).
 ## Excluded
 
 Abandoned cart, store creation, Filament credential UI, Mailchimp-style 404 heal loop, provider-neutral catalog marketing events, live `historical_import` for consent.

@@ -10,6 +10,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class DeleteCatalogVariantFromKlaviyo implements ShouldBeUnique, ShouldQueueAfterCommit
@@ -35,8 +36,7 @@ class DeleteCatalogVariantFromKlaviyo implements ShouldBeUnique, ShouldQueueAfte
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             return;
         }
 

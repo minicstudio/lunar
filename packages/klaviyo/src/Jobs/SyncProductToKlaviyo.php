@@ -12,6 +12,7 @@ use Lunar\Enums\ProductEventType;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Support\CatalogExternalIdStore;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Product;
 
@@ -22,6 +23,11 @@ class SyncProductToKlaviyo implements ShouldBeUnique, ShouldQueueAfterCommit
     public int $tries;
 
     public array $backoff;
+
+    /**
+     * Prevent an interrupted deferred dispatch from locking this product forever.
+     */
+    public int $uniqueFor = 7200;
 
     /**
      * @param  list<string>  $additionalExternalIds
@@ -74,12 +80,11 @@ class SyncProductToKlaviyo implements ShouldBeUnique, ShouldQueueAfterCommit
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             KlaviyoLogger::warning('Product sync job skipped — enabled or sync_products off', [
                 'product_id' => $this->productId,
-                'enabled' => (bool) config('lunar.klaviyo.enabled', false),
-                'sync_products' => (bool) config('lunar.klaviyo.sync_products', false),
+                'enabled' => KlaviyoAvailability::enabled(),
+                'sync_products' => KlaviyoAvailability::syncProducts(),
             ]);
 
             return;

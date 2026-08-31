@@ -4,13 +4,14 @@ namespace Lunar\Klaviyo\Listeners;
 
 use Lunar\Events\Marketing\CustomerMarketingConsentGranted;
 use Lunar\Klaviyo\Jobs\SubscribeProfileToKlaviyo;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class SubscribeProfileOnMarketingConsentGranted
 {
     public function handle(CustomerMarketingConsentGranted $event): void
     {
-        if (! config('lunar.klaviyo.enabled', false)) {
+        if (! KlaviyoAvailability::enabled()) {
             KlaviyoLogger::debug('Consent listener skipped — klaviyo disabled', [
                 'email' => $event->email,
                 'source' => $event->source->value,

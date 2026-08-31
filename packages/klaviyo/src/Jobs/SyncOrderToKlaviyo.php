@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
 use Lunar\Klaviyo\Services\KlaviyoOrderService;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Order;
 
@@ -36,12 +37,11 @@ class SyncOrderToKlaviyo implements ShouldBeUnique, ShouldQueue
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_orders', false)) {
+        if (! KlaviyoAvailability::orderSyncEnabled()) {
             KlaviyoLogger::debug('Order sync job skipped — enabled or sync_orders off', [
                 'order_id' => $this->order->id,
-                'enabled' => (bool) config('lunar.klaviyo.enabled', false),
-                'sync_orders' => (bool) config('lunar.klaviyo.sync_orders', false),
+                'enabled' => KlaviyoAvailability::enabled(),
+                'sync_orders' => KlaviyoAvailability::syncOrders(),
             ]);
 
             return;

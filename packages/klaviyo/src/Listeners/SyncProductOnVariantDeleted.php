@@ -6,14 +6,14 @@ use Lunar\Events\ProductVariantDeletedEvent;
 use Lunar\Klaviyo\Jobs\DeleteCatalogVariantFromKlaviyo;
 use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Support\CatalogExternalIdStore;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 
 class SyncProductOnVariantDeleted
 {
     public function handle(ProductVariantDeletedEvent $event): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_products', false)) {
+        if (! KlaviyoAvailability::catalogSyncEnabled()) {
             return;
         }
 

@@ -10,6 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
 use Lunar\Klaviyo\Services\KlaviyoProfileService;
+use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Customer;
 
@@ -34,12 +35,11 @@ class SyncProfileToKlaviyo implements ShouldQueue
 
     public function handle(): void
     {
-        if (! config('lunar.klaviyo.enabled', false)
-            || ! config('lunar.klaviyo.sync_subscribers', false)) {
+        if (! KlaviyoAvailability::subscriberSyncEnabled()) {
             KlaviyoLogger::debug('Profile sync job skipped — enabled or sync_subscribers off', [
                 'customer_id' => $this->customer->id,
-                'enabled' => (bool) config('lunar.klaviyo.enabled', false),
-                'sync_subscribers' => (bool) config('lunar.klaviyo.sync_subscribers', false),
+                'enabled' => KlaviyoAvailability::enabled(),
+                'sync_subscribers' => KlaviyoAvailability::syncSubscribers(),
             ]);
 
             return;

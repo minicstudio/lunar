@@ -17,6 +17,8 @@ use Lunar\Klaviyo\Requests\DeleteCatalogVariantRequest;
 use Lunar\Klaviyo\Requests\GetBulkCreateCatalogItemsJobRequest;
 use Lunar\Klaviyo\Requests\GetCatalogItemsRequest;
 use Lunar\Klaviyo\Requests\GetCatalogItemVariantIdsRequest;
+use Lunar\Klaviyo\Requests\UpdateCatalogItemRequest;
+use Lunar\Klaviyo\Requests\UpdateCatalogVariantRequest;
 use Lunar\Klaviyo\Support\CatalogExternalIdStore;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Channel;
@@ -41,7 +43,7 @@ class KlaviyoCatalogService
      */
     public function syncProduct(Product $product): array
     {
-        $results = $this->syncProductsBulk(collect([$product]));
+        $results = $this->syncProductsBulk(collect([$product]), synchronousUpdates: true);
 
         return $results[0] ?? [];
     }
@@ -52,11 +54,12 @@ class KlaviyoCatalogService
      * Availability-check exceptions are rethrown (never coerced to delete).
      *
      * @param  iterable<int, Product>|Collection<int, Product>  $products
+     * @param  bool  $synchronousUpdates  Patch existing resources immediately for lifecycle syncs
      * @return list<array<string, mixed>>
      *
      * @throws FailedKlaviyoSyncException
      */
-    public function syncProductsBulk(iterable $products): array
+    public function syncProductsBulk(iterable $products, bool $synchronousUpdates = false): array
     {
         $this->ensureCatalogStorefrontContext();
 
@@ -171,8 +174,14 @@ class KlaviyoCatalogService
             $jobResults[] = $this->submitCatalogVariantBulkCreate($chunk);
         }
 
-        foreach (array_chunk($variantsToUpdate, self::BULK_RESOURCE_LIMIT) as $chunk) {
-            $jobResults[] = $this->submitCatalogVariantBulkUpdate($chunk);
+        if ($synchronousUpdates) {
+            foreach ($variantsToUpdate as $variant) {
+                $jobResults[] = $this->updateCatalogVariant($variant);
+            }
+        } else {
+            foreach (array_chunk($variantsToUpdate, self::BULK_RESOURCE_LIMIT) as $chunk) {
+                $jobResults[] = $this->submitCatalogVariantBulkUpdate($chunk);
+            }
         }
 
         foreach ($orphanCleanup as $entry) {
@@ -883,6 +892,38 @@ class KlaviyoCatalogService
     }
 
     /**
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function updateCatalogItem(array $item): array
+    {
+        $catalogItemId = $item['id'] ?? '';
+
+        KlaviyoLogger::info('Catalog item update starting', [
+            'klaviyo_catalog_item_id' => $catalogItemId,
+        ]);
+
+        $response = $this->klaviyo->getConnector()->send(new UpdateCatalogItemRequest($item));
+
+        if (! $response->successful()) {
+            throw new FailedKlaviyoSyncException(
+                "Failed to update Klaviyo catalog item {$catalogItemId}: ".$response->body()
+            );
+        }
+
+        $json = $response->json() ?? [];
+
+        KlaviyoLogger::info('Catalog item update completed', [
+            'klaviyo_catalog_item_id' => $catalogItemId,
+            'http_status' => $response->status(),
+        ]);
+
+        return $json;
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $items
      * @return array<string, mixed>
      *
@@ -892,6 +933,10 @@ class KlaviyoCatalogService
     {
         if ($items === []) {
             return [];
+        }
+
+        if (count($items) === 1) {
+            return $this->updateCatalogItem($items[0]);
         }
 
         $payload = [
@@ -1103,6 +1148,38 @@ class KlaviyoCatalogService
     }
 
     /**
+     * @param  array<string, mixed>  $variant
+     * @return array<string, mixed>
+     *
+     * @throws FailedKlaviyoSyncException
+     */
+    public function updateCatalogVariant(array $variant): array
+    {
+        $catalogVariantId = $variant['id'] ?? '';
+
+        KlaviyoLogger::info('Catalog variant update starting', [
+            'klaviyo_catalog_variant_id' => $catalogVariantId,
+        ]);
+
+        $response = $this->klaviyo->getConnector()->send(new UpdateCatalogVariantRequest($variant));
+
+        if (! $response->successful()) {
+            throw new FailedKlaviyoSyncException(
+                "Failed to update Klaviyo catalog variant {$catalogVariantId}: ".$response->body()
+            );
+        }
+
+        $json = $response->json() ?? [];
+
+        KlaviyoLogger::info('Catalog variant update completed', [
+            'klaviyo_catalog_variant_id' => $catalogVariantId,
+            'http_status' => $response->status(),
+        ]);
+
+        return $json;
+    }
+
+    /**
      * @param  list<string>  $categoryCompoundIds
      * @return array<string, mixed>
      */
@@ -1266,13 +1343,6 @@ class KlaviyoCatalogService
      */
     protected function resolveCatalogItemSyncContext(int $productId, string $itemExternalId): array
     {
-        if (CatalogExternalIdStore::get($productId) === null) {
-            return [
-                'use_update' => false,
-                'remote_variant_external_ids' => [],
-            ];
-        }
-
         $catalogItemCompoundId = $this->compoundId($itemExternalId);
         $remoteState = $this->fetchRemoteCatalogItemState($catalogItemCompoundId);
 
