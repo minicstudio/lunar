@@ -9,6 +9,7 @@ use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
 use Lunar\Shipping\Interfaces\ShippingRateInterface;
 use Lunar\Shipping\Models\ShippingRate;
+use Spatie\LaravelBlink\BlinkFacade as Blink;
 
 class ShipBy implements ShippingRateInterface
 {
@@ -37,13 +38,27 @@ class ShipBy implements ShippingRateInterface
     {
         $shippingRate = $shippingOptionRequest->shippingRate;
         $shippingMethod = $shippingRate->shippingMethod;
-        $shippingZone = $shippingRate->shippingZone;
+        $shippingZone = Blink::once(
+            'shipping_zone_'.$shippingRate->shipping_zone_id,
+            fn () => $shippingRate->shippingZone
+        );
         $data = $shippingMethod->data;
         $cart = $shippingOptionRequest->cart;
         $customerGroups = collect([]);
 
-        if ($user = $cart->user) {
-            $customerGroups = $user->customers->pluck('customerGroups')->flatten();
+        if ($customer = $cart->customer) {
+            $customerGroups = Blink::once('customer_groups_'.$customer->id, function () use ($customer) {
+                $customer->loadMissing('customerGroups');
+
+                return $customer->customerGroups;
+            }) ?? collect([]);
+        } elseif ($user = $cart->user) {
+            $customerGroups = Blink::once('user_customer_groups_'.$user->getKey(), function () use ($user) {
+                $customers = $user->customers;
+                $customers?->loadMissing('customerGroups');
+
+                return $customers?->pluck('customerGroups')->flatten() ?? collect();
+            }) ?? collect([]);
         }
 
         // Use discounted subtotal instead of base subtotal for shipping calculations
@@ -65,13 +80,18 @@ class ShipBy implements ShippingRateInterface
 
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
-        $productIds = $cart->lines->pluck('purchasable.product_id');
+        $productIds = $cart->lines->pluck('purchasable.product_id')->filter()->sort()->values();
 
-        $hasExclusions = $shippingZone->shippingExclusions()
-            ->whereHas('exclusions', function ($query) use ($productIds) {
-                $query->wherePurchasableType(Product::morphName())
-                    ->whereIn('purchasable_id', $productIds);
-            })->exists();
+        $hasExclusions = $productIds->isNotEmpty() && Blink::once(
+            'shipping_zone_'.$shippingZone->id.'_excludes_'.$productIds->implode(','),
+            function () use ($shippingZone, $productIds) {
+                return $shippingZone->shippingExclusions()
+                    ->whereHas('exclusions', function ($query) use ($productIds) {
+                        $query->wherePurchasableType(Product::morphName())
+                            ->whereIn('purchasable_id', $productIds);
+                    })->exists();
+            }
+        );
 
         if ($hasExclusions) {
             return null;
@@ -106,6 +126,11 @@ class ShipBy implements ShippingRateInterface
         if (! empty($cart->meta['shippingType']) && $cart->meta['shippingType'] === 'locker' && $totalWeight > 20) {
             return null;
         }
+
+        $shippingRate->loadMissing('prices');
+        collect($shippingRate->prices)->each(
+            fn ($price) => $price->setRelation('priceable', $shippingRate)
+        );
 
         // Do we have a suitable tier price?
         $pricing = Pricing::for($shippingRate)->customerGroups($customerGroups)->qty($tier)->get();
@@ -143,6 +168,7 @@ class ShipBy implements ShippingRateInterface
             return null;
         }
 
+        $matched->setRelation('priceable', $shippingRate);
         $price = $matched->price;
 
         return new ShippingOption(

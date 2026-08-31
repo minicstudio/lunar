@@ -19,6 +19,7 @@ use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Spatie\LaravelBlink\BlinkFacade as Blink;
 
 class DiscountManager implements DiscountManagerInterface
 {
@@ -40,6 +41,21 @@ class DiscountManager implements DiscountManagerInterface
      * The available discounts
      */
     protected ?Collection $discounts = null;
+
+    /**
+     * Cache key for cart-scoped discount lookups on this manager instance.
+     */
+    protected ?string $discountsCacheKey = null;
+
+    /**
+     * Cached catalog-wide discounts for channel/group scope (no cart filter).
+     */
+    protected ?Collection $catalogDiscounts = null;
+
+    /**
+     * Cache key for {@see $catalogDiscounts}.
+     */
+    protected ?string $catalogDiscountsCacheKey = null;
 
     /**
      * Per-purchasable memoized result of getDiscountForPurchasable(), keyed by
@@ -134,23 +150,99 @@ class DiscountManager implements DiscountManagerInterface
      */
     public function getDiscounts(?Cart $cart = null): Collection
     {
-        // Return the discounts if they are already set, because we use a singleton instance
+        $this->ensureDiscountChannelsAndGroups($cart);
+
+        $cacheKey = $this->buildDiscountsCacheKey($cart);
+
+        if ($cart) {
+            if ($this->discounts !== null && $this->discountsCacheKey === $cacheKey) {
+                return $this->discounts;
+            }
+
+            $discounts = $this->queryDiscounts($cart);
+
+            $this->discounts = $discounts;
+            $this->discountsCacheKey = $cacheKey;
+
+            return $discounts;
+        }
+
         if ($this->discounts && $this->discounts->isNotEmpty()) {
             return $this->discounts;
         }
 
+        return $this->queryDiscounts(null);
+    }
+
+    /**
+     * Load and cache catalog-wide discounts for the current channel/group scope.
+     */
+    protected function getCatalogDiscounts(): Collection
+    {
+        $this->ensureDiscountChannelsAndGroups();
+
+        $cacheKey = $this->buildDiscountsCacheKey(null);
+
+        if ($this->catalogDiscounts !== null && $this->catalogDiscountsCacheKey === $cacheKey) {
+            return $this->catalogDiscounts;
+        }
+
+        $this->catalogDiscountsCacheKey = $cacheKey;
+
+        return $this->catalogDiscounts = $this->queryDiscounts(null);
+    }
+
+    /**
+     * Ensure default channel and customer groups are set before discount queries.
+     */
+    protected function ensureDiscountChannelsAndGroups(?Cart $cart = null): void
+    {
         if ($this->channels->isEmpty() && $defaultChannel = Channel::getDefault()) {
             $this->channel($defaultChannel);
         }
 
-        if ($cart && $customerGroups = $cart->customer?->customerGroups) {
-            $this->customerGroup($customerGroups);
+        if ($cart && $customer = $cart->customer) {
+            $customerGroups = Blink::once('customer_groups_'.$customer->id, function () use ($customer) {
+                $customer->loadMissing('customerGroups');
+
+                return $customer->customerGroups;
+            });
+
+            if ($customerGroups?->isNotEmpty()) {
+                $this->customerGroup($customerGroups);
+            }
         }
 
         if ($this->customerGroups->isEmpty() && $defaultGroup = CustomerGroup::getDefault()) {
             $this->customerGroup($defaultGroup);
         }
+    }
 
+    /**
+     * Build a stable cache key for discount lookups.
+     */
+    protected function buildDiscountsCacheKey(?Cart $cart): string
+    {
+        $cartKey = 'none';
+
+        if ($cart) {
+            $productIds = $cart->lines->pluck('purchasable.product_id')->filter()->sort()->values();
+            $variantIds = $cart->lines->pluck('purchasable.id')->filter()->sort()->values();
+
+            $cartKey = $cart->id.'_products_'.$productIds->implode(',').'_variants_'.$variantIds->implode(',');
+        }
+
+        return 'lunar_discounts_'.
+            $this->channels->pluck('id')->sort()->implode(',').'_'.
+            $this->customerGroups->pluck('id')->sort()->implode(',').'_'.
+            $cartKey;
+    }
+
+    /**
+     * Query discounts from the database.
+     */
+    protected function queryDiscounts(?Cart $cart): Collection
+    {
         return Discount::active()
             ->usable()
             ->channel($this->channels)
@@ -300,7 +392,7 @@ class DiscountManager implements DiscountManagerInterface
     public function apply(CartContract $cart): CartContract
     {
         if (! $this->discounts || $this->discounts?->isEmpty()) {
-            $this->discounts = $this->getDiscounts($cart);
+            $this->discounts = $this->getCatalogDiscounts();
         }
 
         // Apply automatically applied discounts
@@ -334,6 +426,9 @@ class DiscountManager implements DiscountManagerInterface
     public function resetDiscounts(): self
     {
         $this->discounts = null;
+        $this->discountsCacheKey = null;
+        $this->catalogDiscounts = null;
+        $this->catalogDiscountsCacheKey = null;
 
         return $this;
     }
@@ -417,7 +512,7 @@ class DiscountManager implements DiscountManagerInterface
             return $this->discountForPurchasableCache[$cacheKey];
         }
 
-        $discounts = $this->getDiscounts(null);
+        $discounts = $this->getCatalogDiscounts();
 
         if ($discounts->isEmpty()) {
             return $this->discountForPurchasableCache[$cacheKey] = null;

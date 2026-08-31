@@ -9,6 +9,7 @@ use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Facades\StorefrontSession;
 use Lunar\Models\Currency;
 use Lunar\Models\TaxZone;
+use Spatie\LaravelBlink\BlinkFacade as Blink;
 
 trait HasDiscount
 {
@@ -127,26 +128,51 @@ trait HasDiscount
     public function getTaxRate(): float
     {
         $taxClass = $this->getTaxClass();
-        $taxZone = TaxZone::where('default', true)->first();
 
-        if (! $taxClass || ! $taxZone) {
+        if (! $taxClass) {
             return 0.0;
         }
 
-        $firstTaxRateAmount = $taxClass->taxRateAmounts()
-            ->whereIn('tax_rate_id', $taxZone->taxRates->pluck('id'))
-            ->with('taxRate')
-            ->get()
-            ->sortBy(function ($item) {
-                return $item->taxRate->priority;
-            })
-            ->first();
+        return (float) Blink::once('purchasable_tax_rate_'.$taxClass->id, function () use ($taxClass) {
+            $taxZone = $this->resolveDefaultTaxZoneWithRates();
 
-        if (! $firstTaxRateAmount) {
-            return 0.0;
-        }
+            if (! $taxZone) {
+                return 0.0;
+            }
 
-        return (float) ($firstTaxRateAmount->percentage / 100);
+            $taxRateIds = $taxZone->taxRates->pluck('id');
+
+            $taxClass->loadMissing(['taxRateAmounts.taxRate']);
+
+            $firstTaxRateAmount = $taxClass->taxRateAmounts
+                ->whereIn('tax_rate_id', $taxRateIds)
+                ->sortBy(fn ($item) => $item->taxRate->priority)
+                ->first();
+
+            if (! $firstTaxRateAmount) {
+                return 0.0;
+            }
+
+            return (float) ($firstTaxRateAmount->percentage / 100);
+        });
+    }
+
+    /**
+     * Resolve the default tax zone with rates loaded, once per request.
+     */
+    protected function resolveDefaultTaxZoneWithRates(): ?TaxZone
+    {
+        return Blink::once('lunar_default_tax_zone_with_tax_rates', function () {
+            $taxZone = TaxZone::getDefault();
+
+            if (! $taxZone) {
+                return null;
+            }
+
+            $taxZone->loadMissing('taxRates');
+
+            return $taxZone;
+        });
     }
 
     /**
