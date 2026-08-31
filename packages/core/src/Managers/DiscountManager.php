@@ -160,10 +160,19 @@ class DiscountManager implements DiscountManagerInterface
             $this->customerGroup($defaultGroup);
         }
 
+        $cartKey = 'none';
+
+        if ($cart) {
+            $productIds = $cart->lines->pluck('purchasable.product_id')->filter()->sort()->values();
+            $variantIds = $cart->lines->pluck('purchasable.id')->filter()->sort()->values();
+
+            $cartKey = $cart->id.'_products_'.$productIds->implode(',').'_variants_'.$variantIds->implode(',');
+        }
+
         $cacheKey = 'lunar_discounts_'.
             $this->channels->pluck('id')->sort()->implode(',').'_'.
             $this->customerGroups->pluck('id')->sort()->implode(',').'_'.
-            ($cart?->id ?? 'none');
+            $cartKey;
 
         return $this->discounts = Blink::once($cacheKey, function () use ($cart) {
             return Discount::active()

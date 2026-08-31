@@ -142,9 +142,7 @@ trait HasDiscount
                 return 0.0;
             }
 
-            $taxRateIds = Blink::once('lunar_tax_zone_rate_ids_'.$taxZone->id, function () use ($taxZone) {
-                return $taxZone->taxRates->pluck('id');
-            });
+            $taxRateIds = $taxZone->taxRates->pluck('id');
 
             $taxClass->loadMissing(['taxRateAmounts.taxRate']);
 
