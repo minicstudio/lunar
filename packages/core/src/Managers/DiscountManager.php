@@ -43,6 +43,21 @@ class DiscountManager implements DiscountManagerInterface
     protected ?Collection $discounts = null;
 
     /**
+     * Cache key for cart-scoped discount lookups on this manager instance.
+     */
+    protected ?string $discountsCacheKey = null;
+
+    /**
+     * Cached catalog-wide discounts for channel/group scope (no cart filter).
+     */
+    protected ?Collection $catalogDiscounts = null;
+
+    /**
+     * Cache key for {@see $catalogDiscounts}.
+     */
+    protected ?string $catalogDiscountsCacheKey = null;
+
+    /**
      * Per-purchasable memoized result of getDiscountForPurchasable(), keyed by
      * "<purchasable class>:<purchasable id>".
      *
@@ -135,11 +150,53 @@ class DiscountManager implements DiscountManagerInterface
      */
     public function getDiscounts(?Cart $cart = null): Collection
     {
-        // Return the discounts if they are already set, because we use a singleton instance
+        $this->ensureDiscountChannelsAndGroups($cart);
+
+        $cacheKey = $this->buildDiscountsCacheKey($cart);
+
+        if ($cart) {
+            if ($this->discounts !== null && $this->discountsCacheKey === $cacheKey) {
+                return $this->discounts;
+            }
+
+            $discounts = $this->queryDiscounts($cart);
+
+            $this->discounts = $discounts;
+            $this->discountsCacheKey = $cacheKey;
+
+            return $discounts;
+        }
+
         if ($this->discounts && $this->discounts->isNotEmpty()) {
             return $this->discounts;
         }
 
+        return $this->queryDiscounts(null);
+    }
+
+    /**
+     * Load and cache catalog-wide discounts for the current channel/group scope.
+     */
+    protected function getCatalogDiscounts(): Collection
+    {
+        $this->ensureDiscountChannelsAndGroups();
+
+        $cacheKey = $this->buildDiscountsCacheKey(null);
+
+        if ($this->catalogDiscounts !== null && $this->catalogDiscountsCacheKey === $cacheKey) {
+            return $this->catalogDiscounts;
+        }
+
+        $this->catalogDiscountsCacheKey = $cacheKey;
+
+        return $this->catalogDiscounts = $this->queryDiscounts(null);
+    }
+
+    /**
+     * Ensure default channel and customer groups are set before discount queries.
+     */
+    protected function ensureDiscountChannelsAndGroups(?Cart $cart = null): void
+    {
         if ($this->channels->isEmpty() && $defaultChannel = Channel::getDefault()) {
             $this->channel($defaultChannel);
         }
@@ -159,7 +216,13 @@ class DiscountManager implements DiscountManagerInterface
         if ($this->customerGroups->isEmpty() && $defaultGroup = CustomerGroup::getDefault()) {
             $this->customerGroup($defaultGroup);
         }
+    }
 
+    /**
+     * Build a stable cache key for discount lookups.
+     */
+    protected function buildDiscountsCacheKey(?Cart $cart): string
+    {
         $cartKey = 'none';
 
         if ($cart) {
@@ -169,55 +232,59 @@ class DiscountManager implements DiscountManagerInterface
             $cartKey = $cart->id.'_products_'.$productIds->implode(',').'_variants_'.$variantIds->implode(',');
         }
 
-        $cacheKey = 'lunar_discounts_'.
+        return 'lunar_discounts_'.
             $this->channels->pluck('id')->sort()->implode(',').'_'.
             $this->customerGroups->pluck('id')->sort()->implode(',').'_'.
             $cartKey;
+    }
 
-        return $this->discounts = Blink::once($cacheKey, function () use ($cart) {
-            return Discount::active()
-                ->usable()
-                ->channel($this->channels)
-                ->customerGroup($this->customerGroups)
-                ->with([
-                    'discountables',
-                    'collections',
-                ])
-                ->when(
-                    $cart,
-                    function ($query, $value) {
-                        return $query->where(function ($query) use ($value) {
+    /**
+     * Query discounts from the database.
+     */
+    protected function queryDiscounts(?Cart $cart): Collection
+    {
+        return Discount::active()
+            ->usable()
+            ->channel($this->channels)
+            ->customerGroup($this->customerGroups)
+            ->with([
+                'discountables',
+                'collections',
+            ])
+            ->when(
+                $cart,
+                function ($query, $value) {
+                    return $query->where(function ($query) use ($value) {
 
-                            return $query->where(fn ($query) => $query->products(
-                                $value->lines->pluck('purchasable.product_id')->filter()->values(),
+                        return $query->where(fn ($query) => $query->products(
+                            $value->lines->pluck('purchasable.product_id')->filter()->values(),
+                            ['condition', 'limitation']
+                        )
+                        )
+                            ->orWhere(fn ($query) => $query->productVariants(
+                                $value->lines->pluck('purchasable.id')->filter()->values(),
                                 ['condition', 'limitation']
                             )
                             )
-                                ->orWhere(fn ($query) => $query->productVariants(
-                                    $value->lines->pluck('purchasable.id')->filter()->values(),
-                                    ['condition', 'limitation']
-                                )
-                                )
-                                ->orWhere(fn ($query) => $query->collections(
-                                    $value->lines->map(fn ($line) => $line->purchasable->product->collections->pluck('id'))->flatten()->filter()->values(),
-                                    ['condition']
-                                )
-                                );
-                        });
-                    }
-                )->orderBy('priority', 'desc')
-                ->orderBy('id')
-                ->get()
-                ->filter(function ($discount) {
-                    // IMPORTANT: Skip discounts which has no data or data is empty
-                    // can be a case after creation until the user updates the discount
-                    if (! $discount->data || empty($discount->data)) {
-                        return false;
-                    }
+                            ->orWhere(fn ($query) => $query->collections(
+                                $value->lines->map(fn ($line) => $line->purchasable->product->collections->pluck('id'))->flatten()->filter()->values(),
+                                ['condition']
+                            )
+                            );
+                    });
+                }
+            )->orderBy('priority', 'desc')
+            ->orderBy('id')
+            ->get()
+            ->filter(function ($discount) {
+                // IMPORTANT: Skip discounts which has no data or data is empty
+                // can be a case after creation until the user updates the discount
+                if (! $discount->data || empty($discount->data)) {
+                    return false;
+                }
 
-                    return true;
-                });
-        });
+                return true;
+            });
     }
 
     /**
@@ -325,7 +392,7 @@ class DiscountManager implements DiscountManagerInterface
     public function apply(CartContract $cart): CartContract
     {
         if (! $this->discounts || $this->discounts?->isEmpty()) {
-            $this->discounts = $this->getDiscounts($cart);
+            $this->discounts = $this->getCatalogDiscounts();
         }
 
         // Apply automatically applied discounts
@@ -359,6 +426,9 @@ class DiscountManager implements DiscountManagerInterface
     public function resetDiscounts(): self
     {
         $this->discounts = null;
+        $this->discountsCacheKey = null;
+        $this->catalogDiscounts = null;
+        $this->catalogDiscountsCacheKey = null;
 
         return $this;
     }
@@ -442,7 +512,7 @@ class DiscountManager implements DiscountManagerInterface
             return $this->discountForPurchasableCache[$cacheKey];
         }
 
-        $discounts = $this->getDiscounts(null);
+        $discounts = $this->getCatalogDiscounts();
 
         if ($discounts->isEmpty()) {
             return $this->discountForPurchasableCache[$cacheKey] = null;
