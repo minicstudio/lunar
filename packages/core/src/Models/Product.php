@@ -296,23 +296,10 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
      */
     public function canPurchaseProduct(): bool
     {
-        if (! $this->relationLoaded('customerGroups')) {
-            return self::query()
-                ->where('id', $this->id)
-                ->purchasableCustomerGroups()
-                ->exists();
-        }
-
-        $customerGroupIds = StorefrontSession::getCustomerGroups()->pluck('id');
-
-        return $this->customerGroups->contains(function ($group) use ($customerGroupIds) {
-            $pivot = $group->pivot;
-
-            return $customerGroupIds->contains($group->id)
-                && $pivot?->purchasable
-                && ($pivot->starts_at === null || $pivot->starts_at <= now())
-                && ($pivot->ends_at === null || $pivot->ends_at >= now());
-        });
+        return self::query()
+            ->whereKey($this->getKey())
+            ->purchasableCustomerGroups()
+            ->exists();
     }
 
     /**

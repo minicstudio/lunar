@@ -391,9 +391,7 @@ class DiscountManager implements DiscountManagerInterface
 
     public function apply(CartContract $cart): CartContract
     {
-        if (! $this->discounts || $this->discounts?->isEmpty()) {
-            $this->discounts = $this->getCatalogDiscounts();
-        }
+        $this->discounts = $this->getDiscounts($cart);
 
         // Apply automatically applied discounts
         foreach ($cart->lines as $line) {
