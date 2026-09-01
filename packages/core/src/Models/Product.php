@@ -395,9 +395,7 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
     public function wireVariantPriceables(): static
     {
         if ($this->relationLoaded('media')) {
-            $this->media->each(
-                fn ($media) => $media->setRelation('model', $this)
-            );
+            $this->media->each(fn ($media) => $media->setRelation('model', $this));
         }
 
         if (! $this->relationLoaded('variants')) {
@@ -422,21 +420,18 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
             $variant->prices->each(function ($price) use ($variant) {
                 $price->setRelation('priceable', $variant);
 
-                if ($price->relationLoaded('currency') && $price->currency) {
-                    Blink::put('currency_'.$price->currency->id, $price->currency);
-
-                    return;
-                }
-
-                if ($price->currency_id) {
-                    $currency = Blink::once(
+                $currency = match (true) {
+                    $price->relationLoaded('currency') && $price->currency => $price->currency,
+                    (bool) $price->currency_id => Blink::once(
                         'currency_'.$price->currency_id,
                         fn () => Currency::query()->find($price->currency_id)
-                    );
+                    ),
+                    default => null,
+                };
 
-                    if ($currency) {
-                        $price->setRelation('currency', $currency);
-                    }
+                if ($currency) {
+                    Blink::put('currency_'.$currency->id, $currency);
+                    $price->setRelation('currency', $currency);
                 }
             });
         });
