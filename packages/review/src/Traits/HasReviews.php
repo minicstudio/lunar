@@ -25,11 +25,18 @@ trait HasReviews
     {
         return function (): float {
             /** @var \Illuminate\Database\Eloquent\Model $this */
-            return $this->reviews()
+            if ($this->relationLoaded('reviews')) {
+                return (float) ($this->reviews
+                    ->filter(fn (Review $review) => $review->approved_at !== null)
+                    ->map(fn (Review $review) => (int) $review->attr('rating'))
+                    ->avg() ?? 0.0);
+            }
+
+            return (float) ($this->reviews()
                 ->approved()
                 ->get()
                 ->map(fn (Review $review) => (int) $review->attr('rating'))
-                ->avg() ?? 0.0;
+                ->avg() ?? 0.0);
         };
     }
 
@@ -40,9 +47,15 @@ trait HasReviews
     {
         return function (): int {
             /** @var \Illuminate\Database\Eloquent\Model $this */
-            return $this->reviews()
+            if ($this->relationLoaded('reviews')) {
+                return $this->reviews
+                    ->filter(fn (Review $review) => $review->approved_at !== null)
+                    ->count();
+            }
+
+            return (int) ($this->reviews()
                 ->approved()
-                ->count() ?? 0;
+                ->count() ?? 0);
         };
     }
 

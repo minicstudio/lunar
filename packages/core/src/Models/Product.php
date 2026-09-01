@@ -36,6 +36,7 @@ use Lunar\Facades\StorefrontSession;
 use Lunar\Jobs\Products\Associations\Associate;
 use Lunar\Jobs\Products\Associations\Dissociate;
 use Lunar\Models\Collection as CollectionModel;
+use Spatie\LaravelBlink\BlinkFacade as Blink;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
 /**
@@ -295,10 +296,23 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
      */
     public function canPurchaseProduct(): bool
     {
-        return self::query()
-            ->where('id', $this->id)
-            ->purchasableCustomerGroups()
-            ->exists();
+        if (! $this->relationLoaded('customerGroups')) {
+            return self::query()
+                ->where('id', $this->id)
+                ->purchasableCustomerGroups()
+                ->exists();
+        }
+
+        $customerGroupIds = StorefrontSession::getCustomerGroups()->pluck('id');
+
+        return $this->customerGroups->contains(function ($group) use ($customerGroupIds) {
+            $pivot = $group->pivot;
+
+            return $customerGroupIds->contains($group->id)
+                && $pivot?->purchasable
+                && ($pivot->starts_at === null || $pivot->starts_at <= now())
+                && ($pivot->ends_at === null || $pivot->ends_at >= now());
+        });
     }
 
     /**
@@ -372,5 +386,61 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         return self::available()
             ->where('id', $this->id)
             ->exists();
+    }
+
+    /**
+     * Wire inverse relations used heavily on storefront pricing/media paths
+     * so Price::priceable(), media path generators, and DiscountManager do not re-query.
+     */
+    public function wireVariantPriceables(): static
+    {
+        if ($this->relationLoaded('media')) {
+            $this->media->each(
+                fn ($media) => $media->setRelation('model', $this)
+            );
+        }
+
+        if (! $this->relationLoaded('variants')) {
+            return $this;
+        }
+
+        if ($defaultCurrency = Currency::getDefault()) {
+            Blink::put('currency_'.$defaultCurrency->id, $defaultCurrency);
+        }
+
+        $this->variants->each(function ($variant) {
+            $variant->setRelation('product', $this);
+
+            if ($variant->relationLoaded('taxClass') && $variant->taxClass) {
+                Blink::put('tax_class_'.$variant->tax_class_id, $variant->taxClass);
+            }
+
+            if (! $variant->relationLoaded('prices')) {
+                return;
+            }
+
+            $variant->prices->each(function ($price) use ($variant) {
+                $price->setRelation('priceable', $variant);
+
+                if ($price->relationLoaded('currency') && $price->currency) {
+                    Blink::put('currency_'.$price->currency->id, $price->currency);
+
+                    return;
+                }
+
+                if ($price->currency_id) {
+                    $currency = Blink::once(
+                        'currency_'.$price->currency_id,
+                        fn () => Currency::query()->find($price->currency_id)
+                    );
+
+                    if ($currency) {
+                        $price->setRelation('currency', $currency);
+                    }
+                }
+            });
+        });
+
+        return $this;
     }
 }
