@@ -151,6 +151,7 @@ class ManageOrder extends BaseViewRecord
                     ->hiddenLabel()
                     ->getStateUsing(fn () => __('lunarpanel::order.infolist.no_additional_info.label')),
             ] : collect($state)
+                ->except(static::getHiddenOrderMetaKeys())
                 ->map(function ($value, $key) {
                     if (is_array($value)) {
                         return Infolists\Components\KeyValueEntry::make('meta_'.$key)->state($value);
@@ -197,6 +198,14 @@ class ManageOrder extends BaseViewRecord
     public static function getAdditionalInfoSection(): Infolists\Components\Component
     {
         return self::callStaticLunarHook('extendAdditionalInfoSection', static::getDefaultAdditionalInfoSection());
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected static function getHiddenOrderMetaKeys(): array
+    {
+        return self::callStaticLunarHook('extendHiddenOrderMetaKeys', []);
     }
 
     public function getDefaultInfolist(Infolist $infolist): Infolist

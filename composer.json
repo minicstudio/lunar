@@ -74,8 +74,11 @@
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
             "Lunar\\ERP\\": "packages/ERP/src/",
-            "Lunar\\Locations\\Database\\Seeders\\": "packages/locations/database/seeders",
             "Lunar\\Klaviyo\\": "packages/klaviyo/src/",
+            "Lunar\\Locations\\Database\\Seeders\\": "packages/locations/database/seeders",
+            "Lunar\\Loyalty\\": "packages/loyalty/src",
+            "Lunar\\Loyalty\\Database\\Factories\\": "packages/loyalty/database/factories",
+            "Lunar\\Loyalty\\Database\\State\\": "packages/loyalty/database/state",
             "Lunar\\Mailchimp\\": "packages/mailchimp/src/",
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
@@ -110,6 +113,7 @@
             "Lunar\\Tests\\Review\\": "tests/review",
             "Lunar\\Tests\\ShippingAddon\\": "tests/shipping-addon",
             "Lunar\\Tests\\Klaviyo\\": "tests/klaviyo",
+            "Lunar\\Tests\\Loyalty\\": "tests/loyalty",
             "Lunar\\Tests\\Mailchimp\\": "tests/mailchimp"
         }
     },
@@ -121,6 +125,7 @@
                 "Klaviyo",
                 "Mailchimp",
                 "Locations",
+                "Loyalty",
                 "Review",
                 "Table Rate Shipping",
                 "Shipping",
@@ -144,6 +149,7 @@
                 "Lunar\\Locations\\LocationsServiceProvider",
                 "Lunar\\ERP\\ErpServiceProvider",
                 "Lunar\\Review\\ReviewServiceProvider",
+                "Lunar\\Loyalty\\LoyaltyServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\Content\\ContentServiceProvider",
                 "Lunar\\Mailchimp\\MailchimpServiceProvider",
@@ -166,8 +172,9 @@
         "lunarphp/locations": "self.version",
         "lunarphp/stripe": "self.version",
         "lunarphp/table-rate-shipping": "self.version",
-        "lunarphp/mailchimp": "self.version",
-        "lunarphp/klaviyo": "self.version"
+        "lunarphp/klaviyo": "self.version",
+        "lunarphp/loyalty": "self.version",
+        "lunarphp/mailchimp": "self.version"
     },
     "scripts": {
         "pint": "pint",

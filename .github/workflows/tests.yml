@@ -12,7 +12,7 @@ jobs:
         php: [8.2, 8.3, 8.4]
         laravel: [12.*]
         dependency-version: [prefer-stable]
-        testsuite: [core, admin, shipping, stripe, search, blog, ERP, review, shippingAddon]
+        testsuite: [core, admin, shipping, stripe, search, blog, ERP, review, loyalty, shippingAddon]
         extend-models: ["true", "false"]
         include:
           - laravel: 12.*

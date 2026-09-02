@@ -5,7 +5,9 @@ namespace Lunar\Admin\Filament\Resources\OrderResource\Concerns;
 use Filament\Infolists;
 use Filament\Support\Enums\FontWeight;
 use Illuminate\Support\HtmlString;
+use Lunar\Admin\Support\OrderDiscountBreakdown;
 use Lunar\DataTypes\Price;
+use Lunar\Models\Order;
 
 trait DisplaysOrderTotals
 {
@@ -67,6 +69,55 @@ trait DisplaysOrderTotals
     public static function getDiscountTotalEntry(): Infolists\Components\TextEntry
     {
         return self::callStaticLunarHook('extendDiscountTotalEntry', static::getDefaultDiscountTotalEntry());
+    }
+
+    /**
+     * @return array<int, \Lunar\Admin\Support\OrderDiscountBreakdownLine>
+     */
+    protected static function getOrderDiscountBreakdownLines(Order $order): array
+    {
+        $lines = OrderDiscountBreakdown::fromOrder($order);
+
+        return self::callStaticLunarHook('extendOrderDiscountBreakdownLines', $lines, $order);
+    }
+
+    public static function getDefaultDiscountBreakdownGroup(): Infolists\Components\Group
+    {
+        return Infolists\Components\Group::make()
+            ->schema(function (?Order $record) {
+                if (! $record) {
+                    return [];
+                }
+
+                $entries = [];
+
+                foreach (static::getOrderDiscountBreakdownLines($record) as $index => $line) {
+                    $entries[] = Infolists\Components\Grid::make()
+                        ->columns(3)
+                        ->schema([
+                            Infolists\Components\TextEntry::make('discount_breakdown_'.$index.'_type')
+                                ->hiddenLabel()
+                                ->state(fn () => new HtmlString('&nbsp;&nbsp;•&nbsp;'.e($line->type))),
+                            Infolists\Components\TextEntry::make('discount_breakdown_'.$index.'_detail')
+                                ->hiddenLabel()
+                                ->state(fn () => $line->detail)
+                                ->placeholder('')
+                                ->color('gray'),
+                            Infolists\Components\TextEntry::make('discount_breakdown_'.$index.'_amount')
+                                ->hiddenLabel()
+                                ->alignEnd()
+                                ->state(fn () => $line->amount->formatted),
+                        ]);
+                }
+
+                return $entries;
+            })
+            ->visible(fn (?Order $record) => filled($record) && count(static::getOrderDiscountBreakdownLines($record)) > 0);
+    }
+
+    public static function getDiscountBreakdownGroup(): Infolists\Components\Group
+    {
+        return self::callStaticLunarHook('extendDiscountBreakdownGroup', static::getDefaultDiscountBreakdownGroup());
     }
 
     public static function getDefaultShippingBreakdownGroup(): Infolists\Components\Group
@@ -181,6 +232,7 @@ trait DisplaysOrderTotals
         return self::callStaticLunarHook('extendOrderTotalsSchema', [
             static::getSubTotalEntry(),
             static::getDiscountTotalEntry(),
+            static::getDiscountBreakdownGroup(),
             static::getShippingBreakdownGroup(),
             static::getTaxBreakdownGroup(),
             static::getTotalEntry(),

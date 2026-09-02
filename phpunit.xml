@@ -35,6 +35,9 @@
         <testsuite name="review">
             <directory suffix="Test.php">tests/review/Feature</directory>
         </testsuite>
+        <testsuite name="loyalty">
+            <directory suffix="Test.php">tests/loyalty/Unit</directory>
+        </testsuite>
         <testsuite name="shippingAddon">
             <directory suffix="Test.php">tests/shippingAddon/Unit</directory>
         </testsuite>
