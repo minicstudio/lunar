@@ -59,7 +59,7 @@ return [
         'upload_images_section' => 'Imagini',
         'upload_images' => 'Încarcă imagini',
         'with_options' => 'Cu opțiuni: ',
-        'approved_at' => 'Aprobat la',
+        'approved_at' => 'Aprobare',
         'approved' => 'Aprobat',
         'not_approved' => 'Neaprobat',
     ],

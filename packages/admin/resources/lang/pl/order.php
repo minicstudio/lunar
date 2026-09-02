@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Złożone przed',
         ],
+        'show_draft_orders' => [
+            'label' => 'Pokaż niesfinalizowane zamówienia',
+        ],
     ],
 
     'form' => [
@@ -230,6 +233,7 @@ return [
             'placeholder' => 'Brak transakcji',
         ],
         'alert' => [
+            'draft_order' => 'To zamówienie nie zostało jeszcze sfinalizowane.',
             'requires_capture' => 'To zamówienie nadal wymaga przechwycenia płatności.',
             'partially_refunded' => 'To zamówienie zostało częściowo zwrócone.',
             'refunded' => 'To zamówienie zostało zwrócone.',

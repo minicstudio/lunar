@@ -1,0 +1,39 @@
+{
+    "name": "lunarphp/klaviyo",
+    "description": "Klaviyo Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "klaviyo"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Buksa Kinga Orsolya",
+            "email": "buksakinga@minic.ro",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Klaviyo\\": "src"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Klaviyo"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Klaviyo\\KlaviyoServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version"
+    }
+}

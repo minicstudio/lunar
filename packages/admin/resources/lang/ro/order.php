@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Plasată înainte de',
         ],
+        'show_draft_orders' => [
+            'label' => 'Afișează comenzile nefinalizate',
+        ],
     ],
 
     'form' => [
@@ -239,6 +242,7 @@ return [
             'placeholder' => 'Nicio tranzacție',
         ],
         'alert' => [
+            'draft_order' => 'Această comandă nu a fost plasată încă.',
             'requires_capture' => 'Această comandă necesită în continuare capturarea plății.',
             'partially_refunded' => 'Această comandă a fost rambursată parțial.',
             'refunded' => 'Această comandă a fost rambursată.',

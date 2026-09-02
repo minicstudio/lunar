@@ -74,6 +74,7 @@
             "Lunar\\Database\\Seeders\\": "packages/core/database/seeders",
             "Lunar\\Database\\State\\": "packages/core/database/state",
             "Lunar\\ERP\\": "packages/ERP/src/",
+            "Lunar\\Klaviyo\\": "packages/klaviyo/src/",
             "Lunar\\Locations\\Database\\Seeders\\": "packages/locations/database/seeders",
             "Lunar\\Loyalty\\": "packages/loyalty/src",
             "Lunar\\Loyalty\\Database\\Factories\\": "packages/loyalty/database/factories",
@@ -111,8 +112,9 @@
             "Lunar\\Tests\\ERP\\": "tests/ERP",
             "Lunar\\Tests\\Review\\": "tests/review",
             "Lunar\\Tests\\ShippingAddon\\": "tests/shipping-addon",
-            "Lunar\\Tests\\Mailchimp\\": "tests/mailchimp",
-            "Lunar\\Tests\\Loyalty\\": "tests/loyalty"
+            "Lunar\\Tests\\Klaviyo\\": "tests/klaviyo",
+            "Lunar\\Tests\\Loyalty\\": "tests/loyalty",
+            "Lunar\\Tests\\Mailchimp\\": "tests/mailchimp"
         }
     },
     "extra": {
@@ -120,6 +122,7 @@
             "name": [
                 "Blog",
                 "ERP",
+                "Klaviyo",
                 "Mailchimp",
                 "Locations",
                 "Loyalty",
@@ -150,6 +153,7 @@
                 "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\Content\\ContentServiceProvider",
                 "Lunar\\Mailchimp\\MailchimpServiceProvider",
+                "Lunar\\Klaviyo\\KlaviyoServiceProvider",
                 "Lunar\\LunarServiceProvider"
             ]
         }
@@ -168,6 +172,7 @@
         "lunarphp/locations": "self.version",
         "lunarphp/stripe": "self.version",
         "lunarphp/table-rate-shipping": "self.version",
+        "lunarphp/klaviyo": "self.version",
         "lunarphp/loyalty": "self.version",
         "lunarphp/mailchimp": "self.version"
     },

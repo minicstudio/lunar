@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Bu Tarihten Önce',
         ],
+        'show_draft_orders' => [
+            'label' => 'Tamamlanmamış siparişleri göster',
+        ],
     ],
 
     'form' => [
@@ -233,6 +236,7 @@ return [
             'placeholder' => 'İşlem yok',
         ],
         'alert' => [
+            'draft_order' => 'Bu sipariş henüz tamamlanmadı.',
             'requires_capture' => 'Bu sipariş hala ödemenin tahsil edilmesini gerektiriyor.',
             'partially_refunded' => 'Bu sipariş kısmen iade edildi.',
             'refunded' => 'Bu sipariş iade edildi.',

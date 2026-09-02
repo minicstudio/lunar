@@ -23,9 +23,9 @@ Activate this skill when:
 | Services | `MailchimpService`, `MailchimpEcommerceService`, `MailchimpSubscriberService` |
 | Jobs | `Jobs/Sync*ToMailchimp.php`, `SyncAllProductsToMailchimp` |
 | Observer | `Observers/CartLineObserver.php` (registered in `MailchimpServiceProvider`) |
-| Listener | `Listeners/SyncOrderOnPlacement.php` (**not** registered in package provider) |
-| Trait | `Traits/TrackRemoveFromCart.php` (used from lunar-frontend) |
-| Tests | `tests/mailchimp/` (Saloon `MockClient`; not in root `phpunit.xml` or CI matrix yet) |
+| Listener | `Listeners/` — marketing lifecycle adapters + `SyncOrderOnPlacement` (registered in `MailchimpServiceProvider`) |
+| Trait | `Traits/TrackRemoveFromCart.php` (legacy; prefer core `Lunar\Marketing\Concerns\TracksStorefrontMarketingEvents`) |
+| Tests | `tests/mailchimp/` (Saloon `MockClient`; `mailchimp` testsuite in `phpunit.xml`) |
 
 ## Architecture
 
@@ -55,9 +55,9 @@ flowchart LR
   SAL --> MC[Mailchimp API]
 ```
 
-**Engine (automatic):** `CartLine` create/update/delete → `SyncCartToMailchimp` when `enabled` + `sync_carts` and cart has `user_id`.
+**Engine (automatic):** `CartLine` create/update/delete → `SyncCartToMailchimp` when `enabled` + `sync_carts` and cart has `user_id`. Marketing listeners on provider-neutral events (`CustomerMarketingConsentGranted`, `CustomerMarketingProfileUpdated`, `StorefrontMarketingEventOccurred`, `OrderPlacedEvent`) are registered in `MailchimpServiceProvider`.
 
-**Host (must wire):** `OrderPlacedEvent` → `SyncOrderOnPlacement` → `SyncOrderToMailchimp`. Subscriber sync on registration/OAuth and event tracking (`begin_checkout`, `view_item`, `remove_from_cart`) are dispatched from lunar-frontend, not from this package’s provider.
+**Host (must emit, not call Mailchimp):** Storefront lifecycle points in `lunar-frontend` emit core marketing events / reuse `OrderPlacedEvent`. Do **not** import `Lunar\Mailchimp\Jobs\*` for consent, profile, storefront, or order placement. Product catalog sync host listeners remain Mailchimp-specific in v1.
 
 ## Configuration (`lunar.mailchimp`)
 
@@ -71,10 +71,21 @@ flowchart LR
 | `sync_orders` | `MAILCHIMP_SYNC_ORDERS` | Order sync on placement / bulk command |
 | `sync_carts` | `MAILCHIMP_SYNC_CARTS` | Abandoned-cart ecommerce carts |
 | `track_events` | `MAILCHIMP_TRACK_EVENTS` | Custom member events (default **true** in config) |
+| `queue_connection` | `MAILCHIMP_QUEUE_CONNECTION` | Default **`deferred`** for carts, orders, subscribe/subscriber, and single-product catalog from host lifecycle. Batch backfill uses the app default queue (bare `dispatch()`) |
 | `merge_fields`, `option_fields` | — | Tag mapping; `option_fields` drives custom merge fields from variant options |
 | `retry.max_attempts`, `retry.backoff` | `MAILCHIMP_MAX_ATTEMPTS` | Job retries (default 4; backoff 60s, 300s, 3600s) |
 
 Ecommerce operations call `MailchimpService::ensureStoreIdIsSet()` — set `MAILCHIMP_STORE_ID` or run `php artisan mailchimp:create-store`.
+
+## Queue connections
+
+| Path | Connection |
+|------|------------|
+| Carts, orders, consent/profile subscribe | `lunar.mailchimp.queue_connection` (default `deferred`) via `::dispatch(...)->onConnection(...)` |
+| Host single-product catalog (`SyncProductToMailchimp`) | same — host callers should use `onConnection(...)` |
+| `SyncAllProductsToMailchimp` + nested per-product jobs | application default queue (bare `dispatch()`) |
+
+`MailchimpServiceProvider` registers `queue.connections.deferred` when missing (same pattern as lunar-frontend GTM / Klaviyo).
 
 ## Services
 
@@ -133,12 +144,13 @@ All sync jobs use `retry` config for `$tries` and `$backoff`. Failures wrap in `
 
 1. **Respect feature flags** — every entry path checks `lunar.mailchimp.enabled` and the relevant `sync_*` / `track_events` flag.
 2. **Keep customer IDs consistent** — use `getCustomerIdFromEmail()` for any ecommerce customer reference.
-3. **Order placement** — if changing post-checkout Mailchimp behavior, update `SyncOrderOnPlacement` and confirm host still registers it on `OrderPlacedEvent`.
+3. **Order placement** — `SyncOrderOnPlacement` is registered in `MailchimpServiceProvider` on `OrderPlacedEvent`. Host must not also register it in `listeners.php` (duplicate sync).
 4. **Cart sync** — only authenticated carts (`cart.user_id`); observer runs after DB commit.
 5. **Guest orders** — email from `order.billingAddress.contact_email` when no `user_id`.
 6. **Product/cart/order 400 handling** — existing pattern: sync missing products, retry POST, then PATCH for carts.
 7. **Event tracking** — failures in host/Livewire should use `SilentException` + `report()` (see `TrackRemoveFromCart`); subscriber 404 auto-sync is in `trackEvent`.
-8. **Avoid widening package scope** — storefront UX and listener registration belong in lunar-frontend unless explicitly moving wiring into this repo.
+8. **Queue connection** — request-path jobs use `->onConnection(config('lunar.mailchimp.queue_connection', 'deferred'))`; batch backfill must stay on bare `dispatch()`. No helper dispatcher class.
+9. **Avoid widening package scope** — storefront UX and listener registration belong in lunar-frontend unless explicitly moving wiring into this repo.
 
 ## Testing
 
@@ -146,8 +158,8 @@ Follow `.ai/skills/pest-testing/SKILL.md` for general rules. Mailchimp-specific:
 
 - Never hit the real Mailchimp API.
 - Fake Saloon with `MockClient` / `MockResponse` on the connector (see `tests/mailchimp/Services/MailchimpServiceTest.php`).
-- Set config in `beforeEach`: `lunar.mailchimp.api_key`, `list_id`, `store_id`, `server`.
-- Assert dispatched jobs, request payloads, and config guards — not live API responses.
+- Set config in `beforeEach`: `lunar.mailchimp.api_key`, `list_id`, `store_id`, `server`; set `queue_connection` to `deferred` when asserting listener dispatches.
+- Assert dispatched jobs (including `$job->connection === 'deferred'` for request-path paths), request payloads, and config guards — not live API responses.
 - When adding substantial tests, register a `mailchimp` testsuite in `phpunit.xml` and CI (see `docs/system/TESTING.md`).
 
 ## Exceptions
@@ -157,7 +169,7 @@ Follow `.ai/skills/pest-testing/SKILL.md` for general rules. Mailchimp-specific:
 
 ## Common Pitfalls
 
-- Assuming `SyncOrderOnPlacement` is auto-registered — **host** `config/lunar-frontend/listeners.php`.
+- Assuming `SyncOrderOnPlacement` is host-wired — it self-registers in the package provider; remove duplicate host registration.
 - Assuming `OrderPlacedEvent` fires from core/ERP — dispatched from `AuthorizeOrderPayment` in lunar-frontend.
 - `mailchimp:sync-all-orders` filters `status = completed` — may not match host-published statuses.
 - `MAILCHIMP_PLUGIN.md` documents lunar-frontend file paths; verify in the frontend repo before editing triggers there.

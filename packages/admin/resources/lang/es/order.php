@@ -62,6 +62,9 @@ return [
         'placed_before' => [
             'label' => 'Realizado antes de',
         ],
+        'show_draft_orders' => [
+            'label' => 'Mostrar pedidos no finalizados',
+        ],
     ],
 
     'form' => [
@@ -233,6 +236,7 @@ return [
             'placeholder' => 'Sin transacciones',
         ],
         'alert' => [
+            'draft_order' => 'Este pedido aún no se ha finalizado.',
             'requires_capture' => 'Este pedido aún requiere que se capture el pago.',
             'partially_refunded' => 'Este pedido ha sido parcialmente reembolsado.',
             'refunded' => 'Este pedido ha sido reembolsado.',
