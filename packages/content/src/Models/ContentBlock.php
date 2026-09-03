@@ -11,6 +11,19 @@ use Lunar\Base\Traits\HasTranslations;
 use Lunar\Models\Language;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
+/**
+ * @property int $id
+ * @property string $type
+ * @property ?string $key
+ * @property ?array $data
+ * @property bool $is_active
+ * @property int $sort_order
+ * @property ?int $channel_id
+ * @property ?\Illuminate\Support\Carbon $starts_at
+ * @property ?\Illuminate\Support\Carbon $ends_at
+ * @property ?\Illuminate\Support\Carbon $created_at
+ * @property ?\Illuminate\Support\Carbon $updated_at
+ */
 class ContentBlock extends Model implements SpatieHasMedia
 {
     use HasMedia;

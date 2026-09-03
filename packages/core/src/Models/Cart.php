@@ -55,6 +55,7 @@ use Lunar\Validation\CartLine\CartLineStock;
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
  * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property ?array $meta
  */
 class Cart extends BaseModel implements Contracts\Cart
 {
@@ -246,11 +247,17 @@ class Cart extends BaseModel implements Contracts\Cart
         'coupon_code' => CouponString::class,
     ];
 
+    /**
+     * @return HasMany<CartLine>
+     */
     public function lines(): HasMany
     {
         return $this->hasMany(CartLine::modelClass(), 'cart_id', 'id');
     }
 
+    /**
+     * @return BelongsTo<Currency, $this>
+     */
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::modelClass());
@@ -261,6 +268,9 @@ class Cart extends BaseModel implements Contracts\Cart
         return $this->belongsTo(config('auth.providers.users.model'));
     }
 
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::modelClass());
@@ -271,21 +281,33 @@ class Cart extends BaseModel implements Contracts\Cart
         return $query->whereNull('merged_id');
     }
 
+    /**
+     * @return HasMany<CartAddress>
+     */
     public function addresses(): HasMany
     {
         return $this->hasMany(CartAddress::modelClass(), 'cart_id');
     }
 
+    /**
+     * @return HasOne<CartAddress>
+     */
     public function shippingAddress(): HasOne
     {
         return $this->hasOne(CartAddress::modelClass(), 'cart_id')->whereType('shipping');
     }
 
+    /**
+     * @return HasOne<CartAddress>
+     */
     public function billingAddress(): HasOne
     {
         return $this->hasOne(CartAddress::modelClass(), 'cart_id')->whereType('billing');
     }
 
+    /**
+     * @return HasMany<Order>
+     */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::modelClass());
@@ -304,6 +326,8 @@ class Cart extends BaseModel implements Contracts\Cart
 
     /**
      * Return the draft order relationship.
+     *
+     * @return HasOne<Order>
      */
     public function draftOrder(?int $draftOrderId = null): HasOne
     {
@@ -326,6 +350,8 @@ class Cart extends BaseModel implements Contracts\Cart
 
     /**
      * Return the completed order relationship.
+     *
+     * @return HasOne<Order>
      */
     public function completedOrder(?int $completedOrderId = null): HasOne
     {
@@ -335,6 +361,9 @@ class Cart extends BaseModel implements Contracts\Cart
             })->whereNotNull('placed_at');
     }
 
+    /**
+     * @return HasMany<Order>
+     */
     public function completedOrders(): HasMany
     {
         return $this->hasMany(Order::modelClass())

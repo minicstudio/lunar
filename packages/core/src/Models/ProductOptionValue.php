@@ -55,11 +55,17 @@ class ProductOptionValue extends BaseModel implements Contracts\ProductOptionVal
         return ProductOptionValueFactory::new();
     }
 
+    /**
+     * @return BelongsTo<ProductOption, $this>
+     */
     public function option(): BelongsTo
     {
         return $this->belongsTo(ProductOption::modelClass(), 'product_option_id');
     }
 
+    /**
+     * @return BelongsToMany<ProductVariant, $this>
+     */
     public function variants(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');

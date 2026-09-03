@@ -46,6 +46,8 @@ class TaxRateAmount extends BaseModel implements Contracts\TaxRateAmount
 
     /**
      * Return the tax rate relation.
+     *
+     * @return BelongsTo<TaxRate, $this>
      */
     public function taxRate(): BelongsTo
     {
@@ -54,6 +56,8 @@ class TaxRateAmount extends BaseModel implements Contracts\TaxRateAmount
 
     /**
      * Return the tax class relation.
+     *
+     * @return BelongsTo<TaxClass, $this>
      */
     public function taxClass(): BelongsTo
     {

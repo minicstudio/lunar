@@ -59,11 +59,17 @@ class TaxClass extends BaseModel implements Contracts\TaxClass
      */
     protected $guarded = [];
 
+    /**
+     * @return HasMany<TaxRateAmount>
+     */
     public function taxRateAmounts(): HasMany
     {
         return $this->hasMany(TaxRateAmount::modelClass());
     }
 
+    /**
+     * @return HasMany<ProductVariant>
+     */
     public function productVariants(): HasMany
     {
         return $this->hasMany(ProductVariant::modelClass());

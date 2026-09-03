@@ -10,6 +10,9 @@ use Lunar\Models\Order;
 
 trait LunarUser
 {
+    /**
+     * @return BelongsToMany<Customer, $this>
+     */
     public function customers(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');

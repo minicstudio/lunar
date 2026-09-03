@@ -22,6 +22,7 @@ use Spatie\LaravelBlink\BlinkFacade as Blink;
  * @property int $min_quantity
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property-read ProductVariant $priceable
  */
 class Price extends BaseModel implements Contracts\Price
 {
@@ -59,6 +60,8 @@ class Price extends BaseModel implements Contracts\Price
 
     /**
      * Return the currency relationship.
+     *
+     * @return BelongsTo<Currency, $this>
      */
     public function currency(): BelongsTo
     {
@@ -67,6 +70,8 @@ class Price extends BaseModel implements Contracts\Price
 
     /**
      * Return the customer group relationship.
+     *
+     * @return BelongsTo<CustomerGroup, $this>
      */
     public function customerGroup(): BelongsTo
     {

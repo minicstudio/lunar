@@ -106,16 +106,25 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
         return ProductVariantFactory::new();
     }
 
+    /**
+     * @return BelongsTo<Product, $this>
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::modelClass())->withTrashed();
     }
 
+    /**
+     * @return BelongsTo<TaxClass, $this>
+     */
     public function taxClass(): BelongsTo
     {
         return $this->belongsTo(TaxClass::modelClass());
     }
 
+    /**
+     * @return BelongsToMany<ProductOptionValue, $this>
+     */
     public function values(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
