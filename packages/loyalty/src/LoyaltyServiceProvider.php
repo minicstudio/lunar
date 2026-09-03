@@ -3,6 +3,7 @@
 namespace Lunar\Loyalty;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\MigrationsStarted;
@@ -104,25 +105,27 @@ class LoyaltyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register dynamic model relations.
+     * Register earn/spend transaction relations on Lunar's Order.
+     *
+     * Storefront Order extends this class, so Eloquent resolves the relations there too.
      */
     protected function registerRelations(): void
     {
-        $orderClass = Order::modelClass();
-
-        $orderClass::resolveRelationUsing('loyaltyEarnTransaction', function ($order) {
+        Order::resolveRelationUsing('loyaltyEarnTransaction', function ($order) {
             return $this->orderLoyaltyTransactionRelation($order, LoyaltyEventKey::orderEarn(...));
         });
 
-        $orderClass::resolveRelationUsing('loyaltySpendTransaction', function ($order) {
+        Order::resolveRelationUsing('loyaltySpendTransaction', function ($order) {
             return $this->orderLoyaltyTransactionRelation($order, LoyaltyEventKey::orderSpend(...));
         });
     }
 
     /**
      * Build an order loyalty transaction relation, safe for unsaved orders.
+     *
+     * @param  callable(int|string): string  $eventKeyForOrderId
      */
-    protected function orderLoyaltyTransactionRelation($order, callable $eventKeyForOrderId): \Illuminate\Database\Eloquent\Relations\HasOne
+    protected function orderLoyaltyTransactionRelation(Order $order, callable $eventKeyForOrderId): HasOne
     {
         $relation = $order->hasOne(LoyaltyTransaction::modelClass(), 'reference_id', 'id')
             ->where('reference_type', $order->getMorphClass());

@@ -329,7 +329,7 @@ $order->loyaltyEarnTransaction?->points ?? 0;  // points earned (set after order
 $order->loyaltySpendTransaction?->points ?? 0;  // points spent (set at order creation)
 ```
 
-Relations are registered on `Order` via `LoyaltyServiceProvider` and keyed by `event_key`.
+Relations are registered on `Lunar\Models\Order` via `LoyaltyServiceProvider` and keyed by `event_key`. Storefront Order extends this class, so the same relations apply there.
 
 ### Cart redemption
 
