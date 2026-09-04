@@ -51,7 +51,7 @@ Core product lifecycle (catalog — package-owned):
 - Optional admin `ModelMediaUpdated` → parent `UPDATE` when `$model` is a Product (primary image / gallery)
 - Optional admin `ModelUrlsUpdated` → parent `UPDATE` when `$model` is a Product (storefront slug/url)
 - Discount catalog parity (Meta/Google): skip coupon discounts; `DiscountUpdatedEvent` → affected products (or full sync if global); limitation attach/detach → related products; first limitation on former global / last limitation removed / global delete → `SyncAllProductsToKlaviyo`
-- `klaviyo:sync-all-products` → `SyncAllProductsToKlaviyo` → `syncProductsBulk` per chunk (≤100 products)
+- `klaviyo:sync-all-products` → `SyncAllProductsToKlaviyo` (coordinator) → `SyncProductsBulkToKlaviyo` chunks (≤100 products; staggered delay; each chunk retries 503s)
 
 ### Subscribe modes (`KlaviyoProfileService::subscribe`)
 
@@ -82,6 +82,7 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 - Authoritative `isAvailable() === false` may delete; availability exceptions must retry (never coerce to delete).
 - Queue workers pin default channel + customer group before availability checks.
 - Package jobs/listeners gate on `KlaviyoAvailability` (not raw `config('lunar.klaviyo.*')` guards).
+- `ensureCategory` memoizes successful/409 results per service instance so a bulk chunk does not POST the same collection for every product.
 - API key needs `catalogs:write`. HTTP: `Accept` / body `Content-Type` = `application/vnd.api+json`.
 
 ## Configuration (`lunar.klaviyo`)
@@ -108,7 +109,7 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 |------|------------|
 | Profiles, subscribe, storefront events, orders | `lunar.klaviyo.queue_connection` (default `deferred`) via `dispatch(...)->onConnection(config(...))` |
 | Single-product catalog from product/variant/admin lifecycle | same — `dispatch(...)->onConnection(...)` → `SyncProductToKlaviyo` → bulk jobs (size 1) |
-| `SyncAllProductsToKlaviyo` | application default queue — calls `syncProductsBulk` per chunk (no per-product fan-out) |
+| `SyncAllProductsToKlaviyo` | application default queue — coordinator scans available products and fans out `SyncProductsBulkToKlaviyo` (≤100 ids, staggered delay; no per-product Laravel jobs) |
 | Discount-driven `ResolvesDiscountables` re-syncs | application default queue — `SyncProductsBulkToKlaviyo` in chunks of ≤100 |
 | `DeleteAllProductsFromKlaviyo` | application default queue — lists remote items and submits Klaviyo bulk-delete jobs via `deleteAllCatalogItems()` |
 
@@ -130,7 +131,7 @@ php artisan klaviyo:sync-all-products --chunk=100
 php artisan klaviyo:delete-all-products --force
 ```
 
-`sync-all-products` requires `KLAVIYO_ENABLED=true` and `KLAVIYO_SYNC_PRODUCTS=true`.
+`sync-all-products` requires `KLAVIYO_ENABLED=true` and `KLAVIYO_SYNC_PRODUCTS=true`. Dispatches `SyncAllProductsToKlaviyo` on the application default queue; that job only scans availability and fans out `SyncProductsBulkToKlaviyo` chunks (≤100, 15s stagger). Each bulk job has `$timeout = 300` and retries 503s with `retry.backoff`.
 `delete-all-products` requires `KLAVIYO_ENABLED=true`; dispatches `DeleteAllProductsFromKlaviyo` on the application default queue (lists remote catalog items then spawns Klaviyo bulk-delete jobs; variants deleted with parent items).
 ## Excluded
 

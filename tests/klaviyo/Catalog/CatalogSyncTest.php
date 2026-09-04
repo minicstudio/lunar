@@ -16,6 +16,7 @@ use Lunar\Klaviyo\Jobs\DeleteAllProductsFromKlaviyo;
 use Lunar\Klaviyo\Jobs\DeleteCatalogVariantFromKlaviyo;
 use Lunar\Klaviyo\Jobs\SyncAllProductsToKlaviyo;
 use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
+use Lunar\Klaviyo\Jobs\SyncProductsBulkToKlaviyo;
 use Lunar\Klaviyo\Listeners\SyncProductOnCollectionsUpdated;
 use Lunar\Klaviyo\Listeners\SyncProductOnDeleted;
 use Lunar\Klaviyo\Listeners\SyncProductOnPublished;
@@ -976,6 +977,85 @@ test('klaviyo:sync-all-products fails when sync_products disabled', function () 
         ->assertFailed();
 
     Queue::assertNotPushed(SyncAllProductsToKlaviyo::class);
+});
+
+test('SyncAllProductsToKlaviyo fans out delayed bulk chunk jobs for available products', function () {
+    $channel = Channel::factory()->create(['default' => true]);
+    $customerGroup = CustomerGroup::factory()->create(['default' => true]);
+
+    \Lunar\Facades\StorefrontSession::setChannel($channel);
+    \Lunar\Facades\StorefrontSession::setCustomerGroups(collect([$customerGroup]));
+
+    $available = [];
+
+    foreach (['A', 'B', 'C'] as $suffix) {
+        $product = Product::factory()->create(['status' => 'published']);
+        $product->scheduleChannel($channel, now()->subDay());
+        $product->scheduleCustomerGroup($customerGroup);
+        ProductVariant::factory()->for($product)->create([
+            'sku' => 'SYNC-'.$suffix,
+            'stock' => 5,
+        ]);
+        $available[] = $product->id;
+    }
+
+    $draft = Product::factory()->create(['status' => 'draft']);
+    ProductVariant::factory()->for($draft)->create([
+        'sku' => 'SYNC-DRAFT',
+        'stock' => 5,
+    ]);
+
+    $coordinator = new SyncAllProductsToKlaviyo(2);
+    $coordinator->handle();
+
+    $jobs = Queue::pushed(SyncProductsBulkToKlaviyo::class);
+
+    expect($jobs)->toHaveCount(2)
+        ->and($jobs[0]->productIds)->toBe(array_slice($available, 0, 2))
+        ->and($jobs[1]->productIds)->toBe(array_slice($available, 2, 1))
+        ->and($jobs[0]->delay)->toBeNull()
+        ->and($jobs[1]->delay)->not->toBeNull()
+        ->and($jobs[0]->timeout)->toBe(300)
+        ->and($jobs[0]->connection)->not->toBe('deferred');
+
+    Queue::assertNotPushed(SyncProductToKlaviyo::class);
+});
+
+test('SyncAllProductsToKlaviyo no-ops when catalog sync is disabled', function () {
+    Config::set('lunar.klaviyo.sync_products', false);
+
+    $mock = Mockery::mock(KlaviyoCatalogService::class);
+    $mock->shouldNotReceive('syncProductsBulk');
+    app()->instance(KlaviyoCatalogService::class, $mock);
+
+    (new SyncAllProductsToKlaviyo)->handle();
+
+    Queue::assertNotPushed(SyncProductsBulkToKlaviyo::class);
+});
+
+test('ensureCategory memoizes successful creates within a service instance', function () {
+    $createCalls = 0;
+
+    $mockClient = new MockClient([
+        CreateCatalogCategoryRequest::class => function () use (&$createCalls) {
+            $createCalls++;
+
+            return MockResponse::make([
+                'data' => ['id' => '$custom:::$default:::47'],
+            ], 201);
+        },
+    ]);
+
+    $klaviyo = new KlaviyoService;
+    $klaviyo->getConnector()->withMockClient($mockClient);
+    $catalog = new KlaviyoCatalogService($klaviyo);
+
+    $first = $catalog->ensureCategory('47', 'Sale');
+    $second = $catalog->ensureCategory('47', 'Sale');
+
+    expect($createCalls)->toBe(1)
+        ->and($first)->toBe($second)
+        ->and($first['id'])->toBe('$custom:::$default:::47');
 });
 
 test('deleteAllCatalogItems lists pages then spawns bulk delete jobs', function () {

@@ -8,7 +8,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Lunar\Facades\StorefrontSession;
-use Lunar\Klaviyo\Services\KlaviyoCatalogService;
 use Lunar\Klaviyo\Support\KlaviyoAvailability;
 use Lunar\Klaviyo\Support\KlaviyoLogger;
 use Lunar\Models\Channel;
@@ -19,11 +18,26 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries;
+
+    public array $backoff;
+
+    /**
+     * Coordinator only scans and dispatches — keep well under typical worker timeouts.
+     */
+    public int $timeout = 120;
+
+    /**
+     * Seconds between bulk chunk dispatches to ease Klaviyo 429/503 pressure.
+     */
+    public int $chunkDelaySeconds = 15;
 
     public function __construct(
         public int $chunkSize = 100,
-    ) {}
+    ) {
+        $this->tries = config('lunar.klaviyo.retry.max_attempts', 4);
+        $this->backoff = config('lunar.klaviyo.retry.backoff', [60, 300, 3600]);
+    }
 
     public function handle(): void
     {
@@ -54,13 +68,11 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
             StorefrontSession::setCustomerGroups(collect([$customerGroup]));
         }
 
-        $bulkChunksSubmitted = 0;
+        $availableIds = [];
         $skippedUnavailable = 0;
         $scanned = 0;
-        $catalogService = app(KlaviyoCatalogService::class);
 
         Product::query()
-            ->with(['variants', 'collections', 'brand', 'media'])
             ->where('status', 'published')
             ->whereHas('variants', function ($variantQuery) {
                 $variantQuery->where(function ($stockQuery) {
@@ -68,34 +80,40 @@ class SyncAllProductsToKlaviyo implements ShouldQueue
                         ->orWhere('backorder', true);
                 });
             })
-            ->chunk($chunkSize, function ($products) use ($catalogService, &$bulkChunksSubmitted, &$skippedUnavailable, &$scanned) {
-                $available = collect();
-
+            ->chunkById($chunkSize, function ($products) use (&$availableIds, &$skippedUnavailable, &$scanned) {
                 foreach ($products as $product) {
                     $scanned++;
 
                     if ($product->isAvailable()) {
-                        $available->push($product);
-                    } else {
-                        $skippedUnavailable++;
-                        KlaviyoLogger::info('Sync all products skipped product (not available)', [
-                            'product_id' => $product->id,
-                            'status' => $product->status,
-                        ]);
+                        $availableIds[] = $product->id;
+
+                        continue;
                     }
-                }
 
-                if ($available->isEmpty()) {
-                    return;
+                    $skippedUnavailable++;
+                    KlaviyoLogger::info('Sync all products skipped product (not available)', [
+                        'product_id' => $product->id,
+                        'status' => $product->status,
+                    ]);
                 }
-
-                $catalogService->syncProductsBulk($available);
-                $bulkChunksSubmitted++;
             });
+
+        $bulkChunksSubmitted = 0;
+
+        foreach (array_chunk($availableIds, $chunkSize) as $index => $chunk) {
+            $pending = SyncProductsBulkToKlaviyo::dispatch($chunk);
+
+            if ($index > 0 && $this->chunkDelaySeconds > 0) {
+                $pending->delay(now()->addSeconds($index * $this->chunkDelaySeconds));
+            }
+
+            $bulkChunksSubmitted++;
+        }
 
         KlaviyoLogger::info('Sync all products job finished', [
             'scanned_published_with_stock' => $scanned,
             'bulk_chunks_submitted' => $bulkChunksSubmitted,
+            'available_product_count' => count($availableIds),
             'skipped_unavailable' => $skippedUnavailable,
         ]);
     }
