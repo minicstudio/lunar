@@ -1,19 +1,30 @@
 <?php
 
-uses(\Lunar\Tests\Stripe\Unit\TestCase::class);
+use Lunar\Stripe\Actions\StoreCharges;
+use Lunar\Stripe\Facades\Stripe;
+use Lunar\Tests\Stripe\Unit\TestCase;
+use Lunar\Tests\Stripe\Utils\CartBuilder;
+
+uses(TestCase::class);
 
 it('can store successful charge', function () {
-    $cart = \Lunar\Tests\Stripe\Utils\CartBuilder::build();
+    // Pin a two-decimal currency: the factory's random faker code can land on
+    // a currency Stripe scales differently (JPY, HUF, ...), which makes the
+    // stored amount diverge from the raw charge fixture amount.
+    $cart = CartBuilder::build(currencyParams: [
+        'code' => 'USD',
+        'decimal_places' => 2,
+    ]);
 
     $order = $cart->createOrder();
 
-    $paymentIntent = \Lunar\Stripe\Facades\Stripe::getClient()
+    $paymentIntent = Stripe::getClient()
         ->paymentIntents
         ->retrieve('PI_CAPTURE');
 
     $charges = collect($paymentIntent->charges->data);
 
-    $order = app(\Lunar\Stripe\Actions\StoreCharges::class)->store($order, $charges);
+    $order = app(StoreCharges::class)->store($order, $charges);
 
     expect($order->transactions)->toHaveCount(1);
 
@@ -26,21 +37,21 @@ it('can store successful charge', function () {
 })->group('lunar.stripe.actions');
 
 it('updates existing transactions', function () {
-    $cart = \Lunar\Tests\Stripe\Utils\CartBuilder::build();
+    $cart = CartBuilder::build();
 
     $order = $cart->createOrder();
 
-    $paymentIntent = \Lunar\Stripe\Facades\Stripe::getClient()
+    $paymentIntent = Stripe::getClient()
         ->paymentIntents
         ->retrieve('PI_CAPTURE');
 
     $charges = collect($paymentIntent->charges->data);
 
-    $order = app(\Lunar\Stripe\Actions\StoreCharges::class)->store($order, $charges);
+    $order = app(StoreCharges::class)->store($order, $charges);
 
     expect($order->transactions)->toHaveCount(1);
 
-    $order = app(\Lunar\Stripe\Actions\StoreCharges::class)->store($order, $charges);
+    $order = app(StoreCharges::class)->store($order, $charges);
 
     expect($order->transactions)->toHaveCount(1);
 

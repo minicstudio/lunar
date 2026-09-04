@@ -54,6 +54,7 @@ return [
                     ],
                     'min_weight' => [
                         'label' => 'Poids Min.',
+                        'helper_text' => 'Saisir le poids en :unit',
                     ],
                     'max_weight' => [
                         'label' => 'Poids Max.',

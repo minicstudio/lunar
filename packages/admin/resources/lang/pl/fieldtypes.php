@@ -62,7 +62,7 @@ return [
                 'placeholder' => 'Nowy MIME',
             ],
             'multiple' => [
-                'label' => 'Zezwalaj na wiele plików',
+                'label' => 'Zezwól na wiele plików',
             ],
             'min_files' => [
                 'label' => 'Min. plików',
@@ -71,7 +71,7 @@ return [
                 'label' => 'Maks. plików',
             ],
             'disk' => [
-                'label' => 'Dysk pamięci',
+                'label' => 'Dysk',
             ],
             'directory' => [
                 'label' => 'Katalog',

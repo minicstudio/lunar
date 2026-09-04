@@ -1,16 +1,21 @@
 <?php
 
-// TESTS DISABLED: The current custom discount and tax calculation system
-// does not work well with this discount type. Tests remain here for reference
-// and can be re-enabled once the tax/discount calculation is refactored.
-
-// uses(\Lunar\Tests\Core\TestCase::class);
-
+// use Illuminate\Foundation\Testing\RefreshDatabase;
 // use Lunar\Models\Cart;
 // use Lunar\Models\Channel;
 // use Lunar\Models\Currency;
+// use Lunar\Models\Customer;
 // use Lunar\Models\CustomerGroup;
 // use Lunar\Models\Discount;
+// use Lunar\Models\Price;
+// use Lunar\Models\Product;
+// use Lunar\Models\ProductVariant;
+// use Lunar\Tests\Core\Stubs\TestAbstractDiscount;
+// use Lunar\Tests\Core\TestCase;
+
+// uses(TestCase::class);
+
+// uses(RefreshDatabase::class);
 
 // uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
@@ -34,33 +39,35 @@
 
 //     $channel = Channel::getDefault();
 
-//     $currency = Currency::getDefault();
+    // $customer = Customer::factory()->create([]);
 
 //     $customer = \Lunar\Models\Customer::factory()->create([]);
 
-//     $cart = Cart::factory()->create([
-//         'channel_id' => $channel->id,
-//         'currency_id' => $currency->id,
-//         'coupon_code' => '10OFF',
-//     ]);
+    // $discountModel = Discount::factory()->create([
+    //     'type' => TestAbstractDiscount::class,
+    //     'name' => 'Test Coupon',
+    //     'coupon' => '10OFF',
+    //     'data' => [
+    //         'fixed_value' => true,
+    //         'fixed_values' => [
+    //             'GBP' => 10,
+    //         ],
+    //     ],
+    // ]);
 
-//     $discountModel = Discount::factory()->create([
-//         'type' => \Lunar\Tests\Core\Stubs\TestAbstractDiscount::class,
-//         'name' => 'Test Coupon',
-//         'coupon' => '10OFF',
-//         'data' => [
-//             'fixed_value' => true,
-//             'fixed_values' => [
-//                 'GBP' => 10,
-//             ],
-//         ],
-//     ]);
+    // $product = Product::factory()->create();
 
-//     $product = \Lunar\Models\Product::factory()->create();
+    // $purchasable = ProductVariant::factory()->create([
+    //     'product_id' => $product->id,
+    // ]);
 
-//     $purchasable = \Lunar\Models\ProductVariant::factory()->create([
-//         'product_id' => $product->id,
-//     ]);
+    // Price::factory()->create([
+    //     'price' => 1000, // £10
+    //     'min_quantity' => 1,
+    //     'currency_id' => $currency->id,
+    //     'priceable_type' => $purchasable->getMorphClass(),
+    //     'priceable_id' => $purchasable->id,
+    // ]);
 
 //     \Lunar\Models\Price::factory()->create([
 //         'price' => 1000, // £10

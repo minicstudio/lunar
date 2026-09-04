@@ -71,7 +71,7 @@ return [
                 'label' => 'Max. Bestanden',
             ],
             'disk' => [
-                'label' => 'Opslagschijf',
+                'label' => 'Schijf',
             ],
             'directory' => [
                 'label' => 'Map',

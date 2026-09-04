@@ -12,4 +12,7 @@ return [
         'settings' => 'Beállítások',
     ],
 
+    'yes' => 'Igen',
+    'no' => 'Nem',
+
 ];

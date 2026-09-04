@@ -2,11 +2,14 @@
 
 namespace Lunar\Admin\Filament\Resources\TaxRateResource\RelationManagers;
 
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Tables;
+use Filament\Schemas\Schema;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rules\Unique;
@@ -28,9 +31,9 @@ class TaxRateAmountRelationManager extends RelationManager
         return __('lunarpanel::relationmanagers.tax_rate_amounts.title');
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             Select::make('tax_class_id')
                 ->required()
                 ->label(__('lunarpanel::relationmanagers.tax_rate_amounts.form.tax_class.label'))
@@ -57,24 +60,24 @@ class TaxRateAmountRelationManager extends RelationManager
             )
             ->paginated(false)
             ->headerActions([
-                Tables\Actions\CreateAction::make('create')
+                CreateAction::make('create')
                     ->label(__('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.create.label'))
                     ->modalHeading(
                         __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.create.heading')
                     ),
             ])->columns([
-                Tables\Columns\TextColumn::make('taxClass.name')->label(
+                TextColumn::make('taxClass.name')->label(
                     __('lunarpanel::relationmanagers.tax_rate_amounts.table.tax_class.label')
                 ),
-                Tables\Columns\TextColumn::make('percentage')->label(
+                TextColumn::make('percentage')->label(
                     __('lunarpanel::relationmanagers.tax_rate_amounts.table.percentage.label')
                 ),
             ])->actions([
-                Tables\Actions\EditAction::make()
+                EditAction::make()
                     ->modalHeading(
                         __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.edit.heading')
                     ),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->modalHeading(
                         __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.delete.heading')
                     ),

@@ -1,7 +1,7 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Lunar\Base\ShippingModifiers;
 use Lunar\DataTypes\Price;
 use Lunar\DataTypes\ShippingOption;
 use Lunar\Facades\ShippingManifest;
@@ -13,8 +13,12 @@ use Lunar\Models\Price as PriceModel;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRateAmount;
+use Lunar\Tests\Core\Stubs\TestRecursiveShippingModifier;
+use Lunar\Tests\Core\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class);
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $currency = Currency::factory()->create([
@@ -250,4 +254,34 @@ test('can retrieve cart shipping option using', function () {
     ShippingManifest::getOptionUsing(fn (Cart $cart, $identifier): ShippingOption => $option->getIdentifier() == $identifier ? $option : null);
 
     expect(ShippingManifest::getShippingOption($this->cart))->toBe($option);
+});
+
+test('can not re-enter shipping modifiers while resolving options', function () {
+    TestRecursiveShippingModifier::$calls = 0;
+
+    $taxClass = TaxClass::factory()->create();
+
+    CartAddress::factory()->create([
+        'cart_id' => $this->cart->id,
+        'type' => 'shipping',
+        'shipping_option' => 'BASDEL',
+    ]);
+
+    ShippingManifest::addOption(
+        new ShippingOption(
+            name: 'Basic Delivery',
+            description: 'Basic Delivery',
+            identifier: 'BASDEL',
+            price: new Price(500, $this->cart->currency, 1),
+            taxClass: $taxClass
+        )
+    );
+
+    app(ShippingModifiers::class)->add(TestRecursiveShippingModifier::class);
+
+    $this->cart->calculate();
+
+    // ApplyShipping and CalculateTax each resolve the shipping option once, so
+    // a single calculate runs the modifiers twice. Neither run may re-enter.
+    expect(TestRecursiveShippingModifier::$calls)->toEqual(2);
 });

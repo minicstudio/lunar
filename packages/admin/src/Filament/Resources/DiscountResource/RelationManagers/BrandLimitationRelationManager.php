@@ -2,8 +2,11 @@
 
 namespace Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers;
 
+use Filament\Actions\AttachAction;
+use Filament\Actions\DetachAction;
+use Filament\Actions\DetachBulkAction;
 use Filament\Forms\Components\Select;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Events\DiscountLimitationAttached;
@@ -39,7 +42,7 @@ class BrandLimitationRelationManager extends BaseRelationManager
             )
             ->paginated(false)
             ->headerActions([
-                Tables\Actions\AttachAction::make()->form(fn (Tables\Actions\AttachAction $action): array => [
+                AttachAction::make()->form(fn (AttachAction $action): array => [
                     $action->getRecordSelect(),
                     Select::make('type')
                         ->label(__('lunarpanel::discount.relationmanagers.brands.form.type.label'))
@@ -63,26 +66,26 @@ class BrandLimitationRelationManager extends BaseRelationManager
                         DiscountLimitationAttached::dispatch($this->getOwnerRecord());
                     }),
             ])->columns([
-                Tables\Columns\TextColumn::make('name')
+                TextColumn::make('name')
                     ->label(
                         __('lunarpanel::discount.relationmanagers.brands.table.name.label')
                     ),
-                Tables\Columns\TextColumn::make('pivot.type')
+                TextColumn::make('pivot.type')
                     ->label(
                         __('lunarpanel::discount.relationmanagers.brands.table.type.label')
                     )->formatStateUsing(
                         fn (string $state) => __("lunarpanel::discount.relationmanagers.brands.table.type.{$state}.label")
                     ),
-            ])->actions([
-                Tables\Actions\DetachAction::make()
+            ])->recordActions([
+                DetachAction::make()
                     ->after(function ($record) {
                         DiscountLimitationDetached::dispatch($this->getOwnerRecord());
                     })
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.detach.heading')
                     ),
-            ])->bulkActions([
-                Tables\Actions\DetachBulkAction::make()
+            ])->toolbarActions([
+                DetachBulkAction::make()
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.brands.actions.detach.bulk.heading')
                     )

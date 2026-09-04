@@ -1,11 +1,14 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\DataTypes\Price;
 use Lunar\Exceptions\InvalidDataTypeValueException;
 use Lunar\Models\Currency;
+use Lunar\Tests\Core\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class);
+
+uses(RefreshDatabase::class);
 
 test('can initiate the datatype', function () {
     $currency = Currency::factory()->create([
@@ -58,6 +61,18 @@ test('can handle unit qty', function () {
     expect($dataType->unitFormatted(null, NumberFormatter::CURRENCY, 4))->toEqual('£0.1155');
 });
 
+test('unit qty below one is clamped to one', function () {
+    $currency = Currency::factory()->create([
+        'code' => 'GBP',
+        'decimal_places' => 2,
+    ]);
+
+    $dataType = new Price(1500, $currency, 0);
+
+    expect($dataType->unitDecimal())->toEqual(15.00);
+    expect($dataType->unitFormatted())->toEqual('£15.00');
+});
+
 test('can handle no decimal places', function () {
     $currency = Currency::factory()->create([
         'code' => 'VND',
@@ -81,7 +96,7 @@ test('can format numbers', function () {
 
     expect($dataType->formatted('fr'))->toEqual('15,00 €');
     expect($dataType->formatted('en-gb'))->toEqual('€15.00');
-    expect($dataType->formatted('en-gb', \NumberFormatter::SPELLOUT))->toEqual('fifteen');
+    expect($dataType->formatted('en-gb', NumberFormatter::SPELLOUT))->toEqual('fifteen');
 });
 
 test('can format numbers specifying decimal places', function () {

@@ -66,6 +66,11 @@ class DiscountManager implements DiscountManagerInterface
     protected array $discountForPurchasableCache = [];
 
     /**
+     * Identifies the cart state $discounts was built from.
+     */
+    protected ?string $discountsKey = null;
+
+    /**
      * The available discount types
      *
      * @var array
@@ -148,7 +153,7 @@ class DiscountManager implements DiscountManagerInterface
     /**
      * Returns the available discounts.
      */
-    public function getDiscounts(?Cart $cart = null): Collection
+    public function getDiscounts(?CartContract $cart = null): Collection
     {
         $this->ensureDiscountChannelsAndGroups($cart);
 
@@ -244,7 +249,7 @@ class DiscountManager implements DiscountManagerInterface
     protected function queryDiscounts(?Cart $cart): Collection
     {
         return Discount::active()
-            ->usable()
+            ->usable($cart?->consumedDiscountIds() ?? [])
             ->channel($this->channels)
             ->customerGroup($this->customerGroups)
             ->with([
@@ -421,12 +426,29 @@ class DiscountManager implements DiscountManagerInterface
         return $cart;
     }
 
+    /**
+     * Build the cache key for the memoised discounts.
+     *
+     * getDiscounts() filters on the cart's coupon code and on the purchasables
+     * in its lines, so a set built for one cart state is not valid for another.
+     */
+    protected function getDiscountsCacheKey(CartContract $cart): string
+    {
+        return implode('|', [
+            $cart->id,
+            $cart->coupon_code ?? '',
+            $cart->customer_id ?? '',
+            $cart->lines->map(fn ($line) => $line->purchasable_type.':'.$line->purchasable_id)->sort()->implode(','),
+        ]);
+    }
+
     public function resetDiscounts(): self
     {
         $this->discounts = null;
         $this->discountsCacheKey = null;
         $this->catalogDiscounts = null;
         $this->catalogDiscountsCacheKey = null;
+        $this->discountsKey = null;
 
         return $this;
     }

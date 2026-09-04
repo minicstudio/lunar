@@ -1,35 +1,71 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
+use Lunar\Base\ProvidesTelemetryInsights;
 use Lunar\Base\TelemetryInsights;
+use Lunar\Facades\Telemetry;
+use Lunar\Tests\Core\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class)->group('telemetry');
+uses(TestCase::class);
+
+uses(RefreshDatabase::class)->group('telemetry');
 
 test('can opt out of telemetry', function () {
-    expect(\Lunar\Facades\Telemetry::shouldRun())->toBeTrue();
+    expect(Telemetry::shouldRun())->toBeTrue();
 
-    \Lunar\Facades\Telemetry::optOut();
+    Telemetry::optOut();
 
-    expect(\Lunar\Facades\Telemetry::shouldRun())->toBeFalse();
+    expect(Telemetry::shouldRun())->toBeFalse();
+});
+
+test('skips telemetry when the cache store does not persist', function () {
+    config()->set('cache.default', 'null');
+
+    expect(Telemetry::shouldRun())->toBeFalse();
+});
+
+test('records the attempt before the HTTP call so failures still throttle', function () {
+    Http::fake([
+        Telemetry::getInsightsUrl() => Http::response(null, 500),
+    ]);
+
+    expect(Telemetry::shouldRun())->toBeTrue();
+
+    Telemetry::run();
+
+    expect(Telemetry::shouldRun())->toBeFalse();
+});
+
+test('does not propagate exceptions from the HTTP client', function () {
+    Http::fake(function () {
+        throw new RuntimeException('connection refused');
+    });
+
+    Telemetry::run();
+
+    expect(Telemetry::shouldRun())->toBeFalse();
 });
 
 test('can only run once a day', function () {
-    \Illuminate\Support\Facades\Http::fake();
+    Http::fake();
 
-    \Illuminate\Support\Facades\Cache::set(\Lunar\Facades\Telemetry::getCacheKey(), now());
+    Cache::set(Telemetry::getCacheKey(), now());
 
-    expect(\Lunar\Facades\Telemetry::shouldRun())->toBeFalse();
+    expect(Telemetry::shouldRun())->toBeFalse();
 
-    \Illuminate\Support\Facades\Cache::set(\Lunar\Facades\Telemetry::getCacheKey(), now()->subDay());
+    Cache::set(Telemetry::getCacheKey(), now()->subDay());
 
-    expect(\Lunar\Facades\Telemetry::shouldRun())->toBeTrue();
+    expect(Telemetry::shouldRun())->toBeTrue();
 });
 
 test('can send insights', function () {
-    \Illuminate\Support\Facades\Http::fake();
+    Http::fake();
 
-    app()->singleton(\Lunar\Base\ProvidesTelemetryInsights::class, function () {
+    app()->singleton(ProvidesTelemetryInsights::class, function () {
         return new class extends TelemetryInsights
         {
             public function lunarVersion(): string
@@ -39,17 +75,17 @@ test('can send insights', function () {
         };
     });
 
-    \Lunar\Facades\Telemetry::run();
+    Telemetry::run();
 
-    \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
-        return $request->method() === 'POST' && $request->url() === \Lunar\Facades\Telemetry::getInsightsUrl();
+    Http::assertSent(function (Request $request) {
+        return $request->method() === 'POST' && $request->url() === Telemetry::getInsightsUrl();
     });
 });
 
 test('can send correct insights payload', function () {
-    \Illuminate\Support\Facades\Http::fake();
+    Http::fake();
 
-    app()->singleton(\Lunar\Base\ProvidesTelemetryInsights::class, function () {
+    app()->singleton(ProvidesTelemetryInsights::class, function () {
         return new class extends TelemetryInsights
         {
             public function domainHash(): string
@@ -102,21 +138,21 @@ test('can send correct insights payload', function () {
                 return 50000;
             }
 
-            public function currencies(): \Illuminate\Support\Collection
+            public function currencies(): Collection
             {
                 return collect(['GBP', 'USD']);
             }
 
-            public function languages(): \Illuminate\Support\Collection
+            public function languages(): Collection
             {
                 return collect(['EN', 'FR']);
             }
         };
     });
 
-    \Lunar\Facades\Telemetry::run();
+    Telemetry::run();
 
-    \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) {
+    Http::assertSent(function (Request $request) {
         return
             $request['domain_hash'] == 'ABCDEFGHIJKLMNOPQRSTUVXYZ' &&
             $request['environment'] == 'production' &&

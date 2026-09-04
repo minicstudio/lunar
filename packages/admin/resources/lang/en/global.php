@@ -12,4 +12,7 @@ return [
         'settings' => 'Settings',
     ],
 
+    'yes' => 'Yes',
+    'no' => 'No',
+
 ];

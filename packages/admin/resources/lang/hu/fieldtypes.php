@@ -76,6 +76,12 @@ return [
             'directory' => [
                 'label' => 'Könyvtár',
             ],
+            'disk' => [
+                'label' => 'Lemez',
+            ],
+            'directory' => [
+                'label' => 'Könyvtár',
+            ],
         ],
     ],
 ];
