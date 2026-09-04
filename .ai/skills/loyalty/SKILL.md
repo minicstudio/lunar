@@ -19,7 +19,7 @@ Activate this skill when:
 | Area | Path |
 |------|------|
 | Config | `packages/loyalty/config/loyalty.php` → merged as `lunar.loyalty` |
-| ServiceProvider | `LoyaltyServiceProvider` — pipelines, validators, observers, schedule, mixins, relations |
+| ServiceProvider | `LoyaltyServiceProvider` — pipelines, validators, observers, schedule, mixins, order relations |
 | Plugin | `LoyaltyPlugin` — Filament panel registration |
 | Models | `Models/LoyaltyAccount`, `Models/LoyaltyTransaction` |
 | Enum | `Enums/LoyaltyTransactionType` (`Earn`, `Spend`, `Expire`, `Adjust`) |

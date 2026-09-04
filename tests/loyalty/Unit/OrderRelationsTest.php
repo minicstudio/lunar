@@ -43,3 +43,10 @@ it('does not error when relations are accessed on an unsaved order', function ()
     expect($order->loyaltyEarnTransaction)->toBeNull()
         ->and($order->loyaltySpendTransaction)->toBeNull();
 });
+
+it('exposes loyalty relations on an order subclass', function () {
+    $order = new class extends Order {};
+
+    expect($order->relationResolver($order::class, 'loyaltyEarnTransaction'))->not->toBeNull()
+        ->and($order->relationResolver($order::class, 'loyaltySpendTransaction'))->not->toBeNull();
+});
