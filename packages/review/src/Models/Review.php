@@ -17,6 +17,18 @@ use Lunar\Models\ProductVariant;
 use Lunar\Review\Database\Factories\ReviewFactory;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
 
+/**
+ * @property int $id
+ * @property ?int $order_id
+ * @property ?int $user_id
+ * @property int $reviewable_id
+ * @property string $reviewable_type
+ * @property ?array $attribute_data
+ * @property ?\Illuminate\Support\Carbon $approved_at
+ * @property ?\Illuminate\Support\Carbon $created_at
+ * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property-read ProductVariant $reviewable
+ */
 class Review extends BaseModel implements Contracts\Review, SpatieHasMedia
 {
     use HasFactory, HasMedia, HasTranslations, SoftDeletes;
@@ -53,6 +65,8 @@ class Review extends BaseModel implements Contracts\Review, SpatieHasMedia
 
     /**
      * Get the associated order.
+     *
+     * @return BelongsTo<Order, $this>
      */
     public function order(): BelongsTo
     {

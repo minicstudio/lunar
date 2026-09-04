@@ -123,6 +123,9 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         return $this->productType->mappedAttributes;
     }
 
+    /**
+     * @return BelongsTo<ProductType, $this>
+     */
     public function productType(): BelongsTo
     {
         return $this->belongsTo(ProductType::modelClass());
@@ -133,11 +136,17 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         return $this->media()->where('collection_name', config('lunar.media.collection'));
     }
 
+    /**
+     * @return HasMany<ProductVariant>
+     */
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::modelClass());
     }
 
+    /**
+     * @return HasOne<ProductVariant>
+     */
     public function variant(): HasOne
     {
         return $this->hasOne(ProductVariant::modelClass());
@@ -150,6 +159,9 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         );
     }
 
+    /**
+     * @return BelongsToMany<\Lunar\Models\Collection, $this>
+     */
     public function collections(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -158,11 +170,17 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         )->withPivot(['position'])->orderByPivot('position')->withTimestamps();
     }
 
+    /**
+     * @return HasMany<ProductAssociation>
+     */
     public function associations(): HasMany
     {
         return $this->hasMany(ProductAssociation::modelClass(), 'product_parent_id');
     }
 
+    /**
+     * @return HasMany<ProductAssociation>
+     */
     public function inverseAssociations(): HasMany
     {
         return $this->hasMany(ProductAssociation::modelClass(), 'product_target_id');
@@ -181,6 +199,9 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         Dissociate::dispatch($this, $product, $type);
     }
 
+    /**
+     * @return BelongsToMany<CustomerGroup, $this>
+     */
     public function customerGroups(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
@@ -206,6 +227,8 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
 
     /**
      * Return the brand relationship.
+     *
+     * @return BelongsTo<Brand, $this>
      */
     public function brand(): BelongsTo
     {
@@ -217,6 +240,9 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         return $query->whereStatus($status);
     }
 
+    /**
+     * @return HasManyThrough<Price, ProductVariant, $this>
+     */
     public function prices(): HasManyThrough
     {
         return $this->hasManyThrough(
@@ -227,6 +253,9 @@ class Product extends BaseModel implements Contracts\Product, HasCustomerGroupAv
         )->wherePriceableType('product_variant');
     }
 
+    /**
+     * @return BelongsToMany<ProductOption, $this>
+     */
     public function productOptions(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');

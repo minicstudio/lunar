@@ -11,6 +11,8 @@ trait HasPrices
 {
     /**
      * Get all of the models prices.
+     *
+     * @return MorphMany<Price, $this>
      */
     public function prices(): MorphMany
     {
@@ -22,12 +24,17 @@ trait HasPrices
 
     /**
      * Return base prices query.
+     *
+     * @return MorphMany<Price, $this>
      */
     public function basePrices(): MorphMany
     {
         return $this->prices()->whereMinQuantity(1)->whereNull('customer_group_id');
     }
 
+    /**
+     * @return MorphMany<Price, $this>
+     */
     public function priceBreaks(): MorphMany
     {
         return $this->prices()->where('min_quantity', '>', 1);

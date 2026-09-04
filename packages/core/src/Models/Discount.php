@@ -28,8 +28,10 @@ use Lunar\Events\DiscountUpdatedEvent;
  * @property \Illuminate\Support\Carbon $ends_at
  * @property int $uses
  * @property ?int $max_uses
+ * @property ?int $max_uses_per_user
  * @property int $priority
  * @property bool $stop
+ * @property ?array $data
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
  */
@@ -107,26 +109,41 @@ class Discount extends BaseModel implements Contracts\Discount
         )->withTimestamps();
     }
 
+    /**
+     * @return HasMany<Discountable>
+     */
     public function discountables(): HasMany
     {
         return $this->hasMany(Discountable::modelClass());
     }
 
+    /**
+     * @return HasMany<Discountable>
+     */
     public function discountableConditions(): HasMany
     {
         return $this->hasMany(Discountable::modelClass())->whereType('condition');
     }
 
+    /**
+     * @return HasMany<Discountable>
+     */
     public function discountableExclusions(): HasMany
     {
         return $this->hasMany(Discountable::modelClass())->whereType('exclusion');
     }
 
+    /**
+     * @return HasMany<Discountable>
+     */
     public function discountableLimitations(): HasMany
     {
         return $this->hasMany(Discountable::modelClass())->whereType('limitation');
     }
 
+    /**
+     * @return HasMany<Discountable>
+     */
     public function discountableRewards(): HasMany
     {
         return $this->hasMany(Discountable::modelClass())->whereType('reward');
@@ -137,6 +154,9 @@ class Discount extends BaseModel implements Contracts\Discount
         return app($this->type)->with($this);
     }
 
+    /**
+     * @return BelongsToMany<Collection, $this>
+     */
     public function collections(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
@@ -147,6 +167,9 @@ class Discount extends BaseModel implements Contracts\Discount
         )->withPivot(['type'])->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<Customer, $this>
+     */
     public function customers(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
@@ -157,6 +180,9 @@ class Discount extends BaseModel implements Contracts\Discount
         )->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<CustomerGroup, $this>
+     */
     public function customerGroups(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
@@ -172,6 +198,9 @@ class Discount extends BaseModel implements Contracts\Discount
         ])->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<Brand, $this>
+     */
     public function brands(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');

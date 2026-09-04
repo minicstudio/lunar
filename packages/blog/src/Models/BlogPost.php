@@ -15,6 +15,14 @@ use Lunar\Blog\Database\Factories\BlogPostFactory;
 use Lunar\Blog\Traits\HasUrls as BlogHasUrls;
 use Lunar\Models\Attribute;
 
+/**
+ * @property int $id
+ * @property ?array $attribute_data
+ * @property string $status
+ * @property int $author_id
+ * @property ?\Illuminate\Support\Carbon $created_at
+ * @property ?\Illuminate\Support\Carbon $updated_at
+ */
 class BlogPost extends BaseModel implements Contracts\BlogPost
 {
     use BlogHasUrls,
@@ -53,6 +61,8 @@ class BlogPost extends BaseModel implements Contracts\BlogPost
 
     /**
      * Get the author of the blog post.
+     *
+     * @return BelongsTo<Staff, $this>
      */
     public function author(): BelongsTo
     {
@@ -93,6 +103,8 @@ class BlogPost extends BaseModel implements Contracts\BlogPost
 
     /**
      * Define a many-to-many relationship with BlogCategory.
+     *
+     * @return BelongsToMany<BlogCategory, $this>
      */
     public function blogCategories(): BelongsToMany
     {

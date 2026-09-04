@@ -33,6 +33,7 @@ use Lunar\Exceptions\UnsupportedWeightUnitException;
  * @property ?string $customer_reference
  * @property int $sub_total
  * @property int $discount_total
+ * @property int $shipping_total
  * @property array $discount_breakdown
  * @property array $shipping_breakdown
  * @property array $tax_breakdown
@@ -46,6 +47,8 @@ use Lunar\Exceptions\UnsupportedWeightUnitException;
  * @property ?array $meta
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property-read \Lunar\DataTypes\Price $coupon_total
+ * @property-read \Lunar\DataTypes\Price $coupon_total_without_tax
  */
 class Order extends BaseModel implements Contracts\Order
 {
@@ -89,16 +92,25 @@ class Order extends BaseModel implements Contracts\Order
         return $statuses[$this->status]['label'] ?? $this->status;
     }
 
+    /**
+     * @return BelongsTo<Channel, $this>
+     */
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::modelClass());
     }
 
+    /**
+     * @return BelongsTo<Cart, $this>
+     */
     public function cart(): BelongsTo
     {
         return $this->belongsTo(Cart::modelClass());
     }
 
+    /**
+     * @return HasMany<OrderLine>
+     */
     public function lines(): HasMany
     {
         return $this->hasMany(OrderLine::modelClass());
@@ -114,56 +126,89 @@ class Order extends BaseModel implements Contracts\Order
         return $this->lines()->whereType('digital');
     }
 
+    /**
+     * @return HasMany<OrderLine>
+     */
     public function shippingLines(): HasMany
     {
         return $this->lines()->whereType('shipping');
     }
 
+    /**
+     * @return HasMany<OrderLine>
+     */
     public function productLines(): HasMany
     {
         return $this->lines()->where('type', '!=', 'shipping');
     }
 
+    /**
+     * @return BelongsTo<Currency, $this>
+     */
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::modelClass(), 'currency_code', 'code');
     }
 
+    /**
+     * @return HasMany<OrderAddress>
+     */
     public function addresses(): HasMany
     {
         return $this->hasMany(OrderAddress::modelClass(), 'order_id');
     }
 
+    /**
+     * @return HasOne<OrderAddress>
+     */
     public function shippingAddress(): HasOne
     {
         return $this->hasOne(OrderAddress::modelClass(), 'order_id')->whereType('shipping');
     }
 
+    /**
+     * @return HasOne<OrderAddress>
+     */
     public function billingAddress(): HasOne
     {
         return $this->hasOne(OrderAddress::modelClass(), 'order_id')->whereType('billing');
     }
 
+    /**
+     * @return HasMany<Transaction>
+     */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::modelClass())->orderBy('created_at', 'desc');
     }
 
+    /**
+     * @return HasMany<Transaction>
+     */
     public function captures(): HasMany
     {
         return $this->transactions()->whereType('capture');
     }
 
+    /**
+     * @return HasMany<Transaction>
+     */
     public function intents(): HasMany
     {
         return $this->transactions()->whereType('intent');
     }
 
+    /**
+     * @return HasMany<Transaction>
+     */
     public function refunds(): HasMany
     {
         return $this->transactions()->whereType('refund');
     }
 
+    /**
+     * @return BelongsTo<Customer, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::modelClass());

@@ -63,6 +63,9 @@ class Customer extends BaseModel implements Contracts\Customer
         return CustomerFactory::new();
     }
 
+    /**
+     * @return BelongsToMany<CustomerGroup, $this>
+     */
     public function customerGroups(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
@@ -83,6 +86,9 @@ class Customer extends BaseModel implements Contracts\Customer
         )->withTimestamps();
     }
 
+    /**
+     * @return BelongsToMany<Discount, $this>
+     */
     public function discounts(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
@@ -93,11 +99,17 @@ class Customer extends BaseModel implements Contracts\Customer
         )->withTimestamps();
     }
 
+    /**
+     * @return HasMany<Address>
+     */
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::modelClass());
     }
 
+    /**
+     * @return HasMany<Order>
+     */
     public function orders(): HasMany
     {
         return $this->hasMany(Order::modelClass());

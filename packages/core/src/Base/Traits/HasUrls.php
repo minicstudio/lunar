@@ -33,6 +33,8 @@ trait HasUrls
 
     /**
      * Get all of the models urls.
+     *
+     * @return MorphMany<Url, $this>
      */
     public function urls(): MorphMany
     {
@@ -42,6 +44,9 @@ trait HasUrls
         );
     }
 
+    /**
+     * @return MorphOne<Url, $this>
+     */
     public function defaultUrl(): MorphOne
     {
         return $this->morphOne(
@@ -50,6 +55,9 @@ trait HasUrls
         )->whereDefault(true);
     }
 
+    /**
+     * @return MorphOne<Url, $this>
+     */
     public function localeUrl(?string $locale = null): MorphOne
     {
         return $this->morphOne(

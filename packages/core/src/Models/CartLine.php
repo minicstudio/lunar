@@ -25,6 +25,7 @@ use Lunar\DataTypes\Price;
  * @property ?array $meta
  * @property ?\Illuminate\Support\Carbon $created_at
  * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property-read ProductVariant $purchasable
  */
 class CartLine extends BaseModel implements Contracts\CartLine
 {

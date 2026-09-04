@@ -113,6 +113,9 @@ class TaxZone extends BaseModel implements Contracts\TaxZone
     /**
      * Return the tax rates relationship.
      */
+    /**
+     * @return HasMany<TaxRate>
+     */
     public function taxRates(): HasMany
     {
         return $this->hasMany(TaxRate::modelClass());

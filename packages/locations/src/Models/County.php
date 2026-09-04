@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Lunar\Base\BaseModel;
 use Lunar\Models\Country;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $code
+ * @property int $country_id
+ * @property ?\Illuminate\Support\Carbon $created_at
+ * @property ?\Illuminate\Support\Carbon $updated_at
+ */
 class County extends BaseModel implements Contracts\County
 {
     /**
@@ -25,6 +33,8 @@ class County extends BaseModel implements Contracts\County
 
     /**
      * {@inheritDoc}
+     *
+     * @return BelongsTo<Country, $this>
      */
     public function country(): BelongsTo
     {
@@ -33,6 +43,8 @@ class County extends BaseModel implements Contracts\County
 
     /**
      * {@inheritDoc}
+     *
+     * @return HasMany<Locality>
      */
     public function localities(): HasMany
     {
