@@ -25,7 +25,7 @@ Activate this skill when:
 | Support | `Support/CatalogExternalIdStore`, `KlaviyoLogger`, `KlaviyoAvailability` |
 | Jobs | `SubscribeProfileToKlaviyo`, `SyncProfileToKlaviyo`, `TrackEventToKlaviyo`, `SyncOrderToKlaviyo`, `SyncProductToKlaviyo`, `SyncProductsBulkToKlaviyo`, `DeleteCatalogVariantFromKlaviyo`, `SyncAllProductsToKlaviyo`, `DeleteAllProductsFromKlaviyo` |
 | Listeners | Registered in `KlaviyoServiceProvider` on core marketing events + `OrderPlacedEvent` + product/variant lifecycle + optional admin pricing/options/collections/media/urls/discounts |
-| Commands | `klaviyo:sync-all-products` |
+| Commands | `klaviyo:sync-all-products`, `klaviyo:sync-all-orders`, `klaviyo:delete-all-products` |
 | Tests | `tests/klaviyo/` (`klaviyo` testsuite in `phpunit.xml`) |
 
 ## Architecture
@@ -128,10 +128,12 @@ Subscribe upsert always maps `language` from `context.locale` → linked user `l
 
 ```bash
 php artisan klaviyo:sync-all-products --chunk=100
+php artisan klaviyo:sync-all-orders --chunk=50
 php artisan klaviyo:delete-all-products --force
 ```
 
 `sync-all-products` requires `KLAVIYO_ENABLED=true` and `KLAVIYO_SYNC_PRODUCTS=true`. Dispatches `SyncAllProductsToKlaviyo` on the application default queue; that job only scans availability and fans out `SyncProductsBulkToKlaviyo` chunks (≤100, 15s stagger). Each bulk job has `$timeout = 300` and retries 503s with `retry.backoff`.
+`sync-all-orders` requires `KLAVIYO_ENABLED=true` and `KLAVIYO_SYNC_ORDERS=true`. Syncs all orders with non-null `placed_at` **inline** via `KlaviyoOrderService` (no queue coordinator / `SyncOrderToKlaviyo` fan-out). Events include Create Event `time` from `placed_at` (ISO 8601) and remain idempotent via existing `unique_id`s. Orders without a resolvable email are **skipped** (not failed). Currency uses the relation when present, else the order’s `currency_code`. Optional ops note: pause Placed Order flows in the Klaviyo UI during a one-time historical run.
 `delete-all-products` requires `KLAVIYO_ENABLED=true`; dispatches `DeleteAllProductsFromKlaviyo` on the application default queue (lists remote catalog items then spawns Klaviyo bulk-delete jobs; variants deleted with parent items).
 ## Excluded
 

@@ -29,13 +29,14 @@ class KlaviyoOrderService
         $email = $this->resolveOrderEmail($order);
 
         if (! $email) {
-            KlaviyoLogger::error('Order sync missing email', [
+            KlaviyoLogger::warning('Order sync skipped — missing email', [
                 'order_id' => $order->id,
             ]);
 
-            throw new FailedKlaviyoSyncException(
-                "Order {$order->id} has no email for Klaviyo sync (user or billing contact_email required)."
-            );
+            return [
+                'skipped' => true,
+                'reason' => 'missing_email',
+            ];
         }
 
         $lines = $order->productLines->map(function ($line) {
@@ -58,7 +59,8 @@ class KlaviyoOrderService
         })->values()->all();
 
         $value = (float) $order->total->decimal();
-        $currency = $order->currency->code;
+        $currency = $order->currency?->code ?? $order->currency_code;
+        $eventTime = $order->placed_at;
 
         KlaviyoLogger::debug('Syncing placed order to Klaviyo', [
             'order_id' => $order->id,
@@ -80,6 +82,7 @@ class KlaviyoOrderService
             eventId: (string) $order->id,
             value: $value,
             valueCurrency: $currency,
+            time: $eventTime,
         );
 
         $orderedProducts = [];
@@ -102,6 +105,7 @@ class KlaviyoOrderService
                 eventId: 'order:'.$order->id.':line:'.$line['line_id'],
                 value: (float) $line['RowTotal'],
                 valueCurrency: $currency,
+                time: $eventTime,
             );
         }
 
