@@ -15,8 +15,8 @@ use Lunar\FieldTypes\TranslatedText;
 use Lunar\Klaviyo\Jobs\DeleteAllProductsFromKlaviyo;
 use Lunar\Klaviyo\Jobs\DeleteCatalogVariantFromKlaviyo;
 use Lunar\Klaviyo\Jobs\SyncAllProductsToKlaviyo;
-use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
 use Lunar\Klaviyo\Jobs\SyncProductsBulkToKlaviyo;
+use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
 use Lunar\Klaviyo\Listeners\SyncProductOnCollectionsUpdated;
 use Lunar\Klaviyo\Listeners\SyncProductOnDeleted;
 use Lunar\Klaviyo\Listeners\SyncProductOnPublished;
@@ -882,10 +882,11 @@ test('order service emits Placed Order and Ordered Product with catalog ProductI
     $currency = Currency::where('default', true)->first();
     $product = Product::factory()->create(['status' => 'published']);
     $variant = ProductVariant::factory()->for($product)->create(['sku' => 'ORD-SKU']);
+    $placedAt = now()->subDays(3)->seconds(0);
 
     $order = Order::factory()->create([
         'currency_code' => $currency->code,
-        'placed_at' => now(),
+        'placed_at' => $placedAt,
         'user_id' => null,
     ]);
 
@@ -923,33 +924,39 @@ test('order service emits Placed Order and Ordered Product with catalog ProductI
     $profileService = new KlaviyoProfileService($klaviyo);
     $catalogService = new KlaviyoCatalogService($klaviyo);
 
-    (new KlaviyoOrderService($profileService, $catalogService))->syncPlacedOrder($order->fresh([
+    $order = $order->fresh([
         'user',
         'billingAddress',
         'currency',
         'productLines.purchasable.product.variants',
-    ]));
+    ]);
 
-    $mockClient->assertSent(function (CreateEventRequest $request) {
+    (new KlaviyoOrderService($profileService, $catalogService))->syncPlacedOrder($order);
+
+    $expectedTime = $order->placed_at->format(DATE_ATOM);
+
+    $mockClient->assertSent(function (CreateEventRequest $request) use ($expectedTime) {
         $body = $request->body()->all();
         $name = $body['data']['attributes']['metric']['data']['attributes']['name'] ?? null;
         $props = $body['data']['attributes']['properties'] ?? [];
 
         return $name === 'Placed Order'
             && ($body['data']['attributes']['unique_id'] ?? null) === (string) ($props['OrderId'] ?? '')
+            && ($body['data']['attributes']['time'] ?? null) === $expectedTime
             && ($props['Items'][0]['ProductID'] ?? null) === 'ORD-SKU'
             && ($props['Items'][0]['VariantID'] ?? null) === 'ORD-SKU'
             && array_key_exists('VariantID', $props['Items'][0] ?? [])
             && ! array_key_exists('ProductId', $props['Items'][0] ?? []);
     });
 
-    $mockClient->assertSent(function (CreateEventRequest $request) use ($order) {
+    $mockClient->assertSent(function (CreateEventRequest $request) use ($order, $expectedTime) {
         $body = $request->body()->all();
         $name = $body['data']['attributes']['metric']['data']['attributes']['name'] ?? null;
         $props = $body['data']['attributes']['properties'] ?? [];
         $uniqueId = $body['data']['attributes']['unique_id'] ?? null;
 
         return $name === 'Ordered Product'
+            && ($body['data']['attributes']['time'] ?? null) === $expectedTime
             && ($props['ProductID'] ?? null) === 'ORD-SKU'
             && ($props['VariantID'] ?? null) === 'ORD-SKU'
             && str_starts_with((string) $uniqueId, 'order:'.$order->id.':line:');

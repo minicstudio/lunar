@@ -19,6 +19,7 @@ use Lunar\Events\ProductVariantCreatedEvent;
 use Lunar\Events\ProductVariantDeletedEvent;
 use Lunar\Events\ProductVariantUpdatedEvent;
 use Lunar\Klaviyo\Commands\DeleteAllProductsFromKlaviyoCommand;
+use Lunar\Klaviyo\Commands\SyncAllOrdersToKlaviyoCommand;
 use Lunar\Klaviyo\Commands\SyncAllProductsToKlaviyoCommand;
 use Lunar\Klaviyo\Listeners\CaptureCatalogIdentityOnProductDeleting;
 use Lunar\Klaviyo\Listeners\SubscribeProfileOnMarketingConsentGranted;
@@ -101,6 +102,7 @@ class KlaviyoServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 SyncAllProductsToKlaviyoCommand::class,
+                SyncAllOrdersToKlaviyoCommand::class,
                 DeleteAllProductsFromKlaviyoCommand::class,
             ]);
         }
