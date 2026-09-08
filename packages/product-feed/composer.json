@@ -1,0 +1,43 @@
+{
+  "name": "lunarphp/product-feed",
+  "description": "Public Meta/Google-compatible product feed endpoint for Lunar.",
+  "keywords": [
+    "lunarphp",
+    "laravel",
+    "ecommerce",
+    "e-commerce",
+    "product-feed",
+    "google-merchant",
+    "meta-catalog"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Buksa Kinga Orsolya",
+      "email": "buksakinga@minic.ro",
+      "role": "Developer"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Lunar\\ProductFeed\\": "src"
+    }
+  },
+  "extra": {
+    "lunar": {
+      "name": "Product Feed"
+    },
+    "laravel": {
+      "providers": [
+        "Lunar\\ProductFeed\\ProductFeedServiceProvider"
+      ]
+    }
+  },
+  "require": {
+    "php": "^8.2",
+    "lunarphp/core": "self.version"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

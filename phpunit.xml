@@ -47,6 +47,9 @@
         <testsuite name="klaviyo">
             <directory suffix="Test.php">tests/klaviyo</directory>
         </testsuite>
+        <testsuite name="product-feed">
+            <directory suffix="Test.php">tests/product-feed</directory>
+        </testsuite>
     </testsuites>
     <php>
         <env name="DB_CONNECTION" value="testing"/>
