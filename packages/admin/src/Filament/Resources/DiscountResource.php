@@ -114,12 +114,12 @@ class DiscountResource extends BaseResource
                 )->schema(
                     static::getAmountOffFormComponents()
                 ),
-            Forms\Components\Section::make('advanced_amount_off')
+            Section::make('advanced_amount_off')
                 ->heading(
                     __('lunarpanel::discount.form.advanced_amount_off.heading')
                 )
                 ->visible(
-                    fn (Forms\Get $get) => $get('type') == AdvancedAmountOff::class
+                    fn (Get $get) => $get('type') == AdvancedAmountOff::class
                 )->schema(
                     static::getAmountOffFormComponents()
                 ),

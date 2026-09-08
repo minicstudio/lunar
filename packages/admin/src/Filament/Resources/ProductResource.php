@@ -367,7 +367,7 @@ class ProductResource extends BaseResource
                 ->label(__('lunarpanel::product.table.brand.label'))
                 ->toggleable(isToggledHiddenByDefault: true)
                 ->searchable(),
-            Tables\Columns\TextColumn::make('price_inc_tax')
+            TextColumn::make('price_inc_tax')
                 ->label(__('lunarpanel::product.table.price_inc_tax.label'))
                 ->getStateUsing(function ($record) {
                     $variant = $record->variants->first();
@@ -381,7 +381,7 @@ class ProductResource extends BaseResource
                     return $price ? $price->formatted() : '-';
                 })
                 ->toggleable(),
-            Tables\Columns\TextColumn::make('price_ex_tax')
+            TextColumn::make('price_ex_tax')
                 ->label(__('lunarpanel::product.table.price_ex_tax.label'))
                 ->getStateUsing(function ($record) {
                     $variant = $record->variants->first();

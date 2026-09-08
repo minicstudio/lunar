@@ -2,6 +2,13 @@
 
 namespace Lunar\Shipping\Filament\Resources;
 
+use Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages\EditShippingZone;
+use Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages\ManageShippingRates;
+use Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages\ManageShippingExclusions;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages\ListShippingZones;
 use Awcodes\Shout\Components\Shout;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -57,9 +64,9 @@ class ShippingZoneResource extends BaseResource
     public static function getRecordSubNavigation(Page $page): array
     {
         return $page->generateNavigationItems([
-            Pages\EditShippingZone::class,
-            Pages\ManageShippingRates::class,
-            Pages\ManageShippingExclusions::class,
+            EditShippingZone::class,
+            ManageShippingRates::class,
+            ManageShippingExclusions::class,
         ]);
     }
 
@@ -91,7 +98,7 @@ class ShippingZoneResource extends BaseResource
 
     public static function getNameFormComponent(): Component
     {
-        return Forms\Components\TextInput::make('name')
+        return TextInput::make('name')
             ->label(__('lunarpanel.shipping::shippingzone.form.name.label'))
             ->required()
             ->maxLength(255)
@@ -100,7 +107,7 @@ class ShippingZoneResource extends BaseResource
 
     public static function getTypeFormComponent(): Component
     {
-        return Forms\Components\Select::make('type')
+        return Select::make('type')
             ->label(__('lunarpanel.shipping::shippingzone.form.type.label'))
             ->required()
             ->options([
@@ -113,7 +120,7 @@ class ShippingZoneResource extends BaseResource
 
     protected static function getCountryFormComponent(): Component
     {
-        return Forms\Components\Select::make('country')
+        return Select::make('country')
             ->label(__('lunarpanel.shipping::shippingzone.form.country.label'))
             ->dehydrated(false)
             ->visible(
@@ -123,7 +130,7 @@ class ShippingZoneResource extends BaseResource
 
             ->required()
             ->searchable()
-            ->loadStateFromRelationshipsUsing(static function (Forms\Components\Select $component, Model $record): void {
+            ->loadStateFromRelationshipsUsing(static function (Select $component, Model $record): void {
                 $record->loadMissing('countries');
 
                 /** @var Collection $relatedModels */
@@ -148,14 +155,14 @@ class ShippingZoneResource extends BaseResource
 
     protected static function getCountriesFormComponent(): Component
     {
-        return Forms\Components\Select::make('countries')
+        return Select::make('countries')
             ->label(__('lunarpanel.shipping::shippingzone.form.countries.label'))
             ->visible(fn ($get) => $get('type') == 'countries')
             ->dehydrated(false)
             ->options(Country::get()->pluck('name', 'id'))
             ->multiple()
             ->required()
-            ->loadStateFromRelationshipsUsing(static function (Forms\Components\Select $component, Model $record): void {
+            ->loadStateFromRelationshipsUsing(static function (Select $component, Model $record): void {
                 $record->loadMissing('countries');
                 /** @var Collection $relatedModels */
                 $relatedModels = $record->countries;
@@ -178,14 +185,14 @@ class ShippingZoneResource extends BaseResource
 
     protected static function getStatesFormComponent(): Component
     {
-        return Forms\Components\Select::make('states')
+        return Select::make('states')
             ->label(__('lunarpanel.shipping::shippingzone.form.states.label'))
             ->visible(fn ($get) => $get('type') == 'states')
             ->dehydrated(false)
             ->options(fn ($get) => State::where('country_id', $get('country'))->get()->pluck('name', 'id'))
             ->multiple()
             ->required()
-            ->loadStateFromRelationshipsUsing(static function (Forms\Components\Select $component, Model $record): void {
+            ->loadStateFromRelationshipsUsing(static function (Select $component, Model $record): void {
                 $record->loadMissing('states');
 
                 /** @var Collection $relatedModels */
@@ -209,14 +216,14 @@ class ShippingZoneResource extends BaseResource
 
     protected static function getPostcodesFormComponent(): Component
     {
-        return Forms\Components\Textarea::make('postcodes')
+        return Textarea::make('postcodes')
             ->label(__('lunarpanel.shipping::shippingzone.form.postcodes.label'))
             ->visible(fn ($get) => $get('type') == 'postcodes')
             ->dehydrated(false)
             ->rows(10)
             ->helperText(__('lunarpanel.shipping::shippingzone.form.postcodes.helper'))
             ->required()
-            ->afterStateHydrated(static function (Forms\Components\Textarea $component, Model $record): void {
+            ->afterStateHydrated(static function (Textarea $component, Model $record): void {
                 /** @var Collection $relatedModels */
                 $relatedModels = $record->postcodes;
 
@@ -260,10 +267,10 @@ class ShippingZoneResource extends BaseResource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -297,10 +304,10 @@ class ShippingZoneResource extends BaseResource
     public static function getDefaultPages(): array
     {
         return [
-            'index' => Pages\ListShippingZones::route('/'),
-            'edit' => Pages\EditShippingZone::route('/{record}/edit'),
-            'rates' => Pages\ManageShippingRates::route('/{record}/rates'),
-            'exclusions' => Pages\ManageShippingExclusions::route('/{record}/exclusions'),
+            'index' => ListShippingZones::route('/'),
+            'edit' => EditShippingZone::route('/{record}/edit'),
+            'rates' => ManageShippingRates::route('/{record}/rates'),
+            'exclusions' => ManageShippingExclusions::route('/{record}/exclusions'),
         ];
     }
 }

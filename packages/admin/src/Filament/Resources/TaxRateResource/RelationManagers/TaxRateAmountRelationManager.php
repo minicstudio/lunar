@@ -72,7 +72,7 @@ class TaxRateAmountRelationManager extends RelationManager
                 TextColumn::make('percentage')->label(
                     __('lunarpanel::relationmanagers.tax_rate_amounts.table.percentage.label')
                 ),
-            ])->actions([
+            ])->recordActions([
                 EditAction::make()
                     ->modalHeading(
                         __('lunarpanel::relationmanagers.tax_rate_amounts.table.actions.edit.heading')

@@ -106,7 +106,7 @@ class ProductRewardRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.rewards.actions.attach.modal.heading')
                     )
-                    ->mutateFormDataUsing(function (array $data) {
+                    ->mutateDataUsing(function (array $data) {
                         $data['type'] = 'reward';
 
                         return $data;

@@ -84,6 +84,10 @@ class AttributeData
                     $state = $this->normalizeTranslatedTextValueForStorage($state);
                 }
 
+                if ($attribute->type === DrodownFieldType::class && is_int($state)) {
+                    $state = (string) $state;
+                }
+
                 $instance = new $attribute->type;
 
                 if (! blank($state)) {

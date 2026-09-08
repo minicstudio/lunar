@@ -2,6 +2,7 @@
 
 namespace Lunar\Admin;
 
+use Minic\LaravelAiAssistant\Filament\AiAssistantPlugin;
 use Closure;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
@@ -270,7 +271,7 @@ class LunarPanelManager
             FilamentApexChartsPlugin::make(),
         ];
 
-        if (class_exists(\Minic\LaravelAiAssistant\Filament\AiAssistantPlugin::class)) {
+        if (class_exists(AiAssistantPlugin::class)) {
             $plugins[] = \Lunar\Admin\Filament\AiAssistantPlugin::make();
         }
 

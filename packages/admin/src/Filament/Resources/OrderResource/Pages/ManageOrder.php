@@ -205,29 +205,10 @@ class ManageOrder extends BaseViewRecord
                                 return null;
                             }
 
-                return collect($meta)
-                    ->map(function ($value, $key) {
-                        if (is_array($value)) {
-                            return KeyValueEntry::make('meta_'.$key)->getStateUsing(fn () => $value);
-                        }
-
-                        return TextEntry::make('meta_'.$key)
-                            ->getStateUsing(fn () => is_bool($value)
-                                ? __($value ? 'lunarpanel::global.yes' : 'lunarpanel::global.no')
-                                : $value)
-                            ->label($key)
-                            ->copyable()
-                            ->limit(50)->tooltip(function (TextEntry $component): ?string {
-                                $state = $component->getState();
-                                if (strlen($state) <= $component->getCharacterLimit()) {
-                                    return null;
-                                }
-
-                                return $state;
-                            });
-                    })
-                    ->toArray();
-            });
+                            return $state;
+                        });
+                })
+                ->toArray());
     }
 
     public static function getAdditionalInfoSection(): Component
@@ -243,7 +224,7 @@ class ManageOrder extends BaseViewRecord
         return self::callStaticLunarHook('extendHiddenOrderMetaKeys', []);
     }
 
-    public function getDefaultInfolist(Schema $infolist): Schema
+    public function getDefaultInfolist(Schema $schema): Schema
     {
         return $schema
             ->components([

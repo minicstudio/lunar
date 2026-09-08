@@ -80,7 +80,7 @@ class CustomerLimitationRelationManager extends BaseRelationManager
                     )
                     ->after(function () {
                         DiscountLimitationDetached::dispatch($this->getOwnerRecord());
-                    }),,
+                    }),
             ]);
     }
 }

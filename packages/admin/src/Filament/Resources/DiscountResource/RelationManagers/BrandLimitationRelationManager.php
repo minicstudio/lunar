@@ -42,7 +42,7 @@ class BrandLimitationRelationManager extends BaseRelationManager
             )
             ->paginated(false)
             ->headerActions([
-                AttachAction::make()->form(fn (AttachAction $action): array => [
+                AttachAction::make()->schema(fn (AttachAction $action): array => [
                     $action->getRecordSelect(),
                     Select::make('type')
                         ->label(__('lunarpanel::discount.relationmanagers.brands.form.type.label'))

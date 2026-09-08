@@ -2,6 +2,9 @@
 
 namespace Lunar\Shipping\Filament\Resources;
 
+use Filament\Forms\Components\TextInput;
+use Lunar\Shipping\Filament\Resources\ShippingExclusionListResource\Pages\ListShippingExclusionLists;
+use Lunar\Shipping\Filament\Resources\ShippingExclusionListResource\Pages\EditShippingExclusionList;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -73,7 +76,7 @@ class ShippingExclusionListResource extends BaseResource
 
     public static function getNameFormComponent(): Component
     {
-        return Forms\Components\TextInput::make('name')
+        return TextInput::make('name')
             ->label(__('lunarpanel.shipping::shippingexclusionlist.form.name.label'))
             ->required()
             ->maxLength(255)
@@ -87,10 +90,10 @@ class ShippingExclusionListResource extends BaseResource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -115,8 +118,8 @@ class ShippingExclusionListResource extends BaseResource
     public static function getDefaultPages(): array
     {
         return [
-            'index' => Pages\ListShippingExclusionLists::route('/'),
-            'edit' => Pages\EditShippingExclusionList::route('/{record}/edit'),
+            'index' => ListShippingExclusionLists::route('/'),
+            'edit' => EditShippingExclusionList::route('/{record}/edit'),
         ];
     }
 }

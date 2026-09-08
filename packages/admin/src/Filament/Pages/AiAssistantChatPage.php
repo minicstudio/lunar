@@ -2,6 +2,7 @@
 
 namespace Lunar\Admin\Filament\Pages;
 
+use Filament\Panel;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Gate;
 use Minic\LaravelAiAssistant\Models\AiAssistantSettings;
@@ -18,15 +19,15 @@ class AiAssistantChatPage extends Page
 {
     use HasLivewireChatBehavior;
 
-    protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
-    protected static ?string $navigationGroup = 'AI Assistant';
+    protected static string | \UnitEnum | null $navigationGroup = 'AI Assistant';
 
     protected static ?string $navigationLabel = 'Chat';
 
     protected static ?string $title = 'AI Assistant Chat';
 
-    protected static string $view = 'laravel-ai-assistant::filament.pages.ai-assistant-chat';
+    protected string $view = 'laravel-ai-assistant::filament.pages.ai-assistant-chat';
 
     /**
      * Grants access to staff holding the `ai:chat` permission (admins always pass via Lunar's
@@ -61,7 +62,7 @@ class AiAssistantChatPage extends Page
      *
      * @return string The route name 'ai-assistant-chat'.
      */
-    public static function getRelativeRouteName(): string
+    public static function getRelativeRouteName(Panel $panel): string
     {
         return 'ai-assistant-chat';
     }
@@ -71,8 +72,8 @@ class AiAssistantChatPage extends Page
      *
      * @return string The slug (same as relative route name).
      */
-    public static function getSlug(): string
+    public static function getSlug(?Panel $panel = null): string
     {
-        return static::getRelativeRouteName();
+        return static::getRelativeRouteName($panel);
     }
 }

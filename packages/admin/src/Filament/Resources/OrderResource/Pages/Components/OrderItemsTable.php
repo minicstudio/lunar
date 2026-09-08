@@ -144,7 +144,7 @@ class OrderItemsTable extends TableComponent
             ->label(__('lunarpanel::order.action.refund_payment.label'))
             ->modalSubmitActionLabel(__('lunarpanel::order.action.refund_payment.label'))
             ->icon('heroicon-o-backward')
-            ->form(fn () => [
+            ->schema(fn () => [
                 Select::make('transaction')
                     ->label(__('lunarpanel::order.form.transaction.label'))
                     ->required()

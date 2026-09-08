@@ -2,6 +2,7 @@
 
 namespace Lunar\Admin\Filament\Resources\DiscountResource\RelationManagers;
 
+use Filament\Forms\Components\Hidden;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -65,7 +66,7 @@ class CollectionConditionRelationManager extends BaseRelationManager
 
                             return $record ? static::getCollectionOptionLabel($record) : $value;
                         }),
-                    Forms\Components\Hidden::make('discountable_type')
+                    Hidden::make('discountable_type')
                         ->default(Collection::morphName()),
                 ])->label(
                     __('lunarpanel::discount.relationmanagers.collection_conditions.actions.attach.label')

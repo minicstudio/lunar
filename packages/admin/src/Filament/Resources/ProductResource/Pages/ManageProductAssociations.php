@@ -42,8 +42,7 @@ class ManageProductAssociations extends BaseManageRelatedRecords
 
     public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema([
                 Select::make('product_target_id')
                     ->label(__('lunarpanel::product.pages.associations.form.target.label'))
                     ->required()

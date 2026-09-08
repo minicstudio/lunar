@@ -98,7 +98,7 @@ class CustomerGroupRelationManager extends BaseRelationManager
             )
             ->paginated(false)
             ->headerActions([
-                AttachAction::make()->form(fn (AttachAction $action): array => [
+                AttachAction::make()->schema(fn (AttachAction $action): array => [
                     $action->getRecordSelect(),
                     ...static::getFormInputs(),
                 ])->recordTitle(function ($record) {

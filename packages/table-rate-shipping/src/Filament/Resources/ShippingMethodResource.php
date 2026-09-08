@@ -2,6 +2,17 @@
 
 namespace Lunar\Shipping\Filament\Resources;
 
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages\EditShippingMethod;
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages\ManageShippingMethodAvailability;
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages\ManageShippingMethodLimitations;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Checkbox;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Toggle;
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers\CustomerTypeRelationManager;
+use Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages\ListShippingMethod;
 use Awcodes\Shout\Components\Shout;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -57,9 +68,9 @@ class ShippingMethodResource extends BaseResource
     public static function getDefaultSubNavigation(): array
     {
         return [
-            Pages\EditShippingMethod::class,
-            Pages\ManageShippingMethodAvailability::class,
-            Pages\ManageShippingMethodLimitations::class, // Add Limitations tab
+            EditShippingMethod::class,
+            ManageShippingMethodAvailability::class,
+            ManageShippingMethodLimitations::class, // Add Limitations tab
         ];
     }
 
@@ -97,7 +108,7 @@ class ShippingMethodResource extends BaseResource
 
     public static function getNameFormComponent(): Component
     {
-        return Forms\Components\TextInput::make('name')
+        return TextInput::make('name')
             ->label(__('lunarpanel.shipping::shippingmethod.form.name.label'))
             ->required()
             ->maxLength(255)
@@ -106,13 +117,13 @@ class ShippingMethodResource extends BaseResource
 
     public static function getDescriptionFormComponent(): Component
     {
-        return Forms\Components\RichEditor::make('description')
+        return RichEditor::make('description')
             ->label(__('lunarpanel.shipping::shippingmethod.form.description.label'));
     }
 
     public static function getCodeFormComponent(): Component
     {
-        return Forms\Components\Select::make('code')
+        return Select::make('code')
             ->label(__('lunarpanel.shipping::shippingmethod.form.code.label'))
             ->options(fn () => collect(config('lunar.shipping.providers', []))
                 ->flatMap(function (string $provider) {
@@ -141,16 +152,16 @@ class ShippingMethodResource extends BaseResource
         ];
 
         $rows = collect($days)->map(fn ($label, $day) => Group::make([
-            Forms\Components\Checkbox::make('enabled')
+            Checkbox::make('enabled')
                 ->label($label)
                 ->live()
                 ->columnSpan(1),
-            Forms\Components\TimePicker::make('from')
+            TimePicker::make('from')
                 ->label(__('lunarpanel.shipping::shippingmethod.form.schedule.from.label'))
                 ->seconds(false)
                 ->disabled(fn (Get $get) => ! $get('enabled'))
                 ->columnSpan(1),
-            Forms\Components\TimePicker::make('to')
+            TimePicker::make('to')
                 ->label(__('lunarpanel.shipping::shippingmethod.form.schedule.to.label'))
                 ->seconds(false)
                 ->disabled(fn (Get $get) => ! $get('enabled'))
@@ -176,17 +187,17 @@ class ShippingMethodResource extends BaseResource
             ->all();
 
         return Group::make([
-            Forms\Components\Select::make('weight_unit')
+            Select::make('weight_unit')
                 ->label(__('lunarpanel.shipping::shippingmethod.form.weight_unit.label'))
                 ->options($weightUnits)
                 ->placeholder(__('lunarpanel.shipping::shippingmethod.form.weight_unit.placeholder')),
-            Forms\Components\TextInput::make('min_weight')
+            TextInput::make('min_weight')
                 ->label(__('lunarpanel.shipping::shippingmethod.form.min_weight.label'))
                 ->numeric()
                 ->minValue(0)
                 ->live()
                 ->required(fn (Get $get) => filled($get('weight_unit'))),
-            Forms\Components\TextInput::make('max_weight')
+            TextInput::make('max_weight')
                 ->label(__('lunarpanel.shipping::shippingmethod.form.max_weight.label'))
                 ->numeric()
                 ->minValue(0)
@@ -197,14 +208,14 @@ class ShippingMethodResource extends BaseResource
 
     public static function getStockAvailableFormComponent(): Component
     {
-        return Forms\Components\Toggle::make('stock_available')
+        return Toggle::make('stock_available')
             ->label(__('lunarpanel.shipping::shippingmethod.form.stock_available.label'));
     }
 
     public static function getChargeByFormComponent(): Component
     {
         return Group::make([
-            Forms\Components\Select::make('charge_by')
+            Select::make('charge_by')
                 ->label(
                     __('lunarpanel.shipping::shippingmethod.form.charge_by.label')
                 )
@@ -218,7 +229,7 @@ class ShippingMethodResource extends BaseResource
 
     public static function getDriverFormComponent(): Component
     {
-        return Forms\Components\Select::make('driver')
+        return Select::make('driver')
             ->label(__('lunarpanel.shipping::shippingmethod.form.driver.label'))
             ->options([
                 'ship-by' => __('lunarpanel.shipping::shippingmethod.form.driver.options.ship-by'),
@@ -235,10 +246,10 @@ class ShippingMethodResource extends BaseResource
             ->filters([
                 //
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
@@ -275,17 +286,17 @@ class ShippingMethodResource extends BaseResource
     public static function getRelations(): array
     {
         return [
-            \Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers\CustomerTypeRelationManager::class,
+            CustomerTypeRelationManager::class,
         ];
     }
 
     public static function getDefaultPages(): array
     {
         return [
-            'index' => Pages\ListShippingMethod::route('/'),
-            'edit' => Pages\EditShippingMethod::route('/{record}/edit'),
-            'availability' => Pages\ManageShippingMethodAvailability::route('/{record}/availability'),
-            'limitations' => Pages\ManageShippingMethodLimitations::route('/{record}/limitations'), // Add Limitations route
+            'index' => ListShippingMethod::route('/'),
+            'edit' => EditShippingMethod::route('/{record}/edit'),
+            'availability' => ManageShippingMethodAvailability::route('/{record}/availability'),
+            'limitations' => ManageShippingMethodLimitations::route('/{record}/limitations'), // Add Limitations route
         ];
     }
 }

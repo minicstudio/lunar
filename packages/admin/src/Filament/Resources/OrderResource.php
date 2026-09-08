@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Toggle;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -165,7 +166,7 @@ class OrderResource extends BaseResource
                         ->default(Carbon::now()->subMonths(6)),
                     DatePicker::make('placed_before')
                         ->label(__('lunarpanel::order.table.placed_before.label')),
-                    Forms\Components\Toggle::make('show_draft_orders')
+                    Toggle::make('show_draft_orders')
                         ->label(__('lunarpanel::order.table.show_draft_orders.label'))
                         ->default(false)
                         ->inline(false),

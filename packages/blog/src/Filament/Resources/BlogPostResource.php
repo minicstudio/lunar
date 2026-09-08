@@ -2,17 +2,17 @@
 
 namespace Lunar\Blog\Filament\Resources;
 
-use Filament\Forms\Components\Actions\Action;
-use Filament\Forms\Components\Component;
-use Filament\Forms\Components\Section;
+use Filament\Pages\Enums\SubNavigationPosition;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
+use Filament\Actions\Action;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Pages\SubNavigationPosition;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -45,7 +45,7 @@ class BlogPostResource extends BaseResource
     /**
      * The position of the sub-navigation.
      */
-    protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
+    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
 
     /**
      * Determine if the current user has permission to access this resource.
@@ -90,10 +90,10 @@ class BlogPostResource extends BaseResource
     /**
      * Get the default form schema for the resource.
      */
-    public static function getDefaultForm(Form $form): Form
+    public static function getDefaultForm(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getAttributeDataFormComponent(),
                 static::getBottomFormComponent(),
             ])
@@ -124,18 +124,18 @@ class BlogPostResource extends BaseResource
     protected static function getAttributeDataFormComponent(): Component
     {
         return Attributes::make()
-            ->afterStateHydrated(function (callable $set, callable $get) {
-                $firstName = $get('attribute_data.author_first_name') ?? new Text;
-                $lastName = $get('attribute_data.author_last_name') ?? new Text;
+            ->afterStateHydrated(function (callable $set, callable $get): void {
+                $firstName = $get('attribute_data.author_first_name') ?? '';
+                $lastName = $get('attribute_data.author_last_name') ?? '';
 
                 $user = Auth::user();
 
-                if ($firstName->getValue() === '') {
-                    $firstName->setValue($user?->firstname ?? null);
+                if ($firstName === '') {
+                    $firstName = $user?->firstname;
                 }
 
-                if ($lastName->getValue() === '') {
-                    $lastName->setValue($user?->lastname ?? null);
+                if ($lastName === '') {
+                    $lastName = $user?->lastname;
                 }
 
                 $set('attribute_data.author_first_name', $firstName);
@@ -158,7 +158,7 @@ class BlogPostResource extends BaseResource
                     ->modal()
                     ->modalHeading(__('lunarpanel.blog::post.section.categories.action.modal.heading'))
                     ->modalSubmitActionLabel(__('lunarpanel.blog::post.section.categories.action.modal.submit'))
-                    ->form(ListBlogCategories::createActionFormInputs())
+                    ->schema(ListBlogCategories::createActionFormInputs())
                     ->action(function (array $data) {
                         ListBlogCategories::createRecord($data, BlogCategory::class);
 
@@ -194,10 +194,10 @@ class BlogPostResource extends BaseResource
             ->filters([
                 static::getStatusFilter(),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

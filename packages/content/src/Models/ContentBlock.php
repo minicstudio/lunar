@@ -10,6 +10,7 @@ use Lunar\Base\Traits\HasMedia;
 use Lunar\Base\Traits\HasTranslations;
 use Lunar\Models\Language;
 use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
+use Tiptap\Editor;
 
 /**
  * @property int $id
@@ -19,10 +20,10 @@ use Spatie\MediaLibrary\HasMedia as SpatieHasMedia;
  * @property bool $is_active
  * @property int $sort_order
  * @property ?int $channel_id
- * @property ?\Illuminate\Support\Carbon $starts_at
- * @property ?\Illuminate\Support\Carbon $ends_at
- * @property ?\Illuminate\Support\Carbon $created_at
- * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property ?Carbon $starts_at
+ * @property ?Carbon $ends_at
+ * @property ?Carbon $created_at
+ * @property ?Carbon $updated_at
  */
 class ContentBlock extends Model implements SpatieHasMedia
 {
@@ -97,6 +98,10 @@ class ContentBlock extends Model implements SpatieHasMedia
         ]);
 
         $translated = $instance->translate('value', $locale);
+
+        if (is_array($translated)) {
+            $translated = (new Editor)->setContent($translated)->getHTML();
+        }
 
         return filled($translated) ? (string) $translated : null;
     }

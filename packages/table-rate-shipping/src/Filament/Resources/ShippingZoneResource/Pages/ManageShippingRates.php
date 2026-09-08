@@ -2,6 +2,9 @@
 
 namespace Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages;
 
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Repeater;
 use Awcodes\BadgeableColumn\Components\Badge;
 use Awcodes\BadgeableColumn\Components\BadgeableColumn;
 use Awcodes\Shout\Components\Shout;
@@ -61,7 +64,7 @@ class ManageShippingRates extends ManageRelatedRecords
                     return __('lunarpanel.shipping::relationmanagers.shipping_rates.notices.prices_excl_tax');
                 }
             ),
-            Forms\Components\Select::make('shipping_method_id')
+            Select::make('shipping_method_id')
                 ->label(
                     __('lunarpanel.shipping::relationmanagers.shipping_rates.form.shipping_method_id.label')
                 )
@@ -75,11 +78,11 @@ class ManageShippingRates extends ManageRelatedRecords
                     ->orderBy('name')
                     ->get();
 
-                return $currencies->map(fn ($currency) => Forms\Components\TextInput::make("base_prices.{$currency->id}")
+                return $currencies->map(fn ($currency) => TextInput::make("base_prices.{$currency->id}")
                     ->label($currency->name)
                     ->numeric()
                     ->required($currency->default)
-                    ->afterStateHydrated(static function (Forms\Components\TextInput $component, ?Model $record = null) use ($currency): void {
+                    ->afterStateHydrated(static function (TextInput $component, ?Model $record = null) use ($currency): void {
                         if ($record) {
                             if ($basePrice = $record->basePrices->first(fn ($p) => $p->currency_id == $currency->id)) {
                                 $component->state($basePrice->price->decimal);
@@ -88,11 +91,11 @@ class ManageShippingRates extends ManageRelatedRecords
                     })
                 )->toArray();
             })->columns(2)->columnSpan(2),
-            Forms\Components\Repeater::make('prices')
+            Repeater::make('prices')
                 ->label(
                     __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.label')
                 )->schema([
-                    Forms\Components\Select::make('customer_group_id')
+                    Select::make('customer_group_id')
                         ->label(
                             __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.customer_group_id.label')
                         )
@@ -101,7 +104,7 @@ class ManageShippingRates extends ManageRelatedRecords
                         )->placeholder(
                             __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.customer_group_id.placeholder')
                         )->preload(),
-                    Forms\Components\Select::make('currency_id')
+                    Select::make('currency_id')
                         ->label(
                             __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.currency_id.label')
                         )
@@ -110,13 +113,13 @@ class ManageShippingRates extends ManageRelatedRecords
                         )->default(
                             Currency::getDefault()->id
                         )->required()->preload(),
-                    Forms\Components\TextInput::make('price')
+                    TextInput::make('price')
                         ->label(
                             __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.price.label')
                         )
                         ->numeric()
                         ->required(),
-                    Forms\Components\TextInput::make('min_quantity')
+                    TextInput::make('min_quantity')
                         ->label(fn (Get $get) => static::isWeightCharge($get)
                             ? __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.min_weight.label')
                             : __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.min_spend.label')
@@ -155,7 +158,7 @@ class ManageShippingRates extends ManageRelatedRecords
                         // weight unit — reject decimals instead of truncating them.
                         ->rules(fn (Get $get) => static::isWeightCharge($get) ? ['integer'] : [])
                         ->required(),
-                    Forms\Components\TextInput::make('max_quantity')
+                    TextInput::make('max_quantity')
                         ->label(function (Get $get) {
                             if (static::getShippingChargeBy($get('../../shipping_method_id')) == 'weight') {
                                 return __('lunarpanel.shipping::relationmanagers.shipping_rates.form.prices.repeater.max_weight.label');
@@ -180,7 +183,7 @@ class ManageShippingRates extends ManageRelatedRecords
                         ->numeric()
                         ->nullable(),
                 ])->afterStateHydrated(
-                    static function (Forms\Components\Repeater $component, ?Model $record = null): void {
+                    static function (Repeater $component, ?Model $record = null): void {
                         if ($record) {
                             $chargeBy = static::getShippingChargeBy($record->shippingMethod);
                             $currencies = Currency::all();
@@ -241,7 +244,7 @@ class ManageShippingRates extends ManageRelatedRecords
 
                     static::saveShippingRate($record, $data);
                 })->slideOver(),
-        ])->actions([
+        ])->recordActions([
 
             EditAction::make()->slideOver()->action(function (ShippingRate $shippingRate, array $data) {
                 static::saveShippingRate($shippingRate, $data);

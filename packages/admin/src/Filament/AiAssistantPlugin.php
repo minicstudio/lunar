@@ -62,7 +62,7 @@ class AiAssistantPlugin extends BaseAiAssistantPlugin
                 try {
                     $user = Filament::auth()->user();
 
-                    $show = Filament::getCurrentPanel()?->getId() === $panelId
+                    $show = Filament::getCurrentOrDefaultPanel()?->getId() === $panelId
                         && $user !== null
                         && Gate::forUser($user)->allows('ai:chat')
                         && AiAssistantSettings::instance()->bubble_chat_enabled;

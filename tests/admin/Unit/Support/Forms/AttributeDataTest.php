@@ -11,6 +11,7 @@ use Lunar\FieldTypes\Dropdown;
 use Lunar\FieldTypes\ListField;
 use Lunar\FieldTypes\Number;
 use Lunar\FieldTypes\Text;
+use Lunar\FieldTypes\TranslatedText;
 use Lunar\FieldTypes\YouTube;
 use Lunar\Models\Attribute;
 use Lunar\Tests\Admin\Unit\Livewire\TestCase;
@@ -53,35 +54,60 @@ describe('attribute data test', function () {
         expect($inputComponent)->toBeInstanceOf(RichEditor::class);
     });
 
+    test('preserves dropdown values when saving unchanged select state', function (?string $value, string $expected) {
+        $attribute = Attribute::factory()->create([
+            'type' => Dropdown::class,
+            'handle' => 'rating',
+        ]);
+
+        $component = AttributeData::getFilamentComponent($attribute);
+        $state = $value;
+
+        foreach ($component->getStateCasts() as $stateCast) {
+            $state = $stateCast->get($state);
+        }
+
+        $result = $component->mutateDehydratedState($state);
+
+        expect($result)->toBeInstanceOf(Dropdown::class)
+            ->and($result->getValue())->toBe($expected);
+    })->with([
+        'numeric rating' => ['5', '5'],
+        'zero' => ['0', '0'],
+        'leading zeros' => ['05', '05'],
+        'text option' => ['excellent', 'excellent'],
+        'empty selection' => [null, ''],
+    ]);
+
     test('dehydrates translated text array state into field type with values', function () {
-        $attribute = \Lunar\Models\Attribute::factory()->create([
-            'type' => \Lunar\FieldTypes\TranslatedText::class,
+        $attribute = Attribute::factory()->create([
+            'type' => TranslatedText::class,
             'handle' => 'collection-meta-keywords',
         ]);
 
-        $component = \Lunar\Admin\Support\Facades\AttributeData::getFilamentComponent($attribute);
+        $component = AttributeData::getFilamentComponent($attribute);
 
         $result = $component->mutateDehydratedState([
             'ro' => 'carte, cadou',
             'hu' => 'konyv, ajandek',
         ]);
 
-        expect($result)->toBeInstanceOf(\Lunar\FieldTypes\TranslatedText::class)
+        expect($result)->toBeInstanceOf(TranslatedText::class)
             ->and($result->getValue()->get('ro')->getValue())->toBe('carte, cadou')
             ->and($result->getValue()->get('hu')->getValue())->toBe('konyv, ajandek');
     });
 
     test('dehydrates empty translated text state without error', function () {
-        $attribute = \Lunar\Models\Attribute::factory()->create([
-            'type' => \Lunar\FieldTypes\TranslatedText::class,
+        $attribute = Attribute::factory()->create([
+            'type' => TranslatedText::class,
             'handle' => 'collection-meta-description',
         ]);
 
-        $component = \Lunar\Admin\Support\Facades\AttributeData::getFilamentComponent($attribute);
+        $component = AttributeData::getFilamentComponent($attribute);
 
         $result = $component->mutateDehydratedState(null);
 
-        expect($result)->toBeInstanceOf(\Lunar\FieldTypes\TranslatedText::class)
+        expect($result)->toBeInstanceOf(TranslatedText::class)
             ->and($result->getValue())->toBeEmpty();
     });
 });

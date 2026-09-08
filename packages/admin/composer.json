@@ -24,7 +24,7 @@
         "leandrocfe/filament-apex-charts": "^5.0",
         "awcodes/shout": "^3.0",
         "awcodes/filament-badgeable-column": "^3.0",
-        "minic/laravel-ai-assistant": "^1.0.0"
+        "minic/laravel-ai-assistant": "^1.2.0"
     },
     "extra": {
         "laravel": {

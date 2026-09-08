@@ -2,6 +2,7 @@
 
 namespace Lunar\Review;
 
+use Lunar\Review\Filament\Resources\ReviewResource;
 use Filament\Contracts\Plugin;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
@@ -26,7 +27,7 @@ class ReviewPlugin implements Plugin
                     fn () => __('lunarpanel.review::plugin.navigation.group')
                 ),
         ])->resources([
-            \Lunar\Review\Filament\Resources\ReviewResource::class,
+            ReviewResource::class,
         ]);
     }
 

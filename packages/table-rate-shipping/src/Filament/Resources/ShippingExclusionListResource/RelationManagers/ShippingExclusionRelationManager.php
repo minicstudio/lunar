@@ -103,7 +103,7 @@ class ShippingExclusionRelationManager extends RelationManager
             ])
             ->actions([
                 EditAction::make()
-                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.edit.modal.heading')),,
+                    ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.edit.modal.heading')),
                 DeleteAction::make()
                     ->modalHeading(__('lunarpanel.shipping::relationmanagers.exclusions.actions.delete.modal.heading')),
             ])

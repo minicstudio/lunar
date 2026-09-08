@@ -68,7 +68,7 @@ class ChannelRelationManager extends BaseRelationManager
                 __('lunarpanel::relationmanagers.channels.table.description')
             )->paginated(false)
             ->headerActions([
-                AttachAction::make()->form(fn (AttachAction $action): array => [
+                AttachAction::make()->schema(fn (AttachAction $action): array => [
                     $action->getRecordSelect(),
                     ...static::getFormInputs(),
                 ])->recordTitle(function ($record) {

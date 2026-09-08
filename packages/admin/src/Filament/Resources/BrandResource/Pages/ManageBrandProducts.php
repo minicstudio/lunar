@@ -75,7 +75,7 @@ class ManageBrandProducts extends BaseManageRelatedRecords
                 ->modalHeading(
                     __('lunarpanel::brand.pages.products.actions.attach.modal.heading')
                 )
-                ->form([
+                ->schema([
                     Select::make('recordId')
                         ->label(
                             __('lunarpanel::brand.pages.products.actions.attach.form.record_id.label')

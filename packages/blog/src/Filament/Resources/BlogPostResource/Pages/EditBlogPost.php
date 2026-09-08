@@ -59,7 +59,7 @@ class EditBlogPost extends BaseEditRecord
                 ->label(__('lunarpanel.blog::post.actions.edit_status.label'))
                 ->modalHeading(__('lunarpanel.blog::post.actions.edit_status.heading'))
                 ->record($this->record)
-                ->form([
+                ->schema([
                     Radio::make('status')
                         ->options([
                             'published' => __('lunarpanel.blog::post.form.status.options.published.label'),

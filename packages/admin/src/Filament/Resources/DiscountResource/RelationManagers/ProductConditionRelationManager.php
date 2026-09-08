@@ -93,7 +93,7 @@ class ProductConditionRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.conditions.actions.attach.modal.heading')
                     )
-                    ->mutateFormDataUsing(function (array $data) {
+                    ->mutateDataUsing(function (array $data) {
                         $data['type'] = 'condition';
 
                         return $data;

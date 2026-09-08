@@ -7,6 +7,12 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -75,10 +81,10 @@ class ValuesRelationManager extends BaseRelationManager
         );
     }
 
-    public function getDefaultForm(Form $form): Form
+    public function getDefaultForm(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Grid::make(2)
                     ->schema([
                         TranslatedText::make('name')
@@ -129,7 +135,7 @@ class ValuesRelationManager extends BaseRelationManager
                         return '<div style="background-color: '.e($color).'; width: 24px; height: 24px; min-width: 24px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15);"></div>';
                     })
                     ->visible(fn () => $this->isColorOption()),
-                Tables\Columns\TextColumn::make('position')
+                TextColumn::make('position')
                     ->label(__('lunarpanel::productoption.values.table.position.label')),
             ])
             ->filters([

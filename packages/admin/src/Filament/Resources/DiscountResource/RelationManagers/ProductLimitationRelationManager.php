@@ -77,7 +77,7 @@ class ProductLimitationRelationManager extends BaseRelationManager
                     ->modalHeading(
                         __('lunarpanel::discount.relationmanagers.products.actions.attach.modal.heading')
                     )
-                    ->mutateFormDataUsing(function (array $data) {
+                    ->mutateDataUsing(function (array $data) {
                         $data['type'] = 'limitation';
 
                         return $data;

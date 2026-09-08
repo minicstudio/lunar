@@ -88,7 +88,7 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
             TextColumn::make('attribute_data.name')
                 ->formatStateUsing(fn (Model $record): string => $record->translateAttribute('name'))
                 ->label(__('lunarpanel::product.table.name.label')),
-        ])->actions([
+        ])->recordActions([
             DetachAction::make()
                 ->modalHeading(
                     __('lunarpanel::collection.pages.products.actions.detach.modal.heading')
@@ -108,7 +108,7 @@ class ManageCollectionProducts extends BaseManageRelatedRecords
                     __('lunarpanel::collection.pages.products.actions.attach.label')
                 )
                 ->modalHeading(__('lunarpanel::collection.pages.products.actions.attach.label'))
-                ->form([
+                ->schema([
                     Select::make('recordId')
                         ->label(__('lunarpanel::collection.pages.products.actions.attach.select'))
                         ->required()

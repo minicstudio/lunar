@@ -22,7 +22,7 @@ class UpdateStatusBulkAction extends BulkAction
 
         $this->modalWidth(Width::TwoExtraLarge);
 
-        $this->form([
+        $this->schema([
             static::getStatusSelectInput(),
             static::getMailersCheckboxInput(),
             static::getAdditionalContentInput(),

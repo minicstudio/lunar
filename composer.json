@@ -28,7 +28,7 @@
         "lukascivil/treewalker": "0.9.1",
         "lunarphp/lunar": "self.version",
         "meilisearch/meilisearch-php": "^1.10",
-        "minic/laravel-ai-assistant": "^1.0.0",
+        "minic/laravel-ai-assistant": "^1.2.0",
         "saloonphp/saloon": "^4.0",
         "php": "^8.3",
         "spatie/laravel-activitylog": "^4.10.1",

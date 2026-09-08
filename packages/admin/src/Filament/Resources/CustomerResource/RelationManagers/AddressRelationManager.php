@@ -78,7 +78,7 @@ class AddressRelationManager extends BaseRelationManager
                 TextColumn::make('contact_phone')->label(
                     __('lunarpanel::address.table.contact_phone.label')
                 ),
-            ])->actions([
+            ])->recordActions([
                 EditAction::make('editAddress')
                     ->modalHeading(
                         __('lunarpanel::address.form.edit.heading')
