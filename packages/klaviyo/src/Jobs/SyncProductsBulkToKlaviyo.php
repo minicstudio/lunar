@@ -23,6 +23,11 @@ class SyncProductsBulkToKlaviyo implements ShouldQueue
     public array $backoff;
 
     /**
+     * Bulk catalog upserts poll Klaviyo jobs and issue per-product GETs.
+     */
+    public int $timeout = 300;
+
+    /**
      * @param  list<int>  $productIds
      */
     public function __construct(

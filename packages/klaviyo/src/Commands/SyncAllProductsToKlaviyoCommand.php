@@ -17,7 +17,7 @@ class SyncAllProductsToKlaviyoCommand extends Command
     /**
      * @var string
      */
-    protected $description = 'Dispatch a background job to sync all available published products to Klaviyo Catalogs API';
+    protected $description = 'Queue a catalog backfill that fans out bulk Klaviyo sync jobs for available published products';
 
     public function handle(): int
     {
@@ -35,13 +35,13 @@ class SyncAllProductsToKlaviyoCommand extends Command
 
         $chunkSize = (int) $this->option('chunk');
 
-        $this->info('Dispatching product catalog sync job to Klaviyo...');
+        $this->info('Dispatching product catalog sync coordinator to the queue...');
 
         SyncAllProductsToKlaviyo::dispatch($chunkSize);
 
         $this->newLine();
-        $this->info('✓ Product catalog sync job dispatched successfully.');
-        $this->info('The job will process available published products in the background.');
+        $this->info('✓ Catalog sync coordinator dispatched successfully.');
+        $this->info('It will queue bulk chunks (≤'.$chunkSize.' products) on the default queue; each chunk retries on Klaviyo 503s.');
 
         return self::SUCCESS;
     }

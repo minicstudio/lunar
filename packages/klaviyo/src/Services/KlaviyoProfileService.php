@@ -2,6 +2,7 @@
 
 namespace Lunar\Klaviyo\Services;
 
+use DateTimeInterface;
 use Lunar\Enums\Marketing\MarketingSubscriptionMode;
 use Lunar\Exceptions\SilentException;
 use Lunar\Klaviyo\Exceptions\FailedKlaviyoSyncException;
@@ -105,6 +106,7 @@ class KlaviyoProfileService
         string $eventId = '',
         ?float $value = null,
         ?string $valueCurrency = null,
+        ?DateTimeInterface $time = null,
     ): array {
         $attributes = [
             'properties' => $properties,
@@ -136,6 +138,10 @@ class KlaviyoProfileService
 
         if ($valueCurrency !== null) {
             $attributes['value_currency'] = $valueCurrency;
+        }
+
+        if ($time !== null) {
+            $attributes['time'] = $time->format(DATE_ATOM);
         }
 
         $payload = [

@@ -32,6 +32,11 @@ class KlaviyoCatalogService
 {
     private const BULK_RESOURCE_LIMIT = 100;
 
+    /**
+     * @var array<string, array{external_id: string, id: string}>
+     */
+    protected array $ensuredCategories = [];
+
     public function __construct(protected KlaviyoService $klaviyo) {}
 
     /**
@@ -568,6 +573,10 @@ class KlaviyoCatalogService
     {
         $externalId = $this->sanitizeCategoryExternalId($externalId);
 
+        if (isset($this->ensuredCategories[$externalId])) {
+            return $this->ensuredCategories[$externalId];
+        }
+
         $payload = [
             'data' => [
                 'type' => 'catalog-category',
@@ -598,7 +607,7 @@ class KlaviyoCatalogService
                 'already_existed' => $this->isDuplicateConflict($response),
             ]);
 
-            return [
+            return $this->ensuredCategories[$externalId] = [
                 'external_id' => $externalId,
                 'id' => $compoundId,
             ];
