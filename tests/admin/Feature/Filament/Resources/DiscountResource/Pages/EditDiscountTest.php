@@ -1,10 +1,17 @@
 <?php
 
+use Livewire\Livewire;
+use Lunar\Admin\Filament\Resources\DiscountResource;
+use Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount;
+use Lunar\DiscountTypes\AdvancedAmountOff;
+use Lunar\Models\Discount;
+use Lunar\Tests\Admin\Feature\Filament\TestCase;
+
 use function Pest\Laravel\assertDatabaseHas;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\get;
 
-uses(\Lunar\Tests\Admin\Feature\Filament\TestCase::class)
+uses(TestCase::class)
     ->group('resource.discount');
 
 beforeEach(function () {
@@ -13,31 +20,35 @@ beforeEach(function () {
 
 it('can render discount edit page', function () {
     get(
-        \Lunar\Admin\Filament\Resources\DiscountResource::getUrl(
+        DiscountResource::getUrl(
             'edit',
-            ['record' => \Lunar\Models\Discount::factory()->create()]
+            ['record' => Discount::factory()->create()]
         )
     )->assertSuccessful();
 });
 
 it('can edit discount', function () {
-    $discount = \Lunar\Models\Discount::factory()->create();
-    \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
+    Livewire::test(EditDiscount::class,
         ['record' => $discount->getKey()]
     )->fillForm([
         'name' => 'Updated Name',
         'handle' => 'updated_name',
     ])->call('save')->assertHasNoErrors();
 
-    assertDatabaseHas(\Lunar\Models\Discount::class, [
+    assertDatabaseHas(Discount::class, [
         'name' => 'Updated Name',
         'handle' => 'updated_name',
     ]);
 });
 
 it('can validate start and end date', function () {
-    $discount = \Lunar\Models\Discount::factory()->create();
-    \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
+    Livewire::test(EditDiscount::class,
         ['record' => $discount->getKey()]
     )->fillForm([
         'starts_at' => now(),
@@ -54,7 +65,9 @@ it('requires a minimum cart amount for fixed value discounts', function () {
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -79,7 +92,9 @@ it('requires the minimum cart amount to be at least the fixed value', function (
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -104,7 +119,9 @@ it('can save a fixed value discount when the minimum cart amount covers the fixe
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -128,7 +145,9 @@ it('can save a fixed value discount without a coupon code', function () {
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -152,7 +171,9 @@ it('does not require a minimum cart amount for fixed value discounts without a c
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -176,7 +197,9 @@ it('does not require the minimum cart amount to cover the fixed value when there
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -206,7 +229,9 @@ it('only shows one toast per problem category across multiple currencies', funct
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]

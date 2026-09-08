@@ -19,10 +19,8 @@ class UpdateWeightUnitToKg
         }
 
         DB::table($this->table())
-            ->where(function ($query) {
-                $query->whereNull('weight_unit')
-                    ->orWhere('weight_unit', 'mm');
-            })
+            ->whereNull('weight_unit')
+            ->orWhere('weight_unit', 'mm')
             ->update(['weight_unit' => 'kg']);
     }
 

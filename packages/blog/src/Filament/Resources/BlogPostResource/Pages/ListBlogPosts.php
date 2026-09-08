@@ -23,7 +23,7 @@ class ListBlogPosts extends BaseListRecords
         return [
             CreateAction::make()
                 ->createAnother(false)
-                ->form(static::createActionFormInputs())
+                ->schema(static::createActionFormInputs())
                 ->using(fn (array $data, string $model) => static::createRecord($data, $model))
                 ->successRedirectUrl(
                     fn (Model $record): string => BlogPostResource::getUrl('edit', [

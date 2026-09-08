@@ -71,7 +71,7 @@ return [
                 'label' => 'Maks. Dosya',
             ],
             'disk' => [
-                'label' => 'Depolama Diski',
+                'label' => 'Disk',
             ],
             'directory' => [
                 'label' => 'Dizin',

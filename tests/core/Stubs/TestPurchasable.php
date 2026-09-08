@@ -27,7 +27,7 @@ class TestPurchasable implements Purchasable
     /**
      * Get the price for the purchasable item.
      *
-     * @return \Lunar\DataTypes\Price
+     * @return Price
      */
     public function getPrice()
     {
@@ -159,5 +159,10 @@ class TestPurchasable implements Purchasable
     public function getTotalInventory(): int
     {
         return 999;
+    }
+
+    public function isPurchasable(): bool
+    {
+        return true;
     }
 }

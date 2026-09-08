@@ -2,6 +2,7 @@
 
 namespace Lunar\Shipping\Filament\Resources\ShippingMethodResource\Pages;
 
+use Filament\Actions\DeleteAction;
 use Filament\Actions;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
 use Lunar\Shipping\Filament\Resources\ShippingMethodResource;
@@ -13,7 +14,7 @@ class EditShippingMethod extends BaseEditRecord
     protected function getDefaultHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            DeleteAction::make(),
         ];
     }
 

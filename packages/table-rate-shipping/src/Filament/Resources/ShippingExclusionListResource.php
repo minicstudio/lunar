@@ -2,12 +2,19 @@
 
 namespace Lunar\Shipping\Filament\Resources;
 
+use Filament\Forms\Components\TextInput;
+use Lunar\Shipping\Filament\Resources\ShippingExclusionListResource\Pages\ListShippingExclusionLists;
+use Lunar\Shipping\Filament\Resources\ShippingExclusionListResource\Pages\EditShippingExclusionList;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Components\Component;
-use Filament\Forms\Form;
-use Filament\Pages\SubNavigationPosition;
+use Filament\Pages\Enums\SubNavigationPosition;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Facades\FilamentIcon;
-use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Shipping\Filament\Resources\ShippingExclusionListResource\Pages;
@@ -18,9 +25,11 @@ class ShippingExclusionListResource extends BaseResource
 {
     protected static ?string $model = ShippingExclusionList::class;
 
+    protected static ?string $permission = 'shipping:manage';
+
     protected static ?int $navigationSort = 1;
 
-    protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
+    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
 
     public static function getLabel(): string
     {
@@ -42,10 +51,10 @@ class ShippingExclusionListResource extends BaseResource
         return __('lunarpanel.shipping::plugin.navigation.group');
     }
 
-    public static function getDefaultForm(Form $form): Form
+    public static function getDefaultForm(Schema $schema): Schema
     {
-        return $form->schema([
-            Forms\Components\Section::make()->schema(
+        return $schema->components([
+            Section::make()->schema(
                 static::getMainFormComponents(),
             ),
         ]);
@@ -67,7 +76,7 @@ class ShippingExclusionListResource extends BaseResource
 
     public static function getNameFormComponent(): Component
     {
-        return Forms\Components\TextInput::make('name')
+        return TextInput::make('name')
             ->label(__('lunarpanel.shipping::shippingexclusionlist.form.name.label'))
             ->required()
             ->maxLength(255)
@@ -81,12 +90,12 @@ class ShippingExclusionListResource extends BaseResource
             ->filters([
                 //
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
+            ->recordActions([
+                EditAction::make(),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -94,11 +103,11 @@ class ShippingExclusionListResource extends BaseResource
     public static function getTableColumns(): array
     {
         return [
-            Tables\Columns\TextColumn::make('name')
+            TextColumn::make('name')
                 ->label(
                     __('lunarpanel.shipping::shippingexclusionlist.table.name.label')
                 ),
-            Tables\Columns\TextColumn::make('exclusions_count')
+            TextColumn::make('exclusions_count')
                 ->label(
                     __('lunarpanel.shipping::shippingexclusionlist.table.exclusions_count.label')
                 )
@@ -109,8 +118,8 @@ class ShippingExclusionListResource extends BaseResource
     public static function getDefaultPages(): array
     {
         return [
-            'index' => Pages\ListShippingExclusionLists::route('/'),
-            'edit' => Pages\EditShippingExclusionList::route('/{record}/edit'),
+            'index' => ListShippingExclusionLists::route('/'),
+            'edit' => EditShippingExclusionList::route('/{record}/edit'),
         ];
     }
 }

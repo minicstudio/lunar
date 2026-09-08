@@ -71,7 +71,7 @@ return [
                 'label' => 'Số tệp tối đa',
             ],
             'disk' => [
-                'label' => 'Đĩa lưu trữ',
+                'label' => 'Ổ đĩa',
             ],
             'directory' => [
                 'label' => 'Thư mục',

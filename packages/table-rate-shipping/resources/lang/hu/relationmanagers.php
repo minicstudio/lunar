@@ -57,7 +57,7 @@ return [
                     ],
                     'min_weight' => [
                         'label' => 'Min. súly',
-                        'helper_text' => 'Adja meg kg-ban',
+                        'helper_text' => 'Adja meg a súlyt :unit egységben',
                     ],
                     'max_weight' => [
                         'label' => 'Max. súly',

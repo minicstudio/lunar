@@ -1,8 +1,7 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
-
 use Illuminate\Database\Eloquent\Factories\Sequence;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Drivers\SystemTaxDriver;
@@ -14,8 +13,11 @@ use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
+use Lunar\Tests\Core\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class)->group('taxes');
+uses(TestCase::class);
+
+uses(RefreshDatabase::class)->group('taxes');
 
 test('can set shipping address', function () {
     $address = Address::factory()->create();
@@ -36,7 +38,7 @@ test('can set billing address', function () {
 });
 
 test('must set valid address', function () {
-    $this->expectException(\TypeError::class);
+    $this->expectException(TypeError::class);
 
     $driver = (new SystemTaxDriver)
         ->setShippingAddress('ddd');
@@ -55,7 +57,7 @@ test('can set currency', function () {
 });
 
 test('must set valid currency', function () {
-    $this->expectException(\TypeError::class);
+    $this->expectException(TypeError::class);
 
     $driver = (new SystemTaxDriver)
         ->setCurrency('ddd');
@@ -121,6 +123,86 @@ test('can get breakdown price inc', function () {
     expect($breakdown->amounts[0]->price->value)->toEqual(166);
 });
 
+test('can set tax zone', function () {
+    $taxZone = TaxZone::factory()->create();
+
+    $driver = (new SystemTaxDriver)
+        ->setTaxZone($taxZone);
+
+    expect($driver)->toBeInstanceOf(SystemTaxDriver::class);
+});
+
+test('uses cart tax zone override instead of default zone', function () {
+    $address = Address::factory()->create();
+    $currency = Currency::factory()->create();
+    $defaultTaxZone = TaxZone::factory()->state(['default' => true])->create();
+    $overrideTaxZone = TaxZone::factory()->state(['default' => false])->create();
+
+    $taxClass = TaxClass::factory()->create();
+
+    // Default zone: 20 %
+    TaxRateAmount::factory()->create([
+        'tax_class_id' => $taxClass->id,
+        'tax_rate_id' => TaxRate::factory()->state(['tax_zone_id' => $defaultTaxZone])->create()->id,
+        'percentage' => 20,
+    ]);
+
+    // Override zone: 5 %
+    TaxRateAmount::factory()->create([
+        'tax_class_id' => $taxClass->id,
+        'tax_rate_id' => TaxRate::factory()->state(['tax_zone_id' => $overrideTaxZone])->create()->id,
+        'percentage' => 5,
+    ]);
+
+    $variant = ProductVariant::factory(['tax_class_id' => $taxClass->id])->create();
+    $line = CartLine::factory(['purchasable_id' => $variant->id])->create();
+
+    $breakdown = (new SystemTaxDriver)
+        ->setShippingAddress($address)
+        ->setBillingAddress($address)
+        ->setCurrency($currency)
+        ->setPurchasable($variant)
+        ->setCartLine($line)
+        ->setTaxZone($overrideTaxZone)
+        ->getBreakdown(1000);
+
+    // 5 % of 1000 = 50, not 20 % = 200
+    expect($breakdown)->toBeInstanceOf(TaxBreakdown::class);
+    expect($breakdown->amounts->count())->toEqual(1);
+    expect($breakdown->amounts[0]->price->value)->toEqual(50);
+});
+
+test('falls back to address-derived zone when no override is set', function () {
+    $address = Address::factory()->create();
+    $currency = Currency::factory()->create();
+    $defaultTaxZone = TaxZone::factory()->state(['default' => true])->create();
+
+    $taxClass = TaxClass::factory()->create();
+
+    TaxRateAmount::factory()->create([
+        'tax_class_id' => $taxClass->id,
+        'tax_rate_id' => TaxRate::factory()->state(['tax_zone_id' => $defaultTaxZone])->create()->id,
+        'percentage' => 20,
+    ]);
+
+    $variant = ProductVariant::factory(['tax_class_id' => $taxClass->id])->create();
+    $line = CartLine::factory(['purchasable_id' => $variant->id])->create();
+
+    // No setTaxZone() call
+    $breakdown = (new SystemTaxDriver)
+        ->setShippingAddress($address)
+        ->setBillingAddress($address)
+        ->setCurrency($currency)
+        ->setPurchasable($variant)
+        ->setCartLine($line)
+        ->getBreakdown(1000);
+
+    // Should use address-derived (default) zone → 20 %
+    expect($breakdown)->toBeInstanceOf(TaxBreakdown::class);
+    expect($breakdown->amounts->count())->toEqual(1);
+    expect($breakdown->amounts[0]->price->value)->toEqual(200);
+});
+
 test('can get breakdown with correct tax zone', function () {
     $address = Address::factory()->create();
     $currency = Currency::factory()->create();
@@ -155,7 +237,7 @@ test('can get breakdown with correct tax zone', function () {
 
     expect($breakdown)->toBeInstanceOf(TaxBreakdown::class);
 
-    //Only the 2 tax rates from the default tax zone should have been applied
+    // Only the 2 tax rates from the default tax zone should have been applied
     expect($breakdown->amounts->count())->toEqual(2);
 
     expect($breakdown->amounts[0]->price->value)->toEqual(100);

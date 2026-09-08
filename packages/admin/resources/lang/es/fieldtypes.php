@@ -71,7 +71,7 @@ return [
                 'label' => 'Máx. Archivos',
             ],
             'disk' => [
-                'label' => 'Disco de almacenamiento',
+                'label' => 'Disco',
             ],
             'directory' => [
                 'label' => 'Directorio',

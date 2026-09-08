@@ -18,8 +18,9 @@ use Lunar\Models\OrderAddress;
 use Lunar\Models\Price as ModelsPrice;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\Transaction;
+use Lunar\Tests\Admin\Feature\Filament\TestCase;
 
-uses(\Lunar\Tests\Admin\Feature\Filament\TestCase::class)
+uses(TestCase::class)
     ->group('resource.order');
 
 beforeEach(function () {
@@ -161,18 +162,36 @@ it('can update order status', function () {
         ->status->toBe($status);
 });
 
-it('shows a draft banner for orders that have not been placed', function () {
+it('displays boolean order meta values as localized yes/no', function () {
+    $this->order->update([
+        'meta' => [
+            'express_shipping' => true,
+            'gift_message' => false,
+        ],
+    ]);
+
     Livewire::test(ManageOrder::class, [
         'record' => $this->order->getRouteKey(),
     ])
-        ->assertSee(__('lunarpanel::order.infolist.alert.draft_order'));
+        ->assertSuccessful()
+        ->assertSchemaComponentStateSet('meta.meta_express_shipping', __('lunarpanel::global.yes'))
+        ->assertSchemaComponentStateSet('meta.meta_gift_message', __('lunarpanel::global.no'));
 });
 
-it('does not show a draft banner for placed orders', function () {
-    $this->order->update(['placed_at' => now()]);
+it('does not display numeric order meta values as yes/no', function () {
+    $this->order->update([
+        'meta' => [
+            'parcel_count' => 1,
+            'failed_attempts' => 0,
+            'floor' => '1',
+        ],
+    ]);
 
     Livewire::test(ManageOrder::class, [
         'record' => $this->order->getRouteKey(),
     ])
-        ->assertDontSee(__('lunarpanel::order.infolist.alert.draft_order'));
+        ->assertSuccessful()
+        ->assertSchemaComponentStateSet('meta.meta_parcel_count', 1)
+        ->assertSchemaComponentStateSet('meta.meta_failed_attempts', 0)
+        ->assertSchemaComponentStateSet('meta.meta_floor', '1');
 });

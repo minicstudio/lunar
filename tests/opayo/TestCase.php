@@ -2,12 +2,11 @@
 
 namespace Lunar\Tests\Opayo;
 
-use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
-use Kalnoy\Nestedset\NestedSetServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Lunar\LunarServiceProvider;
+use Lunar\Nestedset\NestedSetServiceProvider;
 use Lunar\Opayo\OpayoServiceProvider;
 use Lunar\Shipping\ShippingServiceProvider;
 use Lunar\Tests\TestCase as BaseTestCase;
@@ -52,7 +51,6 @@ class TestCase extends BaseTestCase
             LivewireServiceProvider::class,
             MediaLibraryServiceProvider::class,
             ActivitylogServiceProvider::class,
-            ConverterServiceProvider::class,
             NestedSetServiceProvider::class,
             ShippingServiceProvider::class,
             BlinkServiceProvider::class,

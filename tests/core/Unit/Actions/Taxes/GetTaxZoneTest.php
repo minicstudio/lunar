@@ -1,7 +1,6 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\Actions\Taxes\GetTaxZone;
 use Lunar\Models\Address;
 use Lunar\Models\Country;
@@ -10,8 +9,11 @@ use Lunar\Models\TaxZone;
 use Lunar\Models\TaxZoneCountry;
 use Lunar\Models\TaxZonePostcode;
 use Lunar\Models\TaxZoneState;
+use Lunar\Tests\Core\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class)
+uses(TestCase::class);
+
+uses(RefreshDatabase::class)
     ->group('taxes');
 
 test('can prioritize taxzones', function () {
@@ -86,4 +88,44 @@ test('can prioritize taxzones', function () {
     $zone3 = app(GetTaxZone::class)->execute($addressWithOnlyCountryMatching);
 
     expect($zone3->id)->toEqual($defaultTaxZone->id);
+});
+
+test('can ignore a state tax zone from another country', function () {
+    $australia = Country::factory()->create([
+        'name' => 'Australia',
+    ]);
+
+    $unitedStates = Country::factory()->create([
+        'name' => 'United States',
+    ]);
+
+    $washington = State::factory()->create([
+        'country_id' => $unitedStates->id,
+        'code' => 'WA',
+        'name' => 'Washington',
+    ]);
+
+    TaxZoneState::factory()->create([
+        'tax_zone_id' => TaxZone::factory(['default' => false]),
+        'state_id' => $washington->id,
+    ]);
+
+    $auZone = TaxZoneCountry::factory()->create([
+        'tax_zone_id' => TaxZone::factory(['default' => false]),
+        'country_id' => $australia->id,
+    ]);
+
+    TaxZone::factory(['default' => true])->create();
+
+    // Western Australia is also "WA", but has no tax zone of its own, so the
+    // Australian country zone should apply.
+    $address = Address::factory()->create([
+        'postcode' => '6000',
+        'state' => 'WA',
+        'country_id' => $australia->id,
+    ]);
+
+    $zone = app(GetTaxZone::class)->execute($address);
+
+    expect($zone->id)->toEqual($auZone->tax_zone_id);
 });

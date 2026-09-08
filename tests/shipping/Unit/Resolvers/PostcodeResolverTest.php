@@ -1,29 +1,44 @@
 <?php
 
-uses(\Lunar\Tests\Shipping\TestCase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Lunar\Models\Country;
 use Lunar\Shipping\Resolvers\PostcodeResolver;
+use Lunar\Tests\Shipping\TestCase;
 
-test('can get postcode query parts', function () {
-    $postcode = 'ABC 123';
+uses(TestCase::class)
+    ->group('shipping', 'shipping-postcode');
+uses(RefreshDatabase::class);
 
-    $parts = (new PostcodeResolver)->getParts($postcode);
+test('splits a UK postcode into queryable parts', function () {
+    $country = Country::factory()->create(['iso2' => 'GB']);
 
-    expect($parts)->toContain('ABC123');
-    expect($parts)->toContain('ABC');
-    expect($parts)->toContain('AB');
+    $parts = (new PostcodeResolver)->getParts('SW1A 1AA', $country);
 
-    $postcode = 'NW1 1TX';
+    expect($parts)->toContain('SW1A1AA');
+    expect($parts)->toContain('SW1');
+    expect($parts)->toContain('SW');
+    expect($parts)->toContain('S');
+});
 
-    $parts = (new PostcodeResolver)->getParts($postcode);
+test('supportsCountry returns true for every country when the countries array is empty', function () {
+    $gb = Country::factory()->create(['iso2' => 'GB']);
+    $us = Country::factory()->create(['iso2' => 'US']);
 
-    expect($parts)->toContain('NW11TX');
-    expect($parts)->toContain('NW1');
-    expect($parts)->toContain('NW');
+    $resolver = new PostcodeResolver;
 
-    $postcode = 90210;
+    expect($resolver->supportsCountry($gb))->toBeTrue();
+    expect($resolver->supportsCountry($us))->toBeTrue();
+});
 
-    $parts = (new PostcodeResolver)->getParts($postcode);
-    expect($parts)->toContain('90210');
-    expect($parts)->toContain('90');
+test('supportsCountry restricts to listed iso2 codes when the property is set on a subclass', function () {
+    $gb = Country::factory()->create(['iso2' => 'GB']);
+    $us = Country::factory()->create(['iso2' => 'US']);
+
+    $resolver = new class extends PostcodeResolver
+    {
+        protected array $countries = ['GB'];
+    };
+
+    expect($resolver->supportsCountry($gb))->toBeTrue();
+    expect($resolver->supportsCountry($us))->toBeFalse();
 });

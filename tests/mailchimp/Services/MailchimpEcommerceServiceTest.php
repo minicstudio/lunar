@@ -1,6 +1,9 @@
 <?php
 
+uses(\Lunar\Tests\Mailchimp\TestCase::class);
+
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
 use Lunar\DataTypes\Price;
@@ -32,6 +35,8 @@ beforeEach(function () {
     $this->createCurrencies();
     $this->createCustomerGroup();
     $this->createChannel();
+
+    Route::get('/checkout', fn () => 'checkout')->name('lfp.checkout.details');
 
     Config::set('lunar.mailchimp.api_key', 'test-api-key');
     Config::set('lunar.mailchimp.list_id', 'test-list-id');
@@ -132,8 +137,7 @@ test('deleteProduct handles 404 gracefully', function () {
 test('syncCustomer creates customer in Mailchimp', function () {
     $user = User::factory()->create([
         'email' => 'customer@example.com',
-        'first_name' => 'Jane',
-        'last_name' => 'Doe',
+        'name' => 'Jane Doe',
     ]);
 
     $customer = Customer::factory()->create();
@@ -224,6 +228,8 @@ test('syncCart falls back to PATCH when cart exists', function () {
     ], 200);
 
     $mockClient = new MockClient([
+        SyncProductRequest::class => MockResponse::make([], 200),
+        DeleteProductRequest::class => MockResponse::make([], 204),
         CreateCartRequest::class => $mockPost400,
         UpdateCartRequest::class => $mockPatchSuccess,
     ]);

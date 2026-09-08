@@ -1,11 +1,6 @@
 <?php
 
-// TESTS DISABLED: The current custom discount and tax calculation system
-// does not work well with this discount type. Tests remain here for reference
-// and can be re-enabled once the tax/discount calculation is refactored.
-
-// uses(\Lunar\Tests\Core\TestCase::class);
-
+// use Illuminate\Foundation\Testing\RefreshDatabase;
 // use Lunar\DiscountTypes\AmountOff;
 // use Lunar\Facades\CartSession;
 // use Lunar\Models\Brand;
@@ -19,8 +14,11 @@
 // use Lunar\Models\Product;
 // use Lunar\Models\ProductVariant;
 // use Lunar\Tests\Core\Stubs\User;
+// use Lunar\Tests\Core\TestCase;
 
-// uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+// uses(TestCase::class);
+
+// uses(RefreshDatabase::class);
 
 // beforeEach(function () {
 //     Currency::factory()->create([

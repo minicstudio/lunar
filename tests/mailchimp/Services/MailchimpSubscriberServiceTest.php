@@ -1,5 +1,7 @@
 <?php
 
+uses(\Lunar\Tests\Mailchimp\TestCase::class);
+
 use Illuminate\Support\Facades\Config;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Requests\CreateMergeFieldRequest;
@@ -9,7 +11,6 @@ use Lunar\Mailchimp\Requests\SyncSubscriberRequest;
 use Lunar\Mailchimp\Requests\TrackEventRequest;
 use Lunar\Mailchimp\Services\MailchimpService;
 use Lunar\Mailchimp\Services\MailchimpSubscriberService;
-use Lunar\Models\Customer;
 use Lunar\Tests\Core\Stubs\User;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
@@ -118,13 +119,15 @@ test('syncSubscriber delegates to syncSubscriberByEmail', function () {
 
     $this->mailchimpService->getConnector()->withMockClient($mockClient);
 
-    $user = User::factory()->create([
+    $user = User::factory()->make([
         'email' => 'user@example.com',
         'first_name' => 'John',
         'last_name' => 'Doe',
     ]);
 
-    $result = $this->subscriberService->syncSubscriber($user);
+    $customer = $this->mockCustomerWithUser($user);
+
+    $result = $this->subscriberService->syncSubscriber($customer);
 
     expect($result)
         ->toBeArray()
@@ -144,16 +147,14 @@ test('getLanguageMergeFields returns empty array when locale is missing', functi
 
 test('getCustomerMergeFields extracts locale from linked user', function () {
     $user = User::factory()->make(['locale' => 'de']);
-    $customer = Customer::factory()->make();
-    $customer->setRelation('users', collect([$user]));
+    $customer = $this->mockCustomerWithUser($user);
 
     expect($this->subscriberService->getCustomerMergeFields($customer))->toBe(['LANGUAGE' => 'de']);
 });
 
 test('syncSubscriberLanguage returns null when customer has no locale', function () {
     $user = User::factory()->make(['locale' => null]);
-    $customer = Customer::factory()->make();
-    $customer->setRelation('users', collect([$user]));
+    $customer = $this->mockCustomerWithUser($user);
 
     expect($this->subscriberService->syncSubscriberLanguage($customer))->toBeNull();
 });
@@ -178,8 +179,7 @@ test('syncSubscriberLanguage syncs only the language merge field', function () {
         'last_name' => 'Doe',
         'locale' => 'hu',
     ]);
-    $customer = Customer::factory()->make();
-    $customer->setRelation('users', collect([$user]));
+    $customer = $this->mockCustomerWithUser($user);
 
     $result = $this->subscriberService->syncSubscriberLanguage($customer);
 
@@ -292,6 +292,8 @@ test('setupMergeFields creates merge fields', function () {
 });
 
 test('setupMergeFields updates existing merge fields', function () {
+    Config::set('lunar.mailchimp.merge_fields.language', null);
+
     // Queue responses for: 1 list request + 2 update requests
     $mockClient = new MockClient([
         MockResponse::make([

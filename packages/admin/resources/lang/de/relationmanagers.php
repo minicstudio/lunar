@@ -35,6 +35,7 @@ return [
             'description' => 'Kundengruppen mit diesem Produkt verknüpfen, um die Verfügbarkeit zu bestimmen.',
             'name' => [
                 'label' => 'Name',
+                'default_description' => 'Standard — steuert den Gastzugriff',
             ],
             'enabled' => [
                 'label' => 'Aktiviert',

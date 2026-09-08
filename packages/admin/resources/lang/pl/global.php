@@ -12,4 +12,7 @@ return [
         'settings' => 'Ustawienia',
     ],
 
+    'yes' => 'Tak',
+    'no' => 'Nie',
+
 ];

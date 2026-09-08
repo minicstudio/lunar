@@ -2,13 +2,13 @@
 
 namespace Lunar\Review\Filament\Resources\OrderResource\RelationManagers;
 
-use Filament\Forms\Components\Component;
-use Filament\Forms\Components\Section;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Form;
-use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
@@ -85,7 +85,7 @@ class ProductVariantReviewRelationManager extends BaseRelationManager
                         ReviewCreatedEvent::dispatch($record);
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make()
                     ->after(function ($record) {
                         ReviewUpdatedEvent::dispatch($record);
@@ -112,10 +112,10 @@ class ProductVariantReviewRelationManager extends BaseRelationManager
     /**
      * Configures the form used in the relation manager.
      */
-    public function getDefaultForm(Form $form): Form
+    public function getDefaultForm(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make()
                     ->schema(
                         static::getMainFormComponents(),

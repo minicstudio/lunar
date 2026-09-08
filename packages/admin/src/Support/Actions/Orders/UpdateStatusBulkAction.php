@@ -2,8 +2,8 @@
 
 namespace Lunar\Admin\Support\Actions\Orders;
 
-use Filament\Support\Enums\MaxWidth;
-use Filament\Tables\Actions\BulkAction;
+use Filament\Actions\BulkAction;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Collection;
 use Lunar\Admin\Support\Actions\Traits\UpdatesOrderStatus;
 use Lunar\Facades\DB;
@@ -20,9 +20,9 @@ class UpdateStatusBulkAction extends BulkAction
             __('lunarpanel::actions.orders.update_status.label')
         );
 
-        $this->modalWidth(MaxWidth::TwoExtraLarge);
+        $this->modalWidth(Width::TwoExtraLarge);
 
-        $this->form([
+        $this->schema([
             static::getStatusSelectInput(),
             static::getMailersCheckboxInput(),
             static::getAdditionalContentInput(),
