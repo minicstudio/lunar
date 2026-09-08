@@ -29,6 +29,13 @@ class TestCase extends BaseTestCase
         Stripe::fake();
     }
 
+    protected function defineDatabaseMigrations(): void
+    {
+        parent::defineDatabaseMigrations();
+
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/stripe/database/migrations');
+    }
+
     protected function getPackageProviders($app)
     {
         return [

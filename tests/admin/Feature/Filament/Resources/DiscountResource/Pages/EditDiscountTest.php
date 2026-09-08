@@ -3,6 +3,7 @@
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\DiscountResource;
 use Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Models\Discount;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
 
@@ -27,7 +28,9 @@ it('can render discount edit page', function () {
 });
 
 it('can edit discount', function () {
-    $discount = Discount::factory()->create();
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
     Livewire::test(EditDiscount::class,
         ['record' => $discount->getKey()]
     )->fillForm([
@@ -42,7 +45,9 @@ it('can edit discount', function () {
 });
 
 it('can validate start and end date', function () {
-    $discount = Discount::factory()->create();
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
     Livewire::test(EditDiscount::class,
         ['record' => $discount->getKey()]
     )->fillForm([
@@ -60,7 +65,9 @@ it('requires a minimum cart amount for fixed value discounts', function () {
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -85,7 +92,9 @@ it('requires the minimum cart amount to be at least the fixed value', function (
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -110,7 +119,9 @@ it('can save a fixed value discount when the minimum cart amount covers the fixe
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -134,7 +145,9 @@ it('can save a fixed value discount without a coupon code', function () {
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -158,7 +171,9 @@ it('does not require a minimum cart amount for fixed value discounts without a c
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -182,7 +197,9 @@ it('does not require the minimum cart amount to cover the fixed value when there
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]
@@ -212,7 +229,9 @@ it('only shows one toast per problem category across multiple currencies', funct
         'enabled' => true,
     ]);
 
-    $discount = \Lunar\Models\Discount::factory()->create();
+    $discount = \Lunar\Models\Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
 
     \Livewire\Livewire::test(\Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount::class,
         ['record' => $discount->getKey()]

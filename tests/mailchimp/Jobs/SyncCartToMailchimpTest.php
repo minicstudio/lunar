@@ -5,12 +5,14 @@ use Illuminate\Support\Facades\Queue;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Jobs\SyncCartToMailchimp;
 use Lunar\Mailchimp\Services\MailchimpEcommerceService;
-use Lunar\Models\Cart;
 use Lunar\Models\Currency;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Lunar\Tests\Core\Stubs\User;
+use Lunar\Tests\Mailchimp\TestCase;
+
+uses(TestCase::class);
 
 beforeEach(function () {
     $this->createLanguages();
@@ -33,7 +35,7 @@ beforeEach(function () {
 test('job can be dispatched successfully', function () {
     Queue::assertNothingPushed();
 
-    $cart = Cart::factory()->create();
+    $cart = $this->createCart();
 
     SyncCartToMailchimp::dispatch($cart);
 
@@ -55,7 +57,7 @@ test('job syncs cart to Mailchimp', function () {
     $taxClass = TaxClass::factory()->create();
     $variant->update(['tax_class_id' => $taxClass->id]);
 
-    $cart = Cart::factory()->create(['user_id' => $user->id, 'currency_id' => $currency->id]);
+    $cart = $this->createCart(['user_id' => $user->id, 'currency_id' => $currency->id]);
     $cart->lines()->create([
         'purchasable_type' => ProductVariant::class,
         'purchasable_id' => $variant->id,
@@ -70,7 +72,8 @@ test('job syncs cart to Mailchimp', function () {
         ->andReturn(['id' => (string) $cart->id]);
 
     $job = new SyncCartToMailchimp($cart);
-    $job->handle($mockService);
+    $this->app->instance(MailchimpEcommerceService::class, $mockService);
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -78,10 +81,10 @@ test('job syncs cart to Mailchimp', function () {
 test('job does not run when mailchimp is disabled', function () {
     Config::set('lunar.mailchimp.enabled', false);
 
-    $cart = Cart::factory()->create();
+    $cart = $this->createCart();
 
     $job = new SyncCartToMailchimp($cart);
-    $job->handle(app(MailchimpEcommerceService::class));
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -89,19 +92,19 @@ test('job does not run when mailchimp is disabled', function () {
 test('job does not run when sync_carts is disabled', function () {
     Config::set('lunar.mailchimp.sync_carts', false);
 
-    $cart = Cart::factory()->create();
+    $cart = $this->createCart();
 
     $job = new SyncCartToMailchimp($cart);
-    $job->handle(app(MailchimpEcommerceService::class));
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
 
 test('job does not sync cart without user_id', function () {
-    $cart = Cart::factory()->create(['user_id' => null]);
+    $cart = $this->createCart(['user_id' => null]);
 
     $job = new SyncCartToMailchimp($cart);
-    $job->handle(app(MailchimpEcommerceService::class));
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -121,7 +124,7 @@ test('job throws FailedMailchimpSyncException on API failure', function () {
     $taxClass = TaxClass::factory()->create();
     $variant->update(['tax_class_id' => $taxClass->id]);
 
-    $cart = Cart::factory()->create(['user_id' => $user->id, 'currency_id' => $currency->id]);
+    $cart = $this->createCart(['user_id' => $user->id, 'currency_id' => $currency->id]);
     $cart->lines()->create([
         'purchasable_type' => ProductVariant::class,
         'purchasable_id' => $variant->id,
@@ -136,11 +139,12 @@ test('job throws FailedMailchimpSyncException on API failure', function () {
         ->andThrow(new \Exception('Failed to sync cart'));
 
     $job = new SyncCartToMailchimp($cart);
-    $job->handle($mockService);
+    $this->app->instance(MailchimpEcommerceService::class, $mockService);
+    $job->handle();
 })->throws(FailedMailchimpSyncException::class);
 
 test('job has correct retry configuration', function () {
-    $cart = Cart::factory()->create();
+    $cart = $this->createCart();
 
     $job = new SyncCartToMailchimp($cart);
 

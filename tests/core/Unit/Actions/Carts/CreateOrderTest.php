@@ -4,7 +4,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\Actions\Carts\CreateOrder;
 use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\DataTypes\ShippingOption;
-use Lunar\DiscountTypes\AmountOff;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Exceptions\DisallowMultipleCartOrdersException;
 use Lunar\Facades\Discounts;
 use Lunar\Facades\ModelManifest;
@@ -405,7 +405,7 @@ test('can keep the discount when the draft order is created again', function () 
 
     // A single-use coupon, which is the ordinary shape of a promotional code.
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Ten off',
         'coupon' => 'SAVE10',
         'uses' => 0,
@@ -477,7 +477,7 @@ test('can not reuse a discount another cart has exhausted', function () {
     ]);
 
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Ten off',
         'coupon' => 'SAVE10',
         'uses' => 0,
@@ -574,7 +574,7 @@ test('can still enforce other conditions on a discount the cart consumed', funct
 
     // Spend at least 15.00 to qualify. Two units is 20.00, one is 10.00.
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Ten off',
         'coupon' => 'SAVE10',
         'uses' => 0,
@@ -659,7 +659,7 @@ test('can not consume a discount twice on one cart instance', function () {
     ]);
 
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Ten off',
         'coupon' => 'SAVE10',
         'uses' => 0,
@@ -740,7 +740,7 @@ test('keeps its own discount when a cart is priced again after order creation', 
     ]);
 
     $discount = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Ten off',
         'coupon' => 'SAVE10',
         'uses' => 0,

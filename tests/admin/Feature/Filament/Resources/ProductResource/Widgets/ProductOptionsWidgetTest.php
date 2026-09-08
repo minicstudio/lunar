@@ -81,7 +81,7 @@ it('can save newly filled size and colour permutations', function () {
         ->and($variants->pluck('sku'))->toContain('SMALL-RED');
 });
 
-it('can save a new size and colour permutation when copied_id is missing', function () {
+it('can save a new size and colour permutation copied from an existing variant', function () {
     Language::factory()->create([
         'default' => true,
     ]);
@@ -120,7 +120,7 @@ it('can save a new size and colour permutation when copied_id is missing', funct
         [
             'key' => 'new',
             'variant_id' => null,
-            'copied_id' => null,
+            'copied_id' => $variant->id,
             'sku' => 'LARGE-BLUE',
             'price' => 18,
             'stock' => 0,

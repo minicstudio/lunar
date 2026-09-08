@@ -162,53 +162,60 @@ class ManageOrder extends BaseViewRecord
             ->heading(__('lunarpanel::order.infolist.additional_info.label'))
             ->compact()
             ->statePath('meta')
-            ->schema(fn ($state) => blank($state) ? [
-                TextEntry::make('no_additional_info')
-                    ->hiddenLabel()
-                    ->getStateUsing(fn () => __('lunarpanel::order.infolist.no_additional_info.label')),
-            ] : collect($state)
-                ->except(static::getHiddenOrderMetaKeys())
-                ->map(function ($value, $key) {
-                    if (is_array($value)) {
-                        return KeyValueEntry::make('meta_'.$key)->state($value);
-                    }
+            ->schema(function (?Order $record): array {
+                $meta = collect($record?->meta ?? []);
 
-                    if (\Carbon\Carbon::hasFormat((string) $value, 'Y-m-d H:i:s')) {
-                        $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
-                        $converted = \Carbon\Carbon::parse($value, config('app.timezone'))
-                            ->setTimezone($timezone)
-                            ->format('Y-m-d H:i:s');
+                if ($meta->isEmpty()) {
+                    return [
+                        TextEntry::make('no_additional_info')
+                            ->hiddenLabel()
+                            ->getStateUsing(fn () => __('lunarpanel::order.infolist.no_additional_info.label')),
+                    ];
+                }
+
+                return $meta
+                    ->except(static::getHiddenOrderMetaKeys())
+                    ->map(function ($value, $key) {
+                        if (is_array($value)) {
+                            return KeyValueEntry::make('meta_'.$key)->state($value);
+                        }
+
+                        if (\Carbon\Carbon::hasFormat((string) $value, 'Y-m-d H:i:s')) {
+                            $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
+                            $converted = \Carbon\Carbon::parse($value, config('app.timezone'))
+                                ->setTimezone($timezone)
+                                ->format('Y-m-d H:i:s');
+
+                            return TextEntry::make('meta_'.$key)
+                                ->state($converted)
+                                ->label(__($key))
+                                ->copyable();
+                        }
+
+                        // Format boolean values as yes/no
+                        if (is_bool($value)) {
+                            $formattedValue = $value ? __('lunarpanel::global.yes') : __('lunarpanel::global.no');
+
+                            return TextEntry::make('meta_'.$key)
+                                ->state($formattedValue)
+                                ->label(__($key));
+                        }
 
                         return TextEntry::make('meta_'.$key)
-                            ->state($converted)
+                            ->state($value)
                             ->label(__($key))
-                            ->copyable();
-                    }
+                            ->copyable()
+                            ->limit(50)->tooltip(function (TextEntry $component): ?string {
+                                $state = $component->getState();
+                                if (strlen($state) <= $component->getCharacterLimit()) {
+                                    return null;
+                                }
 
-                    // Format boolean values as yes/no
-                    if (is_bool($value) || $value === 0 || $value === 1 || $value === '0' || $value === '1') {
-                        $boolValue = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-                        $formattedValue = $boolValue ? __('lunarpanel::global.yes') : __('lunarpanel::global.no');
-
-                        return TextEntry::make('meta_'.$key)
-                            ->state($formattedValue)
-                            ->label(__($key));
-                    }
-
-                    return TextEntry::make('meta_'.$key)
-                        ->state($value)
-                        ->label(__($key))
-                        ->copyable()
-                        ->limit(50)->tooltip(function (TextEntry $component): ?string {
-                            $state = $component->getState();
-                            if (strlen($state) <= $component->getCharacterLimit()) {
-                                return null;
-                            }
-
-                            return $state;
-                        });
-                })
-                ->toArray());
+                                return $state;
+                            });
+                    })
+                    ->toArray();
+            });
     }
 
     public static function getAdditionalInfoSection(): Component

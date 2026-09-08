@@ -4,16 +4,15 @@ namespace Lunar\Tests\Blog;
 
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
-use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Filament\Actions\ActionsServiceProvider;
 use Filament\FilamentServiceProvider;
 use Filament\Forms\FormsServiceProvider;
 use Filament\Infolists\InfolistsServiceProvider;
 use Filament\Notifications\NotificationsServiceProvider;
+use Filament\Schemas\SchemasServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
-use Kalnoy\Nestedset\NestedSetServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Lunar\Admin\LunarPanelProvider;
 use Lunar\Admin\Models\Staff;
@@ -23,6 +22,7 @@ use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
+use Lunar\Nestedset\NestedSetServiceProvider;
 use Lunar\Tests\Blog\Providers\BlogPanelTestServiceProvider;
 use Lunar\Tests\TestCase as BaseTestCase;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
@@ -58,6 +58,7 @@ class TestCase extends BaseTestCase
             FilamentServiceProvider::class,
             FormsServiceProvider::class,
             NotificationsServiceProvider::class,
+            SchemasServiceProvider::class,
             SupportServiceProvider::class,
             TablesServiceProvider::class,
             WidgetsServiceProvider::class,
@@ -71,7 +72,6 @@ class TestCase extends BaseTestCase
             MediaLibraryServiceProvider::class,
             PermissionServiceProvider::class,
             ActivitylogServiceProvider::class,
-            ConverterServiceProvider::class,
             NestedSetServiceProvider::class,
             BlinkServiceProvider::class,
         ];
@@ -82,6 +82,8 @@ class TestCase extends BaseTestCase
         $app['config']->set('cache.default', 'array');
 
         $this->replaceModelsForTesting();
+
+        parent::getEnvironmentSetUp($app);
     }
 
     protected function createLanguages()

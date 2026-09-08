@@ -95,9 +95,7 @@ class PriceRelationManager extends BaseRelationManager
 
                 Group::make([
                     TextInput::make('price')
-                        ->formatStateUsing(
-                            fn ($state) => $state?->decimal(rounding: false)
-                        )->label(
+                        ->label(
                             __('lunarpanel::relationmanagers.pricing.form.price.label')
                         )
                         ->numeric()

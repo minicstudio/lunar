@@ -151,7 +151,7 @@ class TaxZoneResource extends BaseResource
                     $component->state(
                         $relatedModels
                             ->pluck('country')
-                            ->first()->id,
+                            ->first()?->id,
                     );
                 }
             });

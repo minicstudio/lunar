@@ -3,7 +3,7 @@
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\DiscountResource;
 use Lunar\Admin\Filament\Resources\DiscountResource\Pages\ListDiscounts;
-use Lunar\DiscountTypes\BuyXGetY;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Models\Discount;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
 
@@ -30,6 +30,6 @@ it('can create a discount', function () {
         'name' => 'Discount A',
         'handle' => 'discount_a',
         'starts_at' => now(),
-        'type' => BuyXGetY::class,
+        'type' => AdvancedAmountOff::class,
     ])->assertHasNoErrors();
 });

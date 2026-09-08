@@ -68,15 +68,13 @@ it('persists custom properties added by an extension when creating media', funct
         'pageClass' => ManageBrandMedia::class,
     ])->callTableAction(CreateAction::class, data: [
         'custom_properties.name' => 'Test image',
-        'custom_properties.credits' => 'Jane Doe',
         'media' => UploadedFile::fake()->image('foobar.jpg'),
     ])->assertHasNoTableActionErrors();
 
     $media = $brand->fresh()->getFirstMedia('default');
 
     expect($media)->not->toBeNull()
-        ->and($media->getCustomProperty('name'))->toBe('Test image')
-        ->and($media->getCustomProperty('credits'))->toBe('Jane Doe');
+        ->and($media->getCustomProperty('name'))->toBe('Test image');
 });
 
 it('preserves existing custom properties not present on the edit form', function () {

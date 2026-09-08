@@ -78,6 +78,9 @@ class TestCase extends BaseTestCase
         $app['config']->set('auth.passwords.users.table', 'password_reset_tokens');
         $app['config']->set('auth.providers.users.model', User::class);
 
+        $app['config']->set('cache.default', 'array');
+        
+        $this->replaceModelsForTesting();
         parent::getEnvironmentSetUp($app);
     }
 

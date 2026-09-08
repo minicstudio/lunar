@@ -2,6 +2,7 @@
 
 namespace Lunar\Tests;
 
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Lunar\Facades\ModelManifest;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use Spatie\StructureDiscoverer\Discover;
@@ -11,8 +12,19 @@ use function Orchestra\Testbench\default_migration_path;
 
 class TestCase extends BaseTestCase
 {
+    /**
+     * The test case class the shared SQLite file was last migrated for,
+     * per worker process.
+     */
+    protected static ?string $lastMigratedTestCase = null;
+
     protected function setUp(): void
     {
+        if (static::class !== self::$lastMigratedTestCase) {
+            RefreshDatabaseState::$migrated = false;
+            self::$lastMigratedTestCase = static::class;
+        }
+
         parent::setUp();
     }
 
@@ -20,9 +32,11 @@ class TestCase extends BaseTestCase
     {
         $this->replaceModelsForTesting();
 
-        // File-backed SQLite per worker; Testbench wipes RefreshDatabase's
-        // cache for `:memory:`, forcing a full migrate every test.
-        $dbPath = sys_get_temp_dir().'/lunar-test-'.getmypid().'.sqlite';
+        // File-backed SQLite per worker *and* per test case class; Testbench
+        // wipes RefreshDatabase's cache for `:memory:`, forcing a full
+        // migrate every test. Keying by class too keeps one suite's schema
+        // from leaking into another sharing the same worker process.
+        $dbPath = sys_get_temp_dir().'/lunar-test-'.getmypid().'-'.str_replace('\\', '_', static::class).'.sqlite';
         if (! file_exists($dbPath)) {
             touch($dbPath);
         }

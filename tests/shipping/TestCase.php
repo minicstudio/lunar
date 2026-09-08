@@ -11,6 +11,7 @@ use Lunar\Tests\TestCase as BaseTestCase;
 use Spatie\Activitylog\ActivitylogServiceProvider;
 use Spatie\LaravelBlink\BlinkServiceProvider;
 use Spatie\MediaLibrary\MediaLibraryServiceProvider;
+use Spatie\Permission\PermissionServiceProvider;
 
 class TestCase extends BaseTestCase
 {
@@ -33,6 +34,7 @@ class TestCase extends BaseTestCase
             NestedSetServiceProvider::class,
             ShippingServiceProvider::class,
             BlinkServiceProvider::class,
+            PermissionServiceProvider::class,
         ];
     }
 }

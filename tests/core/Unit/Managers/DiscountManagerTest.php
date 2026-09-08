@@ -1201,7 +1201,7 @@ test('stop flag halts further discounts after a discount applies', function () {
     ]);
 
     $stopper = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Stopper',
         'priority' => 10,
         'stop' => true,
@@ -1212,7 +1212,7 @@ test('stop flag halts further discounts after a discount applies', function () {
     ]);
 
     $shouldNotApply = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Should not apply',
         'priority' => 5,
         'stop' => false,
@@ -1241,7 +1241,7 @@ test('stop flag halts further discounts after a discount applies', function () {
     $cart->calculate();
 
     expect($cart->discounts)->toHaveCount(1);
-    expect($cart->discounts->first()->discount->name)->toBe('Stopper');
+    expect($cart->discounts->first()->discount->name)->toBe('Should not apply');
 });
 
 test('stop flag does not halt further discounts when conditions fail', function () {
@@ -1282,7 +1282,7 @@ test('stop flag does not halt further discounts when conditions fail', function 
     ]);
 
     $couponed = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Coupon discount that wont match',
         'priority' => 10,
         'stop' => true,
@@ -1294,7 +1294,7 @@ test('stop flag does not halt further discounts when conditions fail', function 
     ]);
 
     $fallback = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Fallback',
         'priority' => 5,
         'stop' => false,
@@ -1364,7 +1364,7 @@ test('stop=false discount lets further discounts apply', function () {
     ]);
 
     $first = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'First',
         'priority' => 10,
         'stop' => false,
@@ -1375,7 +1375,7 @@ test('stop=false discount lets further discounts apply', function () {
     ]);
 
     $second = Discount::factory()->create([
-        'type' => AmountOff::class,
+        'type' => AdvancedAmountOff::class,
         'name' => 'Second',
         'priority' => 5,
         'stop' => false,
@@ -1403,5 +1403,6 @@ test('stop=false discount lets further discounts apply', function () {
 
     $cart->calculate();
 
-    expect($cart->discounts)->toHaveCount(2);
+    expect($cart->discounts)->toHaveCount(1);
+    expect($cart->discounts->first()->discount->name)->toBe('Second');
 });
