@@ -72,19 +72,6 @@ class EditDiscount extends BaseEditRecord
             }
         }
 
-        $currencies = Currency::enabled()->get();
-
-        foreach ($data['data']['fixed_values'] ?? [] as $currencyCode => $value) {
-            $currency = $currencies->first(
-                fn ($currency) => $currency->code == $currencyCode
-            );
-
-            if (! $currency) {
-                continue;
-            }
-            $data['data']['fixed_values'][$currencyCode] = $value / $currency->factor;
-        }
-
         return $data;
     }
 
