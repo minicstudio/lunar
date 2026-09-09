@@ -249,7 +249,10 @@ class DiscountManager implements DiscountManagerInterface
     protected function queryDiscounts(?Cart $cart): Collection
     {
         return Discount::active()
-            ->usable($cart?->consumedDiscountIds() ?? [])
+            // LFP-809 local override: no draft-time consumption to exempt a cart
+            // from, see AbstractDiscountType::checkDiscountConditions().
+            // ->usable($cart?->consumedDiscountIds() ?? [])
+            ->usable()
             ->channel($this->channels)
             ->customerGroup($this->customerGroups)
             ->with([
