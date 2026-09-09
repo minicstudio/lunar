@@ -107,19 +107,12 @@ class DiscountResource extends BaseResource
                 ),
             Section::make('amount_off')
                 ->heading(
-                    __('lunarpanel::discount.form.amount_off.heading')
-                )
-                ->visible(
-                    fn (Get $get) => $get('type') == AmountOff::class
-                )->schema(
-                    static::getAmountOffFormComponents()
-                ),
-            Section::make('advanced_amount_off')
-                ->heading(
-                    __('lunarpanel::discount.form.advanced_amount_off.heading')
-                )
-                ->visible(
                     fn (Get $get) => $get('type') == AdvancedAmountOff::class
+                        ? __('lunarpanel::discount.form.advanced_amount_off.heading')
+                        : __('lunarpanel::discount.form.amount_off.heading')
+                )
+                ->visible(
+                    fn (Get $get) => in_array($get('type'), [AmountOff::class, AdvancedAmountOff::class])
                 )->schema(
                     static::getAmountOffFormComponents()
                 ),

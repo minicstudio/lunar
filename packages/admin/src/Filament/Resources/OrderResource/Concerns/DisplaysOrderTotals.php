@@ -124,6 +124,21 @@ trait DisplaysOrderTotals
         return self::callStaticLunarHook('extendDiscountBreakdownGroup', static::getDefaultDiscountBreakdownGroup());
     }
 
+    public static function getDefaultShippingTotalEntry(): TextEntry
+    {
+        return TextEntry::make('shipping_total')
+            ->label(__('lunarpanel::order.infolist.shipping_total.label'))
+            ->inlineLabel()
+            ->alignEnd()
+            ->formatStateUsing(fn (Price $state): string => $state->formatted)
+            ->visible(fn (?Price $state): bool => ($state?->value ?? 0) !== 0);
+    }
+
+    public static function getShippingTotalEntry(): TextEntry
+    {
+        return self::callStaticLunarHook('extendShippingTotalEntry', static::getDefaultShippingTotalEntry());
+    }
+
     public static function getDefaultShippingBreakdownGroup(): Group
     {
         return Group::make()
@@ -237,6 +252,7 @@ trait DisplaysOrderTotals
             static::getSubTotalEntry(),
             static::getDiscountTotalEntry(),
             static::getDiscountBreakdownGroup(),
+            static::getShippingTotalEntry(),
             static::getShippingBreakdownGroup(),
             static::getTaxBreakdownGroup(),
             static::getTotalEntry(),
