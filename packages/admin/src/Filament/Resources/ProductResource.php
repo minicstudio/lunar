@@ -224,7 +224,7 @@ class ProductResource extends BaseResource
             ->prefix(
                 $currency->code
             )->rules([
-                'min:'.(1 / $currency->factor),
+                'min:0',
                 "decimal:0,{$currency->decimal_places}",
             ])->required();
     }
