@@ -8,6 +8,7 @@ use Lunar\Base\DataTransferObjects\CartDiscount;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\Validation\CouponValidator;
 use Lunar\DiscountTypes\AdvancedAmountOff;
+use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Facades\StorefrontSession;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
@@ -76,9 +77,9 @@ class DiscountManager implements DiscountManagerInterface
      * @var array
      */
     protected $types = [
-        // Disabled for security: only AdvancedAmountOff is supported right now.
+        // AmountOff remains disabled. BuyXGetY is intentionally enabled and covered by tests.
         // AmountOff::class,
-        // BuyXGetY::class,
+        BuyXGetY::class,
         AdvancedAmountOff::class,
     ];
 
@@ -398,10 +399,14 @@ class DiscountManager implements DiscountManagerInterface
     {
         $this->discounts = $this->getDiscounts($cart);
 
-        // Apply automatically applied discounts
+        $amountOffDiscounts = $this->discounts->reject(
+            fn (Discount $discount) => $discount->type === BuyXGetY::class
+        );
+
+        // Apply AdvancedAmountOff (and similar line-based) discounts per cart line.
         foreach ($cart->lines as $line) {
             // Get the best discount for the line and push it, if it isn't already in the collection
-            $discount = $this->filterDiscountsByPriority($this->discounts, $line->purchasable, $line)->first();
+            $discount = $this->filterDiscountsByPriority($amountOffDiscounts, $line->purchasable, $line)->first();
 
             if (! $discount) {
                 continue;
@@ -414,9 +419,20 @@ class DiscountManager implements DiscountManagerInterface
             }
         }
 
-        // Apply manually applied coupon discount
+        // Apply Buy X Get Y via the classic cart-level apply path (not fixed/percentage line helpers).
+        // Collection is already ordered by DiscountManager query semantics (priority desc, id asc).
+        foreach ($this->discounts->where('type', BuyXGetY::class) as $discount) {
+            /** @var Discount $discount */
+            $discount->getType()->apply($cart);
+
+            if ($discount->stop) {
+                break;
+            }
+        }
+
+        // Apply manually applied coupon discount (non-BXGY; BXGY coupons are handled above via apply()).
         if ($cart->coupon_code) {
-            $discount = $this->discounts->firstWhere('coupon', $cart->coupon_code);
+            $discount = $amountOffDiscounts->firstWhere('coupon', $cart->coupon_code);
 
             if ($discount) {
                 $discount->getType()->applyCouponForCart($cart);
@@ -473,6 +489,11 @@ class DiscountManager implements DiscountManagerInterface
 
         // Categorize discounts by priority
         foreach ($availableDiscounts as $discount) {
+            // Buy X Get Y is applied cart-wide via BuyXGetY::apply(), not as line amount-off.
+            if ($discount->type === BuyXGetY::class) {
+                continue;
+            }
+
             // Skip coupon discounts
             if (! empty($discount->coupon)) {
                 continue;
