@@ -225,7 +225,7 @@ class BuyXGetY extends AbstractDiscountType
         }
 
         if ($automaticallyAddRewards) {
-            [$affectedLines, $discountTotal] = $this->processAutomaticRewards($cart, $remainingRewardQty, $affectedLines, $discountTotal);
+            [$affectedLines, $discountTotal] = $this->processAutomaticRewards($cart, $totalRewardQty, $affectedLines, $discountTotal);
         }
 
         $this->addDiscountBreakdown($cart, new DiscountBreakdown(
@@ -239,181 +239,156 @@ class BuyXGetY extends AbstractDiscountType
         return $cart;
     }
 
-    private function processAutomaticRewards(CartContract $cart, int $remainingRewardQty, Collection $affectedLines, int $discountTotal)
+    /**
+     * Auto-add every fulfillable configured reward (product/variant), using
+     * $rewardQty units each. Collection rewards still pick one fulfillable
+     * product from the collection.
+     */
+    private function processAutomaticRewards(CartContract $cart, int $rewardQty, Collection $affectedLines, int $discountTotal)
     {
-        // Reward lines this run has added, keyed by purchasable. The check below
-        // reads $cart->lines, which never receives a line made here, so without
-        // this a reward quantity of three opens three lines of one rather than
-        // one line of three.
-        $addedRewardLines = [];
+        if ($rewardQty <= 0) {
+            return [$affectedLines, $discountTotal];
+        }
 
-        // we have lines to add
-        if ($remainingRewardQty > 0) {
-            // Fulfillable products per collection reward, hydrated once here rather
-            // than re-queried on every iteration of the allocation loop below.
-            $fulfillableCollectionProducts = [];
+        $fulfillableCollectionProducts = [];
 
-            $fulfillableRewards = $this->discount->discountableRewards->filter(function ($discountableReward) use (&$fulfillableCollectionProducts) {
-                $rewardItem = $discountableReward->discountable;
+        $fulfillableRewards = $this->discount->discountableRewards->filter(function ($discountableReward) use (&$fulfillableCollectionProducts) {
+            $rewardItem = $discountableReward->discountable;
 
-                if (! $rewardItem) {
-                    return false;
+            if (! $rewardItem) {
+                return false;
+            }
+
+            if ($rewardItem instanceof LunarCollection) {
+                $fulfillableCollectionProducts[$rewardItem->id] = $rewardItem->products()
+                    ->with('variants')
+                    ->get()
+                    ->filter(fn ($p) => $p->variants->first()?->canBeFulfilledAtQuantity(1))
+                    ->values();
+
+                return $fulfillableCollectionProducts[$rewardItem->id]->isNotEmpty();
+            }
+
+            if ($rewardItem instanceof Purchasable) {
+                return $rewardItem->canBeFulfilledAtQuantity(1);
+            }
+
+            return (bool) $rewardItem->variants->first()?->canBeFulfilledAtQuantity(1);
+        });
+
+        if ($fulfillableRewards->isEmpty()) {
+            return [$affectedLines, $discountTotal];
+        }
+
+        foreach ($fulfillableRewards as $discountableReward) {
+            $selectedRewardItem = $discountableReward->discountable;
+
+            if ($selectedRewardItem instanceof LunarCollection) {
+                $product = $fulfillableCollectionProducts[$selectedRewardItem->id]->random();
+                $purchasable = $product->variants->first();
+                $selectedRewardItem = $product;
+            } elseif ($selectedRewardItem instanceof Purchasable) {
+                $purchasable = $selectedRewardItem;
+            } else {
+                $purchasable = $selectedRewardItem->variants->first();
+            }
+
+            if (! $purchasable) {
+                continue;
+            }
+
+            $qtyToAdd = 0;
+            for ($i = 1; $i <= $rewardQty; $i++) {
+                if ($purchasable->canBeFulfilledAtQuantity($i)) {
+                    $qtyToAdd = $i;
+                } else {
+                    break;
                 }
+            }
 
-                if ($rewardItem instanceof LunarCollection) {
-                    $fulfillableCollectionProducts[$rewardItem->id] = $rewardItem->products()
-                        ->with('variants')
-                        ->get()
-                        ->filter(fn ($p) => $p->variants->first()?->canBeFulfilledAtQuantity(1))
-                        ->values();
+            if ($qtyToAdd < 1) {
+                continue;
+            }
 
-                    return $fulfillableCollectionProducts[$rewardItem->id]->isNotEmpty();
-                }
-
-                if ($rewardItem instanceof Purchasable) {
-                    return $rewardItem->canBeFulfilledAtQuantity(1);
-                }
-
-                return (bool) $rewardItem->variants->first()?->canBeFulfilledAtQuantity(1);
+            $rewardLine = $cart->lines->first(function ($line) use ($purchasable) {
+                return $line->purchasable_id == $purchasable->id
+                    && $line->purchasable_type == $purchasable->getMorphClass();
             });
 
-            if ($fulfillableRewards->isEmpty()) {
-                return [$affectedLines, $discountTotal];
+            // Already in the cart: the earlier reward-line pass discounts it.
+            // Only create missing rewards here so every configured reward appears.
+            if ($rewardLine) {
+                continue;
             }
 
-            while ($remainingRewardQty > 0) {
-                $selectedRewardItem = $fulfillableRewards->random()->discountable;
+            $rewardLine = $cart->lines()->make([
+                'purchasable_type' => $purchasable->getMorphClass(),
+                'purchasable_id' => $purchasable->id,
+                'quantity' => $qtyToAdd,
+            ]);
 
-                if ($selectedRewardItem instanceof LunarCollection) {
-                    $product = $fulfillableCollectionProducts[$selectedRewardItem->id]->random();
-                    $purchasable = $product->variants->first();
-                    $selectedRewardItem = $product;
-                } elseif ($selectedRewardItem instanceof Purchasable) {
-                    $purchasable = $selectedRewardItem;
-                } else {
-                    $purchasable = $selectedRewardItem->variants->first();
-                }
-
-                if (! $purchasable) {
-                    $remainingRewardQty--;
-
-                    continue;
-                }
-
-                $rewardKey = $purchasable->getMorphClass().':'.$purchasable->id;
-
-                // How many units of this reward this run has already allocated,
-                // since canBeFulfilledAtQuantity below must check against that
-                // running total rather than a fixed quantity of 1 each time.
-                $allocated = $addedRewardLines[$rewardKey]->quantity ?? 0;
-
-                if (! $purchasable->canBeFulfilledAtQuantity($allocated + 1)) {
-                    $remainingRewardQty--;
-
-                    continue;
-                }
-
-                // is it already in cart?
-                $rewardLine = $addedRewardLines[$rewardKey] ?? $cart->lines->first(function ($line) use ($purchasable) {
-                    return $line->purchasable->id == $purchasable->id;
-                });
-
-                if ($rewardLine && isset($addedRewardLines[$rewardKey])) {
-                    // Another unit of a reward this run already added: raise the
-                    // quantity on that line. A line the shopper put in the cart
-                    // themselves is left at the quantity they chose, as before.
-                    $rewardLine->quantity++;
-
-                    $lineTotal = $rewardLine->unitPrice->value * $rewardLine->quantity;
-                    $unitQuantity = $purchasable->getUnitQuantity();
-
-                    $rewardLine->subTotal = new Price($lineTotal, $cart->currency, $unitQuantity);
-                    $rewardLine->total = new Price($lineTotal, $cart->currency, $unitQuantity);
-                }
-
-                if (! $rewardLine) {
-                    $rewardLine = $cart->lines()->make([
-                        'purchasable_type' => $purchasable->getMorphClass(),
-                        'purchasable_id' => $purchasable->id,
-                        'quantity' => 1,
-                    ]);
-
-                    if (! $cart->freeItems) {
-                        $cart->freeItems = collect();
-                    }
-
-                    if (! $cart->freeItems->contains($selectedRewardItem)) {
-                        $cart->freeItems->push($selectedRewardItem);
-                    }
-
-                    $rewardLine = app(Pipeline::class)
-                        ->send($rewardLine)
-                        ->through(
-                            config('lunar.cart.pipelines.cart_lines', [])
-                        )->thenReturn(function ($cartLine) {
-                            $cartLine->cacheProperties();
-
-                            return $cartLine;
-                        });
-
-                    $unitQuantity = $purchasable->getUnitQuantity();
-
-                    $rewardLine->subTotal = new Price($rewardLine->unitPrice->value, $cart->currency, $unitQuantity);
-                    $rewardLine->taxAmount = new Price(0, $cart->currency, $unitQuantity);
-                    $rewardLine->total = new Price($rewardLine->unitPrice->value, $cart->currency, $unitQuantity);
-
-                    $addedRewardLines[$rewardKey] = $rewardLine;
-                }
-
-                $meta = $rewardLine->meta ?? json_decode('{}');
-                if (! isset($meta->added_by_discount)) {
-                    $meta->added_by_discount = [];
-                }
-
-                if (! isset($meta->added_by_discount[$this->discount->id])) {
-                    $meta->added_by_discount[$this->discount->id] = 1;
-                } else {
-                    $meta->added_by_discount[$this->discount->id]++;
-                }
-
-                $affectedLine = $affectedLines->first(function ($line) use ($rewardLine) {
-                    return $line->line == $rewardLine;
-                });
-
-                if (! $affectedLine) {
-                    $affectedLines->push(new DiscountBreakdownLine(
-                        line: $rewardLine,
-                        quantity: 1
-                    ));
-                } else {
-                    $affectedLine->quantity++;
-                }
-
-                $unitPrice = $rewardLine->unitPrice->value;
-
-                $discountTotal += $unitPrice;
-
-                if ($discountTotal > $rewardLine->subTotal->value) {
-                    $discountTotal = $rewardLine->subTotal->value;
-                }
-
-                $rewardLine->discountTotal = new Price(
-                    $discountTotal,
-                    $cart->currency,
-                    1
-                );
-
-                $rewardLine->subTotalDiscounted = new Price(
-                    max(0, $rewardLine->subTotal->value - $rewardLine->discountTotal->value),
-                    $cart->currency,
-                    1
-                );
-
-                $rewardLine->meta = $meta;
-                $rewardLine->save();
-
-                $remainingRewardQty--;
+            if (! $cart->freeItems) {
+                $cart->freeItems = collect();
             }
+
+            if (! $cart->freeItems->contains($selectedRewardItem)) {
+                $cart->freeItems->push($selectedRewardItem);
+            }
+
+            $rewardLine = app(Pipeline::class)
+                ->send($rewardLine)
+                ->through(
+                    config('lunar.cart.pipelines.cart_lines', [])
+                )->thenReturn(function ($cartLine) {
+                    $cartLine->cacheProperties();
+
+                    return $cartLine;
+                });
+
+            $unitQuantity = $purchasable->getUnitQuantity();
+            $lineTotal = $rewardLine->unitPrice->value * $rewardLine->quantity;
+            $rewardLine->subTotal = new Price($lineTotal, $cart->currency, $unitQuantity);
+            $rewardLine->taxAmount = new Price(0, $cart->currency, $unitQuantity);
+            $rewardLine->total = new Price($lineTotal, $cart->currency, $unitQuantity);
+
+            $meta = $rewardLine->meta ?? json_decode('{}');
+            if (is_array($meta)) {
+                $meta = (object) $meta;
+            }
+            if (! isset($meta->added_by_discount)) {
+                $meta->added_by_discount = [];
+            }
+            if (is_array($meta->added_by_discount)) {
+                $meta->added_by_discount = (object) $meta->added_by_discount;
+            }
+
+            $meta->added_by_discount->{$this->discount->id} = $qtyToAdd;
+
+            $giftQty = min($qtyToAdd, (int) $rewardLine->quantity);
+            $lineDiscountTotal = $rewardLine->unitPrice->value * $giftQty;
+            $discountTotal += $lineDiscountTotal;
+
+            $affectedLines->push(new DiscountBreakdownLine(
+                line: $rewardLine,
+                quantity: $giftQty
+            ));
+
+            $rewardLine->discountTotal = new Price(
+                $lineDiscountTotal,
+                $cart->currency,
+                1
+            );
+
+            $rewardLine->subTotalDiscounted = new Price(
+                max(0, $rewardLine->subTotal->value - $rewardLine->discountTotal->value),
+                $cart->currency,
+                1
+            );
+
+            $rewardLine->meta = $meta;
+            $rewardLine->save();
+
+            $cart->setRelation('lines', $cart->lines->push($rewardLine));
         }
 
         return [$affectedLines, $discountTotal];
