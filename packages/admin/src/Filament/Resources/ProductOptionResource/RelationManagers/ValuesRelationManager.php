@@ -2,14 +2,18 @@
 
 namespace Lunar\Admin\Filament\Resources\ProductOptionResource\RelationManagers;
 
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\ColorPicker;
-use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Tables;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -77,10 +81,10 @@ class ValuesRelationManager extends BaseRelationManager
         );
     }
 
-    public function getDefaultForm(Form $form): Form
+    public function getDefaultForm(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Grid::make(2)
                     ->schema([
                         TranslatedText::make('name')
@@ -131,29 +135,29 @@ class ValuesRelationManager extends BaseRelationManager
                         return '<div style="background-color: '.e($color).'; width: 24px; height: 24px; min-width: 24px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15);"></div>';
                     })
                     ->visible(fn () => $this->isColorOption()),
-                Tables\Columns\TextColumn::make('position')
+                TextColumn::make('position')
                     ->label(__('lunarpanel::productoption.values.table.position.label')),
             ])
             ->filters([
                 //
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make()
+                CreateAction::make()
                     ->label(__('lunarpanel::productoption.values.table.actions.create.label'))
                     ->modalHeading(__('lunarpanel::productoption.values.table.actions.create.heading')),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                EditAction::make()
                     ->modalHeading(__('lunarpanel::productoption.values.table.actions.edit.heading'))
                     ->after(function (Model $record) {
                         ProductOptionValueUpdated::dispatch($record);
                     }),
-                Tables\Actions\DeleteAction::make()
+                DeleteAction::make()
                     ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.heading')),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make()
                         ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.bulk.heading')),
                 ]),
             ])

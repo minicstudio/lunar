@@ -2,13 +2,13 @@
 
 namespace Lunar\Blog\Filament\Resources;
 
-use Filament\Forms\Components\Component;
+use Filament\Pages\Enums\SubNavigationPosition;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Component;
+use Filament\Actions\EditAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
-use Filament\Pages\SubNavigationPosition;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -37,7 +37,7 @@ class BlogCategoryResource extends BaseResource
     /**
      * The position of the sub-navigation.
      */
-    protected static SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
+    protected static ?\Filament\Pages\Enums\SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
 
     /**
      * Determine if the current user has permission to access this resource.
@@ -82,10 +82,10 @@ class BlogCategoryResource extends BaseResource
     /**
      * Get the default form schema for the resource.
      */
-    public static function getDefaultForm(Form $form): Form
+    public static function getDefaultForm(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 static::getAttributeDataFormComponent(),
             ])
             ->columns(1);
@@ -127,10 +127,10 @@ class BlogCategoryResource extends BaseResource
             ->filters([
                 static::getStatusFilter(),
             ])
-            ->actions([
+            ->recordActions([
                 EditAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

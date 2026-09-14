@@ -19,7 +19,7 @@ class OrderValuesByStatusChart extends ApexChartWidget
      */
     protected static ?string $chartId = 'orderValuesByStatusChart';
 
-    protected static ?string $pollingInterval = '60s';
+    protected ?string $pollingInterval = '60s';
 
     protected function getHeading(): ?string
     {

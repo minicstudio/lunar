@@ -4,6 +4,7 @@ namespace Lunar\ERP;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
+use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\LunarPanelManager;
 use Lunar\ERP\Console\SyncAttributesCommand;
 use Lunar\ERP\Console\SyncErpOrdersCommand;
@@ -12,11 +13,25 @@ use Lunar\ERP\Console\SyncErpStockCommand;
 use Lunar\ERP\Console\SyncLocalitiesCommand;
 use Lunar\ERP\Filament\Extensions\ShippingExtension;
 use Lunar\ERP\Observers\OrderObserver;
+use Lunar\ERP\Services\ErpService;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Order;
 
 class ErpServiceProvider extends ServiceProvider
 {
+    /**
+     * Scheduled sync commands keyed by their `lunar.erp.sync` / `lunar.erp.schedule` feature.
+     *
+     * @var array<string, string>
+     */
+    protected const SYNC_COMMANDS = [
+        'products' => 'erp:sync-products',
+        'orders' => 'erp:sync-order-statuses',
+        'stock' => 'erp:sync-stock',
+        'localities' => 'erp:sync-localities',
+        'attributes' => 'erp:sync-attributes',
+    ];
+
     /**
      * Register any application services.
      */
@@ -142,34 +157,34 @@ class ErpServiceProvider extends ServiceProvider
 
     /**
      * Register the schedule.
+     *
+     * A sync command is only scheduled when at least one enabled provider is
+     * allowed for that feature, so projects using e.g. Smartbill (billing only)
+     * do not get Magister-only sync commands registered and skipped every run.
+     *
+     * @throws ErpInitializationException
      */
     protected function registerSchedule(): void
     {
         $this->app->booted(function () {
+            if (! config('lunar.erp.enabled')) {
+                return;
+            }
+
             $schedule = $this->app->make(Schedule::class);
+            $erpService = $this->app->make(ErpService::class);
+            $cronExpressions = config('lunar.erp.schedule', []);
 
-            if (config('lunar.erp.enabled')) {
-                $erpSchedule = config('lunar.erp.schedule', []);
+            foreach (self::SYNC_COMMANDS as $feature => $command) {
+                if (empty($erpService->getAllowedProviders('sync', $feature))) {
+                    continue;
+                }
 
-                $schedule->command('erp:sync-products')->cron($erpSchedule['products'])->when(function () {
-                    return ! empty(config('lunar.erp.sync.products'));
-                });
+                if (empty($cronExpressions[$feature])) {
+                    throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP sync feature [{$feature}] has providers configured but no schedule expression.");
+                }
 
-                $schedule->command('erp:sync-order-statuses')->cron($erpSchedule['orders'])->when(function () {
-                    return ! empty(config('lunar.erp.sync.orders'));
-                });
-
-                $schedule->command('erp:sync-stock')->cron($erpSchedule['stock'])->when(function () {
-                    return ! empty(config('lunar.erp.sync.stock'));
-                });
-
-                $schedule->command('erp:sync-localities')->cron($erpSchedule['localities'])->when(function () {
-                    return ! empty(config('lunar.erp.sync.localities'));
-                });
-
-                $schedule->command('erp:sync-attributes')->cron($erpSchedule['attributes'])->when(function () {
-                    return ! empty(config('lunar.erp.sync.attributes'));
-                });
+                $schedule->command($command)->cron($cronExpressions[$feature]);
             }
         });
     }
@@ -189,7 +204,7 @@ class ErpServiceProvider extends ServiceProvider
     {
         $this->app->resolving('lunar-panel', function (LunarPanelManager $panel): void {
             $panel->extensions([
-                \Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder::class => ShippingExtension::class,
+                ManageOrder::class => ShippingExtension::class,
             ]);
         });
     }

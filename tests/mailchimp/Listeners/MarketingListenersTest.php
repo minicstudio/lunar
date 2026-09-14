@@ -1,6 +1,6 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
+uses(\Lunar\Tests\Mailchimp\TestCase::class);
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Queue;

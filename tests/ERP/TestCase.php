@@ -2,9 +2,7 @@
 
 namespace Lunar\Tests\ERP;
 
-use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Filament\FilamentServiceProvider;
-use Kalnoy\Nestedset\NestedSetServiceProvider;
 use Lunar\Admin\LunarPanelProvider;
 use Lunar\ERP\ErpServiceProvider;
 use Lunar\Locations\LocationsServiceProvider;
@@ -13,6 +11,7 @@ use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
+use Lunar\Nestedset\NestedSetServiceProvider;
 use Lunar\Tests\Core\Stubs\User;
 use Lunar\Tests\ERP\Providers\ErpPanelTestServiceProvider;
 use Lunar\Tests\TestCase as BaseTestCase;
@@ -50,7 +49,6 @@ class TestCase extends BaseTestCase
             MediaLibraryServiceProvider::class,
             PermissionServiceProvider::class,
             ActivitylogServiceProvider::class,
-            ConverterServiceProvider::class,
             NestedSetServiceProvider::class,
             BlinkServiceProvider::class,
         ];
@@ -60,7 +58,7 @@ class TestCase extends BaseTestCase
     {
         $app['config']->set('cache.default', 'array');
 
-        $this->replaceModelsForTesting();
+        parent::getEnvironmentSetUp($app);
     }
 
     /**

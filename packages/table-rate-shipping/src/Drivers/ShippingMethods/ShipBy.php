@@ -4,6 +4,7 @@ namespace Lunar\Shipping\Drivers\ShippingMethods;
 
 use Cartalyst\Converter\Laravel\Facades\Converter;
 use Lunar\DataTypes\ShippingOption;
+use Lunar\Exceptions\MissingCurrencyPriceException;
 use Lunar\Facades\Pricing;
 use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
@@ -103,23 +104,16 @@ class ShipBy implements ShippingRateInterface
             $chargeBy = 'cart_total';
         }
 
-        // Calculate total weight for all cart lines
-        $totalWeight = $cart->lines->sum(function ($line) {
-            $weightUnit = $line->purchasable->weight_unit ?: 'kg';
-
-            $unitWeightKg = Converter::from("weight.{$weightUnit}")
-                ->to('weight.kg')
-                ->value($line->purchasable->weight_value)
-                ->convert()
-                ->getValue();
-
-            return $unitWeightKg * $line->quantity;
-        });
-
         $tier = $subTotal;
 
-        if ($chargeBy === 'weight') {
-            $tier = $totalWeight;
+        if ($chargeBy == 'weight') {
+            // Tiers are stored raw in the method's weight unit; each line's
+            // weight converts from its own purchasable unit.
+            $weightUnit = $shippingMethod->weight_unit ?: 'kg';
+
+            $tier = $cart->lines->sum(
+                fn ($line) => $line->purchasable->weight->to("weight.{$weightUnit}")->convert()->getValue() * $line->quantity
+            );
         }
 
         // if locker then max weight check: max 20 kg
@@ -133,7 +127,15 @@ class ShipBy implements ShippingRateInterface
         );
 
         // Do we have a suitable tier price?
-        $pricing = Pricing::for($shippingRate)->customerGroups($customerGroups)->qty($tier)->get();
+        try {
+            $pricing = Pricing::for($shippingRate)
+                ->currency($cart->currency)
+                ->customerGroups($customerGroups)
+                ->qty($tier)
+                ->get();
+        } catch (MissingCurrencyPriceException) {
+            return null;
+        }
 
         $prices = $pricing->priceBreaks;
 

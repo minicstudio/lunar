@@ -54,6 +54,7 @@ return [
                     ],
                     'min_weight' => [
                         'label' => 'K.lượng T.thiểu',
+                        'helper_text' => 'Nhập trọng lượng theo :unit',
                     ],
                     'max_weight' => [
                         'label' => 'K.lượng Tối đa',

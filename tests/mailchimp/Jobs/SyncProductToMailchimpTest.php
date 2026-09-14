@@ -10,6 +10,9 @@ use Lunar\Mailchimp\Services\MailchimpEcommerceService;
 use Lunar\Models\Currency;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Lunar\Tests\Mailchimp\TestCase;
+
+uses(TestCase::class);
 
 beforeEach(function () {
     $this->createLanguages();
@@ -64,7 +67,8 @@ test('job syncs product to Mailchimp', function () {
         ->andReturn(['id' => (string) $product->id, 'title' => 'Test Product']);
 
     $job = new SyncProductToMailchimp($product, ProductEventType::UPDATE);
-    $job->handle($mockService);
+    $this->app->instance(MailchimpEcommerceService::class, $mockService);
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -80,7 +84,8 @@ test('job deletes product when event type is DELETE', function () {
         ->andReturn(true);
 
     $job = new SyncProductToMailchimp($product, ProductEventType::DELETE);
-    $job->handle($mockService);
+    $this->app->instance(MailchimpEcommerceService::class, $mockService);
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -91,7 +96,7 @@ test('job does not run when mailchimp is disabled', function () {
     $product = Product::factory()->create();
 
     $job = new SyncProductToMailchimp($product);
-    $job->handle(app(MailchimpEcommerceService::class));
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -102,7 +107,7 @@ test('job does not run when sync_products is disabled', function () {
     $product = Product::factory()->create();
 
     $job = new SyncProductToMailchimp($product);
-    $job->handle(app(MailchimpEcommerceService::class));
+    $job->handle();
 
     expect(true)->toBeTrue();
 });
@@ -129,7 +134,8 @@ test('job throws FailedMailchimpSyncException on API failure', function () {
         ->andThrow(new \Exception('Failed to sync product'));
 
     $job = new SyncProductToMailchimp($product);
-    $job->handle($mockService);
+    $this->app->instance(MailchimpEcommerceService::class, $mockService);
+    $job->handle();
 })->throws(FailedMailchimpSyncException::class);
 
 test('job has correct retry configuration', function () {

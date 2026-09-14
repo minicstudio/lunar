@@ -2,8 +2,12 @@
 
 namespace Lunar\Admin\Support\FieldTypes;
 
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Component;
 use Lunar\Admin\Support\Synthesizers\FileSynth;
 use Lunar\Models\Attribute;
 
@@ -57,7 +61,7 @@ class File extends BaseFieldType
         $disks = array_keys(config('filesystems.disks', []));
 
         return [
-            \Filament\Forms\Components\TagsInput::make('file_types')
+            TagsInput::make('file_types')
                 ->label(
                     __('lunarpanel::fieldtypes.file.form.file_types.label')
                 )->suggestions([
@@ -79,21 +83,21 @@ class File extends BaseFieldType
                 ])
                 ->placeholder(__('lunarpanel::fieldtypes.file.form.file_types.placeholder'))
                 ->reorderable(),
-            \Filament\Forms\Components\Toggle::make('multiple')->label(
+            Toggle::make('multiple')->label(
                 __('lunarpanel::fieldtypes.file.form.multiple.label')
             ),
-            \Filament\Forms\Components\TextInput::make('min_files')
+            TextInput::make('min_files')
                 ->label(
                     __('lunarpanel::fieldtypes.file.form.min_files.label')
                 )->nullable()->numeric(),
-            \Filament\Forms\Components\TextInput::make('max_files')->label(
+            TextInput::make('max_files')->label(
                 __('lunarpanel::fieldtypes.file.form.max_files.label')
             )->nullable()->numeric(),
-            \Filament\Forms\Components\Select::make('disk')
+            Select::make('disk')
                 ->label(__('lunarpanel::fieldtypes.file.form.disk.label'))
-                ->options(array_combine($disks, $disks))
+                ->options(! empty($disks) ? array_combine($disks, $disks) : [])
                 ->nullable(),
-            \Filament\Forms\Components\TextInput::make('directory')
+            TextInput::make('directory')
                 ->label(__('lunarpanel::fieldtypes.file.form.directory.label'))
                 ->nullable(),
         ];

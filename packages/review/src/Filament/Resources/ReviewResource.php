@@ -2,12 +2,12 @@
 
 namespace Lunar\Review\Filament\Resources;
 
-use Filament\Forms\Components\Component;
+use Filament\Schemas\Components\Component;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Toggle;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -154,7 +154,7 @@ class ReviewResource extends BaseResource
                 static::getRatingFilter(),
                 static::getModelTypeFilter(),
             ])
-            ->actions([
+            ->recordActions([
                 Action::make('manageOrder')
                     ->label(__('lunarpanel.review::plugin.actions.manage_order.label'))
                     ->icon('heroicon-o-arrow-right')
@@ -164,7 +164,7 @@ class ReviewResource extends BaseResource
             ->recordUrl(function (Model $record): ?string {
                 return $record->order ? ManageOrder::getUrl(['record' => $record->order->id]) : null;
             })
-            ->bulkActions([
+            ->toolbarActions([
                 //
             ]);
     }
@@ -191,7 +191,7 @@ class ReviewResource extends BaseResource
     public static function getRatingFilter(): Filter
     {
         return Filter::make('rating')
-            ->form([
+            ->schema([
                 Select::make('rating')
                     ->label(__('lunarpanel.review::plugin.filters.rating.label'))
                     ->options([

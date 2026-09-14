@@ -71,7 +71,7 @@ return [
                 'label' => 'Max. fișiere',
             ],
             'disk' => [
-                'label' => 'Disc de stocare',
+                'label' => 'Disc',
             ],
             'directory' => [
                 'label' => 'Director',

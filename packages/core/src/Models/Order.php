@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Carbon;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\DiscountBreakdown;
 use Lunar\Base\Casts\Price;
@@ -43,10 +44,10 @@ use Lunar\Exceptions\UnsupportedWeightUnitException;
  * @property string $currency_code
  * @property ?string $compare_currency_code
  * @property float $exchange_rate
- * @property ?\Illuminate\Support\Carbon $placed_at
+ * @property ?Carbon $placed_at
  * @property ?array $meta
- * @property ?\Illuminate\Support\Carbon $created_at
- * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property ?Carbon $created_at
+ * @property ?Carbon $updated_at
  * @property-read \Lunar\DataTypes\Price $coupon_total
  * @property-read \Lunar\DataTypes\Price $coupon_total_without_tax
  */
@@ -113,7 +114,7 @@ class Order extends BaseModel implements Contracts\Order
      */
     public function lines(): HasMany
     {
-        return $this->hasMany(OrderLine::modelClass());
+        return $this->hasMany(OrderLine::modelClass())->orderBy('id');
     }
 
     public function physicalLines(): HasMany

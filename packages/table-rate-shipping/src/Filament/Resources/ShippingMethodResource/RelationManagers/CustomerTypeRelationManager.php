@@ -2,6 +2,10 @@
 
 namespace Lunar\Shipping\Filament\Resources\ShippingMethodResource\RelationManagers;
 
+use Filament\Tables\Table;
+use Filament\Actions\AttachAction;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\DetachAction;
 use Filament\Tables;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 
@@ -9,22 +13,22 @@ class CustomerTypeRelationManager extends BaseRelationManager
 {
     protected static string $relationship = 'customerTypes';
 
-    public function getDefaultTable(Tables\Table $table): Tables\Table
+    public function getDefaultTable(Table $table): Table
     {
         return $table
             ->paginated(false)
             ->headerActions([
-                Tables\Actions\AttachAction::make()
+                AttachAction::make()
                     ->recordTitle(fn ($record) => $record->label)
                     ->modalHeading(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.heading'))
                     ->preloadRecordSelect()
                     ->label(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.heading')),
             ])
             ->columns([
-                Tables\Columns\TextColumn::make('label')->label(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.title')),
+                TextColumn::make('label')->label(__('lunarpanel.shipping::relationmanagers.shipping_methods.customer_types.title')),
             ])
-            ->actions([
-                Tables\Actions\DetachAction::make(),
+            ->recordActions([
+                DetachAction::make(),
             ]);
     }
 }

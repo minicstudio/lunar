@@ -2,6 +2,7 @@
 
 namespace Lunar\Review;
 
+use Lunar\Admin\Filament\Resources\OrderResource;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\MigrationsStarted;
@@ -208,7 +209,7 @@ class ReviewServiceProvider extends ServiceProvider
     {
         $this->app->resolving('lunar-panel', function (LunarPanelManager $panel): void {
             $panel->extensions([
-                \Lunar\Admin\Filament\Resources\OrderResource::class => \Lunar\Review\Filament\Resources\OrderResource::class,
+                OrderResource::class => \Lunar\Review\Filament\Resources\OrderResource::class,
             ]);
         });
     }

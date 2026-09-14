@@ -1,6 +1,6 @@
 <?php
 
-uses(\Lunar\Tests\Core\TestCase::class);
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\DataTypes\Price;
 use Lunar\DataTypes\ShippingOption;
 use Lunar\Facades\ShippingManifest;
@@ -11,8 +11,11 @@ use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use Lunar\Models\TaxClass;
 use Lunar\Pipelines\Order\Creation\CreateShippingLine;
+use Lunar\Tests\Core\TestCase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class);
+
+uses(RefreshDatabase::class);
 
 test('can run pipeline', function () {
     $currency = Currency::factory()->create();
@@ -51,7 +54,12 @@ test('can run pipeline', function () {
     });
 
     expect($order->shippingLines)->toHaveCount(1);
-    expect($order->shippingLines->first()->identifier)->toEqual('BASDEL');
+
+    $shippingLine = $order->shippingLines->first();
+
+    expect($shippingLine->identifier)->toEqual('BASDEL');
+    expect($shippingLine->purchasable_type)->toBeNull();
+    expect($shippingLine->purchasable_id)->toBeNull();
 });
 
 test('can update shipping line if exists', function () {
@@ -98,5 +106,11 @@ test('can update shipping line if exists', function () {
     });
 
     expect($order->shippingLines)->toHaveCount(1);
-    expect($order->shippingLines->first()->identifier)->toEqual('BASDEL');
+
+    // The legacy fake morph is matched by type + identifier and de-morphed in place.
+    $shippingLine = $order->shippingLines->first();
+
+    expect($shippingLine->identifier)->toEqual('BASDEL');
+    expect($shippingLine->purchasable_type)->toBeNull();
+    expect($shippingLine->purchasable_id)->toBeNull();
 });

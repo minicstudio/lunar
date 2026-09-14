@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\Price;
 use Lunar\Base\Casts\TaxBreakdown;
@@ -35,8 +36,8 @@ use Lunar\DataTypes\Price as PriceDataType;
  * @property int $total
  * @property ?string $notes
  * @property ?array $meta
- * @property ?\Illuminate\Support\Carbon $created_at
- * @property ?\Illuminate\Support\Carbon $updated_at
+ * @property ?Carbon $created_at
+ * @property ?Carbon $updated_at
  * @property-read ProductVariant $purchasable
  */
 class OrderLine extends BaseModel implements Contracts\OrderLine

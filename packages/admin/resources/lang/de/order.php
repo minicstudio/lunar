@@ -242,6 +242,8 @@ return [
             'notification' => 'Bestellstatus aktualisiert',
         ],
         'update_status' => [
+            'label' => 'Update Status',
+            'notification' => 'Order status updated',
             'new_status' => [
                 'label' => 'Neuer Status',
             ],

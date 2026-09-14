@@ -2,14 +2,18 @@
 
 namespace Lunar\Admin\Filament\Pages;
 
+use Filament\Panel;
+use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Support\Enums\Width;
+use Filament\Schemas\Components\Component;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
@@ -17,11 +21,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Support\Enums\MaxWidth;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -43,15 +44,15 @@ class AiAssistantSettingsPage extends Page implements HasActions, HasForms
     use InteractsWithActions;
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $navigationGroup = 'AI Assistant';
+    protected static string | \UnitEnum | null $navigationGroup = 'AI Assistant';
 
     protected static ?string $navigationLabel = 'AI Assistant Settings';
 
     protected static ?string $title = 'AI Assistant Settings';
 
-    protected static string $view = 'lunarpanel::filament.ai-assistant.settings';
+    protected string $view = 'lunarpanel::filament.ai-assistant.settings';
 
     /**
      * @var array<string, mixed>|null
@@ -82,7 +83,7 @@ class AiAssistantSettingsPage extends Page implements HasActions, HasForms
      *
      * @return string The route name 'ai-assistant-settings'.
      */
-    public static function getRelativeRouteName(): string
+    public static function getRelativeRouteName(Panel $panel): string
     {
         return 'ai-assistant-settings';
     }
@@ -92,9 +93,9 @@ class AiAssistantSettingsPage extends Page implements HasActions, HasForms
      *
      * @return string The slug (same as relative route name).
      */
-    public static function getSlug(): string
+    public static function getSlug(?Panel $panel = null): string
     {
-        return static::getRelativeRouteName();
+        return static::getRelativeRouteName($panel);
     }
 
     /**
@@ -117,12 +118,12 @@ class AiAssistantSettingsPage extends Page implements HasActions, HasForms
     /**
      * Defines the form schema (provider, model, persona, chat appearance, tools).
      *
-     * @param  Form  $form  The form to configure.
-     * @return Form The configured form.
+     * @param Schema $schema The form to configure.
+     * @return Schema The configured form.
      */
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->statePath('data')
             ->model($this->settings)
             ->schema([
@@ -342,7 +343,7 @@ class AiAssistantSettingsPage extends Page implements HasActions, HasForms
                 ->label(__('Embed chat'))
                 ->modalHeading(__('Embed This Bot'))
                 ->modalDescription(__('Paste this script tag into any app or website.'))
-                ->modalWidth(MaxWidth::SixExtraLarge)
+                ->modalWidth(Width::SixExtraLarge)
                 ->modalContent(fn () => view('laravel-ai-assistant::filament.embed-snippet-modal', [
                     'snippet' => AiAssistant::embedSnippet(),
                 ]))

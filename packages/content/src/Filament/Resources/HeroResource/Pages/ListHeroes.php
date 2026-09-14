@@ -29,9 +29,9 @@ class ListHeroes extends BaseListRecords
      *
      * @param  array<int|string>  $order
      */
-    public function reorderTable(array $order): void
+    public function reorderTable(array $order, string|int|null $draggedRecordKey = null): void
     {
-        parent::reorderTable($order);
+        parent::reorderTable($order, $draggedRecordKey);
 
         Cache::forget('content.heroes');
     }

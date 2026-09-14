@@ -2,9 +2,7 @@
 
 namespace Lunar\Tests\shippingAddon;
 
-use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Filament\FilamentServiceProvider;
-use Kalnoy\Nestedset\NestedSetServiceProvider;
 use Lunar\Addons\Shipping\ShippingServiceProvider;
 use Lunar\Admin\LunarPanelProvider;
 use Lunar\DataTypes\Price;
@@ -19,6 +17,7 @@ use Lunar\Models\CustomerGroup;
 use Lunar\Models\Language;
 use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRateAmount;
+use Lunar\Nestedset\NestedSetServiceProvider;
 use Lunar\Tests\Core\Stubs\User;
 use Lunar\Tests\shippingAddon\Providers\ShippingAddonPanelTestServiceProvider;
 use Lunar\Tests\TestCase as BaseTestCase;
@@ -55,7 +54,6 @@ class TestCase extends BaseTestCase
             MediaLibraryServiceProvider::class,
             PermissionServiceProvider::class,
             ActivitylogServiceProvider::class,
-            ConverterServiceProvider::class,
             NestedSetServiceProvider::class,
             BlinkServiceProvider::class,
         ];
@@ -63,7 +61,9 @@ class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        $this->replaceModelsForTesting();
+        $app['config']->set('cache.default', 'array');
+
+        parent::getEnvironmentSetUp($app);
     }
 
     /**

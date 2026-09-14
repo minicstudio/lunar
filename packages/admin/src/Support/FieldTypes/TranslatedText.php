@@ -2,7 +2,7 @@
 
 namespace Lunar\Admin\Support\FieldTypes;
 
-use Filament\Forms\Components\Component;
+use Filament\Schemas\Components\Component;
 use Filament\Forms\Components\Toggle;
 use Lunar\Admin\Support\Forms\Components\TranslatedText as TranslatedTextComponent;
 use Lunar\Admin\Support\Synthesizers\TranslatedTextSynth;
@@ -10,6 +10,11 @@ use Lunar\Models\Attribute;
 
 class TranslatedText extends BaseFieldType
 {
+    public static function canHaveDefaultValue(): bool
+    {
+        return true;
+    }
+
     protected static string $synthesizer = TranslatedTextSynth::class;
 
     public static function getConfigurationFields(): array

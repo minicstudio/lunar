@@ -71,7 +71,7 @@ return [
                 'label' => 'Max. Dateien',
             ],
             'disk' => [
-                'label' => 'Speicher-Festplatte',
+                'label' => 'Datenträger',
             ],
             'directory' => [
                 'label' => 'Verzeichnis',

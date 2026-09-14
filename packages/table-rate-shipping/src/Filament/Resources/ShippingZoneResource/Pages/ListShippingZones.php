@@ -2,6 +2,7 @@
 
 namespace Lunar\Shipping\Filament\Resources\ShippingZoneResource\Pages;
 
+use Filament\Actions\CreateAction;
 use Filament\Actions;
 use Lunar\Admin\Support\Pages\BaseListRecords;
 use Lunar\Shipping\Filament\Resources\ShippingZoneResource;
@@ -13,7 +14,7 @@ class ListShippingZones extends BaseListRecords
     protected function getDefaultHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()->form([
+            CreateAction::make()->schema([
                 ShippingZoneResource::getNameFormComponent(),
                 ShippingZoneResource::getTypeFormComponent(),
             ]),

@@ -3,7 +3,7 @@
 namespace Lunar\Admin\Filament\Resources\CollectionResource\Pages;
 
 use Filament\Actions\DeleteAction;
-use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Illuminate\Contracts\Support\Htmlable;
 use Lunar\Admin\Filament\Resources\CollectionGroupResource;
 use Lunar\Admin\Filament\Resources\CollectionResource;
@@ -50,12 +50,12 @@ class EditCollection extends BaseEditRecord
         }
 
         return [
-            DeleteAction::make('delete')->form([
-                Forms\Components\Select::make('target_collection')
+            DeleteAction::make('delete')->schema([
+                Select::make('target_collection')
                     ->label(__('lunarpanel::collection.pages.edit.actions.delete.select'))
                     ->model(Collection::modelClass())
                     ->searchable()
-                    ->getSearchResultsUsing(static function (Forms\Components\Select $component, string $search) use ($record): array {
+                    ->getSearchResultsUsing(static function (Select $component, string $search) use ($record): array {
                         return get_search_builder(Collection::modelClass(), $search)
                             ->get()
                             ->reject(

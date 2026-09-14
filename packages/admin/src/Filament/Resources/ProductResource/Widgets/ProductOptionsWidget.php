@@ -31,7 +31,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
     use InteractsWithActions;
     use InteractsWithForms;
 
-    protected static string $view = 'lunarpanel::resources.product-resource.widgets.product-options';
+    protected string $view = 'lunarpanel::resources.product-resource.widgets.product-options';
 
     public ?Model $record;
 
@@ -51,7 +51,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
         $this->configureBaseOptions();
     }
 
-    public function addSharedOptionAction()
+    public function addSharedOptionAction(): Action
     {
         $existing = collect($this->configuredOptions)->pluck('id');
         $options = ProductOption::whereNotIn('id', $existing)
@@ -65,7 +65,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             ->modalHeading(
                 __('lunarpanel::productoption.widgets.product-options.actions.add-shared-option.modal.heading')
             )
-            ->form([
+            ->schema([
                 Shout::make('no_shared_components')
                     ->content(
                         __('lunarpanel::productoption.widgets.product-options.actions.add-shared-option.form.no_shared_components.label')
@@ -361,9 +361,12 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
         return $valueIds;
     }
 
-    public function saveVariantsAction()
+    public function saveVariantsAction(): Action
     {
         return Action::make('saveVariants')
+            ->label(
+                __('lunarpanel::productoption.widgets.product-options.actions.save-variants.label')
+            )
             ->action(function () {
                 DB::beginTransaction();
 

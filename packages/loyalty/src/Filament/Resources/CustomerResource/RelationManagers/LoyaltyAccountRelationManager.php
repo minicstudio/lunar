@@ -2,9 +2,10 @@
 
 namespace Lunar\Loyalty\Filament\Resources\CustomerResource\RelationManagers;
 
+use Filament\Schemas\Schema;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Form;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -23,9 +24,9 @@ class LoyaltyAccountRelationManager extends BaseRelationManager
         return __('lunarpanel.loyalty::plugin.customer.loyalty_title');
     }
 
-    public function getDefaultForm(Form $form): Form
+    public function getDefaultForm(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             TextInput::make('balance')
                 ->label(__('lunarpanel.loyalty::plugin.fields.display_balance'))
                 ->disabled(),
@@ -70,17 +71,17 @@ class LoyaltyAccountRelationManager extends BaseRelationManager
                     ->placeholder('—'),
             ])
             ->headerActions([
-                Tables\Actions\Action::make('createAccount')
+                Action::make('createAccount')
                     ->label(__('lunarpanel.loyalty::plugin.actions.create_account'))
                     ->visible(fn () => ! $this->getOwnerRecord()->loyaltyAccount)
                     ->action(function () {
                         app(LoyaltyAccountManager::class)->firstOrCreateForCustomer($this->getOwnerRecord());
                         $this->dispatch('refresh-relation-manager');
                     }),
-                Tables\Actions\Action::make('adjust')
+                Action::make('adjust')
                     ->label(__('lunarpanel.loyalty::plugin.actions.adjust'))
                     ->visible(fn () => (bool) $this->getOwnerRecord()->loyaltyAccount)
-                    ->form([
+                    ->schema([
                         TextInput::make('points')
                             ->label(__('lunarpanel.loyalty::plugin.fields.adjust_points'))
                             ->integer()
@@ -96,7 +97,7 @@ class LoyaltyAccountRelationManager extends BaseRelationManager
                         $this->dispatch('refresh-relation-manager');
                     }),
             ])
-            ->actions([])
-            ->bulkActions([]);
+            ->recordActions([])
+            ->toolbarActions([]);
     }
 }

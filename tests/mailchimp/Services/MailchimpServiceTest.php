@@ -1,5 +1,7 @@
 <?php
 
+uses(\Lunar\Tests\Mailchimp\TestCase::class);
+
 use Illuminate\Support\Facades\Config;
 use Lunar\Mailchimp\Connectors\MailchimpConnector;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;

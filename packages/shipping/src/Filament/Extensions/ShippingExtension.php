@@ -2,7 +2,7 @@
 
 namespace Lunar\Addons\Shipping\Filament\Extensions;
 
-use Filament\Infolists\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
 use Lunar\Addons\Shipping\Exceptions\InvalidShippingProviderException;
@@ -19,7 +19,7 @@ class ShippingExtension extends ViewPageExtension
     public function extendOrderSummaryInfolist(Section $section): Section
     {
         return $section->schema([
-            ...$section->getChildComponents(),
+            ...$section->getDefaultChildComponents(),
             TextEntry::make('awb_number')
                 ->label('AWB')
                 ->default(fn (Order $record) => $record->meta['awb'] ?? null)

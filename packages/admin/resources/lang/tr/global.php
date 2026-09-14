@@ -12,4 +12,7 @@ return [
         'settings' => 'Ayarlar',
     ],
 
+    'yes' => 'Evet',
+    'no' => 'Hayır',
+
 ];

@@ -3,9 +3,9 @@
 uses(\Lunar\Tests\Review\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-use Filament\Tables\Actions\CreateAction;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\EditAction;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\FieldTypes\TranslatedText;
@@ -109,6 +109,15 @@ test('can create review through product review relation manager', function () {
         ],
         'type' => \Lunar\FieldTypes\Dropdown::class,
         'handle' => 'rating',
+        'configuration' => [
+            'lookups' => [
+                ['label' => '1', 'value' => '1'],
+                ['label' => '2', 'value' => '2'],
+                ['label' => '3', 'value' => '3'],
+                ['label' => '4', 'value' => '4'],
+                ['label' => '5', 'value' => '5'],
+            ],
+        ],
         'required' => true,
     ]);
 
@@ -213,6 +222,15 @@ test('can save edited product review data', function () {
         ],
         'type' => \Lunar\FieldTypes\Dropdown::class,
         'handle' => 'rating',
+        'configuration' => [
+            'lookups' => [
+                ['label' => '1', 'value' => '1'],
+                ['label' => '2', 'value' => '2'],
+                ['label' => '3', 'value' => '3'],
+                ['label' => '4', 'value' => '4'],
+                ['label' => '5', 'value' => '5'],
+            ],
+        ],
         'required' => true,
     ]);
 

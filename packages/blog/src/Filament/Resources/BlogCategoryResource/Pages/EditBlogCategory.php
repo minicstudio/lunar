@@ -53,7 +53,7 @@ class EditBlogCategory extends BaseEditRecord
                 ->label(__('lunarpanel.blog::category.actions.edit_status.label'))
                 ->modalHeading(__('lunarpanel.blog::category.actions.edit_status.heading'))
                 ->record($this->record)
-                ->form([
+                ->schema([
                     Radio::make('status')
                         ->options([
                             'published' => __('lunarpanel.blog::category.form.status.options.published.label'),
