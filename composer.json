@@ -81,6 +81,7 @@
             "Lunar\\Meilisearch\\": "packages/meilisearch/src/",
             "Lunar\\Opayo\\": "packages/opayo/src/",
             "Lunar\\Paypal\\": "packages/paypal/src/",
+            "Lunar\\ProductFeed\\": "packages/product-feed/src/",
             "Lunar\\Review\\": "packages/review/src",
             "Lunar\\Review\\Database\\Factories\\": "packages/review/database/factories",
             "Lunar\\Review\\Database\\Seeders\\": "packages/review/database/seeders",
@@ -103,6 +104,7 @@
             "Lunar\\Tests\\Core\\": "tests/core",
             "Lunar\\Tests\\Opayo\\": "tests/opayo",
             "Lunar\\Tests\\Paypal\\": "tests/paypal",
+            "Lunar\\Tests\\ProductFeed\\": "tests/product-feed",
             "Lunar\\Tests\\Shipping\\": "tests/shipping",
             "Lunar\\Shipping\\Tests\\": "packages/table-rate-shipping/tests",
             "Lunar\\Tests\\Stripe\\": "tests/stripe",
@@ -132,6 +134,7 @@
                 "Search",
                 "Meilisearch",
                 "Paypal Payments",
+                "Product Feed",
                 "Stripe Payments"
             ]
         },
@@ -139,6 +142,7 @@
             "providers": [
                 "Lunar\\Stripe\\StripePaymentsServiceProvider",
                 "Lunar\\Paypal\\PaypalServiceProvider",
+                "Lunar\\ProductFeed\\ProductFeedServiceProvider",
                 "Lunar\\Meilisearch\\MeilisearchServiceProvider",
                 "Lunar\\Search\\SearchServiceProvider",
                 "Lunar\\Admin\\LunarPanelProvider",
@@ -164,6 +168,7 @@
         "lunarphp/meilisearch": "self.version",
         "lunarphp/opayo": "self.version",
         "lunarphp/paypal": "self.version",
+        "lunarphp/product-feed": "self.version",
         "lunarphp/review": "self.version",
         "lunarphp/search": "self.version",
         "lunarphp/shipping": "self.version",
