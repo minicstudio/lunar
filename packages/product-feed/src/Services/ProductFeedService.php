@@ -29,7 +29,7 @@ class ProductFeedService
     {
         $chunkSize = max(1, (int) config('lunar.product-feed.query.chunk_size', 100));
 
-        $products = $this->scopeToDefaultChannelAndCustomerGroup(Product::query())
+        $products = $this->feedCatalogQuery()
             ->with($this->feedEagerLoads())
             ->lazyById($chunkSize);
 
@@ -96,7 +96,7 @@ class ProductFeedService
             'title' => $title,
             'description' => $description,
             'availability' => $variant->canBeFulfilledAtQuantity(1) ? 'in_stock' : 'out_of_stock',
-            'condition' => 'new',
+            'condition' => config('lunar.products.product_condition'),
             'price' => $this->formatFeedPrice($originalPrice, $currency),
             'link' => $link,
             'item_group_id' => (string) $product->id,
@@ -340,18 +340,15 @@ class ProductFeedService
     }
 
     /**
-     * Scope to published, storefront-eligible products for the default channel
-     * and customer group.
+     * Published products available on the default channel/customer group.
      *
-     * Deliberately avoids `Product::available()`/`purchasableCustomerGroups()`,
-     * which read from `StorefrontSession`: that facade persists into the
-     * request's session, which would let a public, cacheable feed request
-     * silently overwrite a real visitor's storefront channel/customer group.
-     * The default channel/customer group are queried directly instead.
+     * `customerGroup()` only models visibility (`enabled` OR `visible`); the
+     * feed also requires the purchasable pivot flag (same gap as cart-line
+     * availability vs `scopeCustomerGroup`).
      */
-    protected function scopeToDefaultChannelAndCustomerGroup(Builder $query): Builder
+    protected function feedCatalogQuery(): Builder
     {
-        $query->status('published');
+        $query = Product::query()->status('published');
 
         if ($channel = Channel::getDefault()) {
             $query->channel($channel);
@@ -359,30 +356,10 @@ class ProductFeedService
 
         if ($customerGroup = CustomerGroup::getDefault()) {
             $query
+                ->customerGroup($customerGroup)
                 ->whereHas('customerGroups', function (Builder $query) use ($customerGroup): void {
                     $query->where('lunar_customer_groups.id', $customerGroup->id)
-                        ->where('visible', true)
-                        ->where('enabled', true)
-                        ->where(function (Builder $query): void {
-                            $query->whereNull('starts_at')
-                                ->orWhere('starts_at', '<=', now());
-                        })
-                        ->where(function (Builder $query): void {
-                            $query->whereNull('ends_at')
-                                ->orWhere('ends_at', '>=', now());
-                        });
-                })
-                ->whereHas('customerGroups', function (Builder $query) use ($customerGroup): void {
-                    $query->where('lunar_customer_groups.id', $customerGroup->id)
-                        ->where('purchasable', true)
-                        ->where(function (Builder $query): void {
-                            $query->whereNull('starts_at')
-                                ->orWhere('starts_at', '<=', now());
-                        })
-                        ->where(function (Builder $query): void {
-                            $query->whereNull('ends_at')
-                                ->orWhere('ends_at', '>=', now());
-                        });
+                        ->where('purchasable', true);
                 });
         }
 

@@ -14,7 +14,7 @@ class ProductFeedServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/product-feed.php', 'lunar.product-feed');
 
-        $this->app->singleton(ProductFeedService::class);
+        $this->app->scoped(ProductFeedService::class);
         $this->app->singleton(ProductFeedCache::class);
 
         $this->app->singleton(ProductFeedEncoderResolver::class, function () {
