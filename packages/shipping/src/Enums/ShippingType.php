@@ -6,4 +6,5 @@ enum ShippingType: string
 {
     case LOCKER = 'locker';
     case COURIER = 'courier';
+    case Pickup = 'pickup';
 }
