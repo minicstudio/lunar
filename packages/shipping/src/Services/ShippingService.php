@@ -10,6 +10,7 @@ use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
 use Lunar\Addons\Shipping\Exceptions\FailedAWBGenerationException;
 use Lunar\Addons\Shipping\Exceptions\FailedToDownloadAWBPDFException;
 use Lunar\Addons\Shipping\Exceptions\OrderMissingShippingProviderException;
+use Lunar\Addons\Shipping\Models\ShippingLocker;
 use Lunar\Addons\Shipping\Providers\Sameday\Requests\GeocodeCountyRequest;
 use Lunar\Models\Order;
 use Saloon\Http\Response;
@@ -205,6 +206,47 @@ class ShippingService
         return [
             'lat' => ! empty($data[0]) ? $data[0]['lat'] : null,
             'lng' => ! empty($data[0]) ? $data[0]['lon'] : null,
+        ];
+    }
+
+    /**
+     * Find the county and city of the locker nearest to the given coordinates.
+     */
+    public function findNearestLockerCountyAndCity(ShippingProviderEnum $provider, float $lat, float $lng): ?array
+    {
+        $delta = 0.5;
+
+        $candidates = ShippingLocker::query()
+            ->where('provider', $provider->value)
+            ->whereNotNull('lat')
+            ->whereNotNull('lng')
+            ->whereNotNull('county_id')
+            ->whereNotNull('city_id')
+            ->whereBetween('lat', [$lat - $delta, $lat + $delta])
+            ->whereBetween('lng', [$lng - $delta, $lng + $delta])
+            ->get(['county_id', 'city_id', 'lat', 'lng']);
+
+        if ($candidates->isEmpty()) {
+            $candidates = ShippingLocker::query()
+                ->where('provider', $provider->value)
+                ->whereNotNull('lat')
+                ->whereNotNull('lng')
+                ->whereNotNull('county_id')
+                ->whereNotNull('city_id')
+                ->get(['county_id', 'city_id', 'lat', 'lng']);
+        }
+
+        $nearest = $candidates
+            ->sortBy(fn (ShippingLocker $locker): float => (($locker->lat - $lat) ** 2) + (($locker->lng - $lng) ** 2))
+            ->first();
+
+        if (! $nearest) {
+            return null;
+        }
+
+        return [
+            'county_id' => (int) $nearest->county_id,
+            'city_id' => (int) $nearest->city_id,
         ];
     }
 }
