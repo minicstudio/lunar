@@ -1,6 +1,9 @@
 <?php
 
+use Filament\Actions\Testing\TestAction;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\ProductResource\Pages\EditProduct;
 use Lunar\FieldTypes\Number;
@@ -231,8 +234,8 @@ it('hydrates translated rich text fields with all locale keys', function () {
         'pageClass' => 'productEdit',
     ])
         ->assertSuccessful()
-        ->assertSet('data.attribute_data.description.en', '')
-        ->assertSet('data.attribute_data.description.es', '');
+        ->assertSet('data.attribute_data.description.en', fn (mixed $state): bool => isEmptyRichEditorDocument($state))
+        ->assertSet('data.attribute_data.description.es', fn (mixed $state): bool => isEmptyRichEditorDocument($state));
 });
 
 it('saves translated rich text fields from rich editor document payloads', function () {
@@ -298,6 +301,237 @@ it('saves translated rich text fields from rich editor document payloads', funct
 
     expect($product->refresh()->attr('description', 'en'))->toBe('<p>Rich description</p>');
 });
+
+it('preserves translated attributes when saving a product', function () {
+    CustomerGroup::factory()->create([
+        'default' => true,
+    ]);
+
+    Language::factory()->create([
+        'code' => 'en',
+        'default' => true,
+    ]);
+
+    Language::factory()->create([
+        'code' => 'es',
+        'default' => false,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $product = Product::factory()->create([
+        'attribute_data' => collect([
+            'name' => new TranslatedTextField([
+                'en' => 'Existing Product',
+                'es' => 'Producto existente',
+            ]),
+            'description' => new TranslatedTextField([
+                'en' => '<p>Keep this description</p>',
+                'es' => '',
+            ]),
+        ]),
+    ]);
+
+    ProductVariant::factory()->create([
+        'product_id' => $product->id,
+    ]);
+
+    $group = AttributeGroup::factory()->create([
+        'attributable_type' => 'product',
+        'name' => [
+            'en' => 'Details',
+        ],
+        'handle' => 'details',
+        'position' => 1,
+    ]);
+
+    foreach ([
+        ['handle' => 'name', 'name' => 'Name', 'position' => 1, 'richtext' => false],
+        ['handle' => 'description', 'name' => 'Description', 'position' => 2, 'richtext' => true],
+    ] as $attributeData) {
+        $attribute = Attribute::factory()->create([
+            'attribute_type' => 'product',
+            'attribute_group_id' => $group->id,
+            'position' => $attributeData['position'],
+            'name' => [
+                'en' => $attributeData['name'],
+            ],
+            'handle' => $attributeData['handle'],
+            'section' => 'main',
+            'type' => TranslatedTextField::class,
+            'required' => true,
+            'system' => false,
+            'searchable' => false,
+            'configuration' => [
+                'richtext' => $attributeData['richtext'],
+            ],
+        ]);
+
+        DB::table('lunar_attributables')->insert([
+            'attribute_id' => $attribute->id,
+            'attributable_type' => 'product_type',
+            'attributable_id' => $product->productType->id,
+        ]);
+    }
+
+    $this->asStaff(admin: true);
+
+    Livewire::test(EditProduct::class, [
+        'record' => $product->getRouteKey(),
+        'pageClass' => 'productEdit',
+    ])
+        ->fillForm([
+            'attribute_data' => [
+                'name' => new TranslatedTextField([
+                    'en' => 'Existing Product updated',
+                    'es' => 'Producto existente',
+                ]),
+                'description' => new TranslatedTextField([
+                    'en' => '<p>Keep this description</p>',
+                    'es' => '',
+                ]),
+            ],
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $product->refresh();
+
+    expect($product->attr('name', 'en'))->toBe('Existing Product updated')
+        ->and($product->attr('name', 'es'))->toBe('Producto existente')
+        ->and($product->attr('description', 'en'))->toBe('<p>Keep this description</p>')
+        ->and($product->attribute_data['description']->getValue()['es']->getValue())->toBe('');
+});
+
+it('requires the default language of a required translated attribute', function () {
+    $product = createProductWithTranslatedRichTextAttribute('description');
+
+    Attribute::whereHandle('description')->update(['required' => true]);
+
+    $this->asStaff(admin: true);
+
+    Livewire::test(EditProduct::class, [
+        'record' => $product->getRouteKey(),
+        'pageClass' => 'productEdit',
+    ])
+        ->fillForm([
+            'attribute_data' => [
+                'description' => [
+                    'en' => [
+                        'type' => 'doc',
+                        'content' => [
+                            [
+                                'type' => 'paragraph',
+                                'content' => [],
+                            ],
+                        ],
+                    ],
+                    'es' => '<p>Solo en español</p>',
+                ],
+            ],
+        ])
+        ->call('save')
+        ->assertHasFormErrors(['attribute_data.description.en'])
+        ->assertHasNoFormErrors(['attribute_data.description.es']);
+});
+
+it('can mount the attach files action of a translated rich text field', function () {
+    $product = createProductWithTranslatedRichTextAttribute('description');
+
+    $this->asStaff(admin: true);
+
+    $attachFilesAction = TestAction::make('attachFiles')->schemaComponent('attributeData.description.en', schema: 'form');
+
+    Livewire::test(EditProduct::class, [
+        'record' => $product->getRouteKey(),
+        'pageClass' => 'productEdit',
+    ])
+        ->mountAction($attachFilesAction)
+        ->assertActionMounted($attachFilesAction);
+});
+
+it('saves file attachments uploaded to a translated rich text field', function () {
+    Storage::fake('public');
+
+    $product = createProductWithTranslatedRichTextAttribute('description');
+
+    $this->asStaff(admin: true);
+
+    $attachmentKey = 'b0c6e1a2-4f6b-4c2e-9a1d-3f2e1c0b9a87';
+
+    Livewire::test(EditProduct::class, [
+        'record' => $product->getRouteKey(),
+        'pageClass' => 'productEdit',
+    ])
+        ->set("componentFileAttachments.data.attribute_data.description.en.{$attachmentKey}", UploadedFile::fake()->image('attachment.png'))
+        ->call('callSchemaComponentMethod', 'form.attributeData.description.en', 'getUploadedFileAttachmentTemporaryUrl', ['attachment' => $attachmentKey])
+        ->assertReturned(fn (?string $temporaryUrl): bool => filled($temporaryUrl))
+        ->set('data.attribute_data.description.en', [
+            'type' => 'doc',
+            'content' => [
+                [
+                    'type' => 'image',
+                    'attrs' => [
+                        'id' => $attachmentKey,
+                        'src' => 'https://example.com/temporary-url',
+                    ],
+                ],
+            ],
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $storedAttachments = Storage::disk('public')->allFiles();
+
+    expect($storedAttachments)->toHaveCount(1)
+        ->and($product->refresh()->attr('description', 'en'))
+        ->toContain(Storage::disk('public')->url($storedAttachments[0]))
+        ->not->toContain('temporary-url');
+});
+
+function createProductWithTranslatedRichTextAttribute(string $handle): Product
+{
+    CustomerGroup::factory()->create([
+        'default' => true,
+    ]);
+
+    Language::factory()->create([
+        'code' => 'en',
+        'default' => true,
+    ]);
+
+    Language::factory()->create([
+        'code' => 'es',
+        'default' => false,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $product = Product::factory()->create([
+        'attribute_data' => collect([
+            $handle => new TranslatedTextField(collect()),
+        ]),
+    ]);
+
+    ProductVariant::factory()->create([
+        'product_id' => $product->id,
+    ]);
+
+    createTranslatedRichTextProductAttribute($product, $handle);
+
+    return $product;
+}
+
+function isEmptyRichEditorDocument(mixed $state): bool
+{
+    return is_array($state)
+        && ($state['type'] ?? null) === 'doc'
+        && blank(data_get($state, 'content.0.content'));
+}
 
 function createTranslatedRichTextProductAttribute(Product $product, string $handle): void
 {
