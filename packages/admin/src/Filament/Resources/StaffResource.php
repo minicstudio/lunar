@@ -104,8 +104,9 @@ class StaffResource extends BaseResource
         return TextInput::make('password')
             ->label(__('lunarpanel::staff.form.password.label'))
             ->password()
+            ->autocomplete('new-password')
             ->required(fn ($record) => blank($record))
-            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
             ->dehydrated(fn (?string $state): bool => filled($state))
             ->hint(fn ($record) => filled($record) ? __('lunarpanel::staff.form.password.hint') : null)
             ->maxLength(255);

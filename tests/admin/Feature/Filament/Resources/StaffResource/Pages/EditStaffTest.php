@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\StaffResource;
 use Lunar\Admin\Filament\Resources\StaffResource\Pages\EditStaff;
@@ -51,6 +52,53 @@ it('can save staff data', function () {
         ->first_name->toBe($newData->first_name)
         ->last_name->toBe($newData->last_name)
         ->email->toBe($newData->email);
+});
+
+it('does not overwrite password when editing staff without a new password', function () {
+    $plainPassword = 'OriginalPass123!';
+
+    $staff = Staff::factory()->create([
+        'password' => $plainPassword,
+        'admin' => false,
+    ]);
+
+    $passwordBefore = $staff->getAttributes()['password'];
+
+    Livewire::test(EditStaff::class, [
+        'record' => $staff->getRouteKey(),
+    ])
+        ->fillForm([
+            'first_name' => 'FirstName',
+            'last_name' => 'Editor',
+            'email' => $staff->email,
+        ])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $staff->refresh();
+
+    expect($staff->getAttributes()['password'])->toBe($passwordBefore)
+        ->and(Hash::check($plainPassword, $staff->password))->toBeTrue()
+        ->and($staff->first_name)->toBe('FirstName');
+});
+
+it('can update staff password when a new value is provided', function () {
+    $staff = Staff::factory()->create([
+        'password' => 'OriginalPass123!',
+        'admin' => false,
+    ]);
+
+    Livewire::test(EditStaff::class, [
+        'record' => $staff->getRouteKey(),
+    ])
+        ->set('data.password', 'ReplacementPass123!')
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    $staff->refresh();
+
+    expect(Hash::check('ReplacementPass123!', $staff->password))->toBeTrue()
+        ->and(Hash::check('OriginalPass123!', $staff->password))->toBeFalse();
 });
 
 it('can assign staff role and permissions', function () {

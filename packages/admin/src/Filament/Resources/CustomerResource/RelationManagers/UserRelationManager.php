@@ -55,9 +55,10 @@ class UserRelationManager extends BaseRelationManager
                                 __('lunarpanel::user.form.password.label')
                             )
                             ->password()
+                            ->autocomplete('new-password')
                             ->minLength(8)
                             ->required(fn ($record) => blank($record))
-                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state) ? Hash::make($state) : null)
                             ->dehydrated(fn (?string $state): bool => filled($state))
                             ->currentPassword(false)
                             ->confirmed(),
@@ -66,6 +67,7 @@ class UserRelationManager extends BaseRelationManager
                                 __('lunarpanel::user.form.password_confirmation.label')
                             )
                             ->password()
+                            ->autocomplete('new-password')
                             ->minLength(8)
                             ->dehydrated(false),
                     ])->columns(2),
