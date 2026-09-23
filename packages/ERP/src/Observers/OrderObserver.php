@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Services\ErpService;
 use Lunar\Models\Order;
+use Throwable;
 
 class OrderObserver
 {
@@ -60,7 +61,13 @@ class OrderObserver
             return;
         }
 
-        $erpService->generateInvoice($provider, $order);
+        try {
+            $erpService->generateInvoice($provider, $order);
+        } catch (Throwable $e) {
+            report($e);
+
+            return;
+        }
 
         if (! $order->reference) {
             Notification::make()
