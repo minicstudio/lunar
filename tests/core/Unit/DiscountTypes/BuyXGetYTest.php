@@ -270,7 +270,7 @@ test('buy x get y can apply alongside advanced amount off without negative total
         ->and($cart->lines->every(fn ($line) => $line->subTotalDiscounted->value >= 0))->toBeTrue();
 });
 
-test('automatically adds every configured product reward when multiple rewards exist', function () {
+test('does not random-add when multiple product rewards exist without a shopper selection', function () {
     $condition = createPricedVariant($this->currency, 1000);
     $rewardA = createPricedVariant($this->currency, 500);
     $rewardB = createPricedVariant($this->currency, 400);
@@ -332,7 +332,161 @@ test('automatically adds every configured product reward when multiple rewards e
         ->map(fn ($id) => (int) $id)
         ->all();
 
-    expect($giftIds)->toContain((int) $rewardA->id)
-        ->and($giftIds)->toContain((int) $rewardB->id)
-        ->and($cart->lines)->toHaveCount(3);
+    // Multi-reward BXGY leaves grant choice to the storefront modal; without
+    // selected_gift_rewards meta the engine must not random-pick either reward.
+    expect($giftIds)->toBeEmpty()
+        ->and($cart->lines)->toHaveCount(1);
+});
+
+test('fulfills an explicit multi-reward selection without adding the other reward', function () {
+    $condition = createPricedVariant($this->currency, 1000);
+    $rewardA = createPricedVariant($this->currency, 500);
+    $rewardB = createPricedVariant($this->currency, 400);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $condition->getMorphClass(),
+        'purchasable_id' => $condition->id,
+        'quantity' => 1,
+        'meta' => [
+            'selected_gift_rewards' => [
+                ['variant_id' => $rewardA->id, 'product_id' => $rewardA->product->id, 'quantity' => 1],
+            ],
+        ],
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'automatically_add_rewards' => true,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    $discount->discountables()->create([
+        'discountable_type' => $condition->product->getMorphClass(),
+        'discountable_id' => $condition->product->id,
+        'type' => 'condition',
+    ]);
+
+    $discount->discountables()->create([
+        'discountable_type' => $rewardA->product->getMorphClass(),
+        'discountable_id' => $rewardA->product->id,
+        'type' => 'reward',
+    ]);
+
+    $discount->discountables()->create([
+        'discountable_type' => $rewardB->product->getMorphClass(),
+        'discountable_id' => $rewardB->product->id,
+        'type' => 'reward',
+    ]);
+
+    $cart = $cart->calculate();
+
+    $giftIds = $cart->lines
+        ->filter(function ($line) {
+            $meta = $line->meta;
+            $added = is_array($meta)
+                ? ($meta['added_by_discount'] ?? null)
+                : (is_object($meta) ? ($meta->added_by_discount ?? null) : null);
+
+            return ! empty($added);
+        })
+        ->pluck('purchasable_id')
+        ->map(fn ($id) => (int) $id)
+        ->all();
+
+    expect($giftIds)->toBe([(int) $rewardA->id])
+        ->and($giftIds)->not->toContain((int) $rewardB->id)
+        ->and($cart->lines)->toHaveCount(2);
+});
+
+test('removes gift lines when cart falls below min qty after recalculate', function () {
+    $conditionA = createPricedVariant($this->currency, 1000);
+    $conditionB = createPricedVariant($this->currency, 1000);
+    $conditionC = createPricedVariant($this->currency, 1000);
+    $reward = createPricedVariant($this->currency, 500);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $lineA = $cart->lines()->create([
+        'purchasable_type' => $conditionA->getMorphClass(),
+        'purchasable_id' => $conditionA->id,
+        'quantity' => 1,
+    ]);
+    $cart->lines()->create([
+        'purchasable_type' => $conditionB->getMorphClass(),
+        'purchasable_id' => $conditionB->id,
+        'quantity' => 1,
+    ]);
+    $cart->lines()->create([
+        'purchasable_type' => $conditionC->getMorphClass(),
+        'purchasable_id' => $conditionC->id,
+        'quantity' => 1,
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 3,
+            'reward_qty' => 1,
+            'automatically_add_rewards' => true,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    foreach ([$conditionA, $conditionB, $conditionC] as $condition) {
+        $discount->discountables()->create([
+            'discountable_type' => $condition->product->getMorphClass(),
+            'discountable_id' => $condition->product->id,
+            'type' => 'condition',
+        ]);
+    }
+
+    $discount->discountables()->create([
+        'discountable_type' => $reward->product->getMorphClass(),
+        'discountable_id' => $reward->product->id,
+        'type' => 'reward',
+    ]);
+
+    $cart = $cart->calculate();
+
+    expect($cart->lines->filter(function ($line) {
+        $meta = $line->meta;
+        $added = is_array($meta)
+            ? ($meta['added_by_discount'] ?? null)
+            : (is_object($meta) ? ($meta->added_by_discount ?? null) : null);
+
+        return ! empty($added);
+    }))->not->toBeEmpty();
+
+    $cart->remove($lineA->id);
+    $cart = $cart->fresh(['lines'])->calculate();
+
+    $giftLines = $cart->lines->filter(function ($line) {
+        $meta = $line->meta;
+        $added = is_array($meta)
+            ? ($meta['added_by_discount'] ?? null)
+            : (is_object($meta) ? ($meta->added_by_discount ?? null) : null);
+
+        return ! empty($added);
+    });
+
+    expect($giftLines)->toHaveCount(0)
+        ->and($cart->lines)->toHaveCount(2);
 });
