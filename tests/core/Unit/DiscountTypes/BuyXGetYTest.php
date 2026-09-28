@@ -7,6 +7,7 @@ use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
+use Lunar\Models\Collection as LunarCollection;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
@@ -489,4 +490,225 @@ test('removes gift lines when cart falls below min qty after recalculate', funct
 
     expect($giftLines)->toHaveCount(0)
         ->and($cart->lines)->toHaveCount(2);
+});
+
+test('does not grant a selected variant that is not a configured reward', function () {
+    $condition = createPricedVariant($this->currency, 1000);
+    $reward = createPricedVariant($this->currency, 500);
+    $outsider = createPricedVariant($this->currency, 9000);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $condition->getMorphClass(),
+        'purchasable_id' => $condition->id,
+        'quantity' => 1,
+        'meta' => [
+            'selected_gift_rewards' => [
+                ['variant_id' => $outsider->id, 'product_id' => $outsider->product->id, 'quantity' => 1],
+            ],
+        ],
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'automatically_add_rewards' => false,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    $discount->discountables()->create([
+        'discountable_type' => $condition->product->getMorphClass(),
+        'discountable_id' => $condition->product->id,
+        'type' => 'condition',
+    ]);
+
+    $discount->discountables()->create([
+        'discountable_type' => $reward->product->getMorphClass(),
+        'discountable_id' => $reward->product->id,
+        'type' => 'reward',
+    ]);
+
+    $cart = $cart->calculate();
+
+    expect($cart->lines)->toHaveCount(1)
+        ->and((int) $cart->lines->first()->purchasable_id)->toBe((int) $condition->id);
+});
+
+test('grants a selected variant that belongs to a collection reward', function () {
+    $condition = createPricedVariant($this->currency, 1000);
+    $reward = createPricedVariant($this->currency, 500);
+    $collection = LunarCollection::factory()->create();
+    $reward->product->collections()->attach($collection->id);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $condition->getMorphClass(),
+        'purchasable_id' => $condition->id,
+        'quantity' => 1,
+        'meta' => [
+            'selected_gift_rewards' => [
+                ['variant_id' => $reward->id, 'product_id' => $reward->product->id, 'quantity' => 1],
+            ],
+        ],
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'automatically_add_rewards' => false,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    $discount->discountables()->create([
+        'discountable_type' => $condition->product->getMorphClass(),
+        'discountable_id' => $condition->product->id,
+        'type' => 'condition',
+    ]);
+
+    $discount->discountables()->create([
+        'discountable_type' => $collection->getMorphClass(),
+        'discountable_id' => $collection->id,
+        'type' => 'reward',
+    ]);
+
+    $cart = $cart->calculate();
+
+    $giftLine = $cart->lines->first(fn ($line) => (int) $line->purchasable_id === (int) $reward->id);
+
+    expect($giftLine)->not->toBeNull()
+        ->and((int) data_get($giftLine->meta, 'added_by_discount.'.$discount->id))->toBe(1);
+});
+
+test('does not random-add when multiple collection rewards are configured', function () {
+    $condition = createPricedVariant($this->currency, 1000);
+    $rewardA = createPricedVariant($this->currency, 500);
+    $rewardB = createPricedVariant($this->currency, 400);
+    $collectionA = LunarCollection::factory()->create();
+    $collectionB = LunarCollection::factory()->create();
+    $rewardA->product->collections()->attach($collectionA->id);
+    $rewardB->product->collections()->attach($collectionB->id);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $condition->getMorphClass(),
+        'purchasable_id' => $condition->id,
+        'quantity' => 1,
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'automatically_add_rewards' => true,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    $discount->discountables()->create([
+        'discountable_type' => $condition->product->getMorphClass(),
+        'discountable_id' => $condition->product->id,
+        'type' => 'condition',
+    ]);
+
+    foreach ([$collectionA, $collectionB] as $collection) {
+        $discount->discountables()->create([
+            'discountable_type' => $collection->getMorphClass(),
+            'discountable_id' => $collection->id,
+            'type' => 'reward',
+        ]);
+    }
+
+    $cart = $cart->calculate();
+
+    expect($cart->lines)->toHaveCount(1)
+        ->and((int) $cart->lines->first()->purchasable_id)->toBe((int) $condition->id);
+});
+
+test('partial gift trim stores the reduced added_by_discount count', function () {
+    $condition = createPricedVariant($this->currency, 1000);
+    $reward = createPricedVariant($this->currency, 500);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $condition->getMorphClass(),
+        'purchasable_id' => $condition->id,
+        'quantity' => 3,
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'max_reward_qty' => 3,
+            'automatically_add_rewards' => true,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    $discount->discountables()->create([
+        'discountable_type' => $condition->product->getMorphClass(),
+        'discountable_id' => $condition->product->id,
+        'type' => 'condition',
+    ]);
+
+    $discount->discountables()->create([
+        'discountable_type' => $reward->product->getMorphClass(),
+        'discountable_id' => $reward->product->id,
+        'type' => 'reward',
+    ]);
+
+    $cart = $cart->calculate();
+
+    $discount->update([
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'max_reward_qty' => 1,
+            'automatically_add_rewards' => true,
+        ],
+    ]);
+
+    $cart = $cart->refresh()->calculate();
+
+    $giftLine = $cart->lines->first(fn ($line) => (int) $line->purchasable_id === (int) $reward->id);
+
+    expect($giftLine)->not->toBeNull()
+        ->and((int) $giftLine->quantity)->toBe(1)
+        ->and((int) data_get($giftLine->meta, 'added_by_discount.'.$discount->id))->toBe(1);
 });

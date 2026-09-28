@@ -321,10 +321,6 @@ class BuyXGetY extends AbstractDiscountType
             return [$affectedLines, $discountTotal];
         }
 
-        $productVariantRewards = $fulfillableRewards->filter(
-            fn ($discountableReward) => ! ($discountableReward->discountable instanceof LunarCollection)
-        );
-
         $selectedPurchasables = $this->resolveSelectedGiftPurchasables($cart, $remainingRewardQty);
 
         if ($selectedPurchasables->isNotEmpty()) {
@@ -374,10 +370,11 @@ class BuyXGetY extends AbstractDiscountType
             return [$affectedLines, $discountTotal];
         }
 
-        // Auto-add single reward: top up remaining budget (including after qty
-        // increase when selected_gift_rewards meta still lists only 1 unit).
-        // Multi-reward never random-picks — storefront modal is the grant path.
-        if ($remainingRewardQty < 1 || ! $allowAutoPick || $productVariantRewards->count() > 1) {
+        // Auto-add a single configured reward (product or collection): top up
+        // remaining budget, including after qty increase when selected_gift_rewards
+        // meta still lists only 1 unit. More than one reward never random-picks —
+        // the storefront modal is the grant path.
+        if ($remainingRewardQty < 1 || ! $allowAutoPick || $fulfillableRewards->count() > 1) {
             return [$affectedLines, $discountTotal];
         }
 
@@ -535,9 +532,11 @@ class BuyXGetY extends AbstractDiscountType
         if ($variantId > 0) {
             $purchasable = ProductVariant::query()->with('product')->find($variantId);
 
-            return $purchasable instanceof Purchasable
-                ? ['purchasable' => $purchasable, 'reward_item' => $purchasable->product ?? $purchasable]
-                : null;
+            if (! $purchasable instanceof Purchasable || ! $this->purchasableIsConfiguredReward($purchasable)) {
+                return null;
+            }
+
+            return ['purchasable' => $purchasable, 'reward_item' => $purchasable->product ?? $purchasable];
         }
 
         if ($productId < 1) {
@@ -547,9 +546,11 @@ class BuyXGetY extends AbstractDiscountType
         $product = Product::query()->with('variants')->find($productId);
         $purchasable = $product?->variants->first();
 
-        return $purchasable instanceof Purchasable
-            ? ['purchasable' => $purchasable, 'reward_item' => $product]
-            : null;
+        if (! $purchasable instanceof Purchasable || ! $this->purchasableIsConfiguredReward($purchasable)) {
+            return null;
+        }
+
+        return ['purchasable' => $purchasable, 'reward_item' => $product];
     }
 
     /**
@@ -791,13 +792,38 @@ class BuyXGetY extends AbstractDiscountType
 
             $meta = $this->lineMetaAsObject($line);
             $added = (array) ($meta->added_by_discount ?? []);
+            $discountKey = $this->discount->id;
+            $stored = $added[$discountKey] ?? $added[(string) $discountKey] ?? null;
 
-            when(isset($added[$this->discount->id]), function () use ($added, $meta, $line, $reduceBy) {
-                $added[$this->discount->id] = max(1, (int) $added[$this->discount->id] - $reduceBy);
-                $meta->added_by_discount = $added;
-                $line->meta = $meta;
-            });
+            if ($stored !== null) {
+                $next = max(0, (int) $stored - $reduceBy);
+                unset($added[$discountKey], $added[(string) $discountKey]);
 
+                if ($next > 0) {
+                    $added[$discountKey] = $next;
+                }
+            }
+
+            $added = array_filter(
+                $added,
+                fn (mixed $qty) => (int) $qty > 0
+            );
+
+            if ($added === []) {
+                $lineId = (int) $line->id;
+                $line->delete();
+                $cart->setRelation(
+                    'lines',
+                    $cart->lines
+                        ->reject(fn (CartLine $cartLine) => (int) $cartLine->id === $lineId)
+                        ->values()
+                );
+
+                return;
+            }
+
+            $meta->added_by_discount = $added;
+            $line->meta = $meta;
             $line->save();
         });
     }
@@ -864,6 +890,42 @@ class BuyXGetY extends AbstractDiscountType
                 && $line->purchasable->getMorphClass() === $purchasable->getMorphClass()
                 && $this->lineIsGiftForDiscount($line);
         });
+    }
+
+    /**
+     * Whether a shopper-selected purchasable is one of this discount's rewards.
+     *
+     * Cart line meta is customer-writable, so selections must be checked against
+     * configured product, variant, and collection rewards before a free line is created.
+     */
+    protected function purchasableIsConfiguredReward(Purchasable $purchasable): bool
+    {
+        $product = $purchasable->product ?? null;
+        $product?->loadMissing('collections');
+
+        $collectionIds = $product?->collections?->pluck('id') ?? collect();
+
+        return $this->discount->discountableRewards->contains(
+            fn ($item) => $this->rewardDiscountableMatches($item, $purchasable, $collectionIds)
+        );
+    }
+
+    /**
+     * Whether a reward discountable row covers the purchasable.
+     */
+    protected function rewardDiscountableMatches(mixed $item, Purchasable $purchasable, Collection $collectionIds): bool
+    {
+        $productId = $purchasable->product->id ?? null;
+
+        return match (true) {
+            $item->discountable_type == Product::morphName()
+                && (int) $item->discountable_id === (int) $productId => true,
+            $item->discountable_type == ProductVariant::morphName()
+                && (int) $item->discountable_id === (int) $purchasable->id => true,
+            $item->discountable_type == LunarCollection::morphName()
+                && $collectionIds->contains($item->discountable_id) => true,
+            default => false,
+        };
     }
 
     /**
