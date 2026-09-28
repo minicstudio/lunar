@@ -213,7 +213,7 @@ class BuyXGetY extends AbstractDiscountType
      *
      * @return array{0: Collection, 1: int}
      */
-    private function fulfillConfiguredGiftLines(
+    protected function fulfillConfiguredGiftLines(
         CartContract $cart,
         bool $restrictToGiftLines,
         int $totalRewardQty,
@@ -247,7 +247,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Units of a reward line to discount given remaining reward budget.
      */
-    private function rewardQtyToAllocate(CartLine $rewardLine, int $remainingRewardQty): int
+    protected function rewardQtyToAllocate(CartLine $rewardLine, int $remainingRewardQty): int
     {
         $remainder = (int) floor($remainingRewardQty);
         $qtyToAllocate = $remainder;
@@ -265,7 +265,7 @@ class BuyXGetY extends AbstractDiscountType
      *
      * @return Collection<int|string, Collection<int, int|string>>
      */
-    private function productCollectionIdsForCart(CartContract $cart): Collection
+    protected function productCollectionIdsForCart(CartContract $cart): Collection
     {
         $products = $cart->lines->map(fn ($line) => $line->purchasable->product)->unique('id');
         $products->loadMissing('collections');
@@ -276,7 +276,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * @return array{0: Collection, 1: int}
      */
-    private function processAutomaticRewards(
+    protected function processAutomaticRewards(
         CartContract $cart,
         int $remainingRewardQty,
         Collection $affectedLines,
@@ -413,7 +413,7 @@ class BuyXGetY extends AbstractDiscountType
      * @param  array<int|string, Collection>  $fulfillableCollectionProducts
      * @return array{0: ?Purchasable, 1: mixed}
      */
-    private function resolvePurchasableFromRewardItem(
+    protected function resolvePurchasableFromRewardItem(
         mixed $selectedRewardItem,
         array $fulfillableCollectionProducts,
     ): array {
@@ -440,7 +440,7 @@ class BuyXGetY extends AbstractDiscountType
      *
      * @return Collection<int, array{purchasable: Purchasable, reward_item: mixed, quantity: int}>
      */
-    private function resolveSelectedGiftPurchasables(CartContract $cart, int $remainingRewardQty): Collection
+    protected function resolveSelectedGiftPurchasables(CartContract $cart, int $remainingRewardQty): Collection
     {
         $wantedByKey = $cart->lines
             ->flatMap(fn (CartLine $line) => $this->selectedGiftRewardRowsFromLine($line))
@@ -494,7 +494,7 @@ class BuyXGetY extends AbstractDiscountType
      *
      * @return Collection<int, array{key: string, purchasable: Purchasable, reward_item: mixed, quantity: int}>
      */
-    private function selectedGiftRewardRowsFromLine(CartLine $line): Collection
+    protected function selectedGiftRewardRowsFromLine(CartLine $line): Collection
     {
         $raw = $this->normalizeToArray($this->metaValue($line->meta ?? null, 'selected_gift_rewards'));
 
@@ -530,7 +530,7 @@ class BuyXGetY extends AbstractDiscountType
      *
      * @return array{purchasable: Purchasable, reward_item: mixed}|null
      */
-    private function resolveSelectionPurchasable(int $variantId, int $productId): ?array
+    protected function resolveSelectionPurchasable(int $variantId, int $productId): ?array
     {
         if ($variantId > 0) {
             $purchasable = ProductVariant::query()->with('product')->find($variantId);
@@ -561,7 +561,7 @@ class BuyXGetY extends AbstractDiscountType
      * @param  array<string, CartLine>  $addedRewardLines
      * @return array{0: Collection, 1: int, 2: int, 3: array<string, CartLine>}
      */
-    private function allocateAutomaticRewardUnit(
+    protected function allocateAutomaticRewardUnit(
         CartContract $cart,
         Purchasable $purchasable,
         mixed $selectedRewardItem,
@@ -620,7 +620,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Increment quantity on an existing gift line and refresh totals.
      */
-    private function incrementExistingGiftLine(
+    protected function incrementExistingGiftLine(
         CartLine $rewardLine,
         CartContract $cart,
         Purchasable $purchasable,
@@ -639,7 +639,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Create a new gift cart line for the purchasable.
      */
-    private function createGiftLine(
+    protected function createGiftLine(
         CartContract $cart,
         Purchasable $purchasable,
         mixed $selectedRewardItem,
@@ -682,7 +682,7 @@ class BuyXGetY extends AbstractDiscountType
      * ApplyDiscounts. AdvancedAmountOff updates those fields; BXGY must too or cart Subtotal
      * (subTotalDiscountedWithoutCouponIncTax) still includes the gift at full price.
      */
-    private function applyFreeGiftLinePricing(
+    protected function applyFreeGiftLinePricing(
         CartLine $rewardLine,
         CartContract $cart,
         int $lineDiscountTotal,
@@ -721,7 +721,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Convert an ex-tax price to include tax for storefront display fields.
      */
-    private function convertGiftPriceToIncTax(CartLine $line, Price $price): Price
+    protected function convertGiftPriceToIncTax(CartLine $line, Price $price): Price
     {
         if (config('lunar.pricing.stored_inclusive_of_tax', false)) {
             return $price;
@@ -739,7 +739,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Sum gift line quantities tagged for this discount.
      */
-    private function giftUnitsForDiscount(CartContract $cart): int
+    protected function giftUnitsForDiscount(CartContract $cart): int
     {
         return (int) $cart->lines
             ->filter(fn (CartLine $line) => $this->lineIsGiftForDiscount($line))
@@ -749,7 +749,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Reduce (or remove) gift lines so total gift units do not exceed the reward budget.
      */
-    private function trimGiftLinesToBudget(CartContract $cart, int $totalRewardQty): void
+    protected function trimGiftLinesToBudget(CartContract $cart, int $totalRewardQty): void
     {
         $giftLines = $cart->lines
             ->filter(fn (CartLine $line) => $this->lineIsGiftForDiscount($line))
@@ -805,7 +805,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Whether any cart line carries an explicit selected_gift_rewards key (including empty skip).
      */
-    private function cartHasExplicitGiftSelectionMeta(CartContract $cart): bool
+    protected function cartHasExplicitGiftSelectionMeta(CartContract $cart): bool
     {
         return $cart->lines->contains(
             fn (CartLine $line) => $this->metaHasKey($line->meta ?? null, 'selected_gift_rewards')
@@ -818,7 +818,7 @@ class BuyXGetY extends AbstractDiscountType
      * Distinguishes an explicit skip (`selected_gift_rewards` => []) from a
      * positive pick that may already be fulfilled (qty increase still tops up).
      */
-    private function cartHasPositiveGiftSelectionDemand(CartContract $cart): bool
+    protected function cartHasPositiveGiftSelectionDemand(CartContract $cart): bool
     {
         return $cart->lines->contains(function (CartLine $line) {
             return collect(
@@ -834,7 +834,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Whether the cart line was auto-added as a gift (any discount).
      */
-    private function lineHasAddedByDiscount(CartLine $line): bool
+    protected function lineHasAddedByDiscount(CartLine $line): bool
     {
         $added = $this->normalizeToArray($this->metaValue($line->meta ?? null, 'added_by_discount'));
 
@@ -844,7 +844,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Whether the cart line is a gift line for this discount.
      */
-    private function lineIsGiftForDiscount(CartLine $line): bool
+    protected function lineIsGiftForDiscount(CartLine $line): bool
     {
         $added = $this->normalizeToArray($this->metaValue($line->meta ?? null, 'added_by_discount'));
 
@@ -857,7 +857,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Find an existing gift line for this discount and purchasable.
      */
-    private function findGiftLineForPurchasable(CartContract $cart, Purchasable $purchasable): ?CartLine
+    protected function findGiftLineForPurchasable(CartContract $cart, Purchasable $purchasable): ?CartLine
     {
         return $cart->lines->first(function ($line) use ($purchasable) {
             return $line->purchasable->id == $purchasable->id
@@ -869,7 +869,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Whether a cart line matches a discountable condition or reward row.
      */
-    private function lineMatchesDiscountable(mixed $item, CartLine $line, Collection $productCollectionIds): bool
+    protected function lineMatchesDiscountable(mixed $item, CartLine $line, Collection $productCollectionIds): bool
     {
         return match (true) {
             $item->discountable_type == Product::morphName()
@@ -886,7 +886,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Read a meta key from cart line meta (array or object).
      */
-    private function metaValue(mixed $meta, string $key): mixed
+    protected function metaValue(mixed $meta, string $key): mixed
     {
         return match (true) {
             is_array($meta) => $meta[$key] ?? null,
@@ -898,7 +898,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Whether meta (array or object) has an explicit key, including null values.
      */
-    private function metaHasKey(mixed $meta, string $key): bool
+    protected function metaHasKey(mixed $meta, string $key): bool
     {
         return (is_array($meta) && array_key_exists($key, $meta))
             || (is_object($meta) && (property_exists($meta, $key) || isset($meta->{$key})));
@@ -909,7 +909,7 @@ class BuyXGetY extends AbstractDiscountType
      *
      * @return array<array-key, mixed>|null
      */
-    private function normalizeToArray(mixed $value): ?array
+    protected function normalizeToArray(mixed $value): ?array
     {
         $value = match (true) {
             $value instanceof \Traversable => iterator_to_array($value),
@@ -923,7 +923,7 @@ class BuyXGetY extends AbstractDiscountType
     /**
      * Coerce cart line meta into a mutable object.
      */
-    private function lineMetaAsObject(CartLine $line): object
+    protected function lineMetaAsObject(CartLine $line): object
     {
         $meta = $line->meta ?? null;
 
