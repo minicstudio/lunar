@@ -111,12 +111,16 @@ class ReviewReminderMail extends Mailable
 protected function schedule(Schedule $schedule)
 {
     $schedule->command('review:request-email')->hourly();
+
+    // Or once a day, with a matching 24-hour window:
+    // $schedule->command('review:request-email', ['--window-minutes' => 1440])->daily();
 }
 ```
 
-The command matches orders in a 1-hour window aligned to the configured delay, so
-it must be scheduled `hourly()` (not `everyMinute()`) to catch every eligible order
-exactly once. Running it more often than hourly (e.g. every minute) is unnecessary
+The command matches orders in a window aligned to the configured delay. The window
+defaults to 60 minutes (`--window-minutes`) and must equal the schedule interval to
+catch every eligible order exactly once: a shorter window skips orders, a longer one
+sends duplicates. Running it more often than hourly (e.g. every minute) is unnecessary
 and, on hosts with scale-to-zero/sleep behavior (like Laravel Cloud), will prevent
 the environment from ever going idle.
 
@@ -422,8 +426,9 @@ protected function schedule(Schedule $schedule)
 }
 ```
 
-The command must be scheduled `hourly()`, since it matches orders in a 1-hour
-window aligned to the configured delay.
+The command matches orders in a 1-hour window aligned to the configured delay, so
+schedule it `hourly()`. To run it on a different interval, pass a matching window,
+e.g. `--window-minutes=1440` with `daily()`.
 
 If no mailer is configured, the command will skip execution with an informational message.
 

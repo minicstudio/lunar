@@ -5,6 +5,7 @@ namespace Lunar\Review\Console;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Lunar\Models\Order;
 
 class ReviewRequestEmailCommand extends Command
@@ -14,7 +15,8 @@ class ReviewRequestEmailCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'review:request-email';
+    protected $signature = 'review:request-email
+        {--window-minutes=60 : Size of the matched updated_at window; must equal the schedule interval (60 for hourly, 1440 for daily)}';
 
     /**
      * The console command description.
@@ -28,6 +30,17 @@ class ReviewRequestEmailCommand extends Command
      */
     public function handle(): void
     {
+        $validator = Validator::make(
+            ['window-minutes' => $this->option('window-minutes')],
+            ['window-minutes' => ['integer', 'min:1']],
+        );
+
+        if ($validator->fails()) {
+            $this->fail($validator->errors()->first('window-minutes'));
+        }
+
+        $windowMinutes = (int) $this->option('window-minutes');
+
         $mailer = config('lunar.review.review_reminder_mailer');
 
         if (! $mailer) {
@@ -39,10 +52,6 @@ class ReviewRequestEmailCommand extends Command
         $targetStatus = config('lunar.review.order_status_for_review_reminder');
         $firstDelay = config('lunar.review.first_reminder_delay_minutes');
         $secondDelay = config('lunar.review.second_reminder_delay_minutes');
-
-        // Matches the command's hourly schedule, so each order falls into exactly
-        // one run's window instead of needing minute-level cron precision.
-        $windowMinutes = 60;
 
         $firstReminderFrom = Carbon::now()->subMinutes($firstDelay);
         $firstReminderTo = Carbon::now()->subMinutes($firstDelay - $windowMinutes);
