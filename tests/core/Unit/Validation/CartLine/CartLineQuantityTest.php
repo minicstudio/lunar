@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Session;
 use Lunar\Exceptions\Carts\CartException;
+use Lunar\Exceptions\Carts\MaximumQuantityException;
 use Lunar\Exceptions\Carts\MinimumQuantityException;
 use Lunar\Exceptions\Carts\QuantityIncrementException;
 use Lunar\Models\Cart;
@@ -55,7 +56,7 @@ test('can validate excessive quantity', function () {
     );
 
     expect(fn () => $validator->validate())
-        ->toThrow(CartException::class, __('lunar::exceptions.maximum_cart_line_quantity', ['quantity' => 1000000]));
+        ->toThrow(MaximumQuantityException::class, __('lunar::exceptions.maximum_cart_line_quantity', ['quantity' => 1000000]));
 });
 
 test('can validate minimum quantity', function () {
