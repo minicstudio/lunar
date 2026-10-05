@@ -4,6 +4,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Session;
 use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\Carts\MinimumQuantityException;
+use Lunar\Exceptions\Carts\QuantityIncrementException;
 use Lunar\Models\Cart;
 use Lunar\Models\Currency;
 use Lunar\Models\ProductVariant;
@@ -248,7 +249,7 @@ test('can validate quantity increment quantity', function (array $quantities, in
         if ($outcome == 'fail') {
             expect(fn () => $validator->validate())
                 ->toThrow(
-                    CartException::class,
+                    QuantityIncrementException::class,
                     __('lunar::exceptions.quantity_increment', [
                         'increment' => $purchasable->quantity_increment,
                         'quantity' => $quantity,
@@ -340,5 +341,5 @@ test('can validate from cart line id', function () {
     );
 
     expect(fn () => $validator->validate())
-        ->toThrow(CartException::class);
+        ->toThrow(QuantityIncrementException::class);
 });
