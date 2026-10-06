@@ -31,7 +31,7 @@ Activate this skill when:
 | Order pipeline | `Pipelines/Order/Creation/FinalizeLoyaltySpend` (after `FillOrderFromCart`) |
 | Observers | `Observers/OrderObserver` (on `Order`), `Observers/TransactionObserver` (on `Transaction`) |
 | Listener | `Listeners/RegistrationListener` (on `Customer::created`) |
-| Mixin | `Mixins/CustomerMixin` — adds `loyaltyAccount()` to `Customer` |
+| Relations | `Customer::loyaltyAccount`, `Order::loyaltyEarnTransaction` / `loyaltySpendTransaction` via `resolveRelationUsing` |
 | Support | `Support/LoyaltyEventKey`, `Support/OrderLoyaltySummary` |
 | Validation | `Validation/Cart/LoyaltyRedemptionValidator` |
 | Console | `Console/{ExpireLoyaltyPointsCommand, NotifyExpiringLoyaltyPointsCommand, AwardBirthdayPointsCommand, RecalculateBalancesCommand}` |
@@ -164,6 +164,9 @@ All event keys from `Support/LoyaltyEventKey`:
 - Permission: `sales:loyalty:manage`
 - Read-only; no create/edit pages
 - Registered by `LoyaltyPlugin::make()` in the panel
+
+### `CustomerResource` extension
+- `extendForm` — appends **Total points** (`display_balance`) below Customer Groups on the customer form sidebar when `lunar.loyalty.enabled` is true
 
 ### `LoyaltyAccountRelationManager` (on Customer page)
 - Shows balance stats and all transactions

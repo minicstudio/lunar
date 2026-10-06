@@ -20,8 +20,10 @@ return [
         'expires_at' => 'Expires At',
         'display_balance' => 'Display Balance',
         'available_balance' => 'Available Balance',
+        'total_points' => 'Total points',
         'lifetime_earned' => 'Lifetime Earned',
         'lifetime_spent' => 'Lifetime Spent',
+
         'adjust_points' => 'Points (+ credit, − debit)',
         'adjust_points_help' => 'Use positive values to credit and negative values to debit.',
         'reason' => 'Reason',

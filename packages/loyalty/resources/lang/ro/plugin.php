@@ -20,8 +20,10 @@ return [
         'expires_at' => 'Expiră la',
         'display_balance' => 'Sold afișat',
         'available_balance' => 'Sold disponibil',
+        'total_points' => 'Total puncte',
         'lifetime_earned' => 'Total câștigate',
         'lifetime_spent' => 'Total cheltuite',
+
         'adjust_points' => 'Puncte (+ credit, − debit)',
         'adjust_points_help' => 'Folosiți valori pozitive pentru credit și negative pentru debit.',
         'reason' => 'Motiv',

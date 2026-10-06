@@ -20,8 +20,10 @@ return [
         'expires_at' => 'Lejár',
         'display_balance' => 'Megjelenített egyenleg',
         'available_balance' => 'Elérhető egyenleg',
+        'total_points' => 'Összes pont',
         'lifetime_earned' => 'Összes megszerzett',
         'lifetime_spent' => 'Összes elköltött',
+
         'adjust_points' => 'Pontok (+ jóváírás, − terhelés)',
         'adjust_points_help' => 'Pozitív értékeket jóváíráshoz, negatív értékeket terheléshez használjon.',
         'reason' => 'Indok',
