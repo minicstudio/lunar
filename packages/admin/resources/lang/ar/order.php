@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'نوع العميل',
         ],
+        'payment_type' => [
+            'label' => 'نوع الدفع',
+            'options' => [
+                'offline' => 'غير متصل',
+                'card' => 'بطاقة',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'الإجمالي من',
+        ],
+        'total_to' => [
+            'label' => 'الإجمالي إلى',
+        ],
         'placed_after' => [
             'label' => 'تم الطلب بعد',
         ],

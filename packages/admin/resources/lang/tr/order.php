@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'Müşteri Türü',
         ],
+        'payment_type' => [
+            'label' => 'Ödeme türü',
+            'options' => [
+                'offline' => 'Çevrimdışı',
+                'card' => 'Kart',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Toplam başlangıç',
+        ],
+        'total_to' => [
+            'label' => 'Toplam bitiş',
+        ],
         'placed_after' => [
             'label' => 'Bu Tarihten Sonra',
         ],

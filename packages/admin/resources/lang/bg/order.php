@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'Тип клиент',
         ],
+        'payment_type' => [
+            'label' => 'Тип плащане',
+            'options' => [
+                'offline' => 'Офлайн',
+                'card' => 'Карта',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Общо от',
+        ],
+        'total_to' => [
+            'label' => 'Общо до',
+        ],
         'placed_after' => [
             'label' => 'Поръчки след',
         ],

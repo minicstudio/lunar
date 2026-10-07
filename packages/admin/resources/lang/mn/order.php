@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'Харилцагчийн төрөл',
         ],
+        'payment_type' => [
+            'label' => 'Төлбөрийн төрөл',
+            'options' => [
+                'offline' => 'Офлайн',
+                'card' => 'Карт',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Нийтээс',
+        ],
+        'total_to' => [
+            'label' => 'Нийт хүртэл',
+        ],
         'placed_after' => [
             'label' => 'Дараа захиалсан',
         ],

@@ -6,12 +6,14 @@ use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +27,7 @@ use Lunar\Admin\Support\CustomerStatus;
 use Lunar\Admin\Support\OrderStatus;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Models\Contracts\Order as OrderContract;
+use Lunar\Models\Currency;
 use Lunar\Models\Order;
 
 class OrderResource extends BaseResource
@@ -67,6 +70,7 @@ class OrderResource extends BaseResource
         return $table
             ->columns(static::getTableColumns())
             ->filters(static::getTableFilters())
+            ->filtersFormColumns(2)
             ->modifyQueryUsing(
                 fn (Builder $query): Builder => $query->with(['currency'])
             )
@@ -158,6 +162,84 @@ class OrderResource extends BaseResource
                 ->label(__('lunarpanel::order.table.tags.label'))
                 ->multiple()
                 ->relationship('tags', 'value'),
+            SelectFilter::make('payment_type')
+                ->label(__('lunarpanel::order.table.payment_type.label'))
+                ->options([
+                    'offline' => __('lunarpanel::order.table.payment_type.options.offline'),
+                    'card' => __('lunarpanel::order.table.payment_type.options.card'),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    $value = $data['value'] ?? null;
+
+                    if (blank($value)) {
+                        return $query;
+                    }
+
+                    $successfulPayment = fn (Builder $transactionQuery): Builder => $transactionQuery
+                        ->whereIn('type', ['intent', 'capture'])
+                        ->where('success', true);
+
+                    return match ($value) {
+                        'offline' => $query->whereDoesntHave('transactions', $successfulPayment),
+                        'card' => $query->whereHas('transactions', $successfulPayment),
+                        default => $query,
+                    };
+                }),
+            TernaryFilter::make('new_customer')
+                ->label(__('lunarpanel::order.table.new_customer.label'))
+                ->trueLabel(CustomerStatus::getLabel(true))
+                ->falseLabel(CustomerStatus::getLabel(false)),
+            Filter::make('total')
+                ->label(__('lunarpanel::order.table.total.label'))
+                ->schema([
+                    TextInput::make('total_from')
+                        ->label(__('lunarpanel::order.table.total_from.label'))
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix(fn (): ?string => Currency::getDefault()?->code),
+                    TextInput::make('total_to')
+                        ->label(__('lunarpanel::order.table.total_to.label'))
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix(fn (): ?string => Currency::getDefault()?->code),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    $currency = Currency::getDefault();
+                    $factor = $currency?->factor ?? 100;
+
+                    $from = filled($data['total_from'] ?? null)
+                        ? (int) bcmul((string) $data['total_from'], (string) $factor)
+                        : null;
+                    $to = filled($data['total_to'] ?? null)
+                        ? (int) bcmul((string) $data['total_to'], (string) $factor)
+                        : null;
+
+                    return $query
+                        ->when(
+                            $from !== null,
+                            fn (Builder $query): Builder => $query->where('total', '>=', $from),
+                        )
+                        ->when(
+                            $to !== null,
+                            fn (Builder $query): Builder => $query->where('total', '<=', $to),
+                        );
+                })
+                ->indicateUsing(function (array $data): array {
+                    $indicators = [];
+                    $currencyCode = Currency::getDefault()?->code;
+
+                    if (filled($data['total_from'] ?? null)) {
+                        $indicators[] = Indicator::make(__('lunarpanel::order.table.total_from.label').' '.($currencyCode ? "{$currencyCode} " : '').$data['total_from'])
+                            ->removeField('total_from');
+                    }
+
+                    if (filled($data['total_to'] ?? null)) {
+                        $indicators[] = Indicator::make(__('lunarpanel::order.table.total_to.label').' '.($currencyCode ? "{$currencyCode} " : '').$data['total_to'])
+                            ->removeField('total_to');
+                    }
+
+                    return $indicators;
+                }),
             Filter::make('placed_at')
 
                 ->schema([

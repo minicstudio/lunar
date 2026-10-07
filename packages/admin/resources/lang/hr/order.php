@@ -52,6 +52,19 @@ return [
         'new_customer' => [
             'label' => 'Tip kupca',
         ],
+        'payment_type' => [
+            'label' => 'Način plaćanja',
+            'options' => [
+                'offline' => 'Offline',
+                'card' => 'Kartica',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Ukupno od',
+        ],
+        'total_to' => [
+            'label' => 'Ukupno do',
+        ],
         'placed_after' => [
             'label' => 'Naručeno nakon',
         ],
