@@ -1,11 +1,14 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Event;
 use Lunar\Exceptions\MissingCurrencyPriceException;
 use Lunar\Facades\Pricing;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
+use Lunar\Models\MediaProductVariant;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
@@ -16,6 +19,7 @@ use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
 use Lunar\Tests\Core\TestCase;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 uses(TestCase::class);
 
@@ -331,4 +335,126 @@ test('stock assignment cannot go below zero', function () {
     $variant->stock = -3;
 
     expect($variant->stock)->toBe(0);
+});
+
+/**
+ * Add a product image named after its role, so the chosen image is easy to identify.
+ */
+function addProductVariantTestImage(Product $product, string $name, bool $primary = false): Media
+{
+    return $product->addMedia(UploadedFile::fake()->image($name.'.jpg'))
+        ->withCustomProperties(['name' => $name, 'primary' => $primary])
+        ->toMediaCollection('images');
+}
+
+test('getThumbnail follows variant, general and product image precedence', function (string $scenario, string $expected, bool $eagerLoaded) {
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+    $otherVariant = ProductVariant::factory()->create(['product_id' => $product->id]);
+
+    $other = addProductVariantTestImage($product, 'other', primary: true);
+    $generalFirst = addProductVariantTestImage($product, 'general-first');
+    $generalPrimary = addProductVariantTestImage($product, 'general-primary');
+    $variantLast = addProductVariantTestImage($product, 'variant-last');
+    $variantFirst = addProductVariantTestImage($product, 'variant-first');
+
+    $otherVariant->images()->attach($other->id, ['position' => 0, 'primary' => true]);
+
+    if (str_starts_with($scenario, 'variant')) {
+        $variant->images()->attach([
+            $variantLast->id => ['position' => 2, 'primary' => $scenario === 'variant-primary'],
+            $variantFirst->id => ['position' => 1, 'primary' => false],
+        ]);
+    } else {
+        $otherVariant->images()->attach([
+            $variantLast->id => ['position' => 2, 'primary' => false],
+            $variantFirst->id => ['position' => 1, 'primary' => false],
+        ]);
+    }
+
+    if (in_array($scenario, ['variant-primary', 'variant-first', 'general-primary'])) {
+        $other->setCustomProperty('primary', false)->saveQuietly();
+        $generalPrimary->setCustomProperty('primary', true)->saveQuietly();
+    }
+
+    if (str_starts_with($scenario, 'product')) {
+        $otherVariant->images()->attach([
+            $generalFirst->id => ['position' => 3, 'primary' => false],
+            $generalPrimary->id => ['position' => 4, 'primary' => false],
+        ]);
+    }
+
+    if ($scenario === 'product-first') {
+        $other->setCustomProperty('primary', false)->saveQuietly();
+    }
+
+    $generalFirst->updateQuietly(['order_column' => 0]);
+
+    $variant = $eagerLoaded
+        ? ProductVariant::with(['images', 'product.media', 'product.variants.images'])->find($variant->id)
+        : $variant->fresh();
+
+    $thumbnail = $variant->getThumbnail();
+
+    expect($thumbnail?->getCustomProperty('name'))->toBe($expected)
+        ->and($variant->getThumbnailImage())->toBe($thumbnail->getUrl('small'));
+})->with([
+    'variant primary' => ['variant-primary', 'variant-last'],
+    'variant first before general primary' => ['variant-first', 'variant-first'],
+    'general primary' => ['general-primary', 'general-primary'],
+    'general first before another variant primary' => ['general-first', 'general-first'],
+    'all product primary' => ['product-primary', 'other'],
+    'all product first in media order' => ['product-first', 'general-first'],
+])->with(['lazy loaded' => false, 'eager loaded' => true]);
+
+test('getThumbnail returns null and getThumbnailImage returns an empty string without media', function () {
+    $variant = ProductVariant::factory()->create();
+
+    expect($variant->getThumbnail())->toBeNull()
+        ->and($variant->getThumbnailImage())->toBe('');
+});
+
+test('generalMedia leaves out the images assigned to any variant', function () {
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+    $otherVariant = ProductVariant::factory()->create(['product_id' => $product->id]);
+
+    $general = addProductVariantTestImage($product, 'general');
+    $variantImage = addProductVariantTestImage($product, 'variant');
+    $otherImage = addProductVariantTestImage($product, 'other-variant');
+
+    $variant->images()->attach($variantImage->id, ['position' => 0, 'primary' => true]);
+    $otherVariant->images()->attach($otherImage->id, ['position' => 0, 'primary' => true]);
+
+    expect($variant->fresh()->generalMedia()->modelKeys())->toBe([$general->id])
+        ->and(ProductVariant::with('product.variants.images')->find($variant->id)->generalMedia()->modelKeys())
+        ->toBe([$general->id]);
+});
+
+test('variant images fire MediaProductVariant model events when attached, updated or detached', function () {
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+    $media = addProductVariantTestImage($product, 'variant');
+
+    $savedEvent = 'eloquent.saved: '.MediaProductVariant::class;
+    $deletedEvent = 'eloquent.deleted: '.MediaProductVariant::class;
+
+    Event::fake([$savedEvent, $deletedEvent]);
+
+    $variant->images()->attach($media->id, ['position' => 0, 'primary' => false]);
+    Event::assertDispatchedTimes($savedEvent, 1);
+
+    // The admin's primary toggle saves the loaded pivot directly.
+    $pivot = $variant->fresh()->images->first()->pivot;
+    $pivot->primary = true;
+    $pivot->save();
+    Event::assertDispatchedTimes($savedEvent, 2);
+
+    $variant->images()->updateExistingPivot($media->id, ['primary' => false]);
+    Event::assertDispatchedTimes($savedEvent, 3);
+
+    $variant->images()->detach($media->id);
+    Event::assertDispatched($deletedEvent);
+
+    expect($pivot)->toBeInstanceOf(MediaProductVariant::class);
 });
