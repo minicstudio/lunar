@@ -3,12 +3,16 @@
 uses(\Lunar\Tests\Blog\TestCase::class);
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
+use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
+use Lunar\Admin\Support\Forms\Components\TranslatedRichEditor;
 use Lunar\Blog\Filament\Resources\BlogPostResource;
+use Lunar\Blog\Filament\Resources\BlogPostResource\Pages\EditBlogPost;
 use Lunar\Blog\Filament\Resources\BlogPostResource\Pages\ListBlogPosts;
 use Lunar\Blog\Models\BlogPost;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Attribute;
+use Lunar\Models\AttributeGroup;
 use Lunar\Models\Language;
 
 beforeEach(function () {
@@ -39,6 +43,53 @@ test('can render urls sub page', function () {
             'record' => $category->id,
         ]))
         ->assertSuccessful();
+});
+
+test('can attach files to a translated rich text content attribute', function () {
+    $attributeGroup = AttributeGroup::factory()->create([
+        'attributable_type' => 'blog_post',
+        'name' => [
+            'en' => 'Details',
+        ],
+        'handle' => 'details',
+        'position' => 1,
+    ]);
+
+    Attribute::factory()->create([
+        'attribute_type' => 'blog_post',
+        'attribute_group_id' => $attributeGroup->id,
+        'type' => TranslatedText::class,
+        'handle' => 'content',
+        'name' => [
+            'en' => 'Content',
+        ],
+        'description' => [
+            'en' => 'Description',
+        ],
+        'configuration' => [
+            'richtext' => true,
+        ],
+    ]);
+
+    $post = BlogPost::factory()->create();
+
+    $defaultLanguage = Language::where('default', true)->first();
+
+    $attachFilesAction = TestAction::make('attachFiles')->schemaComponent("attributeData.content.{$defaultLanguage->code}", schema: 'form');
+
+    $this->asStaff(admin: true);
+
+    Livewire::test(EditBlogPost::class, [
+        'record' => $post->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertSchemaComponentExists(
+            "attributeData.content.{$defaultLanguage->code}",
+            'form',
+            fn ($component): bool => $component instanceof TranslatedRichEditor,
+        )
+        ->mountAction($attachFilesAction)
+        ->assertActionMounted($attachFilesAction);
 });
 
 test('can create blog post', function () {

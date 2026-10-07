@@ -6,7 +6,10 @@ use Closure;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Lunar\Base\FieldType;
 use Lunar\Models\Language;
 
 class TranslatedText extends TextInput
@@ -50,6 +53,121 @@ class TranslatedText extends TextInput
         $this->default(static function (TranslatedText $component): array {
             return $component->getLanguageDefaults();
         });
+
+        $this->childComponents([]);
+    }
+
+    /**
+     * Unlike the default component hydration, the hydration hooks of this component (e.g. `formatStateUsing()`)
+     * run before the per-language child fields hydrate, as they normalize the translations the children read from.
+     *
+     * @param  array<string, mixed> | null  $hydratedDefaultState
+     * @param  array<string, true>  $appliedStateCastPaths
+     */
+    public function hydrateState(?array &$hydratedDefaultState, bool $shouldCallHydrationHooks = true, bool $shouldApplyStateCasts = true, array &$appliedStateCastPaths = []): void
+    {
+        $this->hydrateDefaultState($hydratedDefaultState);
+
+        if ($hydratedDefaultState === null) {
+            $this->loadStateFromRelationships();
+        }
+
+        $this->unwrapFieldTypeState();
+
+        if ($shouldCallHydrationHooks) {
+            $this->callAfterStateHydrated();
+        }
+
+        foreach ($this->getChildSchemas(withHidden: true) as $childSchema) {
+            $childSchema->hydrateState($hydratedDefaultState, $shouldCallHydrationHooks, $shouldApplyStateCasts, $appliedStateCastPaths);
+        }
+    }
+
+    /**
+     * @param  array<string>  $statePaths
+     */
+    public function hydrateStatePartially(array $statePaths, bool $shouldCallHydrationHooks = true): void
+    {
+        $statePathToCheck = $this->getStatePath();
+
+        $isStatePathMatching = in_array($statePathToCheck, $statePaths);
+
+        while ((! $isStatePathMatching) && str($statePathToCheck)->contains('.')) {
+            $statePathToCheck = (string) str($statePathToCheck)->beforeLast('.');
+
+            $isStatePathMatching = in_array($statePathToCheck, $statePaths);
+        }
+
+        if ($isStatePathMatching) {
+            $this->loadStateFromRelationships();
+
+            $this->unwrapFieldTypeState();
+
+            if ($shouldCallHydrationHooks) {
+                $this->callAfterStateHydrated();
+            }
+        }
+
+        foreach ($this->getChildSchemas(withHidden: true) as $childSchema) {
+            $childSchema->hydrateStatePartially($statePaths, $shouldCallHydrationHooks);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    public function callBeforeStateDehydrated(array &$state = []): static
+    {
+        $this->unwrapFieldTypeState($state);
+
+        return parent::callBeforeStateDehydrated($state);
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    public function dehydrateState(array &$state, bool $isDehydrated = true): void
+    {
+        $this->unwrapFieldTypeState($state);
+
+        parent::dehydrateState($state, $isDehydrated);
+    }
+
+    /**
+     * Field type values (e.g. set through `$set()` or Livewire's field type synthesizers) are unwrapped
+     * into a plain translations array, so the per-language child fields can read and write their state.
+     *
+     * @param  array<string, mixed> | null  $state
+     */
+    protected function unwrapFieldTypeState(?array &$state = null): void
+    {
+        $rawState = $this->getRawState();
+        $unwrappedRawState = $this->unwrapFieldTypeValue($rawState);
+
+        if ($unwrappedRawState !== $rawState) {
+            $this->rawState($unwrappedRawState);
+        }
+
+        $statePath = $this->getStatePath();
+
+        if (($state !== null) && Arr::has($state, $statePath)) {
+            Arr::set($state, $statePath, $this->unwrapFieldTypeValue(Arr::get($state, $statePath)));
+        }
+    }
+
+    protected function unwrapFieldTypeValue(mixed $value): mixed
+    {
+        if ($value instanceof FieldType) {
+            $value = $value->getValue();
+        }
+
+        if (! (is_array($value) || $value instanceof Arrayable)) {
+            return $value;
+        }
+
+        return collect($value)
+            ->map(fn (mixed $item): mixed => $item instanceof FieldType ? $item->getValue() : $item)
+            ->all();
     }
 
     public function prepareChildComponents()
@@ -60,6 +178,25 @@ class TranslatedText extends TextInput
                 $this->getTranslatedTextComponent($lang->code)
             )
         );
+    }
+
+    /**
+     * @return array<string, Schema>
+     */
+    public function getDefaultChildSchemas(): array
+    {
+        $this->prepareChildComponents();
+
+        return $this->getLanguages()
+            ->mapWithKeys(fn (Language $language): array => [
+                $language->code => $this->makeChildSchema($language->code)->components(
+                    $this->components
+                        ->filter(fn ($component): bool => $component->getName() == $language->code)
+                        ->map(fn ($component) => $this->prepareTranslateLocaleComponent($component, $language->code))
+                        ->all()
+                ),
+            ])
+            ->all();
     }
 
     protected function getTranslatedRichEditorComponent(string $langCode): TranslatedRichEditor
@@ -149,24 +286,16 @@ class TranslatedText extends TextInput
 
         $localeComponent->statePath($localeComponent->getName());
 
-        $localeComponent->required($this->isRequired && $locale == $this->getDefaultLanguage()->code);
+        $localeComponent->required(fn (): bool => $this->isRequired() && $locale == $this->getDefaultLanguage()->code);
+
+        $localeComponent->validationAttribute(fn (): string => $this->getValidationAttribute());
 
         return $localeComponent;
     }
 
-    public function getComponentByLanguage(Language $language): Schema
+    public function getComponentByLanguage(Language $language): ?Schema
     {
-        $this->prepareChildComponents();
-
-        return Schema::make($this->getLivewire())
-            ->parentComponent($this)
-            ->components(
-                $this->components
-                    ->filter(fn ($component): bool => $component->getName() == $language->code)
-                    ->map(fn ($component) => $this->prepareTranslateLocaleComponent($component, $language->code))
-                    ->all()
-            )
-            ->getClone();
+        return $this->getChildSchema($language->code);
     }
 
     public function optionRichtext(bool $optionRichtext): static

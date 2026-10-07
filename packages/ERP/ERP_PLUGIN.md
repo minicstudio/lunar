@@ -138,6 +138,8 @@ Enable actions per provider in `config/lunar/erp.php`:
 
 The ERP service provider schedules sync commands using the cron expressions from `config/lunar/erp.php`.
 
+A sync command is only registered in the scheduler when its `sync.<feature>` list contains at least one enabled provider. A billing-only setup (e.g. `providers => ['smartbill']` with empty `sync` lists) therefore schedules no `erp:sync-*` commands at all, instead of registering them and skipping them on every run. A feature that has providers but no `schedule.<feature>` expression throws an `ErpInitializationException` at boot.
+
 Default schedules:
 
 - Products: every 10 minutes

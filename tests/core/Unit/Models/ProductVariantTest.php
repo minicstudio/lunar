@@ -298,3 +298,37 @@ test('returns variant option values ordered by position', function () {
     expect($variant->load('values')->values->pluck('position')->all())
         ->toBe([1, 2, 3]);
 });
+
+test('decreaseStock floors stock at zero for in_stock purchasable', function () {
+    $variant = ProductVariant::factory()->create([
+        'stock' => 2,
+        'backorder' => 0,
+        'purchasable' => 'in_stock',
+    ]);
+
+    $variant->decreaseStock(5);
+
+    expect($variant->stock)->toBe(0)
+        ->and($variant->backorder)->toBe(0);
+});
+
+test('decreaseStock floors stock at zero and reduces backorder when not in_stock', function () {
+    $variant = ProductVariant::factory()->create([
+        'stock' => 2,
+        'backorder' => 10,
+        'purchasable' => 'always',
+    ]);
+
+    $variant->decreaseStock(5);
+
+    expect($variant->stock)->toBe(0)
+        ->and($variant->backorder)->toBe(7);
+});
+
+test('stock assignment cannot go below zero', function () {
+    $variant = ProductVariant::factory()->create(['stock' => 5]);
+
+    $variant->stock = -3;
+
+    expect($variant->stock)->toBe(0);
+});

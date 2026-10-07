@@ -276,9 +276,9 @@ Carrier and ERP packages extend order UI (e.g. `ShippingExtension` for AWB downl
 Selects orders where:
 
 - `status` = `lunar.review.order_status_for_review_reminder`
-- `updated_at` in configured delay windows (first/second reminder)
+- `updated_at` in configured delay windows (first/second reminder), each `--window-minutes` wide (default 60)
 
-Sends configured mailable to order user. **Not scheduled** in package providers — host must schedule the command.
+Sends configured mailable to order user. **Not scheduled** in package providers — host must schedule the command, with `--window-minutes` equal to the schedule interval.
 
 ---
 

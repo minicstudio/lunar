@@ -6,6 +6,7 @@ use Cartalyst\Converter\Laravel\Facades\Converter;
 use Lunar\DataTypes\ShippingOption;
 use Lunar\Exceptions\MissingCurrencyPriceException;
 use Lunar\Facades\Pricing;
+use Lunar\Models\Contracts\Cart;
 use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
 use Lunar\Shipping\Interfaces\ShippingRateInterface;
@@ -111,13 +112,12 @@ class ShipBy implements ShippingRateInterface
             // weight converts from its own purchasable unit.
             $weightUnit = $shippingMethod->weight_unit ?: 'kg';
 
-            $tier = $cart->lines->sum(
-                fn ($line) => $line->purchasable->weight->to("weight.{$weightUnit}")->convert()->getValue() * $line->quantity
-            );
+            $tier = $this->cartWeightInUnit($cart, $weightUnit);
         }
 
         // if locker then max weight check: max 20 kg
-        if (! empty($cart->meta['shippingType']) && $cart->meta['shippingType'] === 'locker' && $totalWeight > 20) {
+        if (! empty($cart->meta['shippingType']) && $cart->meta['shippingType'] === 'locker'
+            && $this->cartWeightInUnit($cart, 'kg') > 20) {
             return null;
         }
 
@@ -193,5 +193,15 @@ class ShipBy implements ShippingRateInterface
         $this->shippingRate = $shippingRate;
 
         return $this;
+    }
+
+    /**
+     * Sum the cart lines' weight, converted into the given unit.
+     */
+    private function cartWeightInUnit(Cart $cart, string $unit): float
+    {
+        return $cart->lines->sum(
+            fn ($line) => $line->purchasable->weight->to("weight.{$unit}")->convert()->getValue() * $line->quantity
+        );
     }
 }

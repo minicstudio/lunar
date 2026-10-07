@@ -2,6 +2,7 @@
 
 namespace Lunar\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -273,17 +274,30 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     }
 
     /**
+     * Ensure stock is never stored below zero.
+     */
+    protected function stock(): Attribute
+    {
+        return Attribute::make(
+            set: fn (mixed $value) => max(0, (int) $value),
+        );
+    }
+
+    /**
      * Decrease the stock.
+     *
+     * Stock is floored at 0. When purchasable is not `in_stock`, any
+     * shortfall is applied to backorder (which may go negative).
      */
     public function decreaseStock(int $quantity = 1): self
     {
-        $this->stock -= $quantity;
+        $remaining = $this->stock - $quantity;
 
-        if ($this->stock < 0 && $this->purchasable !== 'in_stock') {
-            // stock is negative, so add to backorder
-            $this->backorder += $this->stock;
-            $this->stock = 0;
+        if ($remaining < 0 && $this->purchasable !== 'in_stock') {
+            $this->backorder += $remaining;
         }
+
+        $this->stock = max(0, $remaining);
 
         return $this;
     }

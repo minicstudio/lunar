@@ -123,7 +123,8 @@ class ProductVariantResource extends BaseResource
         return TextInput::make('stock')
             ->label(
                 __('lunarpanel::productvariant.form.stock.label')
-            )->numeric();
+            )->numeric()
+            ->minValue(0);
     }
 
     public static function getBackorderFormComponent(): TextInput

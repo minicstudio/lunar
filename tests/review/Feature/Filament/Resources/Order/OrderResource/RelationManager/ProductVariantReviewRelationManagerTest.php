@@ -156,7 +156,7 @@ test('can create review through product review relation manager', function () {
         ->and($review->translateAttribute('rating'))
         ->toBe($rating)
         ->and($review->translateAttribute('comment', 'en'))
-        ->toBe($comment);
+        ->toBe("<p>{$comment}</p>");
 
     expect($review->reviewable_id)->toBe($product->id);
     expect($review->order_id)->toBe($order->id);
@@ -267,7 +267,7 @@ test('can save edited product review data', function () {
     expect($review->refresh()->translateAttribute('rating'))
         ->toBe($rating)
         ->and($review->translateAttribute('comment', 'en'))
-        ->toBe($comment);
+        ->toBe("<p>{$comment}</p>");
 });
 
 test('can delete a review for a specific order', function () {

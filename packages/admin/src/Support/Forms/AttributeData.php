@@ -197,7 +197,13 @@ class AttributeData
         return array_replace(
             $defaults,
             collect($value)
-                ->map(fn (mixed $item): string => filled($item) ? (string) $item : '')
+                ->map(function (mixed $item): string|array {
+                    if (is_array($item)) {
+                        return $item;
+                    }
+
+                    return filled($item) ? (string) $item : '';
+                })
                 ->all(),
         );
     }

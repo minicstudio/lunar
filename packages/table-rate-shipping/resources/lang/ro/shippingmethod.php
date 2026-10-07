@@ -33,6 +33,16 @@ return [
         'stock_available' => [
             'label' => 'Stocul tuturor articolelor din coș trebuie să fie disponibil',
         ],
+        'weight_unit' => [
+            'label' => 'Unitate de greutate',
+            'placeholder' => 'Fără restricție de greutate',
+        ],
+        'min_weight' => [
+            'label' => 'Greutate minimă',
+        ],
+        'max_weight' => [
+            'label' => 'Greutate maximă',
+        ],
     ],
     'table' => [
         'name' => [

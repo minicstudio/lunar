@@ -4,7 +4,9 @@ namespace Lunar\Validation\CartLine;
 
 use Lunar\Actions\Carts\GetExistingCartLine;
 use Lunar\Base\Purchasable;
+use Lunar\Exceptions\Carts\MaximumQuantityException;
 use Lunar\Exceptions\Carts\MinimumQuantityException;
+use Lunar\Exceptions\Carts\QuantityIncrementException;
 use Lunar\Facades\CartSession;
 use Lunar\Models\CartLine;
 use Lunar\Validation\BaseValidator;
@@ -41,7 +43,8 @@ class CartLineQuantity extends BaseValidator
                 'cart',
                 __('lunar::exceptions.maximum_cart_line_quantity', [
                     'quantity' => 1000000,
-                ])
+                ]),
+                MaximumQuantityException::class
             );
         }
 
@@ -69,7 +72,8 @@ class CartLineQuantity extends BaseValidator
                 __('lunar::exceptions.quantity_increment', [
                     'quantity' => $quantity,
                     'increment' => $purchasable->quantity_increment,
-                ])
+                ]),
+                QuantityIncrementException::class
             );
         }
 

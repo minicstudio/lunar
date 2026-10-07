@@ -36,6 +36,16 @@ return [
         'limitations' => [
             'label' => 'Korlátozások',
         ],
+        'weight_unit' => [
+            'label' => 'Súlyegység',
+            'placeholder' => 'Nincs súlykorlátozás',
+        ],
+        'min_weight' => [
+            'label' => 'Minimális súly',
+        ],
+        'max_weight' => [
+            'label' => 'Maximális súly',
+        ],
     ],
     'table' => [
         'name' => [

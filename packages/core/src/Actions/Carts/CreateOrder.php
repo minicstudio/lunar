@@ -28,10 +28,14 @@ final class CreateOrder extends AbstractAction
             /** @var Cart $cart */
             $order = $cart->draftOrder($orderIdToUpdate)->first() ?: App::make(OrderContract::class);
 
-            // Read before the creation pipeline runs: MapDiscountBreakdown
-            // rewrites the order's breakdown, so afterwards every discount would
-            // look as though it had already been consumed.
-            $alreadyConsumed = $cart->consumedDiscountIds();
+            // LFP-809 local override: lunar-frontend consumes discounts itself,
+            // exactly once, in AuthorizeOrderPayment::performPostSuccessActions()
+            // at payment success - not here at draft order creation. Marking it
+            // here too double-counted `uses` and the `users` pivot on every order.
+            // // Read before the creation pipeline runs: MapDiscountBreakdown
+            // // rewrites the order's breakdown, so afterwards every discount would
+            // // look as though it had already been consumed.
+            // $alreadyConsumed = $cart->consumedDiscountIds();
 
             if ($cart->hasCompletedOrders() && ! $allowMultipleOrders) {
                 throw new DisallowMultipleCartOrdersException;
@@ -50,19 +54,19 @@ final class CreateOrder extends AbstractAction
                     return $order;
                 });
 
-            // Creating the order again for the same cart - a declined card and a
-            // retry - must not consume a second use of the same discount.
-            $cart->discounts?->each(function ($discount) use ($cart, $alreadyConsumed) {
-                if ($alreadyConsumed->contains($discount->discount->id)) {
-                    return;
-                }
-
-                $discount->markAsUsed($cart)->discount->save();
-            });
-
-            // The breakdown has been rewritten, so anything still holding this
-            // cart must not read a set memoised before the order existed.
-            $cart->forgetConsumedDiscountIds();
+            // // Creating the order again for the same cart - a declined card and a
+            // // retry - must not consume a second use of the same discount.
+            // $cart->discounts?->each(function ($discount) use ($cart, $alreadyConsumed) {
+            //     if ($alreadyConsumed->contains($discount->discount->id)) {
+            //         return;
+            //     }
+            //
+            //     $discount->markAsUsed($cart)->discount->save();
+            // });
+            //
+            // // The breakdown has been rewritten, so anything still holding this
+            // // cart must not read a set memoised before the order existed.
+            // $cart->forgetConsumedDiscountIds();
 
             $cart->save();
 
