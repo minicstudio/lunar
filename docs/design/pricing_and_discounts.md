@@ -93,7 +93,9 @@ Tax **amounts** on carts are computed later in `CalculateTax` via `TaxManager` /
 
 ### Enabled discount types (fork)
 
-`DiscountManager` registers **only** `AdvancedAmountOff`. `AmountOff` and `BuyXGetY` exist in the codebase but are **commented out** (“disabled for security”).
+`DiscountManager` registers **`AdvancedAmountOff`** and **`BuyXGetY`**. `AmountOff` remains disabled. BXGY uses cart-level `BuyXGetY::apply()` (including optional `automatically_add_rewards` and parent-line `selected_gift_rewards` meta for multi-gift PDP picks).
+
+**Dual-use rewards:** the same catalog product/variant may be sold at full price and also granted as a free BXGY gift. With `automatically_add_rewards`, free units are always a **separate** cart line tagged `meta.added_by_discount` — they never merge into or discount a shopper-paid line for the same purchasable. Condition `min_qty` ignores gift lines. Catalog price may stay normal; freeness comes from the gift-line discount, not a dedicated zero-price SKU. `gift_only` remains an optional storefront ATC block for rewards that must never be sold standalone.
 
 `CouponValidator` still queries all three class names for coupon existence checks.
 
