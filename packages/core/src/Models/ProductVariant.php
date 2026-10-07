@@ -217,21 +217,65 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
         return $this->sku;
     }
 
+    /**
+     * Get the variant's images through the MediaProductVariant pivot, so changes to them fire model events.
+     */
     public function images(): BelongsToMany
     {
         $prefix = config('lunar.database.table_prefix');
 
         return $this->belongsToMany(Media::class, "{$prefix}media_product_variant")
+            ->using(MediaProductVariant::class)
             ->withPivot(['primary', 'position'])
             ->orderBy('position')
             ->withTimestamps();
     }
 
+    /**
+     * Get the variant primary image, or its first image by pivot position.
+     * Fall back to the general media's primary or first image, then to all
+     * product media's primary or first image in product media order.
+     */
     public function getThumbnail(): ?Media
     {
-        return $this->images->first(function ($media) {
-            return (bool) $media->pivot?->primary;
-        }) ?: $this->product->thumbnail;
+        $productMedia = $this->product->media->sortBy('order_column');
+        $variantImage = $this->images->firstWhere('pivot.primary', true) ?? $this->images->first();
+
+        if ($variantImage) {
+            return $productMedia->firstWhere('id', $variantImage->getKey()) ?? $variantImage;
+        }
+
+        $generalMedia = $this->generalMedia();
+        $isPrimary = fn (Media $media): bool => $media->getCustomProperty('primary') === true;
+
+        return $generalMedia->first($isPrimary)
+            ?? $generalMedia->first()
+            ?? $productMedia->first($isPrimary)
+            ?? $productMedia->first();
+    }
+
+    /**
+     * Get the general media: the product's media not assigned to any of its variants.
+     *
+     * Uses the variant images when loaded for every variant, otherwise a single pivot query,
+     * so partially loaded variants never lazy load their images one by one.
+     *
+     * @return Collection<int, Media>
+     */
+    public function generalMedia(): Collection
+    {
+        $product = $this->product;
+
+        $variantImagesLoaded = $product->relationLoaded('variants')
+            && $product->variants->every(fn (ProductVariant $variant) => $variant->relationLoaded('images'));
+
+        $variantMediaIds = $variantImagesLoaded
+            ? $product->variants->flatMap(fn (ProductVariant $variant) => $variant->images->modelKeys())
+            : MediaProductVariant::query()
+                ->whereIn('product_variant_id', $product->variants()->select('id'))
+                ->pluck('media_id');
+
+        return $product->media->whereNotIn('id', $variantMediaIds->unique())->sortBy('order_column')->values();
     }
 
     public function canBeFulfilledAtQuantity(int $quantity): bool
