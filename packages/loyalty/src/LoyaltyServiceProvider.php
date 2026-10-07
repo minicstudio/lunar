@@ -18,7 +18,6 @@ use Lunar\Loyalty\Console\NotifyExpiringLoyaltyPointsCommand;
 use Lunar\Loyalty\Console\RecalculateBalancesCommand;
 use Lunar\Loyalty\Database\State\EnsureLoyaltyPermissions;
 use Lunar\Loyalty\Listeners\RegistrationListener;
-use Lunar\Loyalty\Mixins\CustomerMixin;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Models\LoyaltyTransaction;
 use Lunar\Loyalty\Observers\OrderObserver;
@@ -69,7 +68,6 @@ class LoyaltyServiceProvider extends ServiceProvider
         $this->registerModelManifest();
         $this->loadPackageAssets();
         $this->publishAssets();
-        $this->registerModelMixins();
         $this->registerRelations();
         $this->registerMorphMap();
         $this->registerObservers();
@@ -105,12 +103,17 @@ class LoyaltyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register earn/spend transaction relations on Lunar's Order.
+     * Register loyalty relations on Lunar Customer and Order.
      *
-     * Storefront Order extends this class, so Eloquent resolves the relations there too.
+     * Uses resolveRelationUsing (not Macroable mixins) so Eloquent property access
+     * and Filament relation managers recognise the relation via isRelation().
      */
     protected function registerRelations(): void
     {
+        Customer::resolveRelationUsing('loyaltyAccount', function (Customer $customer) {
+            return $customer->hasOne(LoyaltyAccount::modelClass());
+        });
+
         Order::resolveRelationUsing('loyaltyEarnTransaction', function ($order) {
             return $this->orderLoyaltyTransactionRelation($order, LoyaltyEventKey::orderEarn(...));
         });
@@ -171,14 +174,6 @@ class LoyaltyServiceProvider extends ServiceProvider
                 RecalculateBalancesCommand::class,
             ]);
         }
-    }
-
-    /**
-     * Register mixins for models.
-     */
-    protected function registerModelMixins(): void
-    {
-        Customer::mixin(new CustomerMixin);
     }
 
     /**
