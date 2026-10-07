@@ -257,7 +257,8 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     /**
      * Get the general media: the product's media not assigned to any of its variants.
      *
-     * Uses the loaded variant images when available, otherwise a single pivot query.
+     * Uses the variant images when loaded for every variant, otherwise a single pivot query,
+     * so partially loaded variants never lazy load their images one by one.
      *
      * @return Collection<int, Media>
      */
@@ -265,7 +266,10 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     {
         $product = $this->product;
 
-        $variantMediaIds = $product->relationLoaded('variants')
+        $variantImagesLoaded = $product->relationLoaded('variants')
+            && $product->variants->every(fn (ProductVariant $variant) => $variant->relationLoaded('images'));
+
+        $variantMediaIds = $variantImagesLoaded
             ? $product->variants->flatMap(fn (ProductVariant $variant) => $variant->images->modelKeys())
             : MediaProductVariant::query()
                 ->whereIn('product_variant_id', $product->variants()->select('id'))
