@@ -55,6 +55,19 @@ return [
         'new_customer' => [
             'label' => 'Loại khách hàng',
         ],
+        'payment_type' => [
+            'label' => 'Loại thanh toán',
+            'options' => [
+                'offline' => 'Ngoại tuyến',
+                'card' => 'Thẻ',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Tổng từ',
+        ],
+        'total_to' => [
+            'label' => 'Tổng đến',
+        ],
         'placed_after' => [
             'label' => 'Đặt sau',
         ],

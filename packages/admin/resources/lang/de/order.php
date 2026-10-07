@@ -52,6 +52,19 @@ return [
         'new_customer' => [
             'label' => 'Kundentyp',
         ],
+        'payment_type' => [
+            'label' => 'Zahlungsart',
+            'options' => [
+                'offline' => 'Offline',
+                'card' => 'Karte',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Gesamt ab',
+        ],
+        'total_to' => [
+            'label' => 'Gesamt bis',
+        ],
         'placed_after' => [
             'label' => 'Plaziert nach',
         ],

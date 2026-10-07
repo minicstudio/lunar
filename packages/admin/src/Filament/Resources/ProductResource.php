@@ -52,6 +52,8 @@ use Lunar\Facades\StorefrontSession;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Attribute;
+use Lunar\Models\Collection;
+use Lunar\Models\Contracts\Collection as CollectionContract;
 use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
@@ -300,6 +302,37 @@ class ProductResource extends BaseResource
                 SelectFilter::make('brand')
                     ->label(__('lunarpanel::product.table.brand.label'))
                     ->relationship('brand', 'name'),
+                SelectFilter::make('productType')
+                    ->label(__('lunarpanel::product.table.producttype.label'))
+                    ->relationship('productType', 'name')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('collections')
+                    ->label(__('lunarpanel::product.form.collections.label'))
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->options(function (): array {
+                        return Collection::modelClass()::query()
+                            ->get()
+                            ->mapWithKeys(fn (CollectionContract $collection): array => [
+                                $collection->getKey() => (string) $collection->attr('name'),
+                            ])
+                            ->all();
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['values'] ?? [])) {
+                            return $query;
+                        }
+
+                        return $query->whereHas(
+                            'collections',
+                            fn (Builder $collectionsQuery): Builder => $collectionsQuery->whereIn(
+                                $collectionsQuery->qualifyColumn('id'),
+                                $data['values'],
+                            ),
+                        );
+                    }),
                 SelectFilter::make('stock')
                     ->label(__('lunarpanel::product.table.stock.label'))
                     ->options([
@@ -327,6 +360,7 @@ class ProductResource extends BaseResource
                     }),
                 TrashedFilter::make(),
             ])
+            ->filtersFormColumns(2)
             ->recordActions([
                 EditAction::make(),
             ])

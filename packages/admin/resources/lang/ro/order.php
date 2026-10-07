@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'Tip client',
         ],
+        'payment_type' => [
+            'label' => 'Tip de plată',
+            'options' => [
+                'offline' => 'Offline',
+                'card' => 'Card',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Total de la',
+        ],
+        'total_to' => [
+            'label' => 'Total până la',
+        ],
         'placed_after' => [
             'label' => 'Plasată după',
         ],

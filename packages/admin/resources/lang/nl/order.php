@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'Klanttype',
         ],
+        'payment_type' => [
+            'label' => 'Betaalwijze',
+            'options' => [
+                'offline' => 'Offline',
+                'card' => 'Kaart',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Totaal vanaf',
+        ],
+        'total_to' => [
+            'label' => 'Totaal tot',
+        ],
         'placed_after' => [
             'label' => 'Geplaatst na',
         ],

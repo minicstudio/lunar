@@ -56,6 +56,19 @@ return [
         'new_customer' => [
             'label' => 'Vásárló típusa',
         ],
+        'payment_type' => [
+            'label' => 'Fizetési mód',
+            'options' => [
+                'offline' => 'Offline',
+                'card' => 'Kártya',
+            ],
+        ],
+        'total_from' => [
+            'label' => 'Végösszeg tól',
+        ],
+        'total_to' => [
+            'label' => 'Végösszeg ig',
+        ],
         'placed_after' => [
             'label' => 'Rendelés ideje után',
         ],
