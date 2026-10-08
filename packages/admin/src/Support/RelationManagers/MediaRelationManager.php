@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Lunar\Admin\Events\ModelMediaUpdated;
 use Lunar\Admin\Rules\SecureMediaUploadRule;
+use Lunar\Base\MediaFileName;
 use Lunar\Base\MediaWebpConverter;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -109,10 +110,22 @@ class MediaRelationManager extends BaseRelationManager
                             $data['media']->getClientOriginalName()
                         );
 
-                        $media = $this->getOwnerRecord()->addMediaFromString($converted['contents'])
-                            ->usingFileName($converted['file_name'])
+                        $owner = $this->getOwnerRecord();
+
+                        $name = MediaFileName::altText($owner, $data['custom_properties']['name'] ?? null);
+                        $identifier = (string) Str::uuid();
+
+                        $fileName = MediaFileName::unique(
+                            MediaFileName::forOwner($converted['file_name'], $owner, $name, $identifier),
+                            MediaFileName::usedBy($owner->getMorphClass(), $owner->getKey())
+                        );
+
+                        $media = $owner->addMediaFromString($converted['contents'])
+                            ->usingFileName($fileName)
+                            ->usingName(Str::substr(filled($name) ? $name : pathinfo($fileName, PATHINFO_FILENAME), 0, 255))
+                            ->withProperties(['uuid' => $identifier])
                             ->withCustomProperties([
-                                'name' => $data['custom_properties']['name'],
+                                'name' => $name,
                                 'primary' => $data['custom_properties']['primary'],
                             ])
                             ->preservingOriginal()

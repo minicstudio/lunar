@@ -1,16 +1,18 @@
 <?php
 
-uses(\Lunar\Tests\Review\TestCase::class);
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
-
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
+use Lunar\FieldTypes\Dropdown;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Attribute;
 use Lunar\Models\AttributeGroup;
+use Lunar\Models\Channel;
 use Lunar\Models\Country;
 use Lunar\Models\Customer;
 use Lunar\Models\CustomerGroup;
@@ -18,12 +20,110 @@ use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Lunar\Review\Filament\Resources\OrderResource\RelationManagers\ChannelReviewRelationManager;
 use Lunar\Review\Filament\Resources\OrderResource\RelationManagers\ProductVariantReviewRelationManager;
 use Lunar\Review\Models\Review;
+use Lunar\Tests\Review\TestCase;
+
+uses(TestCase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->asStaff(admin: true);
 });
+
+test('admin review uploads use the same media names as storefront uploads', function (bool $channelReview, bool $editing) {
+    $this->createLanguages();
+    $this->createCurrencies();
+    app()->setLocale('hu');
+    Storage::fake('public');
+    config(['lunar.review.upload_disk' => 'public']);
+
+    $order = Order::factory()->create();
+
+    if ($channelReview) {
+        $subject = Channel::factory()->create(['name' => 'Webáruház']);
+        $order->update(['channel_id' => $subject->id]);
+        $relationManager = ChannelReviewRelationManager::class;
+        $expectedName = 'Webáruház';
+        $expectedSlug = 'webaruhaz';
+    } else {
+        $product = Product::factory()->create([
+            'attribute_data' => collect(['name' => new TranslatedText([
+                'en' => 'Summer dress',
+                'hu' => 'Nyári ruha',
+            ])]),
+        ]);
+        $subject = ProductVariant::factory()->for($product)->create();
+        OrderLine::factory()->create([
+            'order_id' => $order->id,
+            'purchasable_id' => $subject->id,
+            'purchasable_type' => $subject->getMorphClass(),
+        ]);
+        $relationManager = ProductVariantReviewRelationManager::class;
+        $expectedName = 'Summer dress';
+        $expectedSlug = 'summer-dress';
+    }
+
+    $attributeGroup = AttributeGroup::factory()->create(['attributable_type' => 'review']);
+    Attribute::factory()->create([
+        'attribute_group_id' => $attributeGroup->id,
+        'attribute_type' => 'review',
+        'handle' => 'title',
+        'type' => TranslatedText::class,
+        'configuration' => ['richtext' => false],
+    ]);
+
+    $review = $editing ? Review::factory()->create([
+        'order_id' => $order->id,
+        'reviewable_type' => $subject->getMorphClass(),
+        'reviewable_id' => $subject->id,
+    ]) : null;
+    $existingMedia = $review?->addMedia(UploadedFile::fake()->image('existing.jpg'))
+        ->toMediaCollection('reviews');
+    $uploads = [
+        UploadedFile::fake()->image('customer-private-name.jpg'),
+        UploadedFile::fake()->image('customer-private-name.jpg'),
+    ];
+
+    if ($existingMedia) {
+        $uploads[$existingMedia->uuid] = $existingMedia->uuid;
+    }
+
+    Livewire::test($relationManager, [
+        'ownerRecord' => $order,
+        'pageClass' => ManageOrder::class,
+    ])->callTableAction($editing ? EditAction::class : CreateAction::class, record: $review, data: [
+        'reviewable_id' => $subject->id,
+        'attribute_data.title.en' => 'Great choice',
+        'attribute_data.title.hu' => 'Remek választás',
+        'review' => $uploads,
+    ])->assertHasNoTableActionErrors();
+
+    $review ??= Review::query()->where('order_id', $order->id)->firstOrFail();
+    $mediaItems = $review->fresh()->getMedia('reviews');
+
+    expect($mediaItems)->toHaveCount($editing ? 3 : 2);
+
+    $newMediaItems = $mediaItems->reject(fn ($media) => $media->id === $existingMedia?->id);
+    expect($newMediaItems->pluck('uuid')->unique())->toHaveCount(2)
+        ->and($newMediaItems->pluck('file_name')->unique())->toHaveCount(2);
+
+    foreach ($newMediaItems as $media) {
+        expect($media->file_name)->toBe($expectedSlug.'-'.$media->uuid.'.jpg')
+            ->and($media->name)->toBe($expectedName.' - Great choice')
+            ->and($media->getCustomProperty('name'))->toBe($expectedName.' - Great choice')
+            ->and($media->hasGeneratedConversion('small'))->toBeTrue()
+            ->and($media->hasGeneratedConversion('full'))->toBeTrue();
+
+        Storage::disk('public')->assertExists($media->getPathRelativeToRoot());
+    }
+
+    if ($existingMedia) {
+        expect($existingMedia->fresh()->file_name)->toBe('existing.jpg');
+        Storage::disk('public')->assertExists($existingMedia->getPathRelativeToRoot());
+    }
+})->with([false, true])->with([false, true]);
 
 test('can display reviews for a specific order', function () {
     $this->createLanguages();
@@ -107,7 +207,7 @@ test('can create review through product review relation manager', function () {
         'name' => [
             'en' => 'Rating',
         ],
-        'type' => \Lunar\FieldTypes\Dropdown::class,
+        'type' => Dropdown::class,
         'handle' => 'rating',
         'configuration' => [
             'lookups' => [
@@ -220,7 +320,7 @@ test('can save edited product review data', function () {
         'name' => [
             'en' => 'Rating',
         ],
-        'type' => \Lunar\FieldTypes\Dropdown::class,
+        'type' => Dropdown::class,
         'handle' => 'rating',
         'configuration' => [
             'lookups' => [
