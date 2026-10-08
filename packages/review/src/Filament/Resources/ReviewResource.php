@@ -2,12 +2,13 @@
 
 namespace Lunar\Review\Filament\Resources;
 
-use Filament\Schemas\Components\Component;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\Column;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -18,9 +19,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Str;
+use League\Flysystem\UnableToCheckFileExistence;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\Support\Forms\Components\Attributes;
 use Lunar\Admin\Support\Resources\BaseResource;
+use Lunar\Base\MediaFileName;
+use Lunar\FieldTypes\TranslatedText;
 use Lunar\Review\Filament\Resources\ReviewResource\Pages\ListReview;
 use Lunar\Review\Models\Review;
 
@@ -138,7 +143,41 @@ class ReviewResource extends BaseResource
             ->collection('reviews')
             ->maxFiles(config('lunar.review.max_files'))
             ->image()
-            ->imageEditor();
+            ->imageEditor()
+            ->saveUploadedFileUsing(static function (SpatieMediaLibraryFileUpload $component, TemporaryUploadedFile $file, Model $record, Get $get): ?string {
+                try {
+                    if (! $file->exists()) {
+                        return null;
+                    }
+                } catch (UnableToCheckFileExistence $exception) {
+                    return null;
+                }
+
+                $reviewForNaming = clone $record;
+                $title = $get('attribute_data.title');
+
+                if ($title !== null) {
+                    $reviewForNaming->attribute_data = collect($record->attribute_data)->put(
+                        'title', $title instanceof TranslatedText ? $title : new TranslatedText($title),
+                    );
+                }
+
+                $identifier = (string) Str::uuid();
+                $name = MediaFileName::altText($reviewForNaming);
+
+                $media = $record->addMediaFromString($file->get())
+                    ->addCustomHeaders(['ContentType' => $file->getMimeType(), ...$component->getCustomHeaders()])
+                    ->usingFileName(MediaFileName::forOwner($file->getClientOriginalName(), $record, identifier: $identifier))
+                    ->usingName(Str::substr($name, 0, 255))
+                    ->storingConversionsOnDisk($component->getConversionsDisk() ?? '')
+                    ->withCustomProperties([...$component->getCustomProperties($file), 'name' => $name])
+                    ->withManipulations($component->getManipulations())
+                    ->withResponsiveImagesIf($component->hasResponsiveImages())
+                    ->withProperties([...$component->getProperties(), 'uuid' => $identifier])
+                    ->toMediaCollection($component->getCollection() ?? 'reviews', $component->getDiskName());
+
+                return $media->uuid;
+            });
     }
 
     /**

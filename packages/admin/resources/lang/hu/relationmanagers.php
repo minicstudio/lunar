@@ -130,7 +130,7 @@ return [
         'form' => [
             'name' => [
                 'label' => 'Név',
-                'helper_text' => 'A kép alt szövege lesz — fontos a SEO szempontjából és a látássérültek akadálymentessége miatt.',
+                'helper_text' => 'A kép alt szövege lesz — fontos a SEO szempontjából és a látássérültek akadálymentessége miatt. Feltöltéskor a fájlnév is ebből készül (ékezetek és speciális karakterek nélkül); név hiányában a feltöltött fájl nevéből.',
             ],
             'media' => [
                 'label' => 'Kép',

@@ -120,7 +120,7 @@ return [
         'form' => [
             'name' => [
                 'label' => 'Nume',
-                'helper_text' => 'Devine textul alt al imaginii — important pentru SEO și pentru accesibilitatea persoanelor cu deficiențe de vedere.',
+                'helper_text' => 'Devine textul alt al imaginii — important pentru SEO și pentru accesibilitatea persoanelor cu deficiențe de vedere. La încărcare, numele fișierului este generat tot din acesta (fără diacritice și caractere speciale); în lipsa lui, din numele fișierului încărcat.',
             ],
             'media' => [
                 'label' => 'Imagine',

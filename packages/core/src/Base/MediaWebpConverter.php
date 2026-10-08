@@ -68,7 +68,10 @@ class MediaWebpConverter
 
         $inputPath = self::temporaryPath(filled($extension) ? $extension : 'png');
         $outputPath = self::temporaryPath('webp');
-        $newFileName = self::webpFileName($media->file_name);
+        $newFileName = MediaFileName::unique(
+            self::webpFileName($media->file_name),
+            MediaFileName::usedBy($media->model_type, $media->model_id, $media->getKey())
+        );
         $oldRelativePath = $media->getPathRelativeToRoot();
 
         try {
@@ -148,13 +151,13 @@ class MediaWebpConverter
     }
 
     /**
-     * Generate a WebP file name from a given file name.
+     * Generate a slugified WebP file name from a given file name.
      *
      * @param  string  $fileName  Source file name including extension.
      */
     protected static function webpFileName(string $fileName): string
     {
-        return File::name($fileName).'.webp';
+        return MediaFileName::slug(File::name($fileName)).'.webp';
     }
 
     /**

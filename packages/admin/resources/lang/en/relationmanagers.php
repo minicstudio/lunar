@@ -130,7 +130,7 @@ return [
         'form' => [
             'name' => [
                 'label' => 'Name',
-                'helper_text' => 'Used as the image alt text — important for SEO and accessibility for visually impaired users.',
+                'helper_text' => 'Used as the image alt text — important for SEO and accessibility for visually impaired users. On upload, the file name is generated from it too (accents and special characters removed); without a name, from the uploaded file name.',
             ],
             'media' => [
                 'label' => 'Image',
