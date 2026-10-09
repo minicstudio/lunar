@@ -325,6 +325,17 @@ Storefront payment finalization and extra drivers: `lunar-frontend` (`AuthorizeO
 | **Filament** | `ReviewResource`; extended `OrderResource` in package            |
 
 
+### Feedback (`packages/feedback`)
+
+
+|              |                                                                                          |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| **Purpose**  | One score + optional comment per order and type (collected by the storefront)            |
+| **Models**   | `Feedback` (`lunar_feedback`, unique `order_id` + `type`)                                |
+| **Config**   | `lunar.feedback` (`FEEDBACK_ENABLED`, scale, threshold, type keys)                       |
+| **Filament** | `FeedbackPlugin`, read-only `FeedbackResource`; `OrderResource` / `ManageOrder` extensions |
+
+
 ### Locations (`packages/locations`)
 
 
