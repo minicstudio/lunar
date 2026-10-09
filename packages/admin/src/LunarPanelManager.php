@@ -2,8 +2,8 @@
 
 namespace Lunar\Admin;
 
-use Minic\LaravelAiAssistant\Filament\AiAssistantPlugin;
 use Closure;
+use Filament\Actions\Action;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\TagsInput;
@@ -23,6 +23,7 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Support\Facades\FilamentIcon;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Filament\Widgets\Widget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -70,6 +71,7 @@ use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderValuesByStatusChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\PopularProductsTable;
 use Lunar\Admin\Http\Controllers\DownloadPdfController;
 use Lunar\Admin\Support\Facades\LunarAccessControl;
+use Minic\LaravelAiAssistant\Filament\AiAssistantPlugin;
 
 class LunarPanelManager
 {
@@ -194,7 +196,8 @@ class LunarPanelManager
         Table::configureUsing(function (Table $table): void {
             $table
                 ->paginationPageOptions([10, 25, 50, 100, 250])
-                ->defaultPaginationPageOption(25);
+                ->defaultPaginationPageOption(25)
+                ->filtersApplyAction(fn (Action $action): Action => $action->close($table->getFiltersLayout() === FiltersLayout::Dropdown));
         });
 
         Section::configureUsing(fn (Section $section) => $section->columnSpanFull());

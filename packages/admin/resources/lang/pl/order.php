@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'Tagi',
+            'no_options_message' => 'Nie znaleziono tagów',
         ],
         'postcode' => [
             'label' => 'Kod pocztowy',

@@ -32,6 +32,7 @@ return [
         ],
         'tags' => [
             'label' => 'Tags',
+            'no_options_message' => 'Keine Tags gefunden',
         ],
         'postcode' => [
             'label' => 'Postleitzahl',
