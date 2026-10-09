@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'الوسوم',
+            'no_options_message' => 'لم يتم العثور على وسوم',
         ],
         'postcode' => [
             'label' => 'الرمز البريدي',

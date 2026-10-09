@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'Etiketler',
+            'no_options_message' => 'Etiket bulunamadı',
         ],
         'postcode' => [
             'label' => 'Posta Kodu',

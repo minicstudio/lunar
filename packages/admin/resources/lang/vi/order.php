@@ -35,6 +35,7 @@ return [
         ],
         'tags' => [
             'label' => 'Thẻ',
+            'no_options_message' => 'Không tìm thấy thẻ',
         ],
         'postcode' => [
             'label' => 'Mã bưu điện',

@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Support\Facades\FilamentIcon;
@@ -161,7 +162,12 @@ class OrderResource extends BaseResource
             SelectFilter::make('tags')
                 ->label(__('lunarpanel::order.table.tags.label'))
                 ->multiple()
-                ->relationship('tags', 'value'),
+                ->searchable()
+                ->preload()
+                ->relationship('tags', 'value')
+                ->modifyFormFieldUsing(
+                    fn (Select $field): Select => $field->noOptionsMessage(__('lunarpanel::order.table.tags.no_options_message'))
+                ),
             SelectFilter::make('payment_type')
                 ->label(__('lunarpanel::order.table.payment_type.label'))
                 ->options([
