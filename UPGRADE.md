@@ -2,6 +2,36 @@
 
 This document outlines the key changes and new features in the Admin, Core, Blog, Review, Shipping and ERP packages.
 
+## ⬆️ Upcoming
+
+### Feedback Package
+
+#### ✨ New main features
+
+- New `lunarphp/feedback` package (`Lunar\Feedback\`): stores one score (with an optional comment) per order and feedback type in `lunar_feedback`. The storefront (`minic/lunar-frontend`) collects it; the package owns the table, config, and admin.
+- Read-only **Feedback** admin list under Sales (filter by type and score). Admins cannot create, edit, or delete feedback.
+- Orders list column and order detail entries for the checkout shopping-experience **Feedback score** (and comment).
+- `Order` relations `feedback` (all rows) and `shoppingExperienceFeedback` (checkout type).
+
+#### 🌍 Environment variables
+
+- `FEEDBACK_ENABLED` (default `false`)
+- `FEEDBACK_SCALE_MIN`, `FEEDBACK_SCALE_MAX`, `FEEDBACK_THRESHOLD`
+
+#### ⚙️ New/modified configs
+
+- `config/lunar/feedback.php`
+
+#### 💻 Host responsibilities
+
+- Run `php artisan migrate` to create `lunar_feedback`.
+- Register `Lunar\Feedback\FeedbackPlugin` on the Lunar panel only when `config('lunar.feedback.enabled')` is true (`minic/lunar-frontend` does this). The order list / order detail extensions are skipped while the flag is off.
+
+#### 📦 Published assets
+
+- `php artisan vendor:publish --tag="lunar.feedback.config"`
+- `php artisan vendor:publish --tag="lunar.feedback.migrations"`
+
 ## ⬆️ From 1.15.1 → 2.0.0
 
 ### 📋 Summing up what to do at upgrade
