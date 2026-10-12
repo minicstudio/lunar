@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'Címkék',
+            'no_options_message' => 'Nem található címke',
         ],
         'postcode' => [
             'label' => 'Irányítószám',

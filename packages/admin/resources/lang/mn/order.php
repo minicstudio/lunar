@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'Таг',
+            'no_options_message' => 'Таг олдсонгүй',
         ],
         'postcode' => [
             'label' => 'Шуудангийн код',

@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'Etichete',
+            'no_options_message' => 'Nu s-au găsit etichete',
         ],
         'postcode' => [
             'label' => 'Cod poștal',

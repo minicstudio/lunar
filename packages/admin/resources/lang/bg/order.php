@@ -36,6 +36,7 @@ return [
         ],
         'tags' => [
             'label' => 'Етикети',
+            'no_options_message' => 'Няма намерени етикети',
         ],
         'postcode' => [
             'label' => 'Пощенски код',

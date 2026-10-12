@@ -32,6 +32,7 @@ return [
         ],
         'tags' => [
             'label' => 'Oznake',
+            'no_options_message' => 'Nema pronađenih oznaka',
         ],
         'postcode' => [
             'label' => 'Poštanski broj',

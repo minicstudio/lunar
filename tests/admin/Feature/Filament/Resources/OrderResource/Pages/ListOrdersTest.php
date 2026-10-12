@@ -1,9 +1,12 @@
 <?php
 
+use Filament\Forms\Components\Select;
+use Filament\Tables\Filters\SelectFilter;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ListOrders;
 use Lunar\Models\Currency;
 use Lunar\Models\Order;
+use Lunar\Models\Tag;
 use Lunar\Models\Transaction;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
 
@@ -138,4 +141,45 @@ it('can filter orders by total range', function () {
         ])
         ->assertCanSeeTableRecords([$midTotalOrder])
         ->assertCanNotSeeTableRecords([$lowTotalOrder, $highTotalOrder]);
+});
+
+it('can filter orders by tags', function () {
+    $this->asStaff();
+
+    $tag = Tag::factory()->create(['value' => 'VIP']);
+
+    $taggedOrder = Order::factory()->create(['placed_at' => now()]);
+    $taggedOrder->tags()->attach($tag);
+
+    $untaggedOrder = Order::factory()->create(['placed_at' => now()]);
+
+    Livewire::test(ListOrders::class)
+        ->call('loadTable')
+        ->filterTable('tags', [$tag->id])
+        ->assertCanSeeTableRecords([$taggedOrder])
+        ->assertCanNotSeeTableRecords([$untaggedOrder]);
+});
+
+it('shows a no tags found message in the tags filter', function () {
+    $this->asStaff();
+
+    Livewire::test(ListOrders::class)
+        ->assertTableFilterExists('tags', function (SelectFilter $filter): bool {
+            /** @var Select $field */
+            $field = $filter->getSchemaComponents()[0];
+
+            return $field->hasInitialNoOptionsMessage()
+                && $field->getNoOptionsMessage() === __('lunarpanel::order.table.tags.no_options_message');
+        });
+});
+
+it('closes the filters dropdown when applying filters', function () {
+    $this->asStaff();
+
+    $applyAction = Livewire::test(ListOrders::class)
+        ->instance()
+        ->getTable()
+        ->getFiltersApplyAction();
+
+    expect($applyAction->toHtml())->toContain('x-on:click="close()"');
 });
