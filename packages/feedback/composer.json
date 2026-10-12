@@ -1,0 +1,40 @@
+{
+    "name": "lunarphp/feedback",
+    "description": "Feedback Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "feedback"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Levente Antal",
+            "email": "antal.levente@minic.ro",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Feedback\\": "src"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Feedback"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Feedback\\FeedbackServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version"
+    }
+}

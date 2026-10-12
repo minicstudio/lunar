@@ -63,6 +63,7 @@ Core service providers are registered in root `composer.json` under Laravel pack
 | `packages/stripe`, `packages/paypal`, `packages/opayo` | Payment integrations and routes/webhooks/payment type implementations. |
 | `packages/blog` | Blog category/post models, migrations, URL generation, admin extensions, seed command. |
 | `packages/review` | Review model, media handling, review requests, admin extensions, order/product/channel relations, reminder command. |
+| `packages/feedback` | Feedback model (one score per order and type), migration, config, read-only admin resource, order list/detail extensions, order relations. |
 | `packages/locations` | County and locality models, migrations, `CountySeeder`, and `locality_insert.sql`. `LocationsServiceProvider` only registers models via `ModelManifest`; migrations are not auto-loaded and must be run by the host (see Host integration). |
 | `packages/mailchimp` | Mailchimp connector, requests, services, jobs, observer, commands, and config. |
 | `tests/*` | Pest/Testbench suites split by package/domain, including core, admin, ERP, shipping add-on, mailchimp, and payment packages. |
@@ -327,6 +328,7 @@ The fork is materially different from local `upstream/1.x`. A local diff summary
 - `packages/ERP`: Magister and Smartbill ERP sync, stock/product/order-status/locality/attribute sync, invoice generation, provider manager.
 - `packages/blog`: blog categories/posts, URLs, admin extensions.
 - `packages/review`: reviews, review media, reminder emails, admin/order/product/channel extensions.
+- `packages/feedback`: storefront feedback scores per order and type, read-only admin list, order extensions.
 - `packages/locations`: Romanian-style county/locality models and seed data.
 - `packages/mailchimp`: Mailchimp ecommerce/subscriber/cart/order/product sync.
 - `packages/shipping`: carrier add-on for AWB, lockers, tracking, Sameday/DPD/Pickup/InHouse.
