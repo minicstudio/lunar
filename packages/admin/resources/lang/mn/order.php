@@ -232,6 +232,36 @@ return [
         'no_additional_info' => [
             'label' => 'Нэмэлт мэдээлэл байхгүй',
         ],
+        'shipping_details' => [
+            'label' => 'Хүргэлтийн мэдээлэл',
+        ],
+        'billing_details' => [
+            'label' => 'Төлбөрийн мэдээлэл',
+        ],
+        'meta' => [
+            'shippingType' => 'Хүргэлтийн төрөл',
+            'shipping_zone' => 'Хүргэлтийн бүс',
+            'awb' => 'AWB дугаар',
+            'payment_option' => 'Төлбөрийн хэлбэр',
+            'payment_type' => 'Төлбөрийн төрөл',
+            'isBillingSameAsShipping' => 'Нэхэмжлэхийн хаяг хүргэлтийн хаягтай ижил',
+            'billing_series' => 'Нэхэмжлэхийн цуврал',
+            'billing_number' => 'Нэхэмжлэхийн дугаар',
+        ],
+        'shipping_types' => [
+            'courier' => 'Курьер',
+            'locker' => 'Илгээмжийн автомат',
+            'pickup' => 'Биечлэн авах',
+        ],
+        'payment_methods' => [
+            'offline' => 'Офлайн',
+            'cash-in-hand' => 'Бэлэн мөнгө',
+            'cash-on-delivery' => 'Хүлээн авахдаа төлөх',
+            'bank-transfer' => 'Банкны шилжүүлэг',
+            'stripe-card' => 'Кредит карт',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Онлайн картын төлбөр',
+        ],
         'tags' => [
             'label' => 'Таг',
         ],

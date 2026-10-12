@@ -230,6 +230,36 @@ return [
         'no_additional_info' => [
             'label' => 'Không có thông tin bổ sung',
         ],
+        'shipping_details' => [
+            'label' => 'Chi tiết vận chuyển',
+        ],
+        'billing_details' => [
+            'label' => 'Chi tiết thanh toán',
+        ],
+        'meta' => [
+            'shippingType' => 'Hình thức vận chuyển',
+            'shipping_zone' => 'Khu vực vận chuyển',
+            'awb' => 'Số AWB',
+            'payment_option' => 'Phương thức thanh toán',
+            'payment_type' => 'Loại thanh toán',
+            'isBillingSameAsShipping' => 'Địa chỉ thanh toán giống địa chỉ giao hàng',
+            'billing_series' => 'Ký hiệu hóa đơn',
+            'billing_number' => 'Số hóa đơn',
+        ],
+        'shipping_types' => [
+            'courier' => 'Chuyển phát nhanh',
+            'locker' => 'Tủ nhận hàng',
+            'pickup' => 'Nhận tại cửa hàng',
+        ],
+        'payment_methods' => [
+            'offline' => 'Ngoại tuyến',
+            'cash-in-hand' => 'Tiền mặt',
+            'cash-on-delivery' => 'Thanh toán khi nhận hàng',
+            'bank-transfer' => 'Chuyển khoản ngân hàng',
+            'stripe-card' => 'Thẻ tín dụng',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Thanh toán thẻ trực tuyến',
+        ],
         'tags' => [
             'label' => 'Thẻ',
         ],

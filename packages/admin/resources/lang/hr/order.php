@@ -228,6 +228,36 @@ return [
         'no_additional_info' => [
             'label' => 'Nema dodatnih informacija',
         ],
+        'shipping_details' => [
+            'label' => 'Podaci o dostavi',
+        ],
+        'billing_details' => [
+            'label' => 'Podaci o naplati',
+        ],
+        'meta' => [
+            'shippingType' => 'Način dostave',
+            'shipping_zone' => 'Zona dostave',
+            'awb' => 'AWB broj',
+            'payment_option' => 'Način plaćanja',
+            'payment_type' => 'Vrsta plaćanja',
+            'isBillingSameAsShipping' => 'Adresa za naplatu ista je kao adresa za dostavu',
+            'billing_series' => 'Serija računa',
+            'billing_number' => 'Broj računa',
+        ],
+        'shipping_types' => [
+            'courier' => 'Kurirska služba',
+            'locker' => 'Paketomat',
+            'pickup' => 'Osobno preuzimanje',
+        ],
+        'payment_methods' => [
+            'offline' => 'Izvanmrežno',
+            'cash-in-hand' => 'Gotovina',
+            'cash-on-delivery' => 'Plaćanje pouzećem',
+            'bank-transfer' => 'Bankovni prijenos',
+            'stripe-card' => 'Kreditna kartica',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Online plaćanje karticom',
+        ],
         'tags' => [
             'label' => 'Oznake',
         ],

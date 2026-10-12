@@ -235,6 +235,36 @@ return [
         'no_additional_info' => [
             'label' => 'لا توجد معلومات إضافية',
         ],
+        'shipping_details' => [
+            'label' => 'تفاصيل الشحن',
+        ],
+        'billing_details' => [
+            'label' => 'تفاصيل الفوترة',
+        ],
+        'meta' => [
+            'shippingType' => 'نوع الشحن',
+            'shipping_zone' => 'منطقة الشحن',
+            'awb' => 'رقم بوليصة الشحن (AWB)',
+            'payment_option' => 'طريقة الدفع',
+            'payment_type' => 'نوع الدفع',
+            'isBillingSameAsShipping' => 'عنوان الفوترة مطابق لعنوان الشحن',
+            'billing_series' => 'سلسلة الفاتورة',
+            'billing_number' => 'رقم الفاتورة',
+        ],
+        'shipping_types' => [
+            'courier' => 'التوصيل بالمندوب',
+            'locker' => 'خزانة الطرود',
+            'pickup' => 'الاستلام الشخصي',
+        ],
+        'payment_methods' => [
+            'offline' => 'غير متصل',
+            'cash-in-hand' => 'نقداً',
+            'cash-on-delivery' => 'الدفع عند الاستلام',
+            'bank-transfer' => 'تحويل بنكي',
+            'stripe-card' => 'بطاقة ائتمان',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'الدفع الإلكتروني بالبطاقة',
+        ],
         'tags' => [
             'label' => 'الوسوم',
         ],

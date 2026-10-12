@@ -238,6 +238,36 @@ return [
         'no_additional_info' => [
             'label' => 'Ek Bilgi Yok',
         ],
+        'shipping_details' => [
+            'label' => 'Kargo Detayları',
+        ],
+        'billing_details' => [
+            'label' => 'Fatura Detayları',
+        ],
+        'meta' => [
+            'shippingType' => 'Gönderim türü',
+            'shipping_zone' => 'Gönderim bölgesi',
+            'awb' => 'AWB numarası',
+            'payment_option' => 'Ödeme yöntemi',
+            'payment_type' => 'Ödeme türü',
+            'isBillingSameAsShipping' => 'Fatura adresi teslimat adresiyle aynı',
+            'billing_series' => 'Fatura serisi',
+            'billing_number' => 'Fatura numarası',
+        ],
+        'shipping_types' => [
+            'courier' => 'Kurye',
+            'locker' => 'Kargo dolabı',
+            'pickup' => 'Mağazadan teslim alma',
+        ],
+        'payment_methods' => [
+            'offline' => 'Çevrimdışı',
+            'cash-in-hand' => 'Nakit',
+            'cash-on-delivery' => 'Kapıda ödeme',
+            'bank-transfer' => 'Banka havalesi',
+            'stripe-card' => 'Kredi kartı',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Online kartla ödeme',
+        ],
         'tags' => [
             'label' => 'Etiketler',
         ],

@@ -238,6 +238,36 @@ return [
         'no_additional_info' => [
             'label' => 'Geen aanvullende informatie',
         ],
+        'shipping_details' => [
+            'label' => 'Verzendgegevens',
+        ],
+        'billing_details' => [
+            'label' => 'Factuurgegevens',
+        ],
+        'meta' => [
+            'shippingType' => 'Verzendtype',
+            'shipping_zone' => 'Verzendzone',
+            'awb' => 'AWB-nummer',
+            'payment_option' => 'Betaalmethode',
+            'payment_type' => 'Betalingstype',
+            'isBillingSameAsShipping' => 'Factuuradres gelijk aan verzendadres',
+            'billing_series' => 'Factuurreeks',
+            'billing_number' => 'Factuurnummer',
+        ],
+        'shipping_types' => [
+            'courier' => 'Koerier',
+            'locker' => 'Pakketautomaat',
+            'pickup' => 'Afhalen',
+        ],
+        'payment_methods' => [
+            'offline' => 'Offline',
+            'cash-in-hand' => 'Contant',
+            'cash-on-delivery' => 'Rembours',
+            'bank-transfer' => 'Bankoverschrijving',
+            'stripe-card' => 'Creditcard',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Online kaartbetaling',
+        ],
         'tags' => [
             'label' => 'Tags',
         ],

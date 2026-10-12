@@ -10,7 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\Entry;
-use Filament\Infolists\Components\KeyValueEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
@@ -42,6 +42,7 @@ use Lunar\Admin\Support\Forms\Components\Tags as TagsComponent;
 use Lunar\Admin\Support\Infolists\Components\Livewire;
 use Lunar\Admin\Support\Infolists\Components\Tags;
 use Lunar\Admin\Support\Pages\BaseViewRecord;
+use Lunar\Models\Contracts\OrderLine;
 use Lunar\Models\Order;
 use Lunar\Models\Tag;
 use Lunar\Models\Transaction;
@@ -112,8 +113,11 @@ class ManageOrder extends BaseViewRecord
             static::getCustomerEntry(),
             static::getOrderSummaryInfolist(),
             static::getShippingAddressInfolist(),
+            static::getShippingDetailsSection(),
             static::getBillingAddressInfoList(),
+            static::getBillingDetailsSection(),
             static::getTagsSection(),
+            static::getPersonalizationSection(),
             static::getAdditionalInfoSection(),
         ]);
     }
@@ -156,6 +160,46 @@ class ManageOrder extends BaseViewRecord
         return self::callStaticLunarHook('extendTagsSection', static::getDefaultTagsSection());
     }
 
+    /**
+     * Build the default shipping metadata section.
+     *
+     * @return Section
+     */
+    public static function getDefaultShippingDetailsSection(): Section
+    {
+        return static::getOrderMetaSection('shipping_details', static::getShippingOrderMetaKeys());
+    }
+
+    /**
+     * Apply extensions to the shipping metadata section.
+     *
+     * @return Component
+     */
+    public static function getShippingDetailsSection(): Component
+    {
+        return self::callStaticLunarHook('extendShippingDetailsSection', static::getDefaultShippingDetailsSection());
+    }
+
+    /**
+     * Build the default billing metadata section.
+     *
+     * @return Section
+     */
+    public static function getDefaultBillingDetailsSection(): Section
+    {
+        return static::getOrderMetaSection('billing_details', static::getBillingOrderMetaKeys());
+    }
+
+    /**
+     * Apply extensions to the billing metadata section.
+     *
+     * @return Component
+     */
+    public static function getBillingDetailsSection(): Component
+    {
+        return self::callStaticLunarHook('extendBillingDetailsSection', static::getDefaultBillingDetailsSection());
+    }
+
     public static function getDefaultAdditionalInfoSection(): Section
     {
         return Section::make('additional_info')
@@ -163,7 +207,13 @@ class ManageOrder extends BaseViewRecord
             ->compact()
             ->statePath('meta')
             ->schema(function (?Order $record): array {
-                $meta = collect($record?->meta ?? []);
+                $meta = collect($record?->meta ?? [])->except([
+                    ...static::getHiddenOrderMetaKeys(),
+                    ...static::getShippingOrderMetaKeys(),
+                    ...static::getBillingOrderMetaKeys(),
+                    ...static::getCustomerOrderMetaKeys(),
+                    'personalization',
+                ]);
 
                 if ($meta->isEmpty()) {
                     return [
@@ -173,48 +223,7 @@ class ManageOrder extends BaseViewRecord
                     ];
                 }
 
-                return $meta
-                    ->except(static::getHiddenOrderMetaKeys())
-                    ->map(function ($value, $key) {
-                        if (is_array($value)) {
-                            return KeyValueEntry::make('meta_'.$key)->state($value);
-                        }
-
-                        if (\Carbon\Carbon::hasFormat((string) $value, 'Y-m-d H:i:s')) {
-                            $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
-                            $converted = \Carbon\Carbon::parse($value, config('app.timezone'))
-                                ->setTimezone($timezone)
-                                ->format('Y-m-d H:i:s');
-
-                            return TextEntry::make('meta_'.$key)
-                                ->state($converted)
-                                ->label(__($key))
-                                ->copyable();
-                        }
-
-                        // Format boolean values as yes/no
-                        if (is_bool($value)) {
-                            $formattedValue = $value ? __('lunarpanel::global.yes') : __('lunarpanel::global.no');
-
-                            return TextEntry::make('meta_'.$key)
-                                ->state($formattedValue)
-                                ->label(__($key));
-                        }
-
-                        return TextEntry::make('meta_'.$key)
-                            ->state($value)
-                            ->label(__($key))
-                            ->copyable()
-                            ->limit(50)->tooltip(function (TextEntry $component): ?string {
-                                $state = $component->getState();
-                                if (strlen($state) <= $component->getCharacterLimit()) {
-                                    return null;
-                                }
-
-                                return $state;
-                            });
-                    })
-                    ->toArray();
+                return static::getOrderMetaEntries($meta);
             });
     }
 
@@ -224,11 +233,164 @@ class ManageOrder extends BaseViewRecord
     }
 
     /**
+     * Build stacked personalization entries with product names, SKUs, quantities, and text.
+     *
+     * @return Section
+     */
+    public static function getDefaultPersonalizationSection(): Section
+    {
+        return Section::make('personalization')
+            ->key('personalization')
+            ->heading(__('lunarpanel::order.infolist.personalization.label'))
+            ->compact()
+            ->visible(fn (?Order $record): bool => ! in_array('personalization', static::getHiddenOrderMetaKeys())
+                && static::getOrderPersonalization($record) !== [])
+            ->schema([
+                RepeatableEntry::make('personalization_items')
+                    ->hiddenLabel()
+                    ->state(fn (?Order $record): array => static::getOrderPersonalization($record))
+                    ->columns(1)
+                    ->schema([
+                        TextEntry::make('product')
+                            ->label(__('lunarpanel::product.label'))
+                            ->weight(FontWeight::SemiBold)
+                            ->placeholder('-'),
+                        TextEntry::make('sku')
+                            ->label(__('lunarpanel::order.infolist.personalization.sku'))
+                            ->copyable(),
+                        TextEntry::make('quantity')
+                            ->label(__('lunarpanel::order.infolist.quantity.label'))
+                            ->placeholder('-'),
+                        TextEntry::make('value')
+                            ->label(__('lunarpanel::order.infolist.personalization.value'))
+                            ->copyable(),
+                    ]),
+            ]);
+    }
+
+    /**
+     * Apply extensions to the personalization section.
+     *
+     * @return Component
+     */
+    public static function getPersonalizationSection(): Component
+    {
+        return self::callStaticLunarHook('extendPersonalizationSection', static::getDefaultPersonalizationSection());
+    }
+
+    /**
+     * Build personalization data from order lines, falling back to legacy order metadata.
+     *
+     * @return array<int, array{product: ?string, sku: string, quantity: ?int, value: mixed}>
+     */
+    protected static function getOrderPersonalization(?Order $record): array
+    {
+        $lines = $record?->lines->where('type', '!=', 'shipping')->values() ?? collect();
+        $personalizedLines = $lines->filter(fn (OrderLine $line): bool => filled(data_get($line->meta, 'personalization')));
+
+        if ($personalizedLines->isNotEmpty()) {
+            return $personalizedLines
+                ->map(fn (OrderLine $line): array => [
+                    'product' => $line->description,
+                    'sku' => $line->identifier,
+                    'quantity' => $line->quantity,
+                    'value' => data_get($line->meta, 'personalization'),
+                ])
+                ->values()
+                ->all();
+        }
+
+        return collect(data_get($record?->meta, 'personalization', []))
+            ->filter(fn (mixed $value): bool => filled($value))
+            ->map(function (mixed $value, int|string $key) use ($lines): array {
+                $parts = explode('_', (string) $key, 2);
+                $hasLineIndex = count($parts) === 2 && ctype_digit($parts[0]);
+                $sku = $hasLineIndex ? $parts[1] : (string) $key;
+                $line = $hasLineIndex ? $lines->get((int) $parts[0] - 1) : null;
+
+                if ($line?->identifier !== $sku) {
+                    $matchingLines = $lines->where('identifier', $sku);
+                    $line = $matchingLines->count() === 1 ? $matchingLines->first() : null;
+                }
+
+                return [
+                    'product' => $line?->description,
+                    'sku' => $sku,
+                    'quantity' => $line?->quantity,
+                    'value' => $value,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Return shipping metadata keys in display order, including extensions.
+     *
      * @return array<int, string>
      */
-    protected static function getHiddenOrderMetaKeys(): array
+    protected static function getShippingOrderMetaKeys(): array
     {
-        return self::callStaticLunarHook('extendHiddenOrderMetaKeys', []);
+        return self::callStaticLunarHook('extendShippingOrderMetaKeys', [
+            'shippingType',
+            'shipping_zone',
+            'awb',
+        ]);
+    }
+
+    /**
+     * Return billing metadata keys in display order, including extensions.
+     *
+     * @return array<int, string>
+     */
+    protected static function getBillingOrderMetaKeys(): array
+    {
+        return self::callStaticLunarHook('extendBillingOrderMetaKeys', [
+            'payment_option',
+            'payment_type',
+            'isBillingSameAsShipping',
+            'billing_series',
+            'billing_number',
+        ]);
+    }
+
+    /**
+     * Build a metadata section and hide it when no visible values are filled.
+     *
+     * @param  array<int, string>  $keys
+     * @return Section
+     */
+    protected static function getOrderMetaSection(string $name, array $keys): Section
+    {
+        $getMeta = function (?Order $record) use ($keys): Collection {
+            $meta = collect($record?->meta ?? []);
+
+            return collect($keys)
+                ->diff(static::getHiddenOrderMetaKeys())
+                ->filter(fn (string $key): bool => filled($meta->get($key)))
+                ->mapWithKeys(fn (string $key): array => [$key => $meta->get($key)]);
+        };
+
+        return Section::make($name)
+            ->key($name)
+            ->heading(__("lunarpanel::order.infolist.{$name}.label"))
+            ->compact()
+            ->visible(fn (?Order $record): bool => $getMeta($record)->isNotEmpty())
+            ->schema(fn (?Order $record): array => static::getOrderMetaEntries($getMeta($record)));
+    }
+
+    /**
+     * Convert order metadata into formatted infolist entries.
+     *
+     * @param  Collection<array-key, mixed>  $meta
+     * @return array<int, Entry>
+     */
+    protected static function getOrderMetaEntries(Collection $meta): array
+    {
+        return $meta
+            ->map(fn (mixed $value, int|string $key): Entry => static::getOrderMetaEntry((string) $key, $value))
+            ->values()
+            ->all();
     }
 
     public function getDefaultInfolist(Schema $schema): Schema
