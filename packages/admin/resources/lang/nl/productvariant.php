@@ -71,6 +71,9 @@ return [
         'quantity_increment' => [
             'label' => 'Hoeveelheidsverhoging',
             'helper_text' => 'De productvariant moet in veelvouden van deze hoeveelheid worden gekocht.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Belastingklasse',

@@ -70,6 +70,9 @@ return [
         'quantity_increment' => [
             'label' => 'زيادة الكمية',
             'helper_text' => 'يجب شراء متغير المنتج بمضاعفات هذه الكمية.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'فئة الضريبة',

@@ -70,6 +70,9 @@ return [
         'quantity_increment' => [
             'label' => 'Korak količine',
             'helper_text' => 'Varijanta proizvoda mora se kupovati u višekratnicima ove količine.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Porezni razred',

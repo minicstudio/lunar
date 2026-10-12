@@ -29,6 +29,9 @@ class CalculateLines
                     return $cartLine;
                 });
 
+            // Per cart-quantity amount (catalog price ÷ unit_quantity). unitPrice keeps the
+            // pack/catalog value with unitQty for unitDecimal(); without-coupon fields must
+            // store the divided amount so Qty × unitPrice displays correctly.
             $unitPrice = $cartLine->unitPrice->unitDecimal(false) * $cart->currency->factor;
 
             $subTotal = (int) round($unitPrice * $cartLine->quantity, $cart->currency->decimal_places);
@@ -42,7 +45,11 @@ class CalculateLines
             // Set the default values. These will be overridden by the discount during application.
             $taxRate = $line?->purchasable?->getTaxRate() ?? 0.0;
 
-            $cartLine->unitPriceWithoutCoupon = new Price($cartLine->unitPrice->value, $cart->currency, 1);
+            $cartLine->unitPriceWithoutCoupon = new Price(
+                (int) round($unitPrice, $cart->currency->decimal_places),
+                $cart->currency,
+                1
+            );
             $cartLine->unitPriceWithoutCouponIncTax = $this->addTax($cartLine->unitPriceWithoutCoupon, $taxRate);
 
             $cartLine->discountTotalWithoutCoupon = new Price(0, $cart->currency, 1);

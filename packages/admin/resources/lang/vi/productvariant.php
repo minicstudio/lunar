@@ -71,6 +71,9 @@ return [
         'quantity_increment' => [
             'label' => 'Bước tăng số lượng',
             'helper_text' => 'Biến thể sản phẩm phải được mua theo bội số của số lượng này.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Loại thuế',
