@@ -236,6 +236,36 @@ return [
         'no_additional_info' => [
             'label' => 'No Additional Information',
         ],
+        'shipping_details' => [
+            'label' => 'جزئیات ارسال',
+        ],
+        'billing_details' => [
+            'label' => 'جزئیات صورتحساب',
+        ],
+        'meta' => [
+            'shippingType' => 'نوع ارسال',
+            'shipping_zone' => 'منطقه ارسال',
+            'awb' => 'شماره AWB',
+            'payment_option' => 'روش پرداخت',
+            'payment_type' => 'نوع پرداخت',
+            'isBillingSameAsShipping' => 'آدرس صورتحساب با آدرس ارسال یکسان است',
+            'billing_series' => 'سری فاکتور',
+            'billing_number' => 'شماره فاکتور',
+        ],
+        'shipping_types' => [
+            'courier' => 'پیک',
+            'locker' => 'کمد تحویل مرسوله',
+            'pickup' => 'تحویل حضوری',
+        ],
+        'payment_methods' => [
+            'offline' => 'آفلاین',
+            'cash-in-hand' => 'نقدی',
+            'cash-on-delivery' => 'پرداخت در محل',
+            'bank-transfer' => 'انتقال بانکی',
+            'stripe-card' => 'کارت اعتباری',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'پرداخت آنلاین با کارت',
+        ],
         'tags' => [
             'label' => 'Tags',
         ],

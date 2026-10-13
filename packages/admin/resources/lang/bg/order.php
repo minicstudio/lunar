@@ -236,6 +236,36 @@ return [
         'no_additional_info' => [
             'label' => 'Няма допълнителна информация',
         ],
+        'shipping_details' => [
+            'label' => 'Данни за доставка',
+        ],
+        'billing_details' => [
+            'label' => 'Данни за фактуриране',
+        ],
+        'meta' => [
+            'shippingType' => 'Начин на доставка',
+            'shipping_zone' => 'Зона на доставка',
+            'awb' => 'AWB номер',
+            'payment_option' => 'Начин на плащане',
+            'payment_type' => 'Тип плащане',
+            'isBillingSameAsShipping' => 'Адресът за фактуриране съвпада с адреса за доставка',
+            'billing_series' => 'Серия на фактура',
+            'billing_number' => 'Номер на фактура',
+        ],
+        'shipping_types' => [
+            'courier' => 'Куриер',
+            'locker' => 'Автомат за пратки',
+            'pickup' => 'Лично получаване',
+        ],
+        'payment_methods' => [
+            'offline' => 'Офлайн',
+            'cash-in-hand' => 'В брой',
+            'cash-on-delivery' => 'Наложен платеж',
+            'bank-transfer' => 'Банков превод',
+            'stripe-card' => 'Кредитна карта',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Онлайн плащане с карта',
+        ],
         'tags' => [
             'label' => 'Етикети',
         ],

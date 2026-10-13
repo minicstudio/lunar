@@ -2,11 +2,16 @@
 
 namespace Lunar\Admin\Filament\Resources\OrderResource\Concerns;
 
+use Carbon\Carbon;
 use Filament\Infolists\Components\Entry;
+use Filament\Infolists\Components\KeyValueEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\IconPosition;
+use Illuminate\Support\Facades\Lang;
 use Lunar\Admin\Support\OrderStatus;
+use Lunar\Models\Order;
 
 trait DisplaysOrderSummary
 {
@@ -21,6 +26,143 @@ trait DisplaysOrderSummary
     public static function getOrderSummaryNewCustomerEntry(): Entry
     {
         return self::callStaticLunarHook('extendOrderSummaryNewCustomerEntry', static::getDefaultOrderSummaryNewCustomerEntry());
+    }
+
+    /**
+     * Build right-aligned entries for visible customer metadata.
+     *
+     * @return Group
+     */
+    public static function getCustomerDetailsEntry(): Group
+    {
+        return Group::make()
+            ->key('customer_details')
+            ->schema(fn (?Order $record): array => collect(static::getCustomerOrderMetaKeys())
+                ->diff(static::getHiddenOrderMetaKeys())
+                ->filter(fn (string $key): bool => filled(data_get($record?->meta, $key)))
+                ->map(fn (string $key): Entry => static::getOrderMetaEntry($key, data_get($record?->meta, $key))->alignEnd())
+                ->values()
+                ->all());
+    }
+
+    /**
+     * Return metadata keys hidden from the order page, including extensions.
+     *
+     * @return array<int, string>
+     */
+    protected static function getHiddenOrderMetaKeys(): array
+    {
+        return self::callStaticLunarHook('extendHiddenOrderMetaKeys', [
+            'stashed_courier_address',
+            'stashed_locker_address',
+            'stashed_pickup_address',
+            'preloaded_from_order_id',
+            'insights_purchase_pushed_at',
+            'gtm_purchase_event_id',
+            'gtm_purchase_datalayer_pushed_at',
+            'gtm_ga4_purchase_fallback_sent_at',
+            'gtm_refund_sent_at',
+            'ga4_client_id',
+            'ga4_session_id',
+            'ga4_engagement_time_msec',
+            'gift_slot_allocations',
+        ]);
+    }
+
+    /**
+     * Return customer metadata keys in display order, including extensions.
+     *
+     * @return array<int, string>
+     */
+    protected static function getCustomerOrderMetaKeys(): array
+    {
+        return self::callStaticLunarHook('extendCustomerOrderMetaKeys', [
+            'is_guest',
+            'language_locale',
+        ]);
+    }
+
+    /**
+     * Build an infolist entry with a translated label and type-appropriate formatting.
+     *
+     * @return Entry
+     */
+    protected static function getOrderMetaEntry(string $key, mixed $value): Entry
+    {
+        $name = 'meta_'.$key;
+        $label = static::getOrderMetaLabel($key);
+
+        if (is_array($value)) {
+            return KeyValueEntry::make($name)
+                ->label($label)
+                ->state($value);
+        }
+
+        if (Carbon::hasFormat((string) $value, 'Y-m-d H:i:s')) {
+            $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
+            $converted = Carbon::parse($value, config('app.timezone'))
+                ->setTimezone($timezone)
+                ->format('Y-m-d H:i:s');
+
+            return TextEntry::make($name)
+                ->state($converted)
+                ->label($label)
+                ->copyable();
+        }
+
+        // Format boolean values as yes/no
+        if (is_bool($value)) {
+            $formattedValue = $value ? __('lunarpanel::global.yes') : __('lunarpanel::global.no');
+
+            return TextEntry::make($name)
+                ->state($formattedValue)
+                ->label($label);
+        }
+
+        return TextEntry::make($name)
+            ->state(static::formatOrderMetaValue($key, $value))
+            ->label($label)
+            ->copyable()
+            ->limit(50)->tooltip(function (TextEntry $component): ?string {
+                $state = $component->getState();
+                if (strlen($state) <= $component->getCharacterLimit()) {
+                    return null;
+                }
+
+                return $state;
+            });
+    }
+
+    /**
+     * Resolve a metadata label using its panel translation when available.
+     *
+     * @return string
+     */
+    protected static function getOrderMetaLabel(string $key): string
+    {
+        $translationKey = "lunarpanel::order.infolist.meta.{$key}";
+
+        return Lang::has($translationKey) ? __($translationKey) : __($key);
+    }
+
+    /**
+     * Translate known shipping and payment values while preserving unrecognized values.
+     *
+     * @return mixed
+     */
+    protected static function formatOrderMetaValue(string $key, mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $translationKey = match ($key) {
+            'shippingType' => "lunarpanel::order.infolist.shipping_types.{$value}",
+            'payment_option', 'payment_type' => "lunarpanel::order.infolist.payment_methods.{$value}",
+            default => null,
+        };
+
+        return $translationKey && Lang::has($translationKey) ? __($translationKey) : $value;
     }
 
     public static function getDefaultOrderSummaryStatusEntry(): TextEntry
@@ -112,6 +254,7 @@ trait DisplaysOrderSummary
     {
         return self::callStaticLunarHook('extendOrderSummarySchema', [
             static::getOrderSummaryNewCustomerEntry(),
+            static::getCustomerDetailsEntry(),
             static::getOrderSummaryStatusEntry(),
             static::getOrderSummaryReferenceEntry(),
             static::getOrderSummaryCustomerReferenceEntry(),

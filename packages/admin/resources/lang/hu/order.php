@@ -239,6 +239,43 @@ return [
         'no_additional_info' => [
             'label' => 'Nincs további információ',
         ],
+        'shipping_details' => [
+            'label' => 'Szállítási adatok',
+        ],
+        'billing_details' => [
+            'label' => 'Számlázási adatok',
+        ],
+        'personalization' => [
+            'label' => 'Személyre szabás',
+            'sku' => 'Cikkszám (SKU)',
+            'value' => 'Személyre szabott szöveg',
+        ],
+        'meta' => [
+            'is_guest' => 'Vendégként vásárolt',
+            'language_locale' => 'Nyelv',
+            'shippingType' => 'Szállítási mód',
+            'shipping_zone' => 'Szállítási zóna',
+            'awb' => 'Fuvarlevélszám (AWB)',
+            'payment_option' => 'Fizetési mód',
+            'payment_type' => 'Fizetés típusa',
+            'isBillingSameAsShipping' => 'Számlázási cím megegyezik a szállítási címmel',
+            'billing_series' => 'Számlasorozat',
+            'billing_number' => 'Számlaszám',
+        ],
+        'shipping_types' => [
+            'courier' => 'Futárszolgálat',
+            'locker' => 'Csomagautomata',
+            'pickup' => 'Személyes átvétel',
+        ],
+        'payment_methods' => [
+            'offline' => 'Offline',
+            'cash-in-hand' => 'Készpénz',
+            'cash-on-delivery' => 'Utánvét',
+            'bank-transfer' => 'Banki átutalás',
+            'stripe-card' => 'Bankkártya',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Online bankkártyás fizetés',
+        ],
         'tags' => [
             'label' => 'Címkék',
         ],

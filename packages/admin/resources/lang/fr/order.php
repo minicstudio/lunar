@@ -239,6 +239,36 @@ return [
         'no_additional_info' => [
             'label' => 'Pas d\'informations supplémentaires',
         ],
+        'shipping_details' => [
+            'label' => 'Détails de livraison',
+        ],
+        'billing_details' => [
+            'label' => 'Détails de facturation',
+        ],
+        'meta' => [
+            'shippingType' => 'Type de livraison',
+            'shipping_zone' => 'Zone de livraison',
+            'awb' => 'Numéro AWB',
+            'payment_option' => 'Mode de paiement',
+            'payment_type' => 'Type de paiement',
+            'isBillingSameAsShipping' => 'Adresse de facturation identique à l\'adresse de livraison',
+            'billing_series' => 'Série de facture',
+            'billing_number' => 'Numéro de facture',
+        ],
+        'shipping_types' => [
+            'courier' => 'Coursier',
+            'locker' => 'Consigne automatique',
+            'pickup' => 'Retrait en magasin',
+        ],
+        'payment_methods' => [
+            'offline' => 'Hors ligne',
+            'cash-in-hand' => 'Espèces',
+            'cash-on-delivery' => 'Paiement à la livraison',
+            'bank-transfer' => 'Virement bancaire',
+            'stripe-card' => 'Carte bancaire',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Paiement en ligne par carte',
+        ],
         'tags' => [
             'label' => 'Étiquettes',
         ],

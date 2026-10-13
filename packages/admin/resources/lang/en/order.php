@@ -245,6 +245,43 @@ return [
         'no_additional_info' => [
             'label' => 'No Additional Information',
         ],
+        'shipping_details' => [
+            'label' => 'Shipping Details',
+        ],
+        'billing_details' => [
+            'label' => 'Billing Details',
+        ],
+        'personalization' => [
+            'label' => 'Personalization',
+            'sku' => 'SKU',
+            'value' => 'Personalization text',
+        ],
+        'meta' => [
+            'is_guest' => 'Guest checkout',
+            'language_locale' => 'Language',
+            'shippingType' => 'Shipping type',
+            'shipping_zone' => 'Shipping zone',
+            'awb' => 'AWB number',
+            'payment_option' => 'Payment method',
+            'payment_type' => 'Payment type',
+            'isBillingSameAsShipping' => 'Billing address same as shipping',
+            'billing_series' => 'Invoice series',
+            'billing_number' => 'Invoice number',
+        ],
+        'shipping_types' => [
+            'courier' => 'Courier',
+            'locker' => 'Parcel locker',
+            'pickup' => 'Personal pickup',
+        ],
+        'payment_methods' => [
+            'offline' => 'Offline',
+            'cash-in-hand' => 'Cash in hand',
+            'cash-on-delivery' => 'Cash on delivery',
+            'bank-transfer' => 'Bank transfer',
+            'stripe-card' => 'Credit card',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Online card payment',
+        ],
         'tags' => [
             'label' => 'Tags',
         ],

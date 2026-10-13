@@ -245,6 +245,43 @@ return [
         'no_additional_info' => [
             'label' => 'Nu există informații suplimentare',
         ],
+        'shipping_details' => [
+            'label' => 'Detalii livrare',
+        ],
+        'billing_details' => [
+            'label' => 'Detalii facturare',
+        ],
+        'personalization' => [
+            'label' => 'Personalizare',
+            'sku' => 'SKU',
+            'value' => 'Text personalizat',
+        ],
+        'meta' => [
+            'is_guest' => 'Comandă fără cont',
+            'language_locale' => 'Limbă',
+            'shippingType' => 'Tip livrare',
+            'shipping_zone' => 'Zonă de livrare',
+            'awb' => 'Număr AWB',
+            'payment_option' => 'Metodă de plată',
+            'payment_type' => 'Tip plată',
+            'isBillingSameAsShipping' => 'Adresa de facturare este aceeași cu cea de livrare',
+            'billing_series' => 'Serie factură',
+            'billing_number' => 'Număr factură',
+        ],
+        'shipping_types' => [
+            'courier' => 'Curier',
+            'locker' => 'Locker',
+            'pickup' => 'Ridicare personală',
+        ],
+        'payment_methods' => [
+            'offline' => 'Offline',
+            'cash-in-hand' => 'Numerar',
+            'cash-on-delivery' => 'Ramburs',
+            'bank-transfer' => 'Transfer bancar',
+            'stripe-card' => 'Card bancar',
+            'stripe-wallet-pay' => 'Apple Pay / Google Pay',
+            'hosted-payment' => 'Plată online cu cardul',
+        ],
         'tags' => [
             'label' => 'Etichete',
         ],
