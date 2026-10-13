@@ -71,6 +71,9 @@ return [
         'quantity_increment' => [
             'label' => 'Miktar Artışı',
             'helper_text' => 'Ürün varyantı bu miktarın katları halinde satın alınmalıdır.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Vergi Sınıfı',

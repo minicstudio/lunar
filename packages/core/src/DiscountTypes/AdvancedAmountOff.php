@@ -72,7 +72,7 @@ class AdvancedAmountOff extends AbstractDiscountType
         $affectedLines = collect();
         $totalDiscount = 0;
 
-        $unitPrice = $cartLine->unitPrice->value;
+        $unitPrice = $this->perQuantityUnitPriceValue($cartLine);
         $subTotal = $cartLine->subTotal->value;
         $subTotalDiscounted = $cartLine->subTotalDiscounted?->value ?: 0;
         $lineDiscount = $cartLine->discountTotal?->value ?: 0;
@@ -160,7 +160,7 @@ class AdvancedAmountOff extends AbstractDiscountType
             return $cart;
         }
 
-        $unitPrice = $cartLine->unitPrice->value;
+        $unitPrice = $this->perQuantityUnitPriceValue($cartLine);
         $subTotal = $cartLine->subTotal->value;
         $subTotalDiscounted = $cartLine->subTotalDiscounted?->value ?: 0;
         $lineDiscount = $cartLine->discountTotal?->value ?: 0;
@@ -530,6 +530,19 @@ class AdvancedAmountOff extends AbstractDiscountType
         }
 
         return $lines;
+    }
+
+    /**
+     * Per cart-quantity unit price in minor units (catalog price ÷ unit_quantity).
+     */
+    protected function perQuantityUnitPriceValue(CartLineContract $cartLine): int
+    {
+        $currency = $cartLine->cart->currency;
+
+        return (int) round(
+            $cartLine->unitPrice->unitDecimal(false) * $currency->factor,
+            $currency->decimal_places
+        );
     }
 
     /**

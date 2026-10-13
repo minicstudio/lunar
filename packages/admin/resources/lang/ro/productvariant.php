@@ -70,7 +70,10 @@ return [
         ],
         'quantity_increment' => [
             'label' => 'Increment cantitate',
-            'helper_text' => 'Varianta de produs trebuie cumpărată în multipli ai acestei cantități.',
+            'helper_text' => 'Varianta de produs trebuie cumpărată în multipli ai acestei cantități. Trebuie să fie un multiplu al cantității unitate.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'Incrementul de cantitate trebuie să fie un multiplu al cantității unitate (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Clasă de taxe',

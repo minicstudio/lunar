@@ -70,6 +70,9 @@ return [
         'quantity_increment' => [
             'label' => 'Стъпка на количество',
             'helper_text' => 'Вариантът трябва да бъде закупуван в кратни на това количество.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Данъчен клас',

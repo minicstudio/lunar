@@ -76,3 +76,82 @@ it('rejects a unit quantity below one', function () {
         ])->call('save')
         ->assertHasFormErrors(['unit_quantity' => 'min']);
 });
+
+it('rejects a quantity increment that is not a multiple of the unit quantity', function () {
+    Language::factory()->create(['default' => true]);
+    Currency::factory()->create(['default' => true]);
+
+    $product = Product::factory()->create();
+
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'unit_quantity' => 4,
+        'quantity_increment' => 4,
+    ]);
+
+    $this->asStaff();
+
+    Livewire::test(
+        ManageVariantInventory::class, [
+            'record' => $variant->getRouteKey(),
+        ])->fillForm([
+            'unit_quantity' => 4,
+            'quantity_increment' => 6,
+        ])->call('save')
+        ->assertHasFormErrors(['quantity_increment']);
+});
+
+it('accepts a quantity increment that is a multiple of the unit quantity', function () {
+    Language::factory()->create(['default' => true]);
+    Currency::factory()->create(['default' => true]);
+
+    $product = Product::factory()->create();
+
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'unit_quantity' => 4,
+        'quantity_increment' => 4,
+    ]);
+
+    $this->asStaff();
+
+    Livewire::test(
+        ManageVariantInventory::class, [
+            'record' => $variant->getRouteKey(),
+        ])->fillForm([
+            'unit_quantity' => 4,
+            'quantity_increment' => 8,
+            'min_quantity' => 8,
+        ])->call('save')
+        ->assertHasNoFormErrors();
+
+    $this->assertDatabaseHas((new ProductVariant)->getTable(), [
+        'id' => $variant->id,
+        'unit_quantity' => 4,
+        'quantity_increment' => 8,
+    ]);
+});
+
+it('snaps quantity increment to unit quantity when unit quantity changes and increment is invalid', function () {
+    Language::factory()->create(['default' => true]);
+    Currency::factory()->create(['default' => true]);
+
+    $product = Product::factory()->create();
+
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'unit_quantity' => 1,
+        'quantity_increment' => 1,
+    ]);
+
+    $this->asStaff();
+
+    Livewire::test(
+        ManageVariantInventory::class, [
+            'record' => $variant->getRouteKey(),
+        ])->fillForm([
+            'unit_quantity' => 4,
+        ])->assertFormSet([
+            'quantity_increment' => 4,
+        ]);
+});

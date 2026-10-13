@@ -66,18 +66,37 @@ class CartLineQuantity extends BaseValidator
             }
         }
 
-        if ($purchasable && ($quantity % ($purchasable->quantity_increment ?? 1)) !== 0) {
-            $this->fail(
-                'cart',
-                __('lunar::exceptions.quantity_increment', [
-                    'quantity' => $quantity,
-                    'increment' => $purchasable->quantity_increment,
-                ]),
-                QuantityIncrementException::class
-            );
+        if ($purchasable) {
+            $increment = $this->effectiveQuantityIncrement($purchasable);
+
+            if (($quantity % $increment) !== 0) {
+                $this->fail(
+                    'cart',
+                    __('lunar::exceptions.quantity_increment', [
+                        'quantity' => $quantity,
+                        'increment' => $increment,
+                    ]),
+                    QuantityIncrementException::class
+                );
+            }
         }
 
         return $this->pass();
+    }
+
+    /**
+     * Quantity increment raised to a multiple of the purchasable unit quantity.
+     */
+    protected function effectiveQuantityIncrement(Purchasable $purchasable): int
+    {
+        $increment = max(1, (int) ($purchasable->quantity_increment ?? 1));
+        $unitQuantity = max(1, (int) $purchasable->getUnitQuantity());
+
+        if ($increment % $unitQuantity === 0) {
+            return $increment;
+        }
+
+        return (int) (ceil($increment / $unitQuantity) * $unitQuantity);
     }
 
     /**

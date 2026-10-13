@@ -71,6 +71,9 @@ return [
         'quantity_increment' => [
             'label' => 'Incremento de Cantidad',
             'helper_text' => 'La variante de producto debe comprarse en múltiplos de esta cantidad.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Clase Impositiva',

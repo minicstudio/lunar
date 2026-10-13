@@ -70,6 +70,9 @@ return [
         'quantity_increment' => [
             'label' => 'Тооны өсөлт',
             'helper_text' => 'Бүтээгдэхүүний вариант энэ тооны давхцаагаар худалдаж авах ёстой.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'The quantity increment must be a multiple of the unit quantity (:unit_quantity).',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Татварын ангилал',

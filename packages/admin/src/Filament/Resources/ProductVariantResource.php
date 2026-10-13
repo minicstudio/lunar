@@ -2,12 +2,15 @@
 
 namespace Lunar\Admin\Filament\Resources;
 
+use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\Enums\SubNavigationPosition;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -158,7 +161,16 @@ class ProductVariantResource extends BaseResource
                 __('lunarpanel::productvariant.form.unit_quantity.helper_text')
             )
             ->numeric()
-            ->minValue(1);
+            ->minValue(1)
+            ->live()
+            ->afterStateUpdated(function ($state, Set $set, Get $get): void {
+                $unitQuantity = max(1, (int) $state);
+                $increment = (int) $get('quantity_increment');
+
+                if ($increment < 1 || $increment % $unitQuantity !== 0) {
+                    $set('quantity_increment', $unitQuantity);
+                }
+            });
     }
 
     public static function getQuantityIncrementFormComponent(): TextInput
@@ -168,7 +180,21 @@ class ProductVariantResource extends BaseResource
                 __('lunarpanel::productvariant.form.quantity_increment.label')
             )->helperText(
                 __('lunarpanel::productvariant.form.quantity_increment.helper_text')
-            )->numeric();
+            )
+            ->numeric()
+            ->minValue(1)
+            ->rules([
+                fn (Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
+                    $unitQuantity = max(1, (int) $get('unit_quantity'));
+                    $increment = (int) $value;
+
+                    if ($increment < 1 || $increment % $unitQuantity !== 0) {
+                        $fail(__('lunarpanel::productvariant.form.quantity_increment.validation.multiple_of_unit_quantity', [
+                            'unit_quantity' => $unitQuantity,
+                        ]));
+                    }
+                },
+            ]);
     }
 
     public static function getMinQuantityFormComponent(): TextInput

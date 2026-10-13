@@ -92,6 +92,40 @@ function createLineTaxClassWithZone(int $percentage = 20): TaxClass
     return $taxClass;
 }
 
+test('unitPriceWithoutCoupon uses per-quantity price when unit quantity is greater than 1', function () {
+    $currency = Currency::factory()->create();
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    $purchasable = ProductVariant::factory()->create([
+        'unit_quantity' => 2,
+    ]);
+
+    Price::factory()->create([
+        'price' => 42634,
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+        'priceable_type' => $purchasable->getMorphClass(),
+        'priceable_id' => $purchasable->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $purchasable->getMorphClass(),
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 2,
+    ]);
+
+    $result = app(CalculateLines::class)->handle($cart, fn ($cart) => $cart);
+
+    $line = $result->lines->first();
+
+    expect($line->unitPrice->value)->toBe(42634)
+        ->and($line->unitPriceWithoutCoupon->value)->toBe(21317)
+        ->and($line->subTotal->value)->toBe(42634);
+});
+
 test('sets default discount values on cart lines', function () {
     Config::set('lunar.pricing.stored_inclusive_of_tax', false);
 

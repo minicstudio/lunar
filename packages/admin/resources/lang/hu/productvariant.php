@@ -70,7 +70,10 @@ return [
         ],
         'quantity_increment' => [
             'label' => 'Mennyiség növelése',
-            'helper_text' => 'A termékváltozat csak e mennyiség többszörösében vásárolható meg.',
+            'helper_text' => 'A termékváltozat csak e mennyiség többszörösében vásárolható meg. Az egység mennyiség többszöröse kell legyen.',
+            'validation' => [
+                'multiple_of_unit_quantity' => 'A mennyiség növelésének az egység mennyiség (:unit_quantity) többszörösének kell lennie.',
+            ],
         ],
         'tax_class_id' => [
             'label' => 'Adóosztály',
