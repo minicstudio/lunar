@@ -227,11 +227,24 @@ class BuyXGetY extends AbstractDiscountType
             return [$affectedLines, $discountTotal];
         }
 
-        // When parents carry selected_gift_rewards (including explicit []), honour the
-        // selection demand — a skip-only cart must not keep gifts left by a removed line.
-        $giftBudget = fn (): int => $this->cartHasExplicitGiftSelectionMeta($cart)
-            ? min($totalRewardQty, $this->totalSelectedGiftDemand($cart))
-            : $totalRewardQty;
+        // Explicit selected_gift_rewards (including []) gates the gift budget:
+        // - skip-only (demand 0): drop every gift for this discount
+        // - auto-add single reward: keep full entitlement so qty increases can top up
+        //   even when meta still lists the previous selection quantity
+        // - picker-only: never keep more gifts than the shopper selected
+        $giftBudget = function () use ($cart, $totalRewardQty, $automaticallyAddRewards): int {
+            if (! $this->cartHasExplicitGiftSelectionMeta($cart)) {
+                return $totalRewardQty;
+            }
+
+            $demand = $this->totalSelectedGiftDemand($cart);
+
+            return match (true) {
+                $demand < 1 => 0,
+                $automaticallyAddRewards => $totalRewardQty,
+                default => min($totalRewardQty, $demand),
+            };
+        };
 
         // The first loop only applies discount totals to existing gift lines; it does
         // not keep line quantities inside max_reward_qty. Reconcile the budget before

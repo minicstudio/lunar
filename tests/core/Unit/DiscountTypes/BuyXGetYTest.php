@@ -772,6 +772,65 @@ test('pack-priced condition lines grant one gift per package not per piece', fun
         ->and((int) $giftLine->quantity)->toBe(1);
 });
 
+test('auto-add tops up gifts after qty increase despite stale selection meta', function () {
+    $condition = createPricedVariant($this->currency, 1000);
+    $reward = createPricedVariant($this->currency, 500);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $this->currency->id,
+        'channel_id' => $this->channel->id,
+    ]);
+
+    $parentLine = $cart->lines()->create([
+        'purchasable_type' => $condition->getMorphClass(),
+        'purchasable_id' => $condition->id,
+        'quantity' => 1,
+        'meta' => [
+            'selected_gift_rewards' => [
+                ['variant_id' => $reward->id, 'product_id' => $reward->product->id, 'quantity' => 1],
+            ],
+        ],
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'min_qty' => 1,
+            'reward_qty' => 1,
+            'max_reward_qty' => 4,
+            'automatically_add_rewards' => true,
+        ],
+    ]);
+
+    activateBuyXGetYDiscount($discount, $this->channel, $this->customerGroup);
+
+    $discount->discountables()->create([
+        'discountable_type' => $condition->product->getMorphClass(),
+        'discountable_id' => $condition->product->id,
+        'type' => 'condition',
+    ]);
+    $discount->discountables()->create([
+        'discountable_type' => $reward->product->getMorphClass(),
+        'discountable_id' => $reward->product->id,
+        'type' => 'reward',
+    ]);
+
+    $cart = $cart->calculate();
+
+    expect($cart->lines->first(fn ($line) => (int) $line->purchasable_id === (int) $reward->id))->not->toBeNull();
+
+    $cart->updateLine($parentLine->id, 2);
+    $cart = $cart->fresh(['lines'])->calculate();
+
+    $giftQty = (int) $cart->lines
+        ->filter(fn ($line) => (int) $line->purchasable_id === (int) $reward->id)
+        ->sum('quantity');
+
+    expect($giftQty)->toBe(2);
+});
+
 test('removes gift when only an explicit skip condition line remains', function () {
     $condition = createPricedVariant($this->currency, 1000);
     $rewardA = createPricedVariant($this->currency, 500);
