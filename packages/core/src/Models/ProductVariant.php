@@ -155,6 +155,20 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     }
 
     /**
+     * Map cart/ATC piece quantity to Buy X Get Y condition units.
+     *
+     * Pack-priced variants (`unit_quantity` > 1) count each full pack as one
+     * condition unit so "Buy 1 Get 1" grants one gift per package, not per piece.
+     */
+    public function giftConditionQuantity(int $pieceQuantity): int
+    {
+        $unitQuantity = max(1, (int) $this->unit_quantity);
+        $pieces = max(0, $pieceQuantity);
+
+        return (int) floor($pieces / $unitQuantity);
+    }
+
+    /**
      * Return the tax class.
      */
     public function getTaxClass(): TaxClass

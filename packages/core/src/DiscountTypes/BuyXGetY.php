@@ -83,7 +83,9 @@ class BuyXGetY extends AbstractDiscountType
                 )
         );
 
-        $totalQuantity = $conditions->sum('quantity');
+        $totalQuantity = (int) $conditions->sum(
+            fn (CartLine $line) => $this->conditionQuantityForLine($line)
+        );
 
         // Below min_qty (or no qualifying parents): strip this discount's gift lines.
         if (! $conditions->count() || ($minQty && $totalQuantity < $minQty)) {
@@ -225,23 +227,39 @@ class BuyXGetY extends AbstractDiscountType
             return [$affectedLines, $discountTotal];
         }
 
+        // When parents carry selected_gift_rewards (including explicit []), honour the
+        // selection demand — a skip-only cart must not keep gifts left by a removed line.
+        $giftBudget = fn (): int => $this->cartHasExplicitGiftSelectionMeta($cart)
+            ? min($totalRewardQty, $this->totalSelectedGiftDemand($cart))
+            : $totalRewardQty;
+
         // The first loop only applies discount totals to existing gift lines; it does
         // not keep line quantities inside max_reward_qty. Reconcile the budget before
         // auto-adding so incremental cart updates cannot grow gifts past the cap.
-        $this->trimGiftLinesToBudget($cart, $totalRewardQty);
+        $this->trimGiftLinesToBudget($cart, $giftBudget());
 
         [$affectedLines, $discountTotal] = $this->processAutomaticRewards(
             $cart,
-            max(0, $totalRewardQty - $this->giftUnitsForDiscount($cart)),
+            max(0, $giftBudget() - $this->giftUnitsForDiscount($cart)),
             $affectedLines,
             $discountTotal,
             allowAutoPick: $automaticallyAddRewards,
         );
 
-        // Final safety net: never leave more gift units in the cart than max_reward_qty.
-        $this->trimGiftLinesToBudget($cart, $totalRewardQty);
+        // Final safety net: never leave more gift units than the selection-aware budget.
+        $this->trimGiftLinesToBudget($cart, $giftBudget());
 
         return [$affectedLines, $discountTotal];
+    }
+
+    /**
+     * Sum of selected_gift_rewards quantities on non-gift cart lines.
+     */
+    protected function totalSelectedGiftDemand(CartContract $cart): int
+    {
+        return (int) $cart->lines
+            ->reject(fn (CartLine $line) => $this->lineHasAddedByDiscount($line))
+            ->sum(fn (CartLine $line) => (int) $this->selectedGiftRewardRowsFromLine($line)->sum('quantity'));
     }
 
     /**
@@ -748,13 +766,41 @@ class BuyXGetY extends AbstractDiscountType
     }
 
     /**
+     * Condition units for a qualifying cart line (packs when unit_quantity > 1).
+     */
+    protected function conditionQuantityForLine(CartLine $line): int
+    {
+        $quantity = max(0, (int) $line->quantity);
+        $purchasable = $line->purchasable;
+
+        if (is_object($purchasable) && method_exists($purchasable, 'giftConditionQuantity')) {
+            return $purchasable->giftConditionQuantity($quantity);
+        }
+
+        if ($purchasable instanceof Purchasable) {
+            $unitQuantity = max(1, (int) $purchasable->getUnitQuantity());
+
+            return (int) floor($quantity / $unitQuantity);
+        }
+
+        return $quantity;
+    }
+
+    /**
      * Reduce (or remove) gift lines so total gift units do not exceed the reward budget.
      */
     protected function trimGiftLinesToBudget(CartContract $cart, int $totalRewardQty): void
     {
+        $demandedKeys = $this->selectedGiftDemandKeys($cart);
+
         $giftLines = $cart->lines
             ->filter(fn (CartLine $line) => $this->lineIsGiftForDiscount($line))
-            ->sortByDesc(fn (CartLine $line) => (int) $line->quantity)
+            // Drop non-selected leftovers first so a stranded sibling gift is removed
+            // before a line the shopper explicitly chose.
+            ->sortBy(fn (CartLine $line) => [
+                $this->giftLineMatchesDemand($line, $demandedKeys) ? 1 : 0,
+                -1 * (int) $line->quantity,
+            ])
             ->values();
 
         $overflow = max(0, (int) $giftLines->sum(fn (CartLine $line) => (int) $line->quantity) - $totalRewardQty);
@@ -826,6 +872,35 @@ class BuyXGetY extends AbstractDiscountType
             $line->meta = $meta;
             $line->save();
         });
+    }
+
+    /**
+     * Purchasable keys demanded by parent `selected_gift_rewards` meta.
+     *
+     * @return Collection<int, string>
+     */
+    protected function selectedGiftDemandKeys(CartContract $cart): Collection
+    {
+        return collect($cart->lines)
+            ->reject(fn (CartLine $line) => $this->lineHasAddedByDiscount($line))
+            ->flatMap(fn (CartLine $line) => $this->selectedGiftRewardRowsFromLine($line))
+            ->map(fn (array $row): string => (string) $row['key'])
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * @param  Collection<int, string>  $demandedKeys
+     */
+    protected function giftLineMatchesDemand(CartLine $line, Collection $demandedKeys): bool
+    {
+        if ($demandedKeys->isEmpty() || ! $line->purchasable instanceof Purchasable) {
+            return false;
+        }
+
+        $key = $line->purchasable->getMorphClass().':'.$line->purchasable->id;
+
+        return $demandedKeys->contains($key);
     }
 
     /**
