@@ -355,13 +355,25 @@ class DiscountResource extends BaseResource
                         __('lunarpanel::discount.form.reward_qty.label')
                     )->helperText(
                         __('lunarpanel::discount.form.reward_qty.helper_text')
-                    )->numeric(),
+                    )
+                    ->numeric()
+                    ->default(1)
+                    ->disabled()
+                    ->dehydrated()
+                    ->afterStateHydrated(fn (TextInput $component) => $component->state(1))
+                    ->dehydrateStateUsing(fn (): int => 1),
                 TextInput::make('data.max_reward_qty')
                     ->label(
                         __('lunarpanel::discount.form.max_reward_qty.label')
                     )->helperText(
                         __('lunarpanel::discount.form.max_reward_qty.helper_text')
-                    )->numeric(),
+                    )
+                    ->numeric()
+                    ->default(1)
+                    ->disabled()
+                    ->dehydrated()
+                    ->afterStateHydrated(fn (TextInput $component) => $component->state(1))
+                    ->dehydrateStateUsing(fn (): int => 1),
             ])->columns(2),
             Toggle::make('data.automatically_add_rewards')
                 ->label(
