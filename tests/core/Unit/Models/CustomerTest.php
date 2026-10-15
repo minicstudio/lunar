@@ -8,6 +8,7 @@ use Lunar\Models\Customer;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
+use Lunar\Models\OrderAddress;
 use Lunar\Tests\Core\Stubs\User;
 use Lunar\Tests\Core\TestCase;
 
@@ -72,39 +73,26 @@ test('can make a customer with meta attribute', function () {
     expect($customer->meta['account'])->toEqual(123456);
 });
 
-test('can get full name', function () {
-    $customer = Customer::factory()->create([
-        'title' => null,
-        'first_name' => 'Tony',
-        'last_name' => 'Stark',
-    ]);
+test('can get full name without title', function (?string $title, ?string $firstName, ?string $lastName, string $expectedName) {
+    foreach ([Customer::class, OrderAddress::class] as $modelClass) {
+        $model = new $modelClass([
+            'title' => $title,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+        ]);
 
-    expect($customer->fullName)->toEqual("$customer->first_name $customer->last_name");
-
-    $customer = Customer::factory()->create([
-        'title' => 'Mr.',
-        'first_name' => 'Tony',
-        'last_name' => 'Stark',
-    ]);
-
-    expect($customer->fullName)->toEqual("$customer->title $customer->first_name $customer->last_name");
-
-    $customer = Customer::factory()->create([
-        'title' => 'Mr.',
-        'first_name' => '',
-        'last_name' => 'Stark',
-    ]);
-
-    expect($customer->fullName)->toEqual("$customer->title $customer->last_name");
-
-    $customer = Customer::factory()->create([
-        'title' => 'Mr.',
-        'first_name' => 'Tony',
-        'last_name' => '',
-    ]);
-
-    expect($customer->fullName)->toEqual("$customer->title $customer->first_name");
-});
+        expect($model->fullName)->toBe($expectedName)
+            ->and($model->full_name)->toBe($expectedName)
+            ->and($model->title)->toBe($title);
+    }
+})->with([
+    'no title' => [null, 'Tony', 'Stark', 'Tony Stark'],
+    'title excluded' => ['Customer category', 'Tony', 'Stark', 'Tony Stark'],
+    'no first name' => ['Customer category', '', 'Stark', 'Stark'],
+    'no last name' => ['Customer category', 'Tony', '', 'Tony'],
+    'no name' => ['Customer category', null, null, ''],
+    'whitespace normalized' => ['Customer category', ' Tony ', ' Stark ', 'Tony Stark'],
+]);
 
 test('can associate to customer groups', function () {
     $groups = CustomerGroup::factory(4)->create();

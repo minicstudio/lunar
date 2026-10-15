@@ -57,6 +57,12 @@ beforeEach(function () {
 });
 
 it('can render order manage page', function () {
+    $this->order->customer->update([
+        'title' => 'Customer category',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+    ]);
+
     $currency = Currency::getDefault();
 
     $variants = ProductVariant::factory(5)
@@ -127,7 +133,8 @@ it('can render order manage page', function () {
         ->assertSee($this->order->shippingAddress->line_one)
         ->assertSee($this->order->shippingAddress->line_one)
         ->assertSee($this->order->total->formatted)
-        ->assertSee($this->order->customer->fullName)
+        ->assertSee('Jane Doe')
+        ->assertDontSee('Customer category Jane Doe')
         ->assertSee(CustomerResource::getUrl('edit', ['record' => $this->order->customer->id]))
         ->assertSee(__('lunarpanel::order.transactions.capture'))
         ->assertSee($this->order->captures->first()->amount->formatted)

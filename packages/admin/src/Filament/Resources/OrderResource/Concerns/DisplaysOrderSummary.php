@@ -56,6 +56,7 @@ trait DisplaysOrderSummary
             'stashed_courier_address',
             'stashed_locker_address',
             'stashed_pickup_address',
+            'pickup_shipping_option',
             'preloaded_from_order_id',
             'insights_purchase_pushed_at',
             'gtm_purchase_event_id',
