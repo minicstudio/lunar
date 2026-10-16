@@ -7,6 +7,8 @@ use Illuminate\Support\Collection;
 use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\ERP\Models\ErpSyncTemp;
 use Lunar\ERP\Providers\Magister\Jobs\CreateProductsAndVariantsJob;
+use Lunar\FieldTypes\Text;
+use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Currency;
 use Lunar\Models\Discount;
 use Lunar\Models\Discountable;
@@ -92,8 +94,8 @@ test('handle updates existing standard product and variant price change', functi
         'product_type_id' => $productType->id,
         'status' => 'draft',
         'attribute_data' => [
-            'name' => new \Lunar\FieldTypes\TranslatedText(collect([
-                'ro' => new \Lunar\FieldTypes\Text('Old Name'),
+            'name' => new TranslatedText(collect([
+                'ro' => new Text('Old Name'),
             ])),
         ],
     ]);
@@ -256,8 +258,8 @@ test('handle generic product updates existing variant and adds new', function ()
         'product_type_id' => $productType->id,
         'status' => 'draft',
         'attribute_data' => [
-            'name' => new \Lunar\FieldTypes\TranslatedText(collect([
-                'ro' => new \Lunar\FieldTypes\Text('Old Generic Name'),
+            'name' => new TranslatedText(collect([
+                'ro' => new Text('Old Generic Name'),
             ])),
         ],
     ]);
@@ -350,8 +352,8 @@ test('update variant price unchanged keeps single price row', function () {
         'product_type_id' => $productType->id,
         'status' => 'draft',
         'attribute_data' => [
-            'name' => new \Lunar\FieldTypes\TranslatedText(collect([
-                'ro' => new \Lunar\FieldTypes\Text('Name'),
+            'name' => new TranslatedText(collect([
+                'ro' => new Text('Name'),
             ])),
         ],
     ]);
@@ -404,6 +406,120 @@ test('creating a product without Stock product type throws', function () {
     $this->expectException(\Exception::class);
     $this->expectExceptionMessage('Product type "Stock" not found');
     $job->handle();
+});
+
+test('handle restores soft-deleted product when updating standard variant', function () {
+    $productType = ProductType::firstWhere('name', 'Stock');
+    $product = Product::create([
+        'product_type_id' => $productType->id,
+        'status' => 'draft',
+        'attribute_data' => [
+            'name' => new TranslatedText(collect([
+                'ro' => new Text('Soft Deleted Product'),
+            ])),
+        ],
+    ]);
+
+    $taxClass = TaxClass::first();
+    $variant = ProductVariant::create([
+        'product_id' => $product->id,
+        'erp_id' => 'ERP-SOFT-1',
+        'sku' => 'SOFT-001',
+        'tax_class_id' => $taxClass->id,
+    ]);
+
+    $ron = Currency::firstWhere('code', 'RON');
+    $variant->prices()->create([
+        'min_quantity' => 1,
+        'currency_id' => $ron->id,
+        'price' => 900,
+    ]);
+
+    $product->delete();
+
+    expect(Product::find($product->id))->toBeNull()
+        ->and(Product::withTrashed()->find($product->id)->trashed())->toBeTrue();
+
+    $article = ErpSyncTemp::create([
+        'erp_id' => 'ERP-SOFT-1',
+        'name' => 'Soft Deleted Product',
+        'sku' => 'SOFT-001',
+        'price' => 1100,
+        'discount' => 10,
+        'stock' => 3,
+        'provider_data' => ['article_kind' => 0],
+        'attributes' => [],
+    ]);
+
+    (new CreateProductsAndVariantsJob($article, Collection::make()))->handle();
+
+    $product->refresh();
+    $variant->refresh();
+
+    expect($product->trashed())->toBeFalse()
+        ->and($variant->product_id)->toBe($product->id)
+        ->and($variant->prices()->first()->price->value)->toBe(1100)
+        ->and($variant->stock)->toBe(3);
+
+    $discountable = Discountable::where('discountable_type', Product::morphName())
+        ->where('discountable_id', $product->id)
+        ->first();
+
+    expect($discountable)->not->toBeNull();
+});
+
+test('handle recreates missing product and reassigns orphaned standard variant', function () {
+    $productType = ProductType::firstWhere('name', 'Stock');
+    $product = Product::create([
+        'product_type_id' => $productType->id,
+        'status' => 'draft',
+        'attribute_data' => [
+            'name' => new TranslatedText(collect([
+                'ro' => new Text('Placeholder Product'),
+            ])),
+        ],
+    ]);
+
+    $taxClass = TaxClass::first();
+    $variant = ProductVariant::create([
+        'product_id' => $product->id,
+        'erp_id' => 'ERP-MISS-1',
+        'sku' => 'MISS-001',
+        'tax_class_id' => $taxClass->id,
+    ]);
+
+    $ron = Currency::firstWhere('code', 'RON');
+    $variant->prices()->create([
+        'min_quantity' => 1,
+        'currency_id' => $ron->id,
+        'price' => 800,
+    ]);
+
+    // Simulate a dangling product_id without cascading variant deletion.
+    $orphanedProductId = 999999;
+    $variant->forceFill(['product_id' => $orphanedProductId])->saveQuietly();
+
+    expect(Product::withTrashed()->find($orphanedProductId))->toBeNull();
+
+    $article = ErpSyncTemp::create([
+        'erp_id' => 'ERP-MISS-1',
+        'name' => 'Recreated Product',
+        'sku' => 'MISS-001',
+        'price' => 950,
+        'stock' => 7,
+        'provider_data' => ['article_kind' => 0],
+        'attributes' => [],
+    ]);
+
+    (new CreateProductsAndVariantsJob($article, Collection::make()))->handle();
+
+    $variant->refresh();
+    $newProduct = Product::find($variant->product_id);
+
+    expect($newProduct)->not->toBeNull()
+        ->and($newProduct->id)->not->toBe($orphanedProductId)
+        ->and($variant->prices()->first()->price->value)->toBe(950)
+        ->and($variant->stock)->toBe(7);
 });
 
 // Discount Tests

@@ -3,6 +3,7 @@
 namespace Lunar\Tests\ERP;
 
 use Filament\FilamentServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Lunar\Admin\LunarPanelProvider;
 use Lunar\ERP\ErpServiceProvider;
 use Lunar\Locations\LocationsServiceProvider;
@@ -41,6 +42,8 @@ class TestCase extends BaseTestCase
             LunarPanelProvider::class,
 
             FilamentServiceProvider::class,
+
+            LivewireServiceProvider::class,
 
             ErpPanelTestServiceProvider::class,
             ErpServiceProvider::class,

@@ -86,7 +86,13 @@ class CreateProductsAndVariantsJob implements ShouldQueue
         $currency = Currency::firstWhere('code', 'RON');
 
         if ($productVariant) {
-            $this->updateProduct($productVariant->product_id, $this->article);
+            $product = $this->updateProduct($productVariant->product_id, $this->article);
+
+            if ($productVariant->product_id !== $product->id) {
+                $productVariant->product_id = $product->id;
+                $productVariant->save();
+            }
+
             $this->updateVariant($productVariant, $this->article, $currency);
 
             return;
@@ -117,6 +123,10 @@ class CreateProductsAndVariantsJob implements ShouldQueue
                     : $this->createDraftProduct($this->article);
 
         $currency = Currency::firstWhere('code', 'RON');
+
+        if ($existingVariant && $existingVariant->product_id !== $product->id) {
+            ProductVariant::whereIn('sku', $skus)->update(['product_id' => $product->id]);
+        }
 
         $existingVariants = ProductVariant::whereIn('sku', $skus)->get()->keyBy('sku');
 
@@ -162,10 +172,21 @@ class CreateProductsAndVariantsJob implements ShouldQueue
 
     /**
      * Update existing product.
+     *
+     * Soft-deleted products are restored so ERP sync can continue for active SKUs.
+     * Missing products are recreated as drafts and callers reassign orphaned variants.
      */
     private function updateProduct(int $productId, ErpSyncTemp $article): Product
     {
-        $product = Product::find($productId);
+        $product = Product::withTrashed()->find($productId);
+
+        if ($product === null) {
+            return $this->createDraftProduct($article);
+        }
+
+        if ($product->trashed()) {
+            $product->restore();
+        }
 
         // set the product options for generic articles
         if ($article->provider_data['article_kind'] === 1) {
