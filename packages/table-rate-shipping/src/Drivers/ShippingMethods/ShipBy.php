@@ -115,12 +115,6 @@ class ShipBy implements ShippingRateInterface
             $tier = $this->cartWeightInUnit($cart, $weightUnit);
         }
 
-        // if locker then max weight check: max 20 kg
-        if (! empty($cart->meta['shippingType']) && $cart->meta['shippingType'] === 'locker'
-            && $this->cartWeightInUnit($cart, 'kg') > 20) {
-            return null;
-        }
-
         $shippingRate->loadMissing('prices');
         collect($shippingRate->prices)->each(
             fn ($price) => $price->setRelation('priceable', $shippingRate)
