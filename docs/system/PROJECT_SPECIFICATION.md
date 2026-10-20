@@ -235,8 +235,8 @@ Core service providers are registered in root `composer.json` under Laravel pack
 
 - Core shipping options are resolved through `Lunar\Base\ShippingModifiers`, `Lunar\Base\ShippingManifest`, and `ShippingOption`.
 - `packages/table-rate-shipping` adds `ShippingModifier`, shipping zones, methods, rates, exclusions, customer type eligibility, and customer-group eligibility.
-- `ShippingRateResolver` filters zones by country/state/postcode, method enabled state, customer groups, cut-off time, stock availability, and postcode match.
-- `ShipBy` calculates rates by discounted subtotal excluding coupons or total cart weight. It also rejects customer type mismatches, shipping exclusions, and locker shipments over 20kg.
+- `ShippingRateResolver` filters zones by country/state/postcode, method enabled state, customer groups, cut-off time, stock availability, postcode match, and optional min/max weight on the shipping method.
+- `ShipBy` calculates rates by discounted subtotal excluding coupons or total cart weight. It also rejects customer type mismatches and shipping exclusions.
 - `packages/shipping` adds carrier behavior:
   - AWB generation on configured order status.
   - Tracking URL generation.
@@ -260,7 +260,7 @@ The storefront (`lunar-frontend`) owns checkout meta. `FillOrderFromCart` copies
 | Key | Set on | Values / notes |
 | --- | --- | --- |
 | `payment_option` | Cart during checkout; copied to order | Must be a key in merged `lunar.payments.types`. Core default type is `cash-in-hand` (`offline` driver). **This repo** reads `cash-on-delivery` in Magister, Smartbill, Sameday, and DPD code. Host storefronts typically use `cash-on-delivery` and `stripe-card` (see `lunar-frontend`). |
-| `shippingType` | Cart shipping step | `courier` or `locker` (`Lunar\Addons\Shipping\Enums\ShippingType`). Used by `ShipBy`, locker traits, Sameday/DPD AWB builders. |
+| `shippingType` | Cart shipping step | `courier` or `locker` (`Lunar\Addons\Shipping\Enums\ShippingType`). Used by locker traits, Sameday/DPD AWB builders. |
 | `isBillingSameAsShipping` | Cart billing/shipping | Host/checkout convention; copied via `FillOrderFromCart` but not read in `packages/*`. |
 | `is_guest` | Checkout identity | Host convention; not read in `packages/*`. |
 | `language_locale` | Order placement | Host convention; not read in `packages/*`. |

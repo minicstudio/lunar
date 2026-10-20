@@ -202,7 +202,7 @@ When `lunar.shipping-tables.enabled` is true, `ShippingModifier` adds zone/metho
 
 **Resolution:** `Resolvers\ShippingRateResolver`, `ShipBy`
 
-Considers: country/state/postcode, method enabled, customer groups, cut-off time, stock, exclusions, customer type (`AddressCustomerType`), discounted subtotal (excluding coupons) or cart weight, locker weight cap (20 kg).
+Considers: country/state/postcode, method enabled, customer groups, cut-off time, stock, exclusions, customer type (`AddressCustomerType`), discounted subtotal (excluding coupons) or cart weight, and optional min/max weight on the shipping method.
 
 **Config:** `packages/table-rate-shipping/config/shipping-tables.php` → `lunar.shipping-tables`
 
