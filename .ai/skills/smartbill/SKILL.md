@@ -99,7 +99,7 @@ SMARTBILL_SAVE_TO_DB=false
 | `email`, `token` | `SMARTBILL_EMAIL`, `SMARTBILL_TOKEN` | HTTP Basic auth on both requests |
 | `company_vat_code` | `SMARTBILL_COMPANY_VAT_CODE` | Company CIF on invoice body and PDF query |
 | `series_name` | `SMARTBILL_SERIES_NAME` | Invoice series sent to API |
-| `measuring_unit_name` | `SMARTBILL_MEASURING_UNIT_NAME` | Unit for **product** lines only |
+| `measuring_unit_name` | `SMARTBILL_MEASURING_UNIT_NAME` | Unit for product, shipping, and coupon lines |
 | `save_to_db` | `SMARTBILL_SAVE_TO_DB` | Passed to client and line items in exporter |
 | `tax_names` | — | Map tax **percentage string** → Smartbill label (defaults `'21' => 'Normala'`, `'11' => 'Redusa'`) |
 | `generate_invoice` | — | Order statuses that trigger invoicing (default `['awaiting-payment']`) |
@@ -116,7 +116,8 @@ Global gates: `lunar.erp.enabled` and `lunar.erp.actions.billing` must include `
 4. Skip unless `status` is dirty.
 5. Skip unless new `status` is in `lunar.erp.{provider}.generate_invoice`.
 6. `ErpService::generateInvoice($provider, $order)`.
-7. Filament success notification only when `! $order->reference` (after generation).
+7. On success for SmartBill, `InvoiceDocumentService::dispatchInvoiceGeneratedIfNeeded($order, 'smartbill')` (skipped when `meta.invoice_emailed_at` is set). Storefront listens and emails the PDF.
+8. Filament success notification only when `! $order->reference` (after generation).
 
 **Service** (`ErpService::generateInvoice`):
 
@@ -142,7 +143,7 @@ Loads: `billingAddress.country`, `productLines.purchasable.values`, `productLine
 - `name`: translated product name + variant option values (default language)
 - `code`: `productLine->identifier`
 - `measuringUnitName`: from config
-- `price`: `unit_price_without_coupon->decimal`
+- `price`: `0` for complimentary/BXGY lines (`meta.added_by_discount` or zero net unit); otherwise `unit_price_without_coupon->decimal`
 - `isTaxIncluded`: `config('lunar.pricing.stored_inclusive_of_tax', false)`
 - `taxName` / `taxPercentage`: from `tax_names[(string) (taxRate * 100)]` and `taxRate * 100`
 - `isService`: `false`
