@@ -22,17 +22,13 @@ class InvoiceDocumentService
      */
     public function isSmartbillBillingActive(): bool
     {
-        if (! config('lunar.erp.enabled')) {
-            return false;
-        }
-
-        if (! config('lunar.erp.smartbill.enabled', false)) {
-            return false;
-        }
-
-        $billingProviders = (array) config('lunar.erp.actions.billing', []);
-
-        return in_array(ErpProviderEnum::smartbill->value, $billingProviders, true);
+        return (bool) config('lunar.erp.enabled')
+            && (bool) config('lunar.erp.smartbill.enabled', false)
+            && in_array(
+                ErpProviderEnum::smartbill->value,
+                (array) config('lunar.erp.actions.billing', []),
+                true,
+            );
     }
 
     /**
@@ -40,15 +36,11 @@ class InvoiceDocumentService
      */
     public function hasCustomerInvoice(Order $order): bool
     {
-        if ($this->hasSmartbillBillingMeta($order)) {
-            return true;
-        }
-
-        if ($this->isSmartbillBillingActive()) {
-            return false;
-        }
-
-        return filled($order->meta['lunar_invoice_generated_at'] ?? null);
+        return $this->hasSmartbillBillingMeta($order)
+            || (
+                ! $this->isSmartbillBillingActive()
+                && filled($order->meta['lunar_invoice_generated_at'] ?? null)
+            );
     }
 
     /**
@@ -64,15 +56,11 @@ class InvoiceDocumentService
      */
     public function resolvePdf(Order $order): ?InvoicePdf
     {
-        if ($this->hasSmartbillBillingMeta($order)) {
-            return $this->resolveSmartbillPdf($order);
-        }
-
-        if ($this->isSmartbillBillingActive()) {
-            return null;
-        }
-
-        return $this->resolveLunarPdf($order);
+        return match (true) {
+            $this->hasSmartbillBillingMeta($order) => $this->resolveSmartbillPdf($order),
+            $this->isSmartbillBillingActive() => null,
+            default => $this->resolveLunarPdf($order),
+        };
     }
 
     /**
@@ -80,12 +68,9 @@ class InvoiceDocumentService
      */
     public function markLunarInvoiceGenerated(Order $order): void
     {
-        Order::withoutEvents(function () use ($order) {
-            $meta = (array) $order->meta;
-            $meta['lunar_invoice_generated_at'] = now()->toIso8601String();
-            $order->meta = $meta;
-            $order->save();
-        });
+        $this->mergeOrderMeta($order, [
+            'lunar_invoice_generated_at' => now()->toIso8601String(),
+        ]);
     }
 
     /**
@@ -93,12 +78,9 @@ class InvoiceDocumentService
      */
     public function markInvoiceEmailed(Order $order): void
     {
-        Order::withoutEvents(function () use ($order) {
-            $meta = (array) $order->meta;
-            $meta['invoice_emailed_at'] = now()->toIso8601String();
-            $order->meta = $meta;
-            $order->save();
-        });
+        $this->mergeOrderMeta($order, [
+            'invoice_emailed_at' => now()->toIso8601String(),
+        ]);
     }
 
     /**
@@ -130,15 +112,9 @@ class InvoiceDocumentService
      */
     protected function resolveSmartbillPdf(Order $order): ?InvoicePdf
     {
-        $response = $this->erpService->downloadInvoicePDF(ErpProviderEnum::smartbill, $order);
+        $content = $this->erpService->downloadInvoicePDF(ErpProviderEnum::smartbill, $order)?->body();
 
-        if ($response === null) {
-            return null;
-        }
-
-        $content = $response->body();
-
-        if ($content === '' || $content === null) {
+        if (blank($content)) {
             return null;
         }
 
@@ -160,15 +136,26 @@ class InvoiceDocumentService
             return null;
         }
 
-        $content = Pdf::loadView('lunarpanel::pdf.order', [
-            'record' => $order,
-        ])->output();
-
         $reference = $order->reference ?? $order->id;
 
         return new InvoicePdf(
-            content: $content,
+            content: Pdf::loadView('lunarpanel::pdf.order', [
+                'record' => $order,
+            ])->output(),
             filename: "invoice-{$reference}.pdf",
         );
+    }
+
+    /**
+     * Merge keys into order meta without firing model events.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function mergeOrderMeta(Order $order, array $attributes): void
+    {
+        Order::withoutEvents(function () use ($order, $attributes) {
+            $order->meta = array_merge((array) $order->meta, $attributes);
+            $order->save();
+        });
     }
 }
