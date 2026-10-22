@@ -6,7 +6,6 @@ use Awcodes\Shout\Components\Shout;
 use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\Entry;
@@ -56,10 +55,6 @@ use Lunar\Models\Transaction;
  * @property int $refundTotal
  * @property int $intentTotal
  * @property Collection $intents
- * @property Collection $charges
- * @property Collection $refunds
- * @property float $availableToRefund
- * @property bool $canBeRefunded
  */
 class ManageOrder extends BaseViewRecord
 {
@@ -555,7 +550,6 @@ class ManageOrder extends BaseViewRecord
     {
         return [
             $this->getCaptureAction(),
-            $this->getRefundAction(),
             UpdateStatusAction::make('update_status')
                 ->after(
                     function () {
@@ -569,103 +563,6 @@ class ManageOrder extends BaseViewRecord
                     return "Order-{$record->reference}.pdf";
                 }),
         ];
-    }
-
-    protected function getRefundAction(): Action
-    {
-        return Action::make('refund')
-            ->label(__('lunarpanel::order.action.refund_payment.label'))
-            ->modalSubmitActionLabel(__('lunarpanel::order.action.refund_payment.label'))
-            ->icon('heroicon-o-backward')
-            ->schema(fn () => [
-
-                Select::make('transaction')
-                    ->label(__('lunarpanel::order.form.transaction.label'))
-                    ->required()
-                    ->default(fn () => $this->charges->first()->id)
-                    ->options(fn () => $this->charges
-                        ->mapWithKeys(fn ($charge) => [
-                            $charge->id => "{$charge->amount->formatted} - {$charge->driver} // {$charge->reference}",
-                        ]))
-                    ->live(),
-
-                TextInput::make('amount')
-                    ->required()
-                    ->label(__('lunarpanel::order.form.amount.label'))
-                    ->suffix(fn ($record) => $record->currency->code)
-                    ->default(fn ($record) => number_format($this->availableToRefund / $record->currency->factor, $record->currency->decimal_places, '.', ''))
-                    ->live()
-                    ->autocomplete(false)
-                    ->minValue(
-                        fn ($record) => 1 / $record->currency->factor
-                    )
-                    ->numeric(),
-
-                Textarea::make('notes')
-                    ->label(__('lunarpanel::order.form.notes.label'))
-                    ->autocomplete(false)
-                    ->maxLength(255),
-
-                Toggle::make('confirm')
-                    ->label(__('lunarpanel::order.form.confirm.label'))
-                    ->helperText(__('lunarpanel::order.form.confirm.hint.refund'))
-                    ->rules([
-                        function () {
-                            return function (string $attribute, $value, Closure $fail) {
-                                if ($value !== true) {
-                                    $fail(__('lunarpanel::order.form.confirm.alert'));
-                                }
-                            };
-                        },
-                    ]),
-            ])
-            ->action(function ($data, $record, Action $action) {
-                $transaction = Transaction::findOrFail($data['transaction']);
-
-                $response = $transaction->refund(bcmul($data['amount'], $record->currency->factor), $data['notes']);
-
-                if (! $response->success) {
-                    $action->failureNotification(
-                        fn () => Notification::make('refund_failure')->color('danger')->title($response->message)
-                    );
-
-                    $action->failure();
-
-                    $action->halt();
-
-                    return;
-                }
-
-                $action->success();
-            })
-            ->successNotificationTitle(__('lunarpanel::order.action.refund_payment.notification.success'))
-            ->failureNotificationTitle(__('lunarpanel::order.action.refund_payment.notification.error'))
-            ->color('warning')
-            ->visible($this->charges->count() && $this->canBeRefunded);
-    }
-
-    #[Computed]
-    public function charges(): Collection
-    {
-        return $this->record->transactions()->whereType('capture')->whereSuccess(true)->get();
-    }
-
-    #[Computed]
-    public function refunds(): Collection
-    {
-        return $this->record->transactions()->whereType('refund')->whereSuccess(true)->get();
-    }
-
-    #[Computed]
-    public function availableToRefund(): float
-    {
-        return $this->charges->sum('amount.value') - $this->refunds->sum('amount.value');
-    }
-
-    #[Computed]
-    public function canBeRefunded(): bool
-    {
-        return $this->availableToRefund > 0;
     }
 
     protected function getCaptureAction(): Action

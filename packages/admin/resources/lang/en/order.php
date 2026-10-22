@@ -19,6 +19,18 @@ return [
         'intent' => 'Intent',
         'refund' => 'Refunded',
         'failed' => 'Failed',
+        'meta' => [
+            'bt_order_number' => 'BT order number',
+            'register_error_code' => 'Registration error code',
+            'installments' => 'Instalments',
+            'payment_way' => 'Payment way',
+            'action_code' => 'Action code',
+            'approved_amount' => 'Approved amount',
+            'loyalty_amount' => 'Paid in StarBT points',
+            'loyalty_action_code' => 'StarBT points action code',
+            'reverse_requested_at' => 'Hold release requested at',
+            'reverse_trigger' => 'Hold release reason',
+        ],
     ],
 
     'table' => [

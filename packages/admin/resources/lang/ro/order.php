@@ -19,6 +19,18 @@ return [
         'intent' => 'Intenție',
         'refund' => 'Rambursat',
         'failed' => 'Eșuat',
+        'meta' => [
+            'bt_order_number' => 'Număr comandă BT',
+            'register_error_code' => 'Cod eroare înregistrare',
+            'installments' => 'Număr de rate',
+            'payment_way' => 'Mod de plată',
+            'action_code' => 'Cod de răspuns',
+            'approved_amount' => 'Sumă aprobată',
+            'loyalty_amount' => 'Plătit cu puncte StarBT',
+            'loyalty_action_code' => 'Cod de răspuns puncte StarBT',
+            'reverse_requested_at' => 'Deblocare sumă solicitată la',
+            'reverse_trigger' => 'Motivul deblocării sumei',
+        ],
     ],
 
     'table' => [

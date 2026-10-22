@@ -19,6 +19,18 @@ return [
         'intent' => 'Fizetési szándék',
         'refund' => 'Visszatérítve',
         'failed' => 'Sikertelen',
+        'meta' => [
+            'bt_order_number' => 'BT rendelésszám',
+            'register_error_code' => 'Regisztrációs hibakód',
+            'installments' => 'Részletek száma',
+            'payment_way' => 'Fizetés módja',
+            'action_code' => 'Válaszkód',
+            'approved_amount' => 'Jóváhagyott összeg',
+            'loyalty_amount' => 'StarBT pontokkal fizetve',
+            'loyalty_action_code' => 'StarBT pontok válaszkódja',
+            'reverse_requested_at' => 'Zárolás feloldása kérve',
+            'reverse_trigger' => 'Zárolás feloldásának oka',
+        ],
     ],
 
     'table' => [
