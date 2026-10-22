@@ -227,14 +227,14 @@ class ErpService
     }
 
     /**
-     * Download the invoice PDF for the given order.
+     * Download an already-issued invoice PDF for the given order.
+     *
+     * Unlike generateInvoice, this does not require the provider to be listed under
+     * actions.billing so historical SmartBill PDFs remain downloadable when billing
+     * generation has been switched to Lunar DomPDF.
      */
     public function downloadInvoicePDF(ErpProviderEnum $provider, Order $order): ?Response
     {
-        if (! $this->isAllowed('actions', 'billing', $provider)) {
-            return null;
-        }
-
         $exporter = $this->getExporter($provider);
 
         return $exporter->downloadInvoicePDF($order);
@@ -269,13 +269,9 @@ class ErpService
             return [];
         }
 
-        $allowed = [];
-        foreach ($this->getEnabledProviders() as $provider) {
-            if ($this->isAllowed($group, $feature, $provider)) {
-                $allowed[] = $provider;
-            }
-        }
-
-        return $allowed;
+        return collect($this->getEnabledProviders())
+            ->filter(fn (ErpProviderEnum $provider) => $this->isAllowed($group, $feature, $provider))
+            ->values()
+            ->all();
     }
 }

@@ -198,7 +198,7 @@ To support new payment types, extend `PaymentSlugMapper` (and tests).
 
 `ShippingExtension` adds `DownloadInvoicePdfAction` when `billing_series` and `billing_number` are non-empty in `meta`.
 
-Action loops `getAllowedProviders('actions', 'billing')`, calls `downloadInvoicePDF`, streams body as `Invoice-{provider}-{number}.pdf` on success.
+Action prefers `getAllowedProviders('actions', 'billing')`, then falls back to `getEnabledProviders()` so historical PDFs remain downloadable when billing generation is off. Calls `downloadInvoicePDF`, streams body as `Invoice-{provider}-{number}.pdf` on success. `ErpService::downloadInvoicePDF` does **not** require `actions.billing` (generation does).
 
 ## Making Changes
 

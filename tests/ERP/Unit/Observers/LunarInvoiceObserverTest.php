@@ -19,7 +19,7 @@ beforeEach(function () {
     Config::set('lunar.invoicing.statuses_by_payment_option', [
         'stripe-card' => 'payment-received',
         'stripe-wallet-pay' => 'payment-received',
-        'bank-transfer' => 'awaiting-payment',
+        'bank-transfer' => 'awaiting-bank-transfer',
         'cash-on-delivery' => 'payment-offline',
     ]);
 });
@@ -33,6 +33,44 @@ it('marks lunar invoice generated and dispatches event on configured status', fu
     ]);
 
     $order->update(['status' => 'payment-received']);
+
+    $order->refresh();
+
+    expect($order->meta['lunar_invoice_generated_at'] ?? null)->not->toBeNull();
+
+    Event::assertDispatched(OrderInvoiceGenerated::class, function (OrderInvoiceGenerated $event) use ($order) {
+        return $event->order->is($order) && $event->source === 'lunar';
+    });
+});
+
+it('always generates a lunar invoice when the order reaches completed', function () {
+    Event::fake([OrderInvoiceGenerated::class]);
+
+    $order = Order::factory()->create([
+        'status' => 'payment-received',
+        'meta' => ['payment_option' => 'stripe-card'],
+    ]);
+
+    $order->update(['status' => 'completed']);
+
+    $order->refresh();
+
+    expect($order->meta['lunar_invoice_generated_at'] ?? null)->not->toBeNull();
+
+    Event::assertDispatched(OrderInvoiceGenerated::class, function (OrderInvoiceGenerated $event) use ($order) {
+        return $event->order->is($order) && $event->source === 'lunar';
+    });
+});
+
+it('generates a lunar invoice for bank transfer on awaiting-bank-transfer', function () {
+    Event::fake([OrderInvoiceGenerated::class]);
+
+    $order = Order::factory()->create([
+        'status' => 'awaiting-payment',
+        'meta' => ['payment_option' => 'bank-transfer'],
+    ]);
+
+    $order->update(['status' => 'awaiting-bank-transfer']);
 
     $order->refresh();
 

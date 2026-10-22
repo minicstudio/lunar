@@ -38,26 +38,35 @@ class DownloadInvoicePdfAction extends Action
         }
 
         $erpService = app(ErpService::class);
-        $enabledProviders = $erpService->getAllowedProviders('actions', 'billing');
 
-        if (empty($enabledProviders)) {
+        // Prefer billing providers; fall back to all enabled providers so historical
+        // invoices remain downloadable when actions.billing is empty (Lunar DomPDF mode).
+        $providers = collect($erpService->getAllowedProviders('actions', 'billing'))
+            ->whenEmpty(fn () => collect($erpService->getEnabledProviders()));
+
+        if ($providers->isEmpty()) {
             return;
         }
 
-        foreach ($enabledProviders as $provider) {
-            $response = $erpService->downloadInvoicePDF($provider, $order);
+        $download = $providers
+            ->map(function ($provider) use ($erpService, $order, $number) {
+                $response = $erpService->downloadInvoicePDF($provider, $order);
 
-            if (! $response) {
-                continue;
-            }
+                if (! $response?->successful()) {
+                    return null;
+                }
 
-            if ($response->successful()) {
                 return Response::streamDownload(function () use ($response) {
                     echo $response->body();
                 }, "Invoice-{$provider->value}-{$number}.pdf", [
                     'Content-Type' => 'application/pdf',
                 ]);
-            }
+            })
+            ->filter()
+            ->first();
+
+        if ($download !== null) {
+            return $download;
         }
 
         Notification::make()
