@@ -12,8 +12,10 @@ use Lunar\ERP\Console\SyncErpProductsCommand;
 use Lunar\ERP\Console\SyncErpStockCommand;
 use Lunar\ERP\Console\SyncLocalitiesCommand;
 use Lunar\ERP\Filament\Extensions\ShippingExtension;
+use Lunar\ERP\Observers\LunarInvoiceObserver;
 use Lunar\ERP\Observers\OrderObserver;
 use Lunar\ERP\Services\ErpService;
+use Lunar\ERP\Services\InvoiceDocumentService;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Order;
 
@@ -38,6 +40,9 @@ class ErpServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/erp.php', 'lunar.erp');
+        $this->mergeConfigFrom(__DIR__.'/../config/invoicing.php', 'lunar.invoicing');
+
+        $this->app->singleton(InvoiceDocumentService::class);
 
         $this->extendAdminPanel();
     }
@@ -99,6 +104,7 @@ class ErpServiceProvider extends ServiceProvider
     {
         $this->publishes([
             __DIR__.'/../config/erp.php' => config_path('lunar/erp.php'),
+            __DIR__.'/../config/invoicing.php' => config_path('lunar/invoicing.php'),
         ], 'lunar.erp.config');
 
         // loop through the ERP providers and publish their configs
@@ -192,9 +198,10 @@ class ErpServiceProvider extends ServiceProvider
     /**
      * Register observers for models.
      */
-    protected function registerObservers()
+    protected function registerObservers(): void
     {
         Order::observe(OrderObserver::class);
+        Order::observe(LunarInvoiceObserver::class);
     }
 
     /**

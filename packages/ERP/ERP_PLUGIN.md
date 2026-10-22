@@ -209,7 +209,11 @@ When an invoice is created, the plugin stores:
 - `order.meta['billing_series']`
 - `order.meta['billing_number']`
 
+and dispatches `Lunar\ERP\Events\OrderInvoiceGenerated` (SmartBill source) so the storefront can email the PDF once (`meta.invoice_emailed_at`).
+
 The admin order view shows a "Download invoice PDF" action when those values exist.
+
+When SmartBill billing is **not** active, Lunar DomPDF invoicing uses `config/lunar/invoicing.php` (`statuses_by_payment_option`, overridable via `LUNAR_INVOICE_STATUS_*` env vars) and the same `OrderInvoiceGenerated` event (source `lunar`).
 
 ## Console Commands
 

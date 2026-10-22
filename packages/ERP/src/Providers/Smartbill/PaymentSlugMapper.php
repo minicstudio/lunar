@@ -11,6 +11,8 @@ class PaymentSlugMapper
             'cash-on-delivery' => 'ramburs',
             'hosted-payment' => 'card',
             'stripe-card' => 'card',
+            'stripe-wallet-pay' => 'card',
+            'bank-transfer' => 'transfer',
             default => '',
         };
     }

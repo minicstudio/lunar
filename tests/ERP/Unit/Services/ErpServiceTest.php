@@ -380,13 +380,27 @@ it('downloadInvoicePDF proxies to provider and returns response', function () {
     expect($resp->successful())->toBeTrue();
 });
 
-it('downloadInvoicePDF returns null when billing action is not allowed', function () {
+it('downloadInvoicePDF still works when billing action is empty', function () {
     Config::set('lunar.erp.actions.billing', []);
 
+    $mock = new MockClient([
+        DownloadInvoicePDFRequest::class => MockResponse::make('%PDF-1.7 ...', 200, ['Content-Type' => 'application/pdf']),
+    ]);
+
+    $client = new SmartbillApiClient;
+    $client->withMockClient($mock);
+    app()->singleton(SmartbillApiClient::class, fn () => $client);
+
     $order = makeOrderForErp();
+    $meta = $order->meta ?? [];
+    $meta['billing_series'] = 'S';
+    $meta['billing_number'] = 123;
+    $order->meta = $meta;
+    $order->save();
+
     $service = new ErpService;
     $resp = $service->downloadInvoicePDF(ErpProviderEnum::smartbill, $order);
-    expect($resp)->toBeNull();
+    expect($resp->successful())->toBeTrue();
 });
 
 it('getImporter throws when ERP is globally disabled', function () {
