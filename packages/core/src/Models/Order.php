@@ -2,14 +2,15 @@
 
 namespace Lunar\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Casts\Attribute as EloquentAttribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\DiscountBreakdown;
 use Lunar\Base\Casts\Price;
@@ -91,6 +92,23 @@ class Order extends BaseModel implements Contracts\Order
         $statuses = config('lunar.orders.statuses');
 
         return $statuses[$this->status]['label'] ?? $this->status;
+    }
+
+    /**
+     * Exclude orders whose status is flagged with `exclude_from_reports`
+     * (e.g. test orders) from revenue figures, statistics and charts.
+     */
+    public function scopeReportable(Builder $query): Builder
+    {
+        $excludedStatuses = collect(config('lunar.orders.statuses', []))
+            ->filter(fn (array $status) => $status['exclude_from_reports'] ?? false)
+            ->keys();
+
+        if ($excludedStatuses->isEmpty()) {
+            return $query;
+        }
+
+        return $query->whereNotIn($query->qualifyColumn('status'), $excludedStatuses);
     }
 
     /**

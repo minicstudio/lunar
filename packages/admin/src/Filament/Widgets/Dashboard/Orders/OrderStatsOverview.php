@@ -16,7 +16,8 @@ class OrderStatsOverview extends BaseWidget
 
     protected function getOrderQuery(DateTime|CarbonInterface|null $from = null, DateTime|CarbonInterface|null $to = null)
     {
-        return Order::whereNotNull('placed_at')
+        return Order::reportable()
+            ->whereNotNull('placed_at')
             ->whereBetween('placed_at', [
                 $from,
                 $to,

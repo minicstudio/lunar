@@ -390,3 +390,38 @@ test('can retrieve order lines in ascending id order', function () {
     expect($order->load('lines')->lines->pluck('id')->all())
         ->toBe($expectedOrder);
 });
+
+test('test order status is configured and excluded from reports', function () {
+    expect(config('lunar.orders.statuses.test-order'))
+        ->label->toBe('Test Order')
+        ->mailers->toBe([])
+        ->exclude_from_reports->toBeTrue();
+});
+
+test('reportable scope excludes orders in statuses flagged as excluded from reports', function () {
+    config()->set('lunar.orders.statuses', [
+        'payment-received' => ['label' => 'Payment Received'],
+        'canceled' => ['label' => 'Canceled', 'exclude_from_reports' => false],
+        'test-order' => ['label' => 'Test Order', 'exclude_from_reports' => true],
+    ]);
+
+    $paid = Order::factory()->create(['status' => 'payment-received']);
+    $canceled = Order::factory()->create(['status' => 'canceled']);
+    Order::factory()->create(['status' => 'test-order']);
+
+    expect(Order::reportable()->pluck('id')->all())
+        ->toEqualCanonicalizing([$paid->id, $canceled->id]);
+});
+
+test('reportable scope keeps every order when no status is excluded from reports', function () {
+    config()->set('lunar.orders.statuses', [
+        'payment-received' => ['label' => 'Payment Received'],
+        'test-order' => ['label' => 'Test Order'],
+    ]);
+
+    Order::factory()->create(['status' => 'payment-received']);
+    Order::factory()->create(['status' => 'test-order']);
+
+    expect(Order::reportable()->count())->toBe(2)
+        ->and(Order::reportable()->toRawSql())->toBe(Order::query()->toRawSql());
+});

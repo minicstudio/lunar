@@ -115,6 +115,15 @@ return [
             'favourite' => true,
         ],
 
+        'test-order' => [
+            'label' => 'Test Order',
+            'color' => '#c026d3',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+            'exclude_from_reports' => true,
+        ],
+
     ],
 
     /*
