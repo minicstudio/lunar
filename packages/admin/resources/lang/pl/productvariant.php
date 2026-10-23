@@ -58,7 +58,10 @@ return [
                 'in_stock' => 'Tylko gdy jest w magazynie',
                 'out_of_stock' => 'Brak w magazynie',
                 'backorder' => 'Na zamówienie',
+                'in_stock_or_on_backorder' => 'W magazynie lub na zamówienie',
+                'preorder' => 'Przedsprzedaż',
             ],
+            'unused_helper' => 'Ta wartość nie jest używana przy przedsprzedaży.',
         ],
         'unit_quantity' => [
             'label' => 'Ilość jednostkowa',

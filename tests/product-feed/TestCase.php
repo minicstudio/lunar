@@ -2,13 +2,13 @@
 
 namespace Lunar\Tests\ProductFeed;
 
-use Cartalyst\Converter\Laravel\ConverterServiceProvider;
 use Illuminate\Support\Facades\Config;
-use Kalnoy\Nestedset\NestedSetServiceProvider;
 use Lunar\Facades\Taxes;
 use Lunar\LunarServiceProvider;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
+use Lunar\Nestedset\NestedSetServiceProvider;
+use Lunar\ProductFeed\ProductFeedCache;
 use Lunar\ProductFeed\ProductFeedServiceProvider;
 use Lunar\Review\Mixins\ProductMixin;
 use Lunar\Review\Mixins\ProductVariantMixin;
@@ -54,7 +54,7 @@ class TestCase extends BaseTestCase
 
         $this->freezeTime();
 
-        $this->app->make(\Lunar\ProductFeed\ProductFeedCache::class)->forgetAll();
+        $this->app->make(ProductFeedCache::class)->forgetAll();
     }
 
     protected function getPackageProviders($app)
@@ -64,7 +64,6 @@ class TestCase extends BaseTestCase
             ProductFeedServiceProvider::class,
             MediaLibraryServiceProvider::class,
             ActivitylogServiceProvider::class,
-            ConverterServiceProvider::class,
             NestedSetServiceProvider::class,
             BlinkServiceProvider::class,
         ];

@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'Auf Lager',
                 'out_of_stock' => 'Nicht auf Lager',
                 'in_stock_or_on_backorder' => 'Auf Lager oder im Rückstand',
+                'preorder' => 'Vorbestellung',
             ],
+            'unused_helper' => 'Dieser Wert wird bei einer Vorbestellung nicht verwendet.',
         ],
         'unit_quantity' => [
             'label' => 'Stückzahl',

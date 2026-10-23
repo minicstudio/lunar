@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'Op Voorraad',
                 'out_of_stock' => 'Niet op Voorraad',
                 'in_stock_or_on_backorder' => 'Op Voorraad of In Nabestelling',
+                'preorder' => 'Pre-order',
             ],
+            'unused_helper' => 'Deze waarde wordt niet gebruikt bij pre-order.',
         ],
         'unit_quantity' => [
             'label' => 'Eenheidsaantal',

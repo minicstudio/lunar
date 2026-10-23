@@ -176,8 +176,9 @@ Core service providers are registered in root `composer.json` under Laravel pack
 ### Inventory Management
 
 - Inventory is stored on `ProductVariant` as `stock`, `backorder`, and `purchasable`.
-- `ProductVariant::canBeFulfilledAtQuantity()` and `getTotalInventory()` determine stock/backorder behavior.
-- `decreaseStock()` and `increaseStock()` adjust stock/backorder with support for negative backorder transitions. Stock itself is floored at 0 (including direct assignment); backorder may still go negative.
+- `purchasable` is `always`, `in_stock`, `in_stock_or_on_backorder`, or `preorder`.
+- `ProductVariant::canBeFulfilledAtQuantity()` is unlimited for `always` and for `preorder`. `in_stock` is limited to `stock`. `in_stock_or_on_backorder` is limited to stock plus backorder. `getTotalInventory()` still returns that quantity sum.
+- `decreaseStock()` and `increaseStock()` adjust stock and backorder for `always` and `in_stock_or_on_backorder`, including negative backorder transitions. `in_stock` adjusts stock only. Stock itself is floored at 0 (including direct assignment); backorder may still go negative. `preorder` is always fulfillable and excluded from stock movement: both methods return without changing stock or backorder.
 - Cart stock validation is handled by `Lunar\Validation\CartLineStock` through `HasStock`. Stock checking is disabled by default unless `lunar.cart.stock_check.enabled` is true.
 - Quantity validation is handled by `Lunar\Validation\CartLineQuantity`, including min quantity and quantity increment constraints.
 

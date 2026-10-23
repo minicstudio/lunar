@@ -213,3 +213,99 @@ it('dispatches ProductVariantInventoryUpdated event when updating variant stock 
             && $event->model->backorder == 50;
     });
 });
+
+it('shows the unused value helper when purchasability is preorder', function () {
+    Language::factory()->create([
+        'default' => true,
+    ]);
+
+    Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    $record = Product::factory()->create();
+
+    ProductVariant::factory()->create([
+        'product_id' => $record->id,
+        'purchasable' => 'preorder',
+    ]);
+
+    $this->asStaff();
+
+    $helper = __('lunarpanel::productvariant.form.purchasable.unused_helper');
+
+    $html = Livewire::test(ManageProductInventory::class, [
+        'record' => $record->getRouteKey(),
+    ])->assertSee($helper)
+        ->assertSee(__('lunarpanel::productvariant.form.stock.label'))
+        ->assertSee(__('lunarpanel::productvariant.form.backorder.label'))
+        ->html();
+
+    expect(substr_count($html, $helper))->toBe(2);
+});
+
+it('hides the unused value helper when purchasability is in stock', function () {
+    Language::factory()->create([
+        'default' => true,
+    ]);
+
+    Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    $record = Product::factory()->create();
+
+    ProductVariant::factory()->create([
+        'product_id' => $record->id,
+        'purchasable' => 'in_stock',
+    ]);
+
+    $this->asStaff();
+
+    Livewire::test(ManageProductInventory::class, [
+        'record' => $record->getRouteKey(),
+    ])->assertDontSee(__('lunarpanel::productvariant.form.purchasable.unused_helper'))
+        ->assertSee(__('lunarpanel::productvariant.form.stock.label'))
+        ->assertSee(__('lunarpanel::productvariant.form.backorder.label'));
+});
+
+it('saves backorder purchasability as preorder and can replace it with in stock', function () {
+    Language::factory()->create([
+        'default' => true,
+    ]);
+
+    Currency::factory()->create([
+        'default' => true,
+        'decimal_places' => 2,
+    ]);
+
+    $record = Product::factory()->create();
+
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $record->id,
+    ]);
+
+    $this->asStaff();
+
+    $component = Livewire::test(ManageProductInventory::class, [
+        'record' => $record->getRouteKey(),
+    ]);
+
+    $component->fillForm([
+        'purchasable' => 'preorder',
+    ])->call('save')->assertHasNoErrors();
+
+    $this->assertDatabaseHas((new ProductVariant)->getTable(), [
+        'id' => $variant->id,
+        'purchasable' => 'preorder',
+    ]);
+
+    $component->fillForm([
+        'purchasable' => 'in_stock',
+    ])->call('save')->assertHasNoErrors();
+
+    $this->assertDatabaseHas((new ProductVariant)->getTable(), [
+        'id' => $variant->id,
+        'purchasable' => 'in_stock',
+    ]);
+});

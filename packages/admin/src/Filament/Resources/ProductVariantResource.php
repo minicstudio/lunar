@@ -127,7 +127,8 @@ class ProductVariantResource extends BaseResource
             ->label(
                 __('lunarpanel::productvariant.form.stock.label')
             )->numeric()
-            ->minValue(0);
+            ->minValue(0)
+            ->helperText(self::unusedPreorderValueHelper());
     }
 
     public static function getBackorderFormComponent(): TextInput
@@ -136,7 +137,8 @@ class ProductVariantResource extends BaseResource
             TextInput::make('backorder')
                 ->label(
                     __('lunarpanel::productvariant.form.backorder.label')
-                )->numeric();
+                )->numeric()
+                ->helperText(self::unusedPreorderValueHelper());
     }
 
     public static function getPurchasableFormComponent(): Select
@@ -146,10 +148,22 @@ class ProductVariantResource extends BaseResource
                 'always' => __('lunarpanel::productvariant.form.purchasable.options.always'),
                 'in_stock' => __('lunarpanel::productvariant.form.purchasable.options.in_stock'),
                 'in_stock_or_on_backorder' => __('lunarpanel::productvariant.form.purchasable.options.in_stock_or_on_backorder'),
+                'preorder' => __('lunarpanel::productvariant.form.purchasable.options.preorder'),
             ])
+            ->live()
             ->label(
                 __('lunarpanel::productvariant.form.purchasable.label')
             );
+    }
+
+    /**
+     * Explain that stock and backorder are ignored while purchasability is preorder.
+     */
+    private static function unusedPreorderValueHelper(): Closure
+    {
+        return fn (Get $get): ?string => $get('purchasable') === 'preorder'
+            ? __('lunarpanel::productvariant.form.purchasable.unused_helper')
+            : null;
     }
 
     public static function getUnitQtyFormComponent(): TextInput

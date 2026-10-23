@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'En stock',
                 'out_of_stock' => 'Rupture de stock',
                 'in_stock_or_on_backorder' => 'En stock ou en commande',
+                'preorder' => 'Précommande',
             ],
+            'unused_helper' => 'Cette valeur n\'est pas utilisée pour la précommande.',
         ],
         'unit_quantity' => [
             'label' => 'Quantité par unité',

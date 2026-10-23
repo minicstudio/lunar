@@ -57,7 +57,9 @@ return [
                 'always' => 'Uvijek',
                 'in_stock' => 'Na zalihi',
                 'in_stock_or_on_backorder' => 'Na zalihi ili naručeno unaprijed',
+                'preorder' => 'Prednarudžba',
             ],
+            'unused_helper' => 'Ova se vrijednost ne koristi za prednarudžbu.',
         ],
         'unit_quantity' => [
             'label' => 'Broj komada',
