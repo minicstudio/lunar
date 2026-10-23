@@ -24,7 +24,7 @@ return [
             'register_error_code' => 'Regisztrációs hibakód',
             'installments' => 'Részletek száma',
             'payment_way' => 'Fizetés módja',
-            'action_code' => 'Válaszkód',
+            'action_code' => 'Válaszkód (a bank válasza a kártyaműveletre)',
             'approved_amount' => 'Jóváhagyott összeg',
             'loyalty_amount' => 'StarBT pontokkal fizetve',
             'loyalty_action_code' => 'StarBT pontok válaszkódja',

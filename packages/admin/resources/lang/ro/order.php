@@ -24,7 +24,7 @@ return [
             'register_error_code' => 'Cod eroare înregistrare',
             'installments' => 'Număr de rate',
             'payment_way' => 'Mod de plată',
-            'action_code' => 'Cod de răspuns',
+            'action_code' => 'Cod de răspuns (răspunsul băncii la operațiunea cu cardul)',
             'approved_amount' => 'Sumă aprobată',
             'loyalty_amount' => 'Plătit cu puncte StarBT',
             'loyalty_action_code' => 'Cod de răspuns puncte StarBT',

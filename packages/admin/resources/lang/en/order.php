@@ -24,7 +24,7 @@ return [
             'register_error_code' => 'Registration error code',
             'installments' => 'Instalments',
             'payment_way' => 'Payment way',
-            'action_code' => 'Action code',
+            'action_code' => 'Action code (bank response to the card operation)',
             'approved_amount' => 'Approved amount',
             'loyalty_amount' => 'Paid in StarBT points',
             'loyalty_action_code' => 'StarBT points action code',
