@@ -27,13 +27,13 @@ The product feed maps `canBeFulfilledAtQuantity(1)` to `in_stock` or `out_of_sto
 
 ## Decisions
 
-### Store `preorder`, label it Backorder
+### Store `preorder`, label it Preorder
 
-The dropdown label is Backorder (Hungarian: Előrendelhető). The stored value is `preorder`.
+The dropdown label is Preorder (Hungarian: Előrendelhető). The stored value is `preorder`.
 
 Reusing the string `backorder` would be rewritten to `in_stock_or_on_backorder` the next time `ConvertBackOrderPurchasability` runs. Removing that converter is unnecessary: historical rows should already have been rewritten, and the converter is what protects any leftover rows. `preorder` is also distinct from `always`, so the storefront can show a preorder state later without guessing.
 
-The stock and backorder number fields stay on the form. They are not read for fulfillment. When Purchasability is Backorder, each of those fields shows a short helper that the value is not used. Other purchasability options do not show that helper. English: "This value is not used for Backorder." Hungarian: "Ez az érték nem számít előrendelésnél."
+The stock and backorder number fields stay on the form. They are not read for fulfillment. When Purchasability is Preorder, each of those fields shows a short helper that the value is not used. Other purchasability options do not show that helper. English: "This value is not used for Preorder." Hungarian: "Ez az érték nem számít előrendelésnél."
 
 ### Fulfillment ignores quantities; stock methods no-op
 
@@ -47,7 +47,7 @@ If purchasable is `preorder`, feed availability is `preorder` before the fulfill
 
 ### Translations
 
-Add `purchasable.options.preorder` in all 16 `productvariant` locale files. English is Backorder. Hungarian is Előrendelhető. Other locales get a preorder label, not a copy of "In stock or on backorder". Add the stock and backorder helper string in the same 16 files.
+Add `purchasable.options.preorder` in all 16 `productvariant` locale files. English is Preorder. Hungarian is Előrendelhető. Other locales get a preorder label, not a copy of "In stock or on backorder". Add the stock and backorder helper string in the same 16 files.
 
 The Polish file is the only locale missing `in_stock_or_on_backorder`; it has an unused `backorder` option key instead. While editing that file, add the missing existing key so the current dropdown option keeps a label. Leave the unused `backorder` key in place.
 
@@ -60,7 +60,7 @@ The Polish file is the only locale missing `in_stock_or_on_backorder`; it has an
 
 ## Migration Plan
 
-No migration. Deploy the code. Existing variants are unchanged until an administrator selects Backorder.
+No migration. Deploy the code. Existing variants are unchanged until an administrator selects Preorder.
 
 Rollback is a code revert. Variants already saved as `preorder` then follow the stock-plus-backorder path. If they must stay unlimited without this code, update them to `always`.
 

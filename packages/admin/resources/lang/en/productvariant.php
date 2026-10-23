@@ -58,9 +58,9 @@ return [
                 'in_stock' => 'In Stock',
                 'out_of_stock' => 'Out of Stock',
                 'in_stock_or_on_backorder' => 'In Stock or On Backorder',
-                'preorder' => 'Backorder',
+                'preorder' => 'Preorder',
             ],
-            'unused_helper' => 'This value is not used for Backorder.',
+            'unused_helper' => 'This value is not used for Preorder.',
         ],
         'unit_quantity' => [
             'label' => 'Unit Quantity',

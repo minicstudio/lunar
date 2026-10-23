@@ -6,8 +6,8 @@ Administrators can already sell a variant from stock, or from stock plus a limit
 
 ## What Changes
 
-- Add a Purchasability option labeled Backorder on the product Inventory page (single-variant products) and on the variant Inventory page. The stored value is a new purchasable mode for preorder, distinct from `in_stock_or_on_backorder`.
-- The stock and backorder inputs stay visible. When Backorder is selected, each shows a short helper that the value is not used.
+- Add a Purchasability option labeled Preorder on the product Inventory page (single-variant products) and on the variant Inventory page. The stored value is `preorder`, distinct from `in_stock_or_on_backorder`.
+- The stock and backorder inputs stay visible. When Preorder is selected, each shows a short helper that the value is not used.
 - Saving the option persists it on `product_variants.purchasable`. No new column.
 - A variant in this mode can be fulfilled at any requested quantity. Stock and backorder quantities are ignored.
 - Stock movement methods do not change stock or backorder for this mode. Existing modes keep their current stock behavior.

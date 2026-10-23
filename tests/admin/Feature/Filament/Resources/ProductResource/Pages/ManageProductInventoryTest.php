@@ -269,7 +269,7 @@ it('hides the unused value helper when purchasability is in stock', function () 
         ->assertSee(__('lunarpanel::productvariant.form.backorder.label'));
 });
 
-it('saves backorder purchasability as preorder and can replace it with in stock', function () {
+it('saves preorder purchasability and can replace it with in stock', function () {
     Language::factory()->create([
         'default' => true,
     ]);

@@ -61,7 +61,7 @@ it('includes preorder in the purchasability options', function () {
     $options = ProductVariantResource::getPurchasableFormComponent()->getOptions();
 
     expect($options)->toHaveKey('preorder')
-        ->and($options['preorder'])->toBe('Backorder');
+        ->and($options['preorder'])->toBe('Preorder');
 });
 
 it('shows the unused value helper when purchasability is preorder', function () {
@@ -119,7 +119,7 @@ it('hides the unused value helper when purchasability is in stock', function () 
         ->assertSee(__('lunarpanel::productvariant.form.backorder.label'));
 });
 
-it('saves backorder purchasability as preorder and can replace it with in stock', function () {
+it('saves preorder purchasability and can replace it with in stock', function () {
     Language::factory()->create([
         'default' => true,
     ]);

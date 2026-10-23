@@ -6,26 +6,26 @@ Lets an administrator mark a variant as preorder-only so it stays buyable withou
 
 ## ADDED Requirements
 
-### Requirement: Administrator can select Backorder purchasability
-The inventory Purchasability field SHALL offer Backorder, stored as `preorder`. The English label SHALL be Backorder. The Hungarian label SHALL be Előrendelhető.
+### Requirement: Administrator can select Preorder purchasability
+The inventory Purchasability field SHALL offer Preorder, stored as `preorder`. The English label SHALL be Preorder. The Hungarian label SHALL be Előrendelhető.
 
 #### Scenario: Save on a single-variant product
-- **WHEN** an administrator sets Purchasability to Backorder on the product Inventory page and saves
+- **WHEN** an administrator sets Purchasability to Preorder on the product Inventory page and saves
 - **THEN** that product's variant stores purchasable `preorder`
 
 #### Scenario: Save on a variant
-- **WHEN** an administrator sets Purchasability to Backorder on a variant Inventory page and saves
+- **WHEN** an administrator sets Purchasability to Preorder on a variant Inventory page and saves
 - **THEN** that variant stores purchasable `preorder`
 
 #### Scenario: Change away from preorder
-- **WHEN** an administrator changes Purchasability from Backorder to another existing option and saves
+- **WHEN** an administrator changes Purchasability from Preorder to another existing option and saves
 - **THEN** the variant stores that other option and is no longer `preorder`
 
-### Requirement: Backorder keeps stock inputs and explains they are unused
-When Purchasability is Backorder, the stock and backorder fields SHALL stay visible and each SHALL show helper text that the value is not used. Other purchasability options SHALL NOT show that helper.
+### Requirement: Preorder keeps stock inputs and explains they are unused
+When Purchasability is Preorder, the stock and backorder fields SHALL stay visible and each SHALL show helper text that the value is not used. Other purchasability options SHALL NOT show that helper.
 
-#### Scenario: Helper appears for Backorder
-- **WHEN** Purchasability is Backorder
+#### Scenario: Helper appears for Preorder
+- **WHEN** Purchasability is Preorder
 - **THEN** the stock and backorder inputs are visible
 - **AND** each shows helper text that the value is not used
 
