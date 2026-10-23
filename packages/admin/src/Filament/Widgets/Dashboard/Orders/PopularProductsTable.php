@@ -24,7 +24,7 @@ class PopularProductsTable extends TableWidget
             ->poll('60s')
             ->query(function () {
                 return OrderLine::query()->with(['currency'])->whereHas('order', function ($relation) {
-                    $relation->whereBetween('placed_at', [
+                    $relation->reportable()->whereBetween('placed_at', [
                         now()->subYear()->startOfDay(),
                         now()->endOfDay(),
                     ]);

@@ -21,11 +21,11 @@ class CustomerStatsOverviewWidget extends BaseWidget
             return [];
         }
 
-        $avg = (int) round($this->record->orders()->average(
+        $avg = (int) round($this->record->orders()->reportable()->average(
             DB::RAW('sub_total * exchange_rate')
         ));
 
-        $total = (int) round($this->record->orders()->sum(
+        $total = (int) round($this->record->orders()->reportable()->sum(
             DB::RAW('sub_total * exchange_rate')
         ));
 
@@ -34,7 +34,7 @@ class CustomerStatsOverviewWidget extends BaseWidget
         $avgSpend = new Price($avg, Currency::getDefault());
 
         return [
-            Stat::make(__('lunarpanel::widgets.customer.stats_overview.total_orders.label'), $this->record->orders()->count()),
+            Stat::make(__('lunarpanel::widgets.customer.stats_overview.total_orders.label'), $this->record->orders()->reportable()->count()),
             Stat::make(__('lunarpanel::widgets.customer.stats_overview.avg_spend.label'), $avgSpend->formatted),
             Stat::make(__('lunarpanel::widgets.customer.stats_overview.total_spend.label'), $totalSpend->formatted),
         ];
