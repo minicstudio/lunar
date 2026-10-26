@@ -3,6 +3,7 @@
 namespace Lunar\Loyalty;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Events\MigrationsEnded;
@@ -17,6 +18,7 @@ use Lunar\Loyalty\Console\ExpireLoyaltyPointsCommand;
 use Lunar\Loyalty\Console\NotifyExpiringLoyaltyPointsCommand;
 use Lunar\Loyalty\Console\RecalculateBalancesCommand;
 use Lunar\Loyalty\Database\State\EnsureLoyaltyPermissions;
+use Lunar\Loyalty\Enums\LoyaltyTransactionType;
 use Lunar\Loyalty\Listeners\RegistrationListener;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Models\LoyaltyTransaction;
@@ -119,7 +121,11 @@ class LoyaltyServiceProvider extends ServiceProvider
         });
 
         Order::resolveRelationUsing('loyaltySpendTransaction', function ($order) {
-            return $this->orderLoyaltyTransactionRelation($order, LoyaltyEventKey::orderSpend(...));
+            return $order->hasOne(LoyaltyTransaction::modelClass(), 'reference_id', 'id')
+                ->ofMany(['id' => 'max'], function (Builder $query) use ($order) {
+                    $query->where('reference_type', $order->getMorphClass())
+                        ->where('type', LoyaltyTransactionType::Spend);
+                });
         });
     }
 

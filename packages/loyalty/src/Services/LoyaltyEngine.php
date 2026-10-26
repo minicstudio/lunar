@@ -3,7 +3,10 @@
 namespace Lunar\Loyalty\Services;
 
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 use Lunar\DataTypes\Price;
+use Lunar\Facades\DB;
+use Lunar\Loyalty\Enums\LoyaltyTransactionType;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Models\LoyaltyTransaction;
 use Lunar\Loyalty\Support\LoyaltyEventKey;
@@ -112,14 +115,38 @@ final class LoyaltyEngine
             return null;
         }
 
-        $account = $this->accountManager->firstOrCreateForCustomer($order->customer);
+        return DB::transaction(function () use ($order, $points) {
+            $order->newQuery()->lockForUpdate()->findOrFail($order->id);
 
-        return $this->ledger->spend(
-            $account,
-            $points,
-            LoyaltyEventKey::orderSpend($order->id),
-            ['reference' => $order]
-        );
+            $previousSpend = $this->latestOrderSpend($order);
+            $attempt = (int) ($previousSpend?->meta['redemption_attempt'] ?? 1);
+
+            if ($previousSpend) {
+                $reversal = $this->ledger->findByEventKey(LoyaltyEventKey::orderCancelSpend($order->id, $attempt));
+
+                if (! $reversal) {
+                    if ((int) $previousSpend->points !== $points) {
+                        throw new InvalidArgumentException('The existing loyalty redemption must be reversed before changing the points.');
+                    }
+
+                    return $previousSpend;
+                }
+
+                $attempt++;
+            }
+
+            $account = $this->accountManager->firstOrCreateForCustomer($order->customer);
+
+            return $this->ledger->spend(
+                $account,
+                $points,
+                LoyaltyEventKey::orderSpend($order->id, $attempt),
+                [
+                    'reference' => $order,
+                    'meta' => ['redemption_attempt' => $attempt],
+                ]
+            );
+        });
     }
 
     /**
@@ -131,24 +158,43 @@ final class LoyaltyEngine
             return;
         }
 
-        $spendTransaction = $this->ledger->findByEventKey(LoyaltyEventKey::orderSpend($order->id));
-
-        if (! $spendTransaction || ! $order->customer_id) {
+        if (! $order->customer_id) {
             return;
         }
 
-        $account = $this->accountManager->firstOrCreateForCustomer($order->customer);
+        DB::transaction(function () use ($order) {
+            $order->newQuery()->lockForUpdate()->findOrFail($order->id);
 
-        $this->ledger->adjust(
-            $account,
-            $spendTransaction->points,
-            LoyaltyEventKey::orderCancelSpend($order->id),
-            [
-                'reference' => $order,
-                'spend_transaction' => $spendTransaction,
-                'meta' => ['reason' => 'order_cancelled'],
-            ]
-        );
+            $spendTransaction = $this->latestOrderSpend($order);
+
+            if (! $spendTransaction) {
+                return;
+            }
+
+            $attempt = (int) ($spendTransaction->meta['redemption_attempt'] ?? 1);
+            $account = $this->accountManager->firstOrCreateForCustomer($order->customer);
+
+            $this->ledger->adjust(
+                $account,
+                $spendTransaction->points,
+                LoyaltyEventKey::orderCancelSpend($order->id, $attempt),
+                [
+                    'reference' => $order,
+                    'spend_transaction' => $spendTransaction,
+                    'meta' => ['reason' => 'order_cancelled', 'redemption_attempt' => $attempt],
+                ]
+            );
+        });
+    }
+
+    protected function latestOrderSpend(Order $order): ?LoyaltyTransaction
+    {
+        return LoyaltyTransaction::query()
+            ->where('reference_type', $order->getMorphClass())
+            ->where('reference_id', $order->id)
+            ->where('type', LoyaltyTransactionType::Spend)
+            ->latest('id')
+            ->first();
     }
 
     /**
