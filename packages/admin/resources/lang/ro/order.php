@@ -194,6 +194,9 @@ return [
         'total' => [
             'label' => 'Total',
         ],
+        'preorder' => [
+            'message' => 'Acest produs este disponibil doar pentru precomandă.',
+        ],
         'current_stock_level' => [
             'message' => 'Stoc curent: :count',
         ],

@@ -180,6 +180,9 @@ return [
         'total' => [
             'label' => 'Tổng cộng',
         ],
+        'preorder' => [
+            'message' => 'Sản phẩm này chỉ có sẵn để đặt hàng trước.',
+        ],
         'current_stock_level' => [
             'message' => 'Số lượng tồn kho hiện tại: :count',
         ],

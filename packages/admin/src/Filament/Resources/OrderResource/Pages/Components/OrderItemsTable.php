@@ -52,6 +52,8 @@ class OrderItemsTable extends TableComponent
                 Stack::make([
                     Split::make([
                         Stack::make([
+                            TextColumn::make('identifier')
+                                ->color(Color::Gray),
                             TextColumn::make('description')
                                 ->url(function ($record) {
                                     if ($record->purchasable && $record->purchasable_type == ProductVariant::morphName()) {
@@ -60,9 +62,17 @@ class OrderItemsTable extends TableComponent
 
                                     return null;
                                 })
-                                ->weight(FontWeight::Bold),
-                            TextColumn::make('identifier')
-                                ->color(Color::Gray),
+                                ->description(function ($record): ?string {
+                                    if ($record->purchasable_type != ProductVariant::morphName()) {
+                                        return null;
+                                    }
+
+                                    if ($record->purchasable?->purchasable !== 'preorder') {
+                                        return null;
+                                    }
+
+                                    return __('lunarpanel::order.infolist.preorder.message');
+                                }),
                             TextColumn::make('options')
                                 ->getStateUsing(fn ($record) => $record->purchasable?->getOptions())
                                 ->badge(),

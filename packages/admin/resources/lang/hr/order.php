@@ -178,6 +178,9 @@ return [
         'total' => [
             'label' => 'Ukupno',
         ],
+        'preorder' => [
+            'message' => 'Ovaj je proizvod dostupan samo za prednarudžbu.',
+        ],
         'current_stock_level' => [
             'message' => 'Trenutna razina zaliha: :count',
         ],

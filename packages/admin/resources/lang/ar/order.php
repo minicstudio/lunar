@@ -185,6 +185,9 @@ return [
         'total' => [
             'label' => 'الإجمالي',
         ],
+        'preorder' => [
+            'message' => 'هذا المنتج متاح للطلب المسبق فقط.',
+        ],
         'current_stock_level' => [
             'message' => 'المخزون الحالي: :count',
         ],

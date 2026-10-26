@@ -188,6 +188,9 @@ return [
         'total' => [
             'label' => 'Total',
         ],
+        'preorder' => [
+            'message' => 'Ce produit est disponible uniquement en précommande.',
+        ],
         'current_stock_level' => [
             'message' => 'Niveau de stock actuel : :count',
         ],

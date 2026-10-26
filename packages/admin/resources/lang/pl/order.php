@@ -185,6 +185,9 @@ return [
         'total' => [
             'label' => 'Suma',
         ],
+        'preorder' => [
+            'message' => 'Ten produkt jest dostępny tylko w przedsprzedaży.',
+        ],
         'current_stock_level' => [
             'message' => 'Stan magazynowy: :count',
         ],
