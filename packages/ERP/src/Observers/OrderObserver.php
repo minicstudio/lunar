@@ -6,17 +6,16 @@ use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Services\ErpService;
+use Lunar\ERP\Services\InvoiceDocumentService;
 use Lunar\Models\Order;
 use Throwable;
 
 class OrderObserver
 {
     /**
-     * Handle the "updating" event for the order.
-     *
-     * @return void
+     * Handle the "updated" event for the order.
      */
-    public function updated(Order $order)
+    public function updated(Order $order): void
     {
         $this->handleBilling($order);
     }
@@ -68,6 +67,9 @@ class OrderObserver
 
             return;
         }
+
+        app(InvoiceDocumentService::class)
+            ->dispatchInvoiceGeneratedUnlessEmailed($order, $provider->value);
 
         if (! $order->reference) {
             Notification::make()

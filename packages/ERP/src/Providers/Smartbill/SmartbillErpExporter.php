@@ -82,6 +82,8 @@ class SmartbillErpExporter implements ErpDataExporterInterface
         $name = $billingAddress->company_name ? $billingAddress->company_name : $fullName;
         $defaultLocale = Language::where('default', true)->first()?->code;
 
+        $isTaxIncluded = (bool) config('lunar.pricing.stored_inclusive_of_tax', false);
+
         $products = $order->productLines
             ->map(function ($productLine) use (
                 $measuringUnitName,
@@ -89,6 +91,7 @@ class SmartbillErpExporter implements ErpDataExporterInterface
                 $saveToDb,
                 $defaultLocale,
                 $order,
+                $isTaxIncluded,
             ) {
                 $variant = $productLine->purchasable;
                 $productName = $variant->product->translateAttribute('name', $defaultLocale);
@@ -101,8 +104,8 @@ class SmartbillErpExporter implements ErpDataExporterInterface
                     measuringUnitName: $measuringUnitName,
                     currency: $order->currency_code,
                     quantity: $productLine->quantity,
-                    price: $productLine->unit_price_without_coupon->decimal,
-                    isTaxIncluded: config('lunar.pricing.stored_inclusive_of_tax', false),
+                    price: $productLine->invoiceUnitPrice()->decimal,
+                    isTaxIncluded: $isTaxIncluded,
                     taxName: $taxNames[(string) ($productLine->taxRate * 100)],
                     taxPercentage: $productLine->taxRate * 100,
                     saveToDb: $saveToDb,
@@ -116,19 +119,20 @@ class SmartbillErpExporter implements ErpDataExporterInterface
         // Example: If the Default Tax Class is "Default" and the Default Tax Zone is "Romania" with a 21% tax rate,
         // and the shipping cost is 15 RON with LUNAR_STORE_INCLUSIVE_OF_TAX = false, then the final shipping amount becomes 18.15 RON.
         $defaultTaxPercentage = (float) $this->getDefaultTaxRateAmount()?->percentage;
-        $taxPercentage = (float) $order->shippingLines?->first()?->tax_breakdown?->amounts?->first()?->percentage;
+        $shippingTaxPercentage = (float) $order->shippingLines?->first()?->tax_breakdown?->amounts?->first()?->percentage;
+        $resolvedShippingTaxPercentage = $shippingTaxPercentage ?: $defaultTaxPercentage;
 
         if ($order->shipping_total && $order->shipping_total->decimal > 0) {
             $products[] = new SmartbillProduct(
                 name: 'Cost de livrare',
                 code: 'SHIPPING',
-                measuringUnitName: 'buc',
+                measuringUnitName: $measuringUnitName,
                 currency: $order->currency_code,
                 quantity: 1,
                 price: $order->shipping_total->decimal,
-                isTaxIncluded: $taxPercentage ? true : false,
-                taxName: $taxNames[(string) ($taxPercentage ?? $defaultTaxPercentage)],
-                taxPercentage: $taxPercentage ?? $defaultTaxPercentage,
+                isTaxIncluded: $isTaxIncluded,
+                taxName: $taxNames[(string) $resolvedShippingTaxPercentage],
+                taxPercentage: $resolvedShippingTaxPercentage,
                 saveToDb: $saveToDb,
                 isService: true,
             );
@@ -136,16 +140,18 @@ class SmartbillErpExporter implements ErpDataExporterInterface
 
         $appliedCoupon = $order->appliedCoupon;
         if ($appliedCoupon) {
+            $couponTaxPercentage = $this->resolveCouponTaxPercentage($order, $defaultTaxPercentage);
+
             $products[] = new SmartbillProduct(
                 name: 'Cupon de reducere'.($appliedCoupon?->coupon ? ' - '.$appliedCoupon?->coupon : ''),
                 code: 'CUPON',
-                measuringUnitName: 'buc',
+                measuringUnitName: $measuringUnitName,
                 currency: $order->currency_code,
                 quantity: 1,
                 price: -abs($order->coupon_total->decimal),
-                isTaxIncluded: true,
-                taxName: $taxNames[(string) $defaultTaxPercentage],
-                taxPercentage: $defaultTaxPercentage,
+                isTaxIncluded: $isTaxIncluded,
+                taxName: $taxNames[(string) $couponTaxPercentage],
+                taxPercentage: $couponTaxPercentage,
                 saveToDb: $saveToDb,
                 isService: true,
             );
@@ -168,6 +174,25 @@ class SmartbillErpExporter implements ErpDataExporterInterface
             products: $products,
             observations: $this->buildInvoiceObservations($order),
         );
+    }
+
+    /**
+     * Resolve the tax percentage for the coupon line from product lines when available.
+     */
+    protected function resolveCouponTaxPercentage(Order $order, float $defaultTaxPercentage): float
+    {
+        $productTaxPercentages = $order->productLines
+            ->reject(fn ($line) => $line->isComplimentary())
+            ->map(fn ($line) => (float) ($line->taxRate * 100))
+            ->filter(fn (float $percentage) => $percentage > 0)
+            ->unique()
+            ->values();
+
+        if ($productTaxPercentages->count() === 1) {
+            return (float) $productTaxPercentages->first();
+        }
+
+        return $defaultTaxPercentage;
     }
 
     /**

@@ -309,3 +309,56 @@ it('sendOrder returns false by default for Smartbill exporter', function () {
     $order = makeOrderForSmartbillExporter();
     expect($exporter->sendOrder($order))->toBeFalse();
 });
+
+it('maps bank-transfer and stripe-wallet-pay payment options in observations', function (string $paymentOption, string $slug) {
+    $captured = null;
+    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
+        $captured = $payload->toArray();
+
+        return ['series' => 'S', 'number' => 20];
+    });
+
+    $exporter = new SmartbillErpExporter($client);
+    $order = makeOrderForSmartbillExporter([
+        'meta' => ['payment_option' => $paymentOption],
+    ]);
+
+    $exporter->generateInvoice($order);
+    expect($captured['observations'] ?? null)->toBe("#1525_{$slug}_dpd");
+})->with([
+    ['bank-transfer', 'transfer'],
+    ['stripe-wallet-pay', 'card'],
+]);
+
+it('sends complimentary product lines at price zero', function () {
+    $captured = null;
+    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
+        $captured = $payload->toArray();
+
+        return ['series' => 'S', 'number' => 21];
+    });
+
+    $exporter = new SmartbillErpExporter($client);
+    $order = makeOrderForSmartbillExporter();
+
+    \Lunar\Models\OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'type' => 'physical',
+        'identifier' => 'GIFT-SKU',
+        'quantity' => 1,
+        'unit_price' => 0,
+        'sub_total' => 0,
+        'discount_total' => 0,
+        'tax_total' => 0,
+        'total' => 0,
+        'meta' => ['added_by_discount' => [1]],
+    ]);
+
+    $exporter->generateInvoice($order->fresh());
+
+    $gift = collect($captured['products'])->firstWhere('code', 'GIFT-SKU');
+    expect($gift)->not->toBeNull();
+    expect($gift['price'])->toBe(0.0);
+});

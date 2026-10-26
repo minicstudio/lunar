@@ -261,3 +261,74 @@ test('the migration nulls legacy fake shipping morphs', function () {
 
     expect(DB::table($table)->where('type', 'shipping')->whereNotNull('purchasable_type')->count())->toBe(0);
 });
+
+test('isComplimentary detects gift lines and zero net unit', function () {
+    Currency::factory()->create(['default' => true]);
+    $order = Order::factory()->create();
+    $variant = ProductVariant::factory()->create();
+
+    $giftLine = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'quantity' => 1,
+        'total' => 100,
+        'tax_total' => 0,
+        'meta' => ['added_by_discount' => [1]],
+    ]);
+
+    $zeroNetLine = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'quantity' => 1,
+        'total' => 0,
+        'tax_total' => 0,
+        'meta' => null,
+    ]);
+
+    $paidLine = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'quantity' => 1,
+        'total' => 1000,
+        'tax_total' => 190,
+        'meta' => null,
+    ]);
+
+    expect($giftLine->isComplimentary())->toBeTrue()
+        ->and($zeroNetLine->isComplimentary())->toBeTrue()
+        ->and($paidLine->isComplimentary())->toBeFalse();
+});
+
+test('invoiceUnitPrice is zero for complimentary lines', function () {
+    $currency = Currency::factory()->create(['default' => true]);
+    $order = Order::factory()->create([
+        'currency_code' => $currency->code,
+    ]);
+    $variant = ProductVariant::factory()->create();
+
+    $giftLine = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'quantity' => 1,
+        'total' => 100,
+        'tax_total' => 0,
+        'meta' => ['added_by_discount' => [1]],
+    ]);
+
+    $paidLine = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'quantity' => 1,
+        'total' => 1000,
+        'tax_total' => 0,
+        'meta' => null,
+    ]);
+
+    expect($giftLine->fresh()->invoiceUnitPrice()->value)->toBe(0)
+        ->and($paidLine->fresh()->invoiceUnitPrice()->value)->toBe(1000);
+});
