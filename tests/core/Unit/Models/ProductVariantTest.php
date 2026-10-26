@@ -329,6 +329,53 @@ test('decreaseStock floors stock at zero and reduces backorder when not in_stock
         ->and($variant->backorder)->toBe(7);
 });
 
+test('preorder variants can be fulfilled at any positive quantity without stock', function () {
+    $variant = ProductVariant::factory()->create([
+        'stock' => 0,
+        'backorder' => 0,
+        'purchasable' => 'preorder',
+    ]);
+
+    expect($variant->canBeFulfilledAtQuantity(10))->toBeTrue();
+});
+
+test('decrease and increase leave preorder stock and backorder unchanged', function () {
+    $variant = ProductVariant::factory()->create([
+        'stock' => 0,
+        'backorder' => 0,
+        'purchasable' => 'preorder',
+    ]);
+
+    $variant->decreaseStock(5);
+    $variant->increaseStock(5);
+
+    expect($variant->stock)->toBe(0)
+        ->and($variant->backorder)->toBe(0);
+});
+
+test('decreaseStock still decreases stock for always variants', function () {
+    $variant = ProductVariant::factory()->create([
+        'stock' => 4,
+        'backorder' => 0,
+        'purchasable' => 'always',
+    ]);
+
+    $variant->decreaseStock(1);
+
+    expect($variant->stock)->toBe(3);
+});
+
+test('in stock or on backorder fulfillment uses stock plus backorder', function () {
+    $variant = ProductVariant::factory()->create([
+        'stock' => 1,
+        'backorder' => 2,
+        'purchasable' => 'in_stock_or_on_backorder',
+    ]);
+
+    expect($variant->canBeFulfilledAtQuantity(3))->toBeTrue()
+        ->and($variant->canBeFulfilledAtQuantity(4))->toBeFalse();
+});
+
 test('stock assignment cannot go below zero', function () {
     $variant = ProductVariant::factory()->create(['stock' => 5]);
 

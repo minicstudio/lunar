@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'Készleten',
                 'out_of_stock' => 'Nincs készleten',
                 'in_stock_or_on_backorder' => 'Készleten vagy utánrendelhető',
+                'preorder' => 'Előrendelhető',
             ],
+            'unused_helper' => 'Ez az érték nem számít előrendelésnél.',
         ],
         'unit_quantity' => [
             'label' => 'Egység mennyiség',

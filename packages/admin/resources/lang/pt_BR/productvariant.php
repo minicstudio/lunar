@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'Em estoque',
                 'out_of_stock' => 'Fora de estoque',
                 'in_stock_or_on_backorder' => 'Em estoque ou sob encomenda',
+                'preorder' => 'Pré-venda',
             ],
+            'unused_helper' => 'Este valor não é usado para a pré-venda.',
         ],
         'unit_quantity' => [
             'label' => 'Quantidade por unidade',

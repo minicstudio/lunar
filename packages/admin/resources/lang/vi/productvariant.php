@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'Còn hàng',
                 'out_of_stock' => 'Hết hàng',
                 'in_stock_or_on_backorder' => 'Còn hàng hoặc đặt trước',
+                'preorder' => 'Đặt hàng trước',
             ],
+            'unused_helper' => 'Giá trị này không được dùng cho đặt hàng trước.',
         ],
         'unit_quantity' => [
             'label' => 'Số lượng đơn vị',

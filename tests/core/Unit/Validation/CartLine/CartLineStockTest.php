@@ -79,6 +79,13 @@ test('can validate available stock', function (int $stock, int $backorder, int $
     ],
     [
         0,
+        0,
+        150,
+        'preorder',
+        true,
+    ],
+    [
+        0,
         150,
         150,
         'in_stock',

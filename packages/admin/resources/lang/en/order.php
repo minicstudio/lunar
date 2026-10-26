@@ -194,6 +194,9 @@ return [
         'total' => [
             'label' => 'Total',
         ],
+        'preorder' => [
+            'message' => 'This product is only available for preorder.',
+        ],
         'current_stock_level' => [
             'message' => 'Current Stock Level: :count',
         ],

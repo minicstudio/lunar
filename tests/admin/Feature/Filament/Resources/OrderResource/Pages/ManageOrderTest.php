@@ -145,6 +145,63 @@ it('can render order manage page', function () {
         ->assertSee($this->order->reference);
 });
 
+it('shows a preorder notice under the product name', function () {
+    $currency = Currency::getDefault();
+
+    $preorder = ProductVariant::factory()
+        ->has(ModelsPrice::factory()->state([
+            'currency_id' => $currency->id,
+        ]))
+        ->create([
+            'purchasable' => 'preorder',
+        ]);
+
+    $inStock = ProductVariant::factory()
+        ->has(ModelsPrice::factory()->state([
+            'currency_id' => $currency->id,
+        ]))
+        ->create([
+            'purchasable' => 'in_stock',
+        ]);
+
+    foreach ([$preorder, $inStock] as $variant) {
+        $taxBreakdown = new TaxBreakdown;
+        $taxBreakdown->addAmount(new TaxBreakdownAmount(
+            price: new Price(value: 0, currency: $currency),
+            identifier: $currency->code,
+            description: 'VAT',
+            percentage: 0,
+        ));
+
+        $this->order->lines()->create([
+            'quantity' => 1,
+            'purchasable_type' => $variant->getMorphClass(),
+            'purchasable_id' => $variant->id,
+            'type' => 'physical',
+            'description' => $variant->product->translateAttribute('name'),
+            'identifier' => $variant->sku,
+            'unit_price' => 1000,
+            'unit_quantity' => 1,
+            'sub_total' => 1000,
+            'discount_total' => 0,
+            'tax_total' => 0,
+            'total' => 1000,
+            'tax_breakdown' => $taxBreakdown,
+        ]);
+    }
+
+    $notice = __('lunarpanel::order.infolist.preorder.message');
+
+    $html = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSee($preorder->product->translateAttribute('name'))
+        ->assertSee($inStock->product->translateAttribute('name'))
+        ->html();
+
+    expect(substr_count($html, $notice))->toBe(1);
+});
+
 it('can download order pdf', function () {
     Livewire::test(ManageOrder::class, [
         'record' => $this->order->getRouteKey(),

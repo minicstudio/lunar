@@ -185,6 +185,9 @@ return [
         'total' => [
             'label' => 'Total',
         ],
+        'preorder' => [
+            'message' => 'این محصول فقط برای پیش‌سفارش در دسترس است.',
+        ],
         'current_stock_level' => [
             'message' => 'Current Stock Level: :count',
         ],

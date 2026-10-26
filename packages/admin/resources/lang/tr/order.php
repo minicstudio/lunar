@@ -188,6 +188,9 @@ return [
         'total' => [
             'label' => 'Toplam',
         ],
+        'preorder' => [
+            'message' => 'Bu ürün yalnızca ön sipariş için mevcuttur.',
+        ],
         'current_stock_level' => [
             'message' => 'Mevcut Stok Seviyesi: :count',
         ],

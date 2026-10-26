@@ -1,10 +1,9 @@
 <?php
 
-uses(\Lunar\Tests\ProductFeed\TestCase::class);
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Facades\StorefrontSession;
+use Lunar\FieldTypes\Dropdown;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Brand;
@@ -25,6 +24,11 @@ use Lunar\ProductFeed\Encoders\JsonFeedEncoder;
 use Lunar\ProductFeed\Encoders\XmlFeedEncoder;
 use Lunar\ProductFeed\ProductFeedCache;
 use Lunar\ProductFeed\Services\ProductFeedService;
+use Lunar\Review\Models\Review;
+use Lunar\Tests\ProductFeed\TestCase;
+
+uses(TestCase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Language::factory()->create(['default' => true, 'code' => 'en']);
@@ -215,6 +219,37 @@ test('purchasable variant that cannot fulfill qty 1 still appears as out_of_stoc
         ]);
 });
 
+test('preorder variant is reported as preorder in the feed', function () {
+    createFeedEligibleProduct([], [
+        'sku' => 'PREORDER-TEE',
+        'stock' => 0,
+        'backorder' => 0,
+        'purchasable' => 'preorder',
+    ]);
+
+    $this->getJson('/feeds/products/json')
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => 'PREORDER-TEE',
+            'availability' => 'preorder',
+        ]);
+});
+
+test('in stock variant with stock stays in stock in the feed', function () {
+    createFeedEligibleProduct([], [
+        'sku' => 'IN-STOCK-TEE',
+        'stock' => 1,
+        'purchasable' => 'in_stock',
+    ]);
+
+    $this->getJson('/feeds/products/json')
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => 'IN-STOCK-TEE',
+            'availability' => 'in_stock',
+        ]);
+});
+
 test('invalid format returns 404', function () {
     $this->get('/feeds/products/yaml')->assertNotFound();
 });
@@ -279,24 +314,24 @@ test('mapped text fields are trimmed', function () {
 test('review score is included from approved product reviews', function () {
     $created = createFeedEligibleProduct();
 
-    \Lunar\Review\Models\Review::query()->create([
+    Review::query()->create([
         'order_id' => null,
         'user_id' => null,
         'reviewable_type' => ProductVariant::morphName(),
         'reviewable_id' => $created['variant']->id,
         'attribute_data' => [
-            'rating' => new \Lunar\FieldTypes\Dropdown('5'),
+            'rating' => new Dropdown('5'),
         ],
         'approved_at' => now(),
     ]);
 
-    \Lunar\Review\Models\Review::query()->create([
+    Review::query()->create([
         'order_id' => null,
         'user_id' => null,
         'reviewable_type' => ProductVariant::morphName(),
         'reviewable_id' => $created['variant']->id,
         'attribute_data' => [
-            'rating' => new \Lunar\FieldTypes\Dropdown('4'),
+            'rating' => new Dropdown('4'),
         ],
         'approved_at' => now(),
     ]);

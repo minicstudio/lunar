@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'Stokta',
                 'out_of_stock' => 'Stokta Yok',
                 'in_stock_or_on_backorder' => 'Stokta veya Sipariş Üzerine',
+                'preorder' => 'Ön sipariş',
             ],
+            'unused_helper' => 'Bu değer ön sipariş için kullanılmaz.',
         ],
         'unit_quantity' => [
             'label' => 'Birim Miktarı',
