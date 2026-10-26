@@ -203,4 +203,26 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
             }
         );
     }
+
+    /**
+     * Whether the line is a complimentary / BXGY gift line.
+     */
+    public function isComplimentary(): bool
+    {
+        $netUnit = (int) (($this->total->value - $this->tax_total->value) / max(1, (int) $this->quantity));
+
+        return filled(data_get($this->meta, 'added_by_discount')) || $netUnit <= 0;
+    }
+
+    /**
+     * Unit price for invoicing (zero when complimentary).
+     */
+    public function invoiceUnitPrice(): PriceDataType
+    {
+        if ($this->isComplimentary()) {
+            return new PriceDataType(0, $this->unit_price->currency, $this->unit_price->unitQty);
+        }
+
+        return $this->unit_price_without_coupon;
+    }
 }

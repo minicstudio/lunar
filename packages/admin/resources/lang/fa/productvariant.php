@@ -57,7 +57,9 @@ return [
                 'always' => 'Always',
                 'in_stock' => 'In Stock',
                 'in_stock_or_on_backorder' => 'In Stock or On Backorder',
+                'preorder' => 'پیش‌سفارش',
             ],
+            'unused_helper' => 'این مقدار برای پیش‌سفارش استفاده نمی‌شود.',
         ],
         'unit_quantity' => [
             'label' => 'Unit Quantity',

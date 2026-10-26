@@ -200,6 +200,9 @@ return [
         'total' => [
             'label' => 'Végösszeg',
         ],
+        'preorder' => [
+            'message' => 'Ez a termék csak előrendelésre érhető el.',
+        ],
         'current_stock_level' => [
             'message' => 'Jelenlegi készletszint: :count',
         ],

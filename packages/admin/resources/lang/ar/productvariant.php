@@ -57,7 +57,9 @@ return [
                 'always' => 'دائمًا',
                 'in_stock' => 'متوفر في المخزون',
                 'in_stock_or_on_backorder' => 'متوفر في المخزون أو طلب مسبق',
+                'preorder' => 'طلب مسبق',
             ],
+            'unused_helper' => 'لا تُستخدم هذه القيمة للطلب المسبق.',
         ],
         'unit_quantity' => [
             'label' => 'كمية الوحدة',

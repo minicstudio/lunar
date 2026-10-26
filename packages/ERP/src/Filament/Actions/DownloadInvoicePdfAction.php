@@ -41,6 +41,10 @@ class DownloadInvoicePdfAction extends Action
         $enabledProviders = $erpService->getAllowedProviders('actions', 'billing');
 
         if (empty($enabledProviders)) {
+            $enabledProviders = $erpService->getEnabledProviders();
+        }
+
+        if (empty($enabledProviders)) {
             return;
         }
 

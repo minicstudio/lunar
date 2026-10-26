@@ -185,6 +185,9 @@ return [
         'total' => [
             'label' => 'Общо',
         ],
+        'preorder' => [
+            'message' => 'Този продукт е наличен само за предварителна поръчка.',
+        ],
         'current_stock_level' => [
             'message' => 'Текущо ниво на наличност: :count',
         ],

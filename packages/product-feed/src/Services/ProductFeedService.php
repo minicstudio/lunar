@@ -95,7 +95,7 @@ class ProductFeedService
             'id' => $id,
             'title' => $title,
             'description' => $description,
-            'availability' => $variant->canBeFulfilledAtQuantity(1) ? 'in_stock' : 'out_of_stock',
+            'availability' => $this->availability($variant),
             'condition' => config('lunar.products.product_condition'),
             'price' => $this->formatFeedPrice($originalPrice, $currency),
             'link' => $link,
@@ -337,6 +337,18 @@ class ProductFeedService
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * Feed availability. Preorder is reported before the fulfillable stock check.
+     */
+    protected function availability(ProductVariant $variant): string
+    {
+        if ($variant->purchasable === 'preorder') {
+            return 'preorder';
+        }
+
+        return $variant->canBeFulfilledAtQuantity(1) ? 'in_stock' : 'out_of_stock';
     }
 
     /**

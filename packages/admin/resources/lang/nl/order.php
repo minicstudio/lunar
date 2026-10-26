@@ -188,6 +188,9 @@ return [
         'total' => [
             'label' => 'Totaal',
         ],
+        'preorder' => [
+            'message' => 'Dit product is alleen beschikbaar als pre-order.',
+        ],
         'current_stock_level' => [
             'message' => 'Huidig Voorraadniveau: :count',
         ],

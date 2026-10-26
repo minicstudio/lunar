@@ -294,7 +294,7 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
 
     public function canBeFulfilledAtQuantity(int $quantity): bool
     {
-        if ($this->purchasable == 'always') {
+        if ($this->purchasable == 'always' || $this->purchasable == 'preorder') {
             return true;
         }
 
@@ -307,6 +307,14 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
             && $this->product
             && ! $this->product->trashed()
             && $this->product->status === 'published';
+    }
+
+    /**
+     * Whether this variant is sold as a preorder.
+     */
+    public function isPreorder(): bool
+    {
+        return $this->purchasable === 'preorder';
     }
 
     public function getTotalInventory(): int
@@ -344,11 +352,16 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     /**
      * Decrease the stock.
      *
+     * `preorder` leaves stock and backorder unchanged.
      * Stock is floored at 0. When purchasable is not `in_stock`, any
      * shortfall is applied to backorder (which may go negative).
      */
     public function decreaseStock(int $quantity = 1): self
     {
+        if ($this->purchasable == 'preorder') {
+            return $this;
+        }
+
         $remaining = $this->stock - $quantity;
 
         if ($remaining < 0 && $this->purchasable !== 'in_stock') {
@@ -362,9 +375,15 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
 
     /**
      * Increase the stock.
+     *
+     * `preorder` leaves stock and backorder unchanged.
      */
     public function increaseStock(int $quantity = 1): self
     {
+        if ($this->purchasable == 'preorder') {
+            return $this;
+        }
+
         if ($this->backorder < 0 && $this->purchasable !== 'in_stock') {
             $backorderToReduce = min($quantity, abs($this->backorder));
             $this->backorder += $backorderToReduce;

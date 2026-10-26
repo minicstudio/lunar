@@ -58,7 +58,9 @@ return [
                 'in_stock' => 'În stoc',
                 'out_of_stock' => 'Fără stoc',
                 'in_stock_or_on_backorder' => 'În stoc sau la precomandă',
+                'preorder' => 'Precomandă',
             ],
+            'unused_helper' => 'Această valoare nu este folosită pentru precomandă.',
         ],
         'unit_quantity' => [
             'label' => 'Cantitate unitate',
