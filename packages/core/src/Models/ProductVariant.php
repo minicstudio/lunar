@@ -309,6 +309,14 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
             && $this->product->status === 'published';
     }
 
+    /**
+     * Whether this variant is sold as a preorder.
+     */
+    public function isPreorder(): bool
+    {
+        return $this->purchasable === 'preorder';
+    }
+
     public function getTotalInventory(): int
     {
         if ($this->purchasable == 'in_stock') {
