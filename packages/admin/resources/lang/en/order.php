@@ -300,6 +300,12 @@ return [
             'requires_capture' => 'This order still requires payment to be captured.',
             'partially_refunded' => 'This order has been partially refunded.',
             'refunded' => 'This order has been refunded.',
+            'product_line_gates' => [
+                'paid' => 'Paid: this order cannot be modified because it has been paid.',
+                'erp' => 'ERP: this order cannot be modified because it has been sent to the ERP.',
+                'invoice' => 'Invoice: this order cannot be modified because it has an invoice.',
+                'awb' => 'AWB: this order cannot be modified because it has an AWB.',
+            ],
         ],
     ],
 
@@ -371,6 +377,44 @@ return [
                 'error' => 'There was a problem with the refund',
                 'success' => 'Refund successful',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Add product',
+            'product' => [
+                'label' => 'Product',
+            ],
+            'variant' => [
+                'label' => 'Variant',
+            ],
+            'quantity' => [
+                'label' => 'Quantity',
+            ],
+            'notification' => 'Product added',
+        ],
+        'update_quantity' => [
+            'label' => 'Update quantity',
+            'quantity' => [
+                'label' => 'Quantity',
+            ],
+            'notification' => 'Quantity updated',
+        ],
+        'remove_product' => [
+            'label' => 'Remove product',
+            'confirmation' => 'Remove this product from the order?',
+            'notification' => 'Product removed',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'An order must keep at least one product.',
+            'unauthorized' => 'You cannot change products on this order.',
+            'cart' => 'This order has no cart, so its products cannot be changed.',
+            'line' => 'That product line could not be found.',
+            'purchasable' => 'That variant could not be found.',
+            'shipping' => 'The shipping option cannot be priced, so the order was left unchanged.',
+            'locked' => 'This order can no longer be edited.',
+            'not_purchasable' => 'This variant cannot be purchased.',
+            'out_of_stock' => 'This variant is out of stock.',
+            'insufficient_stock' => 'There is not enough stock for this quantity.',
+            'missing_price' => 'This variant has no price in the order currency.',
         ],
     ],
 

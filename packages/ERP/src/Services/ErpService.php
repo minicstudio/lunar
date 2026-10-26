@@ -9,6 +9,7 @@ use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Exceptions\ErpInitializationException;
 use Lunar\Models\Order;
 use Saloon\Http\Response;
+use Throwable;
 
 class ErpService
 {
@@ -92,6 +93,9 @@ class ErpService
 
     /**
      * Send an order to the specified ERP provider.
+     *
+     * A successful response records `meta.erp_sent_at`. A failure while saving
+     * that timestamp does not fail the send.
      */
     public function sendOrder(ErpProviderEnum $provider, Order $order): bool
     {
@@ -99,9 +103,36 @@ class ErpService
             return false;
         }
 
-        $exporter = $this->getExporter($provider);
+        $accepted = $this->getExporter($provider)->sendOrder($order) === true;
 
-        return $exporter->sendOrder($order);
+        if (! $accepted) {
+            return false;
+        }
+
+        try {
+            $this->stampSentAt($order);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return true;
+    }
+
+    /**
+     * Record that the provider accepted this order.
+     */
+    protected function stampSentAt(Order $order): void
+    {
+        Order::withoutEvents(function () use ($order): void {
+            $order->refresh();
+
+            $meta = $order->meta instanceof \ArrayObject
+                ? $order->meta->getArrayCopy()
+                : (array) ($order->meta ?? []);
+            $meta['erp_sent_at'] = now()->toIso8601String();
+            $order->meta = $meta;
+            $order->save();
+        });
     }
 
     /**

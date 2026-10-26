@@ -1,8 +1,6 @@
 <?php
 
-uses(\Lunar\Tests\ERP\TestCase::class);
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Filament\Actions\ResendOrderToErpAction;
@@ -12,6 +10,12 @@ use Lunar\Locations\Models\Locality;
 use Lunar\Models\Country;
 use Lunar\Models\Order;
 use Lunar\Models\OrderAddress;
+use Lunar\Tests\ERP\Stubs\FakeErpClient;
+use Lunar\Tests\ERP\Stubs\FakeOrderExporter;
+use Lunar\Tests\ERP\TestCase;
+
+uses(TestCase::class);
+uses(RefreshDatabase::class);
 
 /**
  * Creates a Locality row scoped to the given county name.
@@ -59,7 +63,7 @@ it('keeps the order flagged failed-erp-sync when it has no shipping address at a
         'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
     ]);
 
-    $service = \Mockery::mock(ErpService::class);
+    $service = Mockery::mock(ErpService::class);
     $service->shouldNotReceive('getEnabledProviders');
     $service->shouldNotReceive('sendOrder');
     $service->shouldReceive('getAllowedProviders')->andReturn([]);
@@ -79,7 +83,7 @@ it('restores the pre-failure status and clears the stashed meta on a successful 
         'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
     ]);
 
-    $service = \Mockery::mock(ErpService::class);
+    $service = Mockery::mock(ErpService::class);
     $service->shouldReceive('getEnabledProviders')->once()->andReturn([ErpProviderEnum::magister]);
     $service->shouldReceive('sendOrder')->once()->andReturnTrue();
     $service->shouldReceive('getAllowedProviders')->andReturn([]);
@@ -101,7 +105,7 @@ it('re-sets failed-erp-sync when the resend attempt fails again', function () {
         'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
     ]);
 
-    $service = \Mockery::mock(ErpService::class);
+    $service = Mockery::mock(ErpService::class);
     $service->shouldReceive('getEnabledProviders')->once()->andReturn([ErpProviderEnum::magister]);
     $service->shouldReceive('sendOrder')->once()->andReturnFalse();
     app()->instance(ErpService::class, $service);
@@ -127,7 +131,7 @@ it('keeps the order flagged invalid-address then failed-erp-sync when the addres
             'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
         ]);
 
-    $service = \Mockery::mock(ErpService::class);
+    $service = Mockery::mock(ErpService::class);
     $service->shouldNotReceive('getEnabledProviders');
     $service->shouldNotReceive('sendOrder');
     $service->shouldReceive('getAllowedProviders')->andReturn([]);
@@ -155,7 +159,7 @@ it('keeps the order flagged invalid-address then failed-erp-sync when the city m
             'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
         ]);
 
-    $service = \Mockery::mock(ErpService::class);
+    $service = Mockery::mock(ErpService::class);
     $service->shouldNotReceive('getEnabledProviders');
     $service->shouldNotReceive('sendOrder');
     $service->shouldReceive('getAllowedProviders')->andReturn([]);
@@ -165,6 +169,55 @@ it('keeps the order flagged invalid-address then failed-erp-sync when the city m
 
     $order->refresh();
     expect($order->status)->toBe('failed-erp-sync');
+});
+
+it('stores erp_sent_at on a successful resend and keeps the restored status', function () {
+    FakeOrderExporter::$accepts = true;
+    FakeOrderExporter::$throws = false;
+
+    Config::set('lunar.erp.enabled', true);
+    Config::set('lunar.erp.providers', ['magister']);
+    Config::set('lunar.erp.magister.enabled', true);
+    Config::set('lunar.erp.magister.exporter_class', FakeOrderExporter::class);
+    Config::set('lunar.erp.magister.client_class', FakeErpClient::class);
+    Config::set('lunar.erp.actions.send_order', ['magister']);
+
+    $order = Order::factory()->create([
+        'status' => 'failed-erp-sync',
+        'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
+    ]);
+
+    callResendOrderToErpHandle($order);
+
+    $order->refresh();
+
+    expect($order->status)->toBe('awaiting-payment')
+        ->and(isset($order->meta['status_before_erp_failure']))->toBeFalse()
+        ->and($order->meta['erp_sent_at'])->not->toBeEmpty();
+});
+
+it('leaves erp_sent_at empty when the resend is rejected', function () {
+    FakeOrderExporter::$accepts = false;
+    FakeOrderExporter::$throws = false;
+
+    Config::set('lunar.erp.enabled', true);
+    Config::set('lunar.erp.providers', ['magister']);
+    Config::set('lunar.erp.magister.enabled', true);
+    Config::set('lunar.erp.magister.exporter_class', FakeOrderExporter::class);
+    Config::set('lunar.erp.magister.client_class', FakeErpClient::class);
+    Config::set('lunar.erp.actions.send_order', ['magister']);
+
+    $order = Order::factory()->create([
+        'status' => 'failed-erp-sync',
+        'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
+    ]);
+
+    callResendOrderToErpHandle($order);
+
+    $order->refresh();
+
+    expect($order->status)->toBe('failed-erp-sync')
+        ->and(isset($order->meta['erp_sent_at']))->toBeFalse();
 });
 
 it('resends when the city and county both match a seeded locality', function () {
@@ -183,7 +236,7 @@ it('resends when the city and county both match a seeded locality', function () 
             'meta' => ['status_before_erp_failure' => 'awaiting-payment'],
         ]);
 
-    $service = \Mockery::mock(ErpService::class);
+    $service = Mockery::mock(ErpService::class);
     $service->shouldReceive('getEnabledProviders')->once()->andReturn([ErpProviderEnum::magister]);
     $service->shouldReceive('sendOrder')->once()->andReturnTrue();
     $service->shouldReceive('getAllowedProviders')->andReturn([]);

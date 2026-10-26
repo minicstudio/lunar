@@ -3,6 +3,7 @@
 namespace Lunar\Loyalty\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Lunar\Facades\DB;
 use Lunar\Loyalty\Enums\LoyaltyTransactionType;
 use Lunar\Loyalty\Exceptions\InsufficientLoyaltyPointsException;
@@ -14,7 +15,7 @@ final class LoyaltyLedger
     /**
      * Record an earn transaction.
      *
-     * @param  array{reference?: Model, meta?: array<string, mixed>, expires_at?: \Illuminate\Support\Carbon|null}  $options
+     * @param  array{reference?: Model, meta?: array<string, mixed>, expires_at?: Carbon|null}  $options
      */
     public function earn(LoyaltyAccount $account, int $points, string $eventKey, array $options = []): ?LoyaltyTransaction
     {
@@ -201,7 +202,8 @@ final class LoyaltyLedger
 
         $spent = (int) $account->transactions()
             ->where('type', LoyaltyTransactionType::Spend->value)
-            ->sum('points');
+            ->get()
+            ->sum(fn (LoyaltyTransaction $transaction): int => $this->originalSpendPoints($transaction));
 
         $expired = (int) $account->transactions()
             ->where('type', LoyaltyTransactionType::Expire->value)
@@ -326,27 +328,82 @@ final class LoyaltyLedger
     }
 
     /**
-     * Restore remaining points on lots debited by a spend transaction.
+     * Return points to the lots a spend took, and leave that spend at the points still redeemed.
      */
     protected function restoreAllocations(LoyaltyTransaction $spendTransaction, int $pointsToRestore): void
     {
-        $allocations = $spendTransaction->meta['allocations'] ?? [];
+        /** @var LoyaltyTransaction $spendTransaction */
+        $spendTransaction = LoyaltyTransaction::query()->lockForUpdate()->findOrFail($spendTransaction->id);
+
+        $allocations = $this->allocationRows($spendTransaction);
         $remaining = $pointsToRestore;
+        $kept = [];
 
         foreach (array_reverse($allocations) as $allocation) {
-            if ($remaining <= 0) {
-                break;
+            $allocated = (int) ($allocation['points'] ?? 0);
+            $earnId = $allocation['earn_transaction_id'] ?? null;
+
+            if ($remaining > 0 && $allocated > 0 && $earnId !== null) {
+                $restore = min($remaining, $allocated);
+                $lot = LoyaltyTransaction::query()->lockForUpdate()->find($earnId);
+
+                if ($lot) {
+                    $lot->increment('remaining_points', $restore);
+                }
+
+                $allocated -= $restore;
+                $remaining -= $restore;
             }
 
-            $restore = min($remaining, (int) $allocation['points']);
-            $lot = LoyaltyTransaction::query()->lockForUpdate()->find($allocation['earn_transaction_id']);
-
-            if ($lot) {
-                $lot->increment('remaining_points', $restore);
+            if ($allocated > 0 && $earnId !== null) {
+                $kept[] = [
+                    'earn_transaction_id' => $earnId,
+                    'points' => $allocated,
+                ];
             }
-
-            $remaining -= $restore;
         }
+
+        $meta = $spendTransaction->meta instanceof \ArrayObject
+            ? $spendTransaction->meta->getArrayCopy()
+            : (array) ($spendTransaction->meta ?? []);
+
+        if (! array_key_exists('original_points', $meta)) {
+            $meta['original_points'] = (int) $spendTransaction->points;
+        }
+
+        $meta['allocations'] = array_reverse($kept);
+
+        $spendTransaction->meta = $meta;
+        $spendTransaction->points = max(0, (int) $spendTransaction->points - $pointsToRestore);
+        $spendTransaction->save();
+    }
+
+    /**
+     * Spend points as first recorded, so a later reduction does not change the ledger sum.
+     */
+    private function originalSpendPoints(LoyaltyTransaction $spendTransaction): int
+    {
+        $original = $spendTransaction->meta['original_points'] ?? null;
+
+        if ($original !== null) {
+            return (int) $original;
+        }
+
+        return (int) $spendTransaction->points;
+    }
+
+    /**
+     * @return list<array{earn_transaction_id: mixed, points: mixed}>
+     */
+    private function allocationRows(LoyaltyTransaction $spendTransaction): array
+    {
+        $allocations = $spendTransaction->meta['allocations'] ?? [];
+
+        if ($allocations instanceof \ArrayObject) {
+            $allocations = $allocations->getArrayCopy();
+        }
+
+        return array_values(is_array($allocations) ? $allocations : []);
     }
 
     /**
@@ -362,7 +419,7 @@ final class LoyaltyLedger
     /**
      * Resolve the expiration date for new earn transactions.
      */
-    protected function resolveExpirationDate(): ?\Illuminate\Support\Carbon
+    protected function resolveExpirationDate(): ?Carbon
     {
         $months = (int) config('lunar.loyalty.expiration.months', 0);
 

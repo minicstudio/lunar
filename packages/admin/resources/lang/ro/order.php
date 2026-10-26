@@ -300,6 +300,12 @@ return [
             'requires_capture' => 'Această comandă necesită în continuare capturarea plății.',
             'partially_refunded' => 'Această comandă a fost rambursată parțial.',
             'refunded' => 'Această comandă a fost rambursată.',
+            'product_line_gates' => [
+                'paid' => 'Plătit: această comandă nu poate fi modificată, deoarece a fost plătită.',
+                'erp' => 'ERP: această comandă nu poate fi modificată, deoarece a fost trimisă către ERP.',
+                'invoice' => 'Factură: această comandă nu poate fi modificată, deoarece are o factură.',
+                'awb' => 'AWB: această comandă nu poate fi modificată, deoarece are un AWB.',
+            ],
         ],
     ],
 
@@ -363,6 +369,44 @@ return [
                 'error' => 'A apărut o problemă la rambursare',
                 'success' => 'Rambursare reușită',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Adaugă produs',
+            'product' => [
+                'label' => 'Produs',
+            ],
+            'variant' => [
+                'label' => 'Variantă',
+            ],
+            'quantity' => [
+                'label' => 'Cantitate',
+            ],
+            'notification' => 'Produs adăugat',
+        ],
+        'update_quantity' => [
+            'label' => 'Actualizează cantitatea',
+            'quantity' => [
+                'label' => 'Cantitate',
+            ],
+            'notification' => 'Cantitate actualizată',
+        ],
+        'remove_product' => [
+            'label' => 'Elimină produsul',
+            'confirmation' => 'Elimini acest produs din comandă?',
+            'notification' => 'Produs eliminat',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'O comandă trebuie să păstreze cel puțin un produs.',
+            'unauthorized' => 'Nu puteți modifica produsele acestei comenzi.',
+            'cart' => 'Această comandă nu are un coș, deci produsele nu pot fi modificate.',
+            'line' => 'Linia de produs nu a fost găsită.',
+            'purchasable' => 'Varianta nu a fost găsită.',
+            'shipping' => 'Opțiunea de livrare nu poate fi tarifată, așa că comanda a rămas neschimbată.',
+            'locked' => 'Această comandă nu mai poate fi editată.',
+            'not_purchasable' => 'Această variantă nu poate fi cumpărată.',
+            'out_of_stock' => 'Această variantă nu este în stoc.',
+            'insufficient_stock' => 'Nu există stoc suficient pentru această cantitate.',
+            'missing_price' => 'Această variantă nu are preț în moneda comenzii.',
         ],
     ],
 

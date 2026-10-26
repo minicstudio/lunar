@@ -294,6 +294,12 @@ return [
             'requires_capture' => 'Ennél a rendelésnél még fizetést kell lekönyvelni.',
             'partially_refunded' => 'Ennél a rendelésnél részleges visszatérítés történt.',
             'refunded' => 'Ennél a rendelésnél visszatérítés történt.',
+            'product_line_gates' => [
+                'paid' => 'Fizetve: ez a rendelés nem módosítható, mert ki van fizetve.',
+                'erp' => 'ERP: ez a rendelés nem módosítható, mert el lett küldve az ERP-nek.',
+                'invoice' => 'Számla: ez a rendelés nem módosítható, mert számla tartozik hozzá.',
+                'awb' => 'AWB: ez a rendelés nem módosítható, mert AWB tartozik hozzá.',
+            ],
         ],
     ],
 
@@ -363,6 +369,44 @@ return [
                 'error' => 'Hiba történt a visszatérítés során',
                 'success' => 'Visszatérítés sikeres',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Termék hozzáadása',
+            'product' => [
+                'label' => 'Termék',
+            ],
+            'variant' => [
+                'label' => 'Változat',
+            ],
+            'quantity' => [
+                'label' => 'Mennyiség',
+            ],
+            'notification' => 'Termék hozzáadva',
+        ],
+        'update_quantity' => [
+            'label' => 'Mennyiség módosítása',
+            'quantity' => [
+                'label' => 'Mennyiség',
+            ],
+            'notification' => 'Mennyiség frissítve',
+        ],
+        'remove_product' => [
+            'label' => 'Termék eltávolítása',
+            'confirmation' => 'Eltávolítja ezt a terméket a rendelésből?',
+            'notification' => 'Termék eltávolítva',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'A rendelésnek legalább egy terméket meg kell tartania.',
+            'unauthorized' => 'Nincs jogosultsága a rendelés termékeinek módosításához.',
+            'cart' => 'Ehhez a rendeléshez nem tartozik kosár, ezért a termékek nem módosíthatók.',
+            'line' => 'A terméksor nem található.',
+            'purchasable' => 'A változat nem található.',
+            'shipping' => 'A szállítási mód nem árazható, ezért a rendelés változatlan maradt.',
+            'locked' => 'Ez a rendelés már nem szerkeszthető.',
+            'not_purchasable' => 'Ez a változat nem vásárolható.',
+            'out_of_stock' => 'Ez a változat nincs készleten.',
+            'insufficient_stock' => 'Nincs elég készlet ehhez a mennyiséghez.',
+            'missing_price' => 'Ehhez a változathoz nincs ár a rendelés pénznemében.',
         ],
     ],
 

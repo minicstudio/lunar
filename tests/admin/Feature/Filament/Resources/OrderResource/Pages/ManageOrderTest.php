@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\CustomerResource;
@@ -142,7 +143,8 @@ it('can render order manage page', function () {
         ->assertSee($firstItem->total->formatted)
         ->assertSee($firstItem->sub_total->formatted)
         ->assertSee($secondItem->total->formatted)
-        ->assertSee($this->order->reference);
+        ->assertSee($this->order->reference)
+        ->assertSee(__('lunarpanel::order.infolist.alert.product_line_gates.paid'));
 });
 
 it('shows a preorder notice under the product name', function () {
@@ -539,4 +541,57 @@ it('can extend the shipping and billing order meta keys', function () {
         ->assertSchemaComponentDoesNotExist('meta.meta_awb')
         ->assertSchemaComponentDoesNotExist('meta.meta_delivery_date')
         ->assertSchemaComponentDoesNotExist('meta.meta_vat_number');
+});
+
+it('hides the product line gate shout when the order can be edited', function () {
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertDontSee(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))
+        ->assertDontSee(__('lunarpanel::order.infolist.alert.product_line_gates.erp'))
+        ->assertDontSee(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))
+        ->assertDontSee(__('lunarpanel::order.infolist.alert.product_line_gates.awb'));
+});
+
+it('has product line editing copy in every admin locale', function () {
+    $keys = [
+        'lunarpanel::order.infolist.alert.product_line_gates.paid',
+        'lunarpanel::order.infolist.alert.product_line_gates.erp',
+        'lunarpanel::order.infolist.alert.product_line_gates.invoice',
+        'lunarpanel::order.infolist.alert.product_line_gates.awb',
+        'lunarpanel::order.action.add_product.label',
+        'lunarpanel::order.action.add_product.product.label',
+        'lunarpanel::order.action.add_product.variant.label',
+        'lunarpanel::order.action.add_product.quantity.label',
+        'lunarpanel::order.action.add_product.notification',
+        'lunarpanel::order.action.update_quantity.label',
+        'lunarpanel::order.action.update_quantity.quantity.label',
+        'lunarpanel::order.action.update_quantity.notification',
+        'lunarpanel::order.action.remove_product.label',
+        'lunarpanel::order.action.remove_product.confirmation',
+        'lunarpanel::order.action.remove_product.notification',
+    ];
+
+    foreach (['ar', 'bg', 'de', 'es', 'fa', 'fr', 'hr', 'hu', 'mn', 'nl', 'pl', 'pt_BR', 'ro', 'tr', 'vi', 'en'] as $locale) {
+        foreach ($keys as $key) {
+            expect(Lang::has($key, $locale, false))->toBeTrue();
+        }
+    }
+
+    app()->setLocale('en');
+
+    expect(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('Paid')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('cannot be modified')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.erp'))->toContain('ERP')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))->toContain('Invoice')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.awb'))->toContain('AWB');
+
+    app()->setLocale('hu');
+
+    expect(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('Fizetve')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('nem módosítható')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.erp'))->toContain('ERP')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))->toContain('Számla')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.awb'))->toContain('AWB');
 });

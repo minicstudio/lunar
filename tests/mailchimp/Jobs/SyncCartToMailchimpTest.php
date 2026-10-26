@@ -4,8 +4,10 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Queue;
 use Lunar\Mailchimp\Exceptions\FailedMailchimpSyncException;
 use Lunar\Mailchimp\Jobs\SyncCartToMailchimp;
+use Lunar\Mailchimp\Observers\CartLineObserver;
 use Lunar\Mailchimp\Services\MailchimpEcommerceService;
 use Lunar\Models\Currency;
+use Lunar\Models\Order;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
@@ -100,6 +102,36 @@ test('job does not run when sync_carts is disabled', function () {
     expect(true)->toBeTrue();
 });
 
+test('job does not sync a cart that already has a placed order', function () {
+    $currency = Currency::where('default', true)->first();
+    $user = User::factory()->create();
+    $cart = $this->createCart(['user_id' => $user->id, 'currency_id' => $currency->id]);
+
+    Order::factory()->create([
+        'cart_id' => $cart->id,
+        'channel_id' => $cart->channel_id,
+        'currency_code' => $currency->code,
+        'placed_at' => now(),
+    ]);
+
+    $mockService = Mockery::mock(MailchimpEcommerceService::class);
+    $mockService->shouldNotReceive('syncCart');
+    $this->app->instance(MailchimpEcommerceService::class, $mockService);
+
+    (new SyncCartToMailchimp($cart))->handle();
+
+    $line = $cart->lines()->make([
+        'purchasable_type' => ProductVariant::class,
+        'purchasable_id' => 1,
+        'quantity' => 1,
+    ]);
+    $line->setRelation('cart', $cart);
+
+    (new CartLineObserver)->created($line);
+
+    Queue::assertNotPushed(SyncCartToMailchimp::class);
+});
+
 test('job does not sync cart without user_id', function () {
     $cart = $this->createCart(['user_id' => null]);
 
@@ -136,7 +168,7 @@ test('job throws FailedMailchimpSyncException on API failure', function () {
     $mockService->shouldReceive('syncCart')
         ->once()
         ->with($cart)
-        ->andThrow(new \Exception('Failed to sync cart'));
+        ->andThrow(new Exception('Failed to sync cart'));
 
     $job = new SyncCartToMailchimp($cart);
     $this->app->instance(MailchimpEcommerceService::class, $mockService);
