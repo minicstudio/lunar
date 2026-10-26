@@ -100,7 +100,7 @@ return [
     | (e.g., "pcs", "kg"). Ensures consistency with Smartbill's unit definitions.
     |
     */
-    'measuring_unit_name' => env('SMARTBILL_MEASURING_UNIT_NAME'),
+    'measuring_unit_name' => env('SMARTBILL_MEASURING_UNIT_NAME', 'buc'),
 
     /*
     |--------------------------------------------------------------------------
