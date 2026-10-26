@@ -26,7 +26,27 @@ class InvoiceDocumentService
     }
 
     /**
-     * Whether the customer can download an invoice PDF for the order.
+     * Whether a Lunar DomPDF invoice may be issued for the order's current status.
+     */
+    public function isLunarInvoiceEligible(Order $order): bool
+    {
+        if ($order->status === 'completed') {
+            return true;
+        }
+
+        $paymentOption = $order->meta['payment_option'] ?? null;
+
+        if (! is_string($paymentOption)) {
+            return false;
+        }
+
+        $expectedStatus = ((array) config('lunar.invoicing.statuses_by_payment_option', []))[$paymentOption] ?? null;
+
+        return filled($expectedStatus) && $order->status === $expectedStatus;
+    }
+
+    /**
+     * Whether an invoice PDF is available for the order (availability, not authorization).
      */
     public function hasCustomerInvoice(Order $order): bool
     {
@@ -38,7 +58,7 @@ class InvoiceDocumentService
             return false;
         }
 
-        return filled($order->meta['lunar_invoice_generated_at'] ?? null);
+        return $this->isLunarInvoiceEligible($order);
     }
 
     /**
@@ -92,11 +112,11 @@ class InvoiceDocumentService
     }
 
     /**
-     * Dispatch OrderInvoiceGenerated when the customer has not been emailed yet.
+     * Dispatch OrderInvoiceGenerated unless the customer has already been emailed.
      *
      * @param  string  $source  Billing provider value or `lunar`
      */
-    public function dispatchInvoiceGeneratedIfNeeded(Order $order, string $source): void
+    public function dispatchInvoiceGeneratedUnlessEmailed(Order $order, string $source): void
     {
         $order->refresh();
 

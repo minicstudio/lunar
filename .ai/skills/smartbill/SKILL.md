@@ -116,7 +116,7 @@ Global gates: `lunar.erp.enabled` and `lunar.erp.actions.billing` must include `
 4. Skip unless `status` is dirty.
 5. Skip unless new `status` is in `lunar.erp.{provider}.generate_invoice`.
 6. `ErpService::generateInvoice($provider, $order)`.
-7. On success, `InvoiceDocumentService::dispatchInvoiceGeneratedIfNeeded($order, $provider->value)` (skipped when `meta.invoice_emailed_at` is set). Storefront listens and emails the PDF.
+7. On success, `InvoiceDocumentService::dispatchInvoiceGeneratedUnlessEmailed($order, $provider->value)` (skipped when `meta.invoice_emailed_at` is set). Storefront listens and emails the PDF.
 8. Filament success notification only when `! $order->reference` (after generation).
 
 **Service** (`ErpService::generateInvoice`):

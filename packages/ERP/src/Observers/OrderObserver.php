@@ -69,7 +69,7 @@ class OrderObserver
         }
 
         app(InvoiceDocumentService::class)
-            ->dispatchInvoiceGeneratedIfNeeded($order, $provider->value);
+            ->dispatchInvoiceGeneratedUnlessEmailed($order, $provider->value);
 
         if (! $order->reference) {
             Notification::make()
