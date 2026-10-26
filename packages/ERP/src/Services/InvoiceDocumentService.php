@@ -140,21 +140,13 @@ class InvoiceDocumentService
      */
     protected function resolveErpPdf(Order $order): ?InvoicePdf
     {
-        $providers = $this->erpService->getAllowedProviders('actions', 'billing');
+        $providers = $this->erpService->getAllowedProviders('actions', 'billing')
+            ?: $this->erpService->getEnabledProviders();
 
-        if ($providers === []) {
-            $providers = $this->erpService->getEnabledProviders();
-        }
-
-        foreach ($providers as $provider) {
-            $pdf = $this->downloadErpPdf($provider, $order);
-
-            if ($pdf !== null) {
-                return $pdf;
-            }
-        }
-
-        return null;
+        return collect($providers)
+            ->map(fn (ErpProviderEnum $provider) => $this->downloadErpPdf($provider, $order))
+            ->filter()
+            ->first();
     }
 
     /**
@@ -162,24 +154,15 @@ class InvoiceDocumentService
      */
     protected function downloadErpPdf(ErpProviderEnum $provider, Order $order): ?InvoicePdf
     {
-        $response = $this->erpService->downloadInvoicePDF($provider, $order);
+        $content = $this->erpService->downloadInvoicePDF($provider, $order)?->body();
 
-        if ($response === null) {
+        if (blank($content)) {
             return null;
         }
-
-        $content = $response->body();
-
-        if ($content === '' || $content === null) {
-            return null;
-        }
-
-        $series = $order->meta['billing_series'];
-        $number = $order->meta['billing_number'];
 
         return new InvoicePdf(
             content: $content,
-            filename: "invoice-{$series}-{$number}.pdf",
+            filename: "invoice-{$order->meta['billing_series']}-{$order->meta['billing_number']}.pdf",
         );
     }
 
