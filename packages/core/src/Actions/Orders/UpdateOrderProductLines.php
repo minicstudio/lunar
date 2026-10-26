@@ -217,7 +217,7 @@ final class UpdateOrderProductLines extends AbstractAction
         $orderLine = $this->productLine($order, $change->orderLineId);
         $purchasable = $orderLine->purchasable;
 
-        if (! $purchasable instanceof ProductVariant) {
+        if (! $purchasable) {
             throw new OrderProductLinePurchasableMissingException;
         }
 
@@ -239,7 +239,7 @@ final class UpdateOrderProductLines extends AbstractAction
     {
         $variant = ProductVariant::query()->find($change->purchasableId);
 
-        if (! $variant instanceof ProductVariant || $variant->getMorphClass() !== $change->purchasableType) {
+        if (! $variant || $variant->getMorphClass() !== $change->purchasableType) {
             throw new OrderProductLinePurchasableMissingException;
         }
 
@@ -298,7 +298,7 @@ final class UpdateOrderProductLines extends AbstractAction
     {
         $orderLine = $order->productLines()->whereKey($orderLineId)->first();
 
-        if (! $orderLine instanceof OrderLine) {
+        if (! $orderLine) {
             throw new OrderProductLineNotFoundException;
         }
 
@@ -340,13 +340,13 @@ final class UpdateOrderProductLines extends AbstractAction
 
             $purchasable = $after[$key]['purchasable'] ?? $before[$key]['purchasable'] ?? null;
 
-            if (! $purchasable instanceof ProductVariant) {
+            if (! $purchasable) {
                 continue;
             }
 
             $variant = $purchasable->fresh();
 
-            if (! $variant instanceof ProductVariant) {
+            if (! $variant) {
                 continue;
             }
 
@@ -423,7 +423,7 @@ final class UpdateOrderProductLines extends AbstractAction
 
         $option = $cart->getShippingOption();
 
-        if (! $option instanceof ShippingOption || $option->getIdentifier() !== $identifier) {
+        if (! $option || $option->getIdentifier() !== $identifier) {
             throw new UnpricedOrderShippingException;
         }
     }
@@ -519,7 +519,7 @@ final class UpdateOrderProductLines extends AbstractAction
 
         $option = $cart->getShippingOption();
 
-        if (! $option instanceof ShippingOption) {
+        if (! $option) {
             return;
         }
 
