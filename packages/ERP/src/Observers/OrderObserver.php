@@ -68,9 +68,8 @@ class OrderObserver
             return;
         }
 
-        if ($provider === ErpProviderEnum::smartbill) {
-            app(InvoiceDocumentService::class)->dispatchInvoiceGeneratedIfNeeded($order, 'smartbill');
-        }
+        app(InvoiceDocumentService::class)
+            ->dispatchInvoiceGeneratedIfNeeded($order, $provider->value);
 
         if (! $order->reference) {
             Notification::make()

@@ -19,7 +19,7 @@ class LunarInvoiceObserver
             : null;
 
         if (
-            $invoiceDocuments->isSmartbillBillingActive()
+            $invoiceDocuments->isErpBillingActive()
             || ! $order->wasChanged('status')
             || filled($order->meta['lunar_invoice_generated_at'] ?? null)
             || (

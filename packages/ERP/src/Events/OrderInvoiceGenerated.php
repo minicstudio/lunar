@@ -14,7 +14,7 @@ class OrderInvoiceGenerated
     /**
      * Create a new event instance.
      *
-     * @param  'smartbill'|'lunar'  $source
+     * @param  string  $source  Billing provider value or `lunar`
      */
     public function __construct(
         public Order $order,

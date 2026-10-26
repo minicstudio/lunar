@@ -116,7 +116,7 @@ Global gates: `lunar.erp.enabled` and `lunar.erp.actions.billing` must include `
 4. Skip unless `status` is dirty.
 5. Skip unless new `status` is in `lunar.erp.{provider}.generate_invoice`.
 6. `ErpService::generateInvoice($provider, $order)`.
-7. On success for SmartBill, `InvoiceDocumentService::dispatchInvoiceGeneratedIfNeeded($order, 'smartbill')` (skipped when `meta.invoice_emailed_at` is set). Storefront listens and emails the PDF.
+7. On success, `InvoiceDocumentService::dispatchInvoiceGeneratedIfNeeded($order, $provider->value)` (skipped when `meta.invoice_emailed_at` is set). Storefront listens and emails the PDF.
 8. Filament success notification only when `! $order->reference` (after generation).
 
 **Service** (`ErpService::generateInvoice`):
@@ -143,7 +143,7 @@ Loads: `billingAddress.country`, `productLines.purchasable.values`, `productLine
 - `name`: translated product name + variant option values (default language)
 - `code`: `productLine->identifier`
 - `measuringUnitName`: from config
-- `price`: `0` for complimentary/BXGY lines (`meta.added_by_discount` or zero net unit); otherwise `unit_price_without_coupon->decimal`
+- `price`: `OrderLine::invoiceUnitPrice()->decimal` (zero when `isComplimentary()`)
 - `isTaxIncluded`: `config('lunar.pricing.stored_inclusive_of_tax', false)`
 - `taxName` / `taxPercentage`: from `tax_names[(string) (taxRate * 100)]` and `taxRate * 100`
 - `isService`: `false`

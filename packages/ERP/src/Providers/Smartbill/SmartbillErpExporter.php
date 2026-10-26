@@ -98,17 +98,13 @@ class SmartbillErpExporter implements ErpDataExporterInterface
                 $options = $variant->values->map(fn ($value) => $value->translate('name', $defaultLocale))->join(', ');
                 $displayName = $options ? $productName.' - '.$options : $productName;
 
-                $price = $this->isComplimentaryProductLine($productLine)
-                    ? 0.0
-                    : $productLine->unit_price_without_coupon->decimal;
-
                 return new SmartbillProduct(
                     name: $displayName,
                     code: $productLine->identifier,
                     measuringUnitName: $measuringUnitName,
                     currency: $order->currency_code,
                     quantity: $productLine->quantity,
-                    price: $price,
+                    price: $productLine->invoiceUnitPrice()->decimal,
                     isTaxIncluded: $isTaxIncluded,
                     taxName: $taxNames[(string) ($productLine->taxRate * 100)],
                     taxPercentage: $productLine->taxRate * 100,
@@ -181,22 +177,12 @@ class SmartbillErpExporter implements ErpDataExporterInterface
     }
 
     /**
-     * Whether the order line is a complimentary / BXGY gift line.
-     */
-    protected function isComplimentaryProductLine(mixed $productLine): bool
-    {
-        $netUnit = (int) (($productLine->total->value - $productLine->tax_total->value) / max(1, (int) $productLine->quantity));
-
-        return filled(data_get($productLine->meta, 'added_by_discount')) || $netUnit <= 0;
-    }
-
-    /**
      * Resolve the tax percentage for the coupon line from product lines when available.
      */
     protected function resolveCouponTaxPercentage(Order $order, float $defaultTaxPercentage): float
     {
         $productTaxPercentages = $order->productLines
-            ->reject(fn ($line) => $this->isComplimentaryProductLine($line))
+            ->reject(fn ($line) => $line->isComplimentary())
             ->map(fn ($line) => (float) ($line->taxRate * 100))
             ->filter(fn (float $percentage) => $percentage > 0)
             ->unique()

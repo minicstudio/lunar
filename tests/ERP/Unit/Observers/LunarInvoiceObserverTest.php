@@ -81,10 +81,11 @@ it('generates a lunar invoice for bank transfer on awaiting-bank-transfer', func
     });
 });
 
-it('skips lunar invoicing when smartbill billing is active', function () {
+it('skips lunar invoicing when erp billing is active', function () {
     Event::fake([OrderInvoiceGenerated::class]);
 
     Config::set('lunar.erp.enabled', true);
+    Config::set('lunar.erp.providers', ['smartbill']);
     Config::set('lunar.erp.smartbill.enabled', true);
     Config::set('lunar.erp.actions.billing', ['smartbill']);
 

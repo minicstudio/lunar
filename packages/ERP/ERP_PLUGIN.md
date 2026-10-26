@@ -213,7 +213,7 @@ and dispatches `Lunar\ERP\Events\OrderInvoiceGenerated` (SmartBill source) so th
 
 The admin order view shows a "Download invoice PDF" action when those values exist.
 
-When SmartBill billing is **not** active, Lunar DomPDF invoicing uses `config/lunar/invoicing.php` (`statuses_by_payment_option`, overridable via `LUNAR_INVOICE_STATUS_*` env vars) and the same `OrderInvoiceGenerated` event (source `lunar`).
+When no ERP provider is listed under `actions.billing`, Lunar DomPDF invoicing uses `config/lunar/invoicing.php` (`statuses_by_payment_option`, overridable via `LUNAR_INVOICE_STATUS_*` env vars) and the same `OrderInvoiceGenerated` event (source `lunar`). When billing providers are configured, successful `generateInvoice` dispatches the event with the provider value as `$source`.
 
 ## Console Commands
 
