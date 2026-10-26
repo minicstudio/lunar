@@ -21,7 +21,7 @@ use Lunar\Facades\Payments;
  * @property bool $success
  * @property string $type
  * @property string $driver
- * @property int $amount
+ * @property \Lunar\DataTypes\Price $amount
  * @property string $reference
  * @property string $status
  * @property ?string $notes
