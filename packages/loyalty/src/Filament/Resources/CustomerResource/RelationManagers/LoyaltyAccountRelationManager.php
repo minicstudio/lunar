@@ -2,17 +2,18 @@
 
 namespace Lunar\Loyalty\Filament\Resources\CustomerResource\RelationManagers;
 
-use Filament\Schemas\Schema;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Tables;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 use Lunar\Loyalty\Facades\Loyalty;
 use Lunar\Loyalty\Models\LoyaltyAccount;
+use Lunar\Loyalty\Models\LoyaltyTransaction;
 use Lunar\Loyalty\Services\LoyaltyAccountManager;
 
 class LoyaltyAccountRelationManager extends BaseRelationManager
@@ -49,7 +50,8 @@ class LoyaltyAccountRelationManager extends BaseRelationManager
         return $table
             ->heading(__('lunarpanel.loyalty::plugin.customer.transactions_heading'))
             ->query(
-                fn () => $this->getOwnerRecord()->loyaltyAccount?->transactions() ?? LoyaltyAccount::query()->whereRaw('1 = 0')
+                fn (): Builder => $this->getOwnerRecord()->loyaltyAccount?->transactions()->getQuery()
+                    ?? LoyaltyTransaction::query()->whereRaw('1 = 0')
             )
             ->columns([
                 TextColumn::make('created_at')
