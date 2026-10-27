@@ -282,6 +282,8 @@ return [
             'isBillingSameAsShipping' => 'Billing address same as shipping',
             'billing_series' => 'Invoice series',
             'billing_number' => 'Invoice number',
+            'lunar_invoice_generated_at' => 'Lunar invoice generated at',
+            'invoice_emailed_at' => 'Invoice emailed at',
         ],
         'shipping_types' => [
             'courier' => 'Courier',

@@ -87,15 +87,13 @@ class InvoiceDocumentService
 
     /**
      * Mark that the Lunar DomPDF invoice has been generated for the order.
+     *
+     * Persists via query update so a nested save/refresh does not clear
+     * wasChanged() for later Order observers (e.g. loyalty earn on completed).
      */
     public function markLunarInvoiceGenerated(Order $order): void
     {
-        Order::withoutEvents(function () use ($order) {
-            $meta = (array) $order->meta;
-            $meta['lunar_invoice_generated_at'] = now()->toIso8601String();
-            $order->meta = $meta;
-            $order->save();
-        });
+        $this->persistMetaKey($order, 'lunar_invoice_generated_at', $this->formattedMetaTimestamp());
     }
 
     /**
@@ -103,12 +101,7 @@ class InvoiceDocumentService
      */
     public function markInvoiceEmailed(Order $order): void
     {
-        Order::withoutEvents(function () use ($order) {
-            $meta = (array) $order->meta;
-            $meta['invoice_emailed_at'] = now()->toIso8601String();
-            $order->meta = $meta;
-            $order->save();
-        });
+        $this->persistMetaKey($order, 'invoice_emailed_at', $this->formattedMetaTimestamp());
     }
 
     /**
@@ -118,13 +111,39 @@ class InvoiceDocumentService
      */
     public function dispatchInvoiceGeneratedUnlessEmailed(Order $order, string $source): void
     {
-        $order->refresh();
-
-        if ($this->hasInvoiceBeenEmailed($order)) {
+        if ($this->hasInvoiceBeenEmailed($order->fresh() ?? $order)) {
             return;
         }
 
         OrderInvoiceGenerated::dispatch($order, $source);
+    }
+
+    /**
+     * Human-readable timestamp matching admin Date Placed (`Y-m-d h:i a`).
+     */
+    protected function formattedMetaTimestamp(): string
+    {
+        $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
+
+        return now()->timezone($timezone)->format('Y-m-d h:i a');
+    }
+
+    /**
+     * Persist a meta key without saving the in-memory order instance.
+     */
+    protected function persistMetaKey(Order $order, string $key, string $value): void
+    {
+        $meta = (array) $order->meta;
+        $meta[$key] = $value;
+
+        Order::withoutEvents(function () use ($order, $meta) {
+            Order::query()->whereKey($order->id)->update([
+                'meta' => json_encode($meta),
+            ]);
+        });
+
+        $order->meta = $meta;
+        $order->syncOriginalAttribute('meta');
     }
 
     /**

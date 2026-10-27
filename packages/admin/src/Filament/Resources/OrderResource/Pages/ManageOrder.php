@@ -342,6 +342,8 @@ class ManageOrder extends BaseViewRecord
             'isBillingSameAsShipping',
             'billing_series',
             'billing_number',
+            'lunar_invoice_generated_at',
+            'invoice_emailed_at',
         ]);
     }
 

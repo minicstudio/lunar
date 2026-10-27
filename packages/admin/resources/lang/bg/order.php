@@ -254,6 +254,8 @@ return [
             'isBillingSameAsShipping' => 'Адресът за фактуриране съвпада с адреса за доставка',
             'billing_series' => 'Серия на фактура',
             'billing_number' => 'Номер на фактура',
+            'lunar_invoice_generated_at' => 'Lunar фактура генерирана на',
+            'invoice_emailed_at' => 'Фактура изпратена по имейл на',
         ],
         'shipping_types' => [
             'courier' => 'Куриер',

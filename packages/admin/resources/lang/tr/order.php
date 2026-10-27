@@ -257,6 +257,8 @@ return [
             'isBillingSameAsShipping' => 'Fatura adresi teslimat adresiyle aynı',
             'billing_series' => 'Fatura serisi',
             'billing_number' => 'Fatura numarası',
+            'lunar_invoice_generated_at' => 'Lunar fatura oluşturulma zamanı',
+            'invoice_emailed_at' => 'Fatura e-posta ile gönderilme zamanı',
         ],
         'shipping_types' => [
             'courier' => 'Kurye',

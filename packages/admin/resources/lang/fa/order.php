@@ -254,6 +254,8 @@ return [
             'isBillingSameAsShipping' => 'آدرس صورتحساب با آدرس ارسال یکسان است',
             'billing_series' => 'سری فاکتور',
             'billing_number' => 'شماره فاکتور',
+            'lunar_invoice_generated_at' => 'فاکتور Lunar تولید شده در',
+            'invoice_emailed_at' => 'فاکتور ایمیل شده در',
         ],
         'shipping_types' => [
             'courier' => 'پیک',

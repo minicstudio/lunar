@@ -249,6 +249,8 @@ return [
             'isBillingSameAsShipping' => 'Địa chỉ thanh toán giống địa chỉ giao hàng',
             'billing_series' => 'Ký hiệu hóa đơn',
             'billing_number' => 'Số hóa đơn',
+            'lunar_invoice_generated_at' => 'Hóa đơn Lunar được tạo lúc',
+            'invoice_emailed_at' => 'Hóa đơn đã gửi email lúc',
         ],
         'shipping_types' => [
             'courier' => 'Chuyển phát nhanh',
