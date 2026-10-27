@@ -49,7 +49,7 @@ class SyncCartToMailchimp implements ShouldQueue
         $ecommerceService = app(MailchimpEcommerceService::class);
 
         // Only sync carts with associated users (logged in)
-        if (! $this->cart->user_id) {
+        if (! $this->cart->user_id || $this->cart->completedOrders()->exists()) {
             return;
         }
 

@@ -11,7 +11,10 @@ use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Lunar\Admin\Filament\Resources\CustomerResource;
+use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\LunarPanelManager;
+use Lunar\Events\OrderProductLinesRecalculated;
 use Lunar\Facades\ModelManifest;
 use Lunar\Loyalty\Console\AwardBirthdayPointsCommand;
 use Lunar\Loyalty\Console\ExpireLoyaltyPointsCommand;
@@ -19,6 +22,8 @@ use Lunar\Loyalty\Console\NotifyExpiringLoyaltyPointsCommand;
 use Lunar\Loyalty\Console\RecalculateBalancesCommand;
 use Lunar\Loyalty\Database\State\EnsureLoyaltyPermissions;
 use Lunar\Loyalty\Enums\LoyaltyTransactionType;
+use Lunar\Loyalty\Filament\Extensions\ManageOrderExtension;
+use Lunar\Loyalty\Listeners\AdjustLoyaltyForOrderProductLineEdit;
 use Lunar\Loyalty\Listeners\RegistrationListener;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Models\LoyaltyTransaction;
@@ -199,6 +204,11 @@ class LoyaltyServiceProvider extends ServiceProvider
         Customer::created(function (Customer $customer) {
             app(RegistrationListener::class)->handle($customer);
         });
+
+        Event::listen(
+            OrderProductLinesRecalculated::class,
+            AdjustLoyaltyForOrderProductLineEdit::class,
+        );
     }
 
     /**
@@ -296,8 +306,8 @@ class LoyaltyServiceProvider extends ServiceProvider
     {
         $this->app->resolving('lunar-panel', function (LunarPanelManager $panel): void {
             $panel->extensions([
-                \Lunar\Admin\Filament\Resources\CustomerResource::class => \Lunar\Loyalty\Filament\Resources\CustomerResource::class,
-                \Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder::class => \Lunar\Loyalty\Filament\Extensions\ManageOrderExtension::class,
+                CustomerResource::class => Filament\Resources\CustomerResource::class,
+                ManageOrder::class => ManageOrderExtension::class,
             ]);
         });
     }

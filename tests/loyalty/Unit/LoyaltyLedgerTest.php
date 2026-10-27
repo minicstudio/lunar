@@ -1,12 +1,15 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Lunar\Loyalty\Enums\LoyaltyTransactionType;
+use Lunar\Loyalty\Exceptions\InsufficientLoyaltyPointsException;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Services\LoyaltyLedger;
 use Lunar\Loyalty\Support\LoyaltyEventKey;
+use Lunar\Tests\Loyalty\TestCase;
 
-uses(\Lunar\Tests\Loyalty\TestCase::class);
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class);
+uses(RefreshDatabase::class);
 
 it('keeps cached balance consistent after earn spend expire and adjust', function () {
     $ledger = app(LoyaltyLedger::class);
@@ -69,6 +72,33 @@ it('allocates spend using fifo ordering', function () {
         ->and($spend->meta['allocations'])->toHaveCount(2);
 });
 
+it('reduces the spend row when a reversal returns part of it', function () {
+    $ledger = app(LoyaltyLedger::class);
+    $account = LoyaltyAccount::factory()->create();
+
+    $ledger->earn($account, 1000, 'earn:1');
+    $spend = $ledger->spend($account, 600, 'spend:1');
+
+    $ledger->adjust($account, 250, 'edit:1', ['spend_transaction' => $spend]);
+
+    $spend->refresh();
+    $account->refresh();
+
+    expect($spend->points)->toBe(350)
+        ->and($spend->meta['original_points'])->toBe(600)
+        ->and(collect($spend->meta['allocations'])->sum(fn (array $row): int => (int) $row['points']))->toBe(350)
+        ->and($account->balance)->toBe(650)
+        ->and($ledger->assertBalanceConsistent($account))->toBeTrue();
+
+    $ledger->adjust($account, (int) $spend->points, 'cancel:1', ['spend_transaction' => $spend]);
+    $account->refresh();
+
+    expect($account->balance)->toBe(1000)
+        ->and($account->getAvailableBalance())->toBe(1000)
+        ->and($ledger->assertBalanceConsistent($account))->toBeTrue()
+        ->and($spend->fresh()->points)->toBe(0);
+});
+
 it('restores lots on positive adjust from spend reversal', function () {
     $ledger = app(LoyaltyLedger::class);
     $account = LoyaltyAccount::factory()->create();
@@ -92,7 +122,7 @@ it('rejects spend when insufficient lot balance', function () {
     $ledger->earn($account, 100, 'earn:1');
 
     $ledger->spend($account, 200, 'spend:1');
-})->throws(\Lunar\Loyalty\Exceptions\InsufficientLoyaltyPointsException::class);
+})->throws(InsufficientLoyaltyPointsException::class);
 
 it('uses signed points for negative adjust clawback', function () {
     $ledger = app(LoyaltyLedger::class);

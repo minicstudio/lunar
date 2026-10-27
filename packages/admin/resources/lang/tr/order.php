@@ -287,6 +287,12 @@ return [
             'requires_capture' => 'Bu sipariş hala ödemenin tahsil edilmesini gerektiriyor.',
             'partially_refunded' => 'Bu sipariş kısmen iade edildi.',
             'refunded' => 'Bu sipariş iade edildi.',
+            'product_line_gates' => [
+                'paid' => 'Ödendi: bu sipariş değiştirilemez, çünkü ödendi.',
+                'erp' => 'ERP: bu sipariş değiştirilemez, çünkü ERP sistemine gönderildi.',
+                'invoice' => 'Fatura: bu sipariş değiştirilemez, çünkü bir faturası var.',
+                'awb' => 'AWB: bu sipariş değiştirilemez, çünkü bir AWB belgesi var.',
+            ],
         ],
     ],
 
@@ -350,6 +356,44 @@ return [
                 'error' => 'İade ile ilgili bir sorun oluştu',
                 'success' => 'İade başarılı',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Ürün ekle',
+            'product' => [
+                'label' => 'Ürün',
+            ],
+            'variant' => [
+                'label' => 'Varyant',
+            ],
+            'quantity' => [
+                'label' => 'Adet',
+            ],
+            'notification' => 'Ürün eklendi',
+        ],
+        'update_quantity' => [
+            'label' => 'Adedi güncelle',
+            'quantity' => [
+                'label' => 'Adet',
+            ],
+            'notification' => 'Adet güncellendi',
+        ],
+        'remove_product' => [
+            'label' => 'Ürünü kaldır',
+            'confirmation' => 'Bu ürün siparişten kaldırılsın mı?',
+            'notification' => 'Ürün kaldırıldı',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Bir sipariş en az bir ürün içermelidir.',
+            'unauthorized' => 'Bu siparişin ürünlerini değiştiremezsiniz.',
+            'cart' => 'Bu siparişin sepeti yok, bu nedenle ürünler değiştirilemez.',
+            'line' => 'Bu ürün satırı bulunamadı.',
+            'purchasable' => 'Bu varyant bulunamadı.',
+            'shipping' => 'Kargo seçeneği fiyatlandırılamadı, bu nedenle sipariş değişmedi.',
+            'locked' => 'Bu sipariş artık düzenlenemez.',
+            'not_purchasable' => 'Bu varyant satın alınamaz.',
+            'out_of_stock' => 'Bu varyant stokta yok.',
+            'insufficient_stock' => 'Bu miktar için yeterli stok yok.',
+            'missing_price' => 'Bu varyantın sipariş para biriminde fiyatı yok.',
         ],
     ],
 

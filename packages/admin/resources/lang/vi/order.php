@@ -279,6 +279,12 @@ return [
             'requires_capture' => 'Đơn hàng này vẫn cần thu tiền thanh toán',
             'partially_refunded' => 'Đơn hàng này đã được hoàn tiền một phần',
             'refunded' => 'Đơn hàng này đã được hoàn tiền',
+            'product_line_gates' => [
+                'paid' => 'Đã thanh toán: đơn hàng này không thể sửa vì đã được thanh toán.',
+                'erp' => 'ERP: đơn hàng này không thể sửa vì đã được gửi tới ERP.',
+                'invoice' => 'Hóa đơn: đơn hàng này không thể sửa vì đã có hóa đơn.',
+                'awb' => 'AWB: đơn hàng này không thể sửa vì đã có AWB.',
+            ],
         ],
     ],
 
@@ -333,6 +339,44 @@ return [
                 'error' => 'Có lỗi khi hoàn tiền',
                 'success' => 'Hoàn tiền thành công',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Thêm sản phẩm',
+            'product' => [
+                'label' => 'Sản phẩm',
+            ],
+            'variant' => [
+                'label' => 'Biến thể',
+            ],
+            'quantity' => [
+                'label' => 'Số lượng',
+            ],
+            'notification' => 'Đã thêm sản phẩm',
+        ],
+        'update_quantity' => [
+            'label' => 'Cập nhật số lượng',
+            'quantity' => [
+                'label' => 'Số lượng',
+            ],
+            'notification' => 'Đã cập nhật số lượng',
+        ],
+        'remove_product' => [
+            'label' => 'Xóa sản phẩm',
+            'confirmation' => 'Xóa sản phẩm này khỏi đơn hàng?',
+            'notification' => 'Đã xóa sản phẩm',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Đơn hàng phải giữ ít nhất một sản phẩm.',
+            'unauthorized' => 'Bạn không thể thay đổi sản phẩm của đơn hàng này.',
+            'cart' => 'Đơn hàng này không có giỏ hàng, nên không thể thay đổi sản phẩm.',
+            'line' => 'Không tìm thấy dòng sản phẩm đó.',
+            'purchasable' => 'Không tìm thấy biến thể đó.',
+            'shipping' => 'Không thể tính giá phương thức vận chuyển, nên đơn hàng được giữ nguyên.',
+            'locked' => 'Đơn hàng này không còn có thể chỉnh sửa.',
+            'not_purchasable' => 'Biến thể này không thể mua.',
+            'out_of_stock' => 'Biến thể này đã hết hàng.',
+            'insufficient_stock' => 'Không đủ tồn kho cho số lượng này.',
+            'missing_price' => 'Biến thể này không có giá theo tiền tệ của đơn hàng.',
         ],
     ],
 ];

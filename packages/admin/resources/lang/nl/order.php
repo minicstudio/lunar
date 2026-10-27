@@ -287,6 +287,12 @@ return [
             'requires_capture' => 'Deze bestelling moet nog worden geïncasseerd.',
             'partially_refunded' => 'Deze bestelling is gedeeltelijk terugbetaald.',
             'refunded' => 'Deze bestelling is terugbetaald.',
+            'product_line_gates' => [
+                'paid' => 'Betaald: deze bestelling kan niet worden gewijzigd omdat deze is betaald.',
+                'erp' => 'ERP: deze bestelling kan niet worden gewijzigd omdat deze naar het ERP is gestuurd.',
+                'invoice' => 'Factuur: deze bestelling kan niet worden gewijzigd omdat deze een factuur heeft.',
+                'awb' => 'AWB: deze bestelling kan niet worden gewijzigd omdat deze een AWB heeft.',
+            ],
         ],
     ],
 
@@ -346,6 +352,44 @@ return [
                 'error' => 'Er was een probleem met de terugbetaling',
                 'success' => 'Terugbetaling succesvol',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Product toevoegen',
+            'product' => [
+                'label' => 'Product',
+            ],
+            'variant' => [
+                'label' => 'Variant',
+            ],
+            'quantity' => [
+                'label' => 'Aantal',
+            ],
+            'notification' => 'Product toegevoegd',
+        ],
+        'update_quantity' => [
+            'label' => 'Aantal bijwerken',
+            'quantity' => [
+                'label' => 'Aantal',
+            ],
+            'notification' => 'Aantal bijgewerkt',
+        ],
+        'remove_product' => [
+            'label' => 'Product verwijderen',
+            'confirmation' => 'Dit product uit de bestelling verwijderen?',
+            'notification' => 'Product verwijderd',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Een bestelling moet minstens één product behouden.',
+            'unauthorized' => 'U kunt de producten van deze bestelling niet wijzigen.',
+            'cart' => 'Deze bestelling heeft geen winkelwagen, dus de producten kunnen niet worden gewijzigd.',
+            'line' => 'Die productregel is niet gevonden.',
+            'purchasable' => 'Die variant is niet gevonden.',
+            'shipping' => 'De verzendmethode kan niet worden geprijsd, dus de bestelling is ongewijzigd.',
+            'locked' => 'Deze bestelling kan niet meer worden bewerkt.',
+            'not_purchasable' => 'Deze variant kan niet worden gekocht.',
+            'out_of_stock' => 'Deze variant is niet op voorraad.',
+            'insufficient_stock' => 'Er is niet genoeg voorraad voor dit aantal.',
+            'missing_price' => 'Deze variant heeft geen prijs in de valuta van de bestelling.',
         ],
     ],
 
