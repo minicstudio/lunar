@@ -276,6 +276,12 @@ return [
             'requires_capture' => 'Za ovu narudžbu još uvijek je potrebno evidentirati plaćanje.',
             'partially_refunded' => 'Za ovu narudžbu je djelomično izvršen povrat sredstava',
             'refunded' => 'Ova narudžba je vraćena.',
+            'product_line_gates' => [
+                'paid' => 'Plaćeno: ova narudžba ne može se izmijeniti jer je plaćena.',
+                'erp' => 'ERP: ova narudžba ne može se izmijeniti jer je poslana u ERP.',
+                'invoice' => 'Račun: ova narudžba ne može se izmijeniti jer ima račun.',
+                'awb' => 'AWB: ova narudžba ne može se izmijeniti jer ima AWB.',
+            ],
         ],
     ],
 
@@ -335,6 +341,44 @@ return [
                 'error' => 'Došlo je do problema prilikom povrata',
                 'success' => 'Povrat uspješan',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Dodaj proizvod',
+            'product' => [
+                'label' => 'Proizvod',
+            ],
+            'variant' => [
+                'label' => 'Varijanta',
+            ],
+            'quantity' => [
+                'label' => 'Količina',
+            ],
+            'notification' => 'Proizvod dodan',
+        ],
+        'update_quantity' => [
+            'label' => 'Ažuriraj količinu',
+            'quantity' => [
+                'label' => 'Količina',
+            ],
+            'notification' => 'Količina ažurirana',
+        ],
+        'remove_product' => [
+            'label' => 'Ukloni proizvod',
+            'confirmation' => 'Ukloniti ovaj proizvod iz narudžbe?',
+            'notification' => 'Proizvod uklonjen',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Narudžba mora zadržati barem jedan proizvod.',
+            'unauthorized' => 'Ne možete mijenjati proizvode ove narudžbe.',
+            'cart' => 'Ova narudžba nema košaricu, pa se proizvodi ne mogu mijenjati.',
+            'line' => 'Ta stavka proizvoda nije pronađena.',
+            'purchasable' => 'Ta varijanta nije pronađena.',
+            'shipping' => 'Opcija dostave ne može se cijeniti, pa je narudžba ostala nepromijenjena.',
+            'locked' => 'Ova narudžba se više ne može uređivati.',
+            'not_purchasable' => 'Ova varijanta se ne može kupiti.',
+            'out_of_stock' => 'Ova varijanta nije na zalihi.',
+            'insufficient_stock' => 'Nema dovoljno zalihe za ovu količinu.',
+            'missing_price' => 'Ova varijanta nema cijenu u valuti narudžbe.',
         ],
     ],
 

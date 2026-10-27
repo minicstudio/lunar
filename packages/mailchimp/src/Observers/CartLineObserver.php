@@ -48,7 +48,7 @@ class CartLineObserver implements ShouldHandleEventsAfterCommit
         $cart = $cartLine->cart;
 
         // Only sync carts for logged-in users (abandoned cart tracking)
-        if (! $cart || ! $cart->user_id) {
+        if (! $cart || ! $cart->user_id || $cart->completedOrders()->exists()) {
             return;
         }
 

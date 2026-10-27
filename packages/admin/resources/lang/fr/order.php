@@ -287,6 +287,12 @@ return [
             'requires_capture' => 'Cette commande nécessite toujours que le paiement soit capturé.',
             'partially_refunded' => 'Cette commande a été partiellement remboursée.',
             'refunded' => 'Cette commande a été remboursée.',
+            'product_line_gates' => [
+                'paid' => 'Payée : cette commande ne peut pas être modifiée, car elle a été payée.',
+                'erp' => 'ERP : cette commande ne peut pas être modifiée, car elle a été envoyée vers ERP.',
+                'invoice' => 'Facture : cette commande ne peut pas être modifiée, car elle a une facture.',
+                'awb' => 'AWB : cette commande ne peut pas être modifiée, car elle a un AWB.',
+            ],
         ],
     ],
 
@@ -346,6 +352,44 @@ return [
                 'error' => 'Il y a eu un problème avec le remboursement',
                 'success' => 'Remboursement réussi',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Ajouter un produit',
+            'product' => [
+                'label' => 'Produit',
+            ],
+            'variant' => [
+                'label' => 'Variante',
+            ],
+            'quantity' => [
+                'label' => 'Quantité',
+            ],
+            'notification' => 'Produit ajouté',
+        ],
+        'update_quantity' => [
+            'label' => 'Modifier la quantité',
+            'quantity' => [
+                'label' => 'Quantité',
+            ],
+            'notification' => 'Quantité mise à jour',
+        ],
+        'remove_product' => [
+            'label' => 'Retirer le produit',
+            'confirmation' => 'Retirer ce produit de la commande ?',
+            'notification' => 'Produit retiré',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Une commande doit conserver au moins un produit.',
+            'unauthorized' => 'Vous ne pouvez pas modifier les produits de cette commande.',
+            'cart' => 'Cette commande n a pas de panier, ses produits ne peuvent donc pas être modifiés.',
+            'line' => 'Cette ligne de produit est introuvable.',
+            'purchasable' => 'Cette variante est introuvable.',
+            'shipping' => 'Le mode de livraison ne peut pas être tarifé, la commande est donc inchangée.',
+            'locked' => 'Cette commande ne peut plus être modifiée.',
+            'not_purchasable' => 'Cette variante ne peut pas être achetée.',
+            'out_of_stock' => 'Cette variante est en rupture de stock.',
+            'insufficient_stock' => 'Le stock est insuffisant pour cette quantité.',
+            'missing_price' => 'Cette variante n a pas de prix dans la devise de la commande.',
         ],
     ],
 

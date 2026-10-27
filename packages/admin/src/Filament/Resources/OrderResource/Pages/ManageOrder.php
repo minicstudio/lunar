@@ -24,6 +24,8 @@ use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
+use Lunar\Actions\Orders\GetOrderProductLineEditGates;
 use Lunar\Admin\Filament\Resources\CustomerResource;
 use Lunar\Admin\Filament\Resources\OrderResource;
 use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysOrderAddresses;
@@ -72,6 +74,12 @@ class ManageOrder extends BaseViewRecord
     protected string $view = 'lunarpanel::resources.order-resource.pages.manage-order';
 
     protected Width|string|null $maxContentWidth = 'screen-2xl';
+
+    #[On('order-product-lines-updated')]
+    public function refreshAfterProductLineEdit(): void
+    {
+        $this->record->refresh();
+    }
 
     public function getBreadcrumb(): string
     {
@@ -157,8 +165,6 @@ class ManageOrder extends BaseViewRecord
 
     /**
      * Build the default shipping metadata section.
-     *
-     * @return Section
      */
     public static function getDefaultShippingDetailsSection(): Section
     {
@@ -167,8 +173,6 @@ class ManageOrder extends BaseViewRecord
 
     /**
      * Apply extensions to the shipping metadata section.
-     *
-     * @return Component
      */
     public static function getShippingDetailsSection(): Component
     {
@@ -177,8 +181,6 @@ class ManageOrder extends BaseViewRecord
 
     /**
      * Build the default billing metadata section.
-     *
-     * @return Section
      */
     public static function getDefaultBillingDetailsSection(): Section
     {
@@ -187,8 +189,6 @@ class ManageOrder extends BaseViewRecord
 
     /**
      * Apply extensions to the billing metadata section.
-     *
-     * @return Component
      */
     public static function getBillingDetailsSection(): Component
     {
@@ -229,8 +229,6 @@ class ManageOrder extends BaseViewRecord
 
     /**
      * Build stacked personalization entries with product names, SKUs, quantities, and text.
-     *
-     * @return Section
      */
     public static function getDefaultPersonalizationSection(): Section
     {
@@ -265,8 +263,6 @@ class ManageOrder extends BaseViewRecord
 
     /**
      * Apply extensions to the personalization section.
-     *
-     * @return Component
      */
     public static function getPersonalizationSection(): Component
     {
@@ -353,7 +349,6 @@ class ManageOrder extends BaseViewRecord
      * Build a metadata section and hide it when no visible values are filled.
      *
      * @param  array<int, string>  $keys
-     * @return Section
      */
     protected static function getOrderMetaSection(string $name, array $keys): Section
     {
@@ -395,6 +390,12 @@ class ManageOrder extends BaseViewRecord
                 Group::make()
                     ->schema([
                         Group::make()->key('shouts')->schema([
+                            Shout::make('product_line_gates')
+                                ->type('warning')
+                                ->content(fn (): string => collect(GetOrderProductLineEditGates::run($this->record))
+                                    ->map(fn (string $gate): string => __('lunarpanel::order.infolist.alert.product_line_gates.'.$gate))
+                                    ->implode(' '))
+                                ->visible(fn (): bool => GetOrderProductLineEditGates::run($this->record) !== []),
                             Shout::make('draft_order')
                                 ->type('warning')
                                 ->content(__('lunarpanel::order.infolist.alert.draft_order'))

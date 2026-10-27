@@ -280,6 +280,12 @@ return [
             'requires_capture' => 'Diese Bestellung erfordert noch die Erfassung der Zahlung.',
             'partially_refunded' => 'Diese Bestellung wurde teilweise erstattet.',
             'refunded' => 'Diese Bestellung wurde erstattet.',
+            'product_line_gates' => [
+                'paid' => 'Bezahlt: diese Bestellung kann nicht geändert werden, weil sie bezahlt wurde.',
+                'erp' => 'ERP: diese Bestellung kann nicht geändert werden, weil sie an das ERP gesendet wurde.',
+                'invoice' => 'Rechnung: diese Bestellung kann nicht geändert werden, weil sie eine Rechnung hat.',
+                'awb' => 'AWB: diese Bestellung kann nicht geändert werden, weil sie einen AWB hat.',
+            ],
         ],
     ],
 
@@ -339,6 +345,44 @@ return [
                 'error' => 'Bei der Rückerstattung gab es ein Problem',
                 'success' => 'Rückerstattung erfolgreich',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Produkt hinzufügen',
+            'product' => [
+                'label' => 'Produkt',
+            ],
+            'variant' => [
+                'label' => 'Variante',
+            ],
+            'quantity' => [
+                'label' => 'Menge',
+            ],
+            'notification' => 'Produkt hinzugefügt',
+        ],
+        'update_quantity' => [
+            'label' => 'Menge aktualisieren',
+            'quantity' => [
+                'label' => 'Menge',
+            ],
+            'notification' => 'Menge aktualisiert',
+        ],
+        'remove_product' => [
+            'label' => 'Produkt entfernen',
+            'confirmation' => 'Dieses Produkt aus der Bestellung entfernen?',
+            'notification' => 'Produkt entfernt',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Eine Bestellung muss mindestens ein Produkt behalten.',
+            'unauthorized' => 'Sie können die Produkte dieser Bestellung nicht ändern.',
+            'cart' => 'Diese Bestellung hat keinen Warenkorb, daher können die Produkte nicht geändert werden.',
+            'line' => 'Diese Produktposition wurde nicht gefunden.',
+            'purchasable' => 'Diese Variante wurde nicht gefunden.',
+            'shipping' => 'Die Versandart kann nicht bepreist werden, daher blieb die Bestellung unverändert.',
+            'locked' => 'Diese Bestellung kann nicht mehr bearbeitet werden.',
+            'not_purchasable' => 'Diese Variante kann nicht gekauft werden.',
+            'out_of_stock' => 'Diese Variante ist nicht auf Lager.',
+            'insufficient_stock' => 'Für diese Menge ist nicht genug Bestand vorhanden.',
+            'missing_price' => 'Diese Variante hat keinen Preis in der Währung der Bestellung.',
         ],
     ],
 

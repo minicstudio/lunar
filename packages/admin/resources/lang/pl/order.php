@@ -284,6 +284,12 @@ return [
             'requires_capture' => 'To zamówienie nadal wymaga przechwycenia płatności.',
             'partially_refunded' => 'To zamówienie zostało częściowo zwrócone.',
             'refunded' => 'To zamówienie zostało zwrócone.',
+            'product_line_gates' => [
+                'paid' => 'Opłacone: tego zamówienia nie można zmienić, ponieważ zostało opłacone.',
+                'erp' => 'ERP: tego zamówienia nie można zmienić, ponieważ zostało wysłane do ERP.',
+                'invoice' => 'Faktura: tego zamówienia nie można zmienić, ponieważ ma fakturę.',
+                'awb' => 'AWB: tego zamówienia nie można zmienić, ponieważ ma AWB.',
+            ],
         ],
     ],
 
@@ -343,6 +349,44 @@ return [
                 'error' => 'Wystąpił problem ze zwróceniem płatności',
                 'success' => 'Płatność zwrócona',
             ],
+        ],
+        'add_product' => [
+            'label' => 'Dodaj produkt',
+            'product' => [
+                'label' => 'Produkt',
+            ],
+            'variant' => [
+                'label' => 'Wariant',
+            ],
+            'quantity' => [
+                'label' => 'Ilość',
+            ],
+            'notification' => 'Produkt dodany',
+        ],
+        'update_quantity' => [
+            'label' => 'Zmień ilość',
+            'quantity' => [
+                'label' => 'Ilość',
+            ],
+            'notification' => 'Ilość zaktualizowana',
+        ],
+        'remove_product' => [
+            'label' => 'Usuń produkt',
+            'confirmation' => 'Usunąć ten produkt z zamówienia?',
+            'notification' => 'Produkt usunięty',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'Zamówienie musi zachować co najmniej jeden produkt.',
+            'unauthorized' => 'Nie możesz zmieniać produktów w tym zamówieniu.',
+            'cart' => 'To zamówienie nie ma koszyka, więc produktów nie można zmienić.',
+            'line' => 'Nie znaleziono tej pozycji produktu.',
+            'purchasable' => 'Nie znaleziono tego wariantu.',
+            'shipping' => 'Opcji wysyłki nie można wycenić, więc zamówienie pozostało bez zmian.',
+            'locked' => 'Tego zamówienia nie można już edytować.',
+            'not_purchasable' => 'Tego wariantu nie można kupić.',
+            'out_of_stock' => 'Ten wariant jest niedostępny.',
+            'insufficient_stock' => 'Brak wystarczającego stanu dla tej ilości.',
+            'missing_price' => 'Ten wariant nie ma ceny w walucie zamówienia.',
         ],
     ],
 

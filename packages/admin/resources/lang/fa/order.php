@@ -283,6 +283,12 @@ return [
             'requires_capture' => 'This order still requires payment to be captured.',
             'partially_refunded' => 'This order has been partially refunded.',
             'refunded' => 'This order has been refunded.',
+            'product_line_gates' => [
+                'paid' => 'پرداخت‌شده: این سفارش قابل تغییر نیست چون پرداخت شده است.',
+                'erp' => 'ERP: این سفارش قابل تغییر نیست چون به ERP ارسال شده است.',
+                'invoice' => 'فاکتور: این سفارش قابل تغییر نیست چون فاکتور دارد.',
+                'awb' => 'AWB: این سفارش قابل تغییر نیست چون AWB دارد.',
+            ],
         ],
     ],
 
@@ -346,6 +352,44 @@ return [
                 'error' => 'There was a problem with the refund',
                 'success' => 'Refund successful',
             ],
+        ],
+        'add_product' => [
+            'label' => 'افزودن محصول',
+            'product' => [
+                'label' => 'محصول',
+            ],
+            'variant' => [
+                'label' => 'گونه',
+            ],
+            'quantity' => [
+                'label' => 'تعداد',
+            ],
+            'notification' => 'محصول اضافه شد',
+        ],
+        'update_quantity' => [
+            'label' => 'به‌روزرسانی تعداد',
+            'quantity' => [
+                'label' => 'تعداد',
+            ],
+            'notification' => 'تعداد به‌روز شد',
+        ],
+        'remove_product' => [
+            'label' => 'حذف محصول',
+            'confirmation' => 'این محصول از سفارش حذف شود؟',
+            'notification' => 'محصول حذف شد',
+        ],
+        'product_line_edit' => [
+            'last_line' => 'سفارش باید حداقل یک محصول را نگه دارد.',
+            'unauthorized' => 'نمی‌توانید محصولات این سفارش را تغییر دهید.',
+            'cart' => 'این سفارش سبد ندارد، بنابراین محصولات آن قابل تغییر نیستند.',
+            'line' => 'این ردیف محصول پیدا نشد.',
+            'purchasable' => 'این گونه پیدا نشد.',
+            'shipping' => 'گزینه ارسال قابل قیمت‌گذاری نیست، بنابراین سفارش بدون تغییر ماند.',
+            'locked' => 'این سفارش دیگر قابل ویرایش نیست.',
+            'not_purchasable' => 'این گونه قابل خرید نیست.',
+            'out_of_stock' => 'این گونه موجود نیست.',
+            'insufficient_stock' => 'موجودی برای این تعداد کافی نیست.',
+            'missing_price' => 'این گونه در واحد پول سفارش قیمت ندارد.',
         ],
     ],
 
