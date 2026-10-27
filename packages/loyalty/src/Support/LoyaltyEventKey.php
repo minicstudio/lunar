@@ -17,16 +17,24 @@ final class LoyaltyEventKey
     /**
      * Build a spend event key for an order.
      */
-    public static function orderSpend(int $orderId): string
+    public static function orderSpend(int $orderId, int $attempt = 1): string
     {
+        if ($attempt > 1) {
+            return "order:{$orderId}:attempt:{$attempt}:spend";
+        }
+
         return "order:{$orderId}:spend";
     }
 
     /**
      * Build a cancel spend reversal event key for an order.
      */
-    public static function orderCancelSpend(int $orderId): string
+    public static function orderCancelSpend(int $orderId, int $attempt = 1): string
     {
+        if ($attempt > 1) {
+            return "order:{$orderId}:attempt:{$attempt}:cancel:spend";
+        }
+
         return "order:{$orderId}:cancel:spend";
     }
 

@@ -213,6 +213,84 @@ it('can download order pdf', function () {
         ->assertFileDownloaded("Order-{$this->order->reference}.pdf");
 });
 
+it('does not offer a refund action for captured payments', function () {
+    Transaction::factory()->for($this->order)->create([
+        'type' => 'capture',
+        'success' => true,
+        'driver' => 'offline',
+        'amount' => 5000,
+    ]);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertActionDoesNotExist('refund');
+});
+
+it('lists the meta of BT iPay card payments not shown elsewhere on the transaction card', function () {
+    config([
+        'lunar.payments.types.bt-ipay' => ['driver' => 'offline'],
+        'lunar.panel.timezone' => 'Europe/Bucharest',
+    ]);
+
+    Transaction::factory()->for($this->order)->create([
+        'type' => 'capture',
+        'success' => true,
+        'driver' => 'bt-ipay',
+        'amount' => 12000,
+        'reference' => '111aa4b9-baeb-4676-bbde-c5e4d5070cce',
+        'meta' => [
+            'bt_order_number' => '00000042-1',
+            'bt_order_id' => '111aa4b9-baeb-4676-bbde-c5e4d5070cce',
+            'installments' => 6,
+            'payment_way' => 'CARD',
+            'action_code' => 0,
+            'approved_amount' => 12000,
+            'deposited_amount' => 12000,
+            'loyalty_amount' => 1800,
+            'reverse_requested_at' => '2026-10-21T10:15:00+00:00',
+            'reverse_trigger' => 'amount_mismatch',
+        ],
+    ]);
+
+    $currency = Currency::getDefault();
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.bt_order_number'), '00000042-1'])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.installments'), '6'])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.payment_way'), 'CARD'])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.action_code'), '0'])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.approved_amount'), (new Price(12000, $currency))->formatted])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.loyalty_amount'), (new Price(1800, $currency))->formatted])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.reverse_requested_at'), '2026-10-21 13:15:00'])
+        ->assertSeeInOrder([__('lunarpanel::order.transactions.meta.reverse_trigger'), 'amount_mismatch'])
+        ->assertDontSee('Bt Order Id')
+        ->assertDontSee('Deposited Amount');
+});
+
+it('does not list the transaction meta of other payment drivers', function () {
+    Transaction::factory()->for($this->order)->create([
+        'type' => 'capture',
+        'success' => true,
+        'driver' => 'offline',
+        'meta' => [
+            'installments' => 6,
+            'payment_way' => 'CARD',
+        ],
+    ]);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertDontSee(__('lunarpanel::order.transactions.meta.installments'))
+        ->assertDontSee(__('lunarpanel::order.transactions.meta.payment_way'));
+});
+
 it('can update order status', function () {
     $status = collect(config('lunar.orders.statuses', []))
         ->keys()

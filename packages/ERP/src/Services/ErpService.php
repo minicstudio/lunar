@@ -262,10 +262,6 @@ class ErpService
      */
     public function downloadInvoicePDF(ErpProviderEnum $provider, Order $order): ?Response
     {
-        if (! $this->isAllowed('actions', 'billing', $provider)) {
-            return null;
-        }
-
         $exporter = $this->getExporter($provider);
 
         return $exporter->downloadInvoicePDF($order);

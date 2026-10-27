@@ -74,6 +74,15 @@
             </strong>
         </div>
 
+        @if ($meta = $metaEntries($transaction))
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-1 px-4 py-2 bg-white dark:bg-gray-800 shadow rounded text-xs text-gray-600 dark:text-gray-400 ring-1 ring-gray-100 dark:ring-gray-700">
+                @foreach ($meta as $entry)
+                    <dt>{{ $entry['label'] }}</dt>
+                    <dd class="text-right font-medium text-gray-900 dark:text-gray-100">{{ $entry['value'] }}</dd>
+                @endforeach
+            </dl>
+        @endif
+
         <div class="px-4 py-2 bg-white dark:bg-gray-800 shadow rounded flex items-center justify-between text-gray-600 dark:text-gray-400 ring-1 ring-gray-100 dark:ring-gray-700">
             <div class="text-xs flex items-center gap-2">
                 <div>

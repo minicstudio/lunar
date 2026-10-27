@@ -5,6 +5,7 @@ namespace Lunar\Models\Contracts;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Lunar\DataTypes\Price;
 
 interface OrderLine
 {
@@ -22,4 +23,14 @@ interface OrderLine
      * Return the currency relationship.
      */
     public function currency(): HasOneThrough;
+
+    /**
+     * Whether the line is a complimentary / BXGY gift line.
+     */
+    public function isComplimentary(): bool;
+
+    /**
+     * Unit price for invoicing (zero when complimentary).
+     */
+    public function invoiceUnitPrice(): Price;
 }
