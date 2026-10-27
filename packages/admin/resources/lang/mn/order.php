@@ -251,6 +251,8 @@ return [
             'isBillingSameAsShipping' => 'Нэхэмжлэхийн хаяг хүргэлтийн хаягтай ижил',
             'billing_series' => 'Нэхэмжлэхийн цуврал',
             'billing_number' => 'Нэхэмжлэхийн дугаар',
+            'lunar_invoice_generated_at' => 'Lunar нэхэмжлэх үүсгэсэн',
+            'invoice_emailed_at' => 'Нэхэмжлэх имэйлээр илгээсэн',
         ],
         'shipping_types' => [
             'courier' => 'Курьер',

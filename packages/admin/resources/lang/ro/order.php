@@ -282,6 +282,8 @@ return [
             'isBillingSameAsShipping' => 'Adresa de facturare este aceeași cu cea de livrare',
             'billing_series' => 'Serie factură',
             'billing_number' => 'Număr factură',
+            'lunar_invoice_generated_at' => 'Factură Lunar generată la',
+            'invoice_emailed_at' => 'Factură trimisă pe e-mail la',
         ],
         'shipping_types' => [
             'courier' => 'Curier',

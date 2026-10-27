@@ -247,6 +247,8 @@ return [
             'isBillingSameAsShipping' => 'Adresa za naplatu ista je kao adresa za dostavu',
             'billing_series' => 'Serija računa',
             'billing_number' => 'Broj računa',
+            'lunar_invoice_generated_at' => 'Lunar račun generiran',
+            'invoice_emailed_at' => 'Račun poslan e-poštom',
         ],
         'shipping_types' => [
             'courier' => 'Kurirska služba',

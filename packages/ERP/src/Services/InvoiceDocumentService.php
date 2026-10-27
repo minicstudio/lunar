@@ -93,7 +93,7 @@ class InvoiceDocumentService
      */
     public function markLunarInvoiceGenerated(Order $order): void
     {
-        $this->persistMetaKey($order, 'lunar_invoice_generated_at', now()->toIso8601String());
+        $this->persistMetaKey($order, 'lunar_invoice_generated_at', $this->formattedMetaTimestamp());
     }
 
     /**
@@ -101,7 +101,7 @@ class InvoiceDocumentService
      */
     public function markInvoiceEmailed(Order $order): void
     {
-        $this->persistMetaKey($order, 'invoice_emailed_at', now()->toIso8601String());
+        $this->persistMetaKey($order, 'invoice_emailed_at', $this->formattedMetaTimestamp());
     }
 
     /**
@@ -116,6 +116,16 @@ class InvoiceDocumentService
         }
 
         OrderInvoiceGenerated::dispatch($order, $source);
+    }
+
+    /**
+     * Human-readable timestamp matching admin Date Placed (`Y-m-d h:i a`).
+     */
+    protected function formattedMetaTimestamp(): string
+    {
+        $timezone = config('lunar.panel.timezone') ?? config('app.timezone');
+
+        return now()->timezone($timezone)->format('Y-m-d h:i a');
     }
 
     /**

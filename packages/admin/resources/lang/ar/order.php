@@ -254,6 +254,8 @@ return [
             'isBillingSameAsShipping' => 'عنوان الفوترة مطابق لعنوان الشحن',
             'billing_series' => 'سلسلة الفاتورة',
             'billing_number' => 'رقم الفاتورة',
+            'lunar_invoice_generated_at' => 'تم إنشاء فاتورة Lunar في',
+            'invoice_emailed_at' => 'تم إرسال الفاتورة بالبريد في',
         ],
         'shipping_types' => [
             'courier' => 'التوصيل بالمندوب',

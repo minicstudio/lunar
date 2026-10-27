@@ -257,6 +257,8 @@ return [
             'isBillingSameAsShipping' => 'Dirección de facturación igual a la de envío',
             'billing_series' => 'Serie de factura',
             'billing_number' => 'Número de factura',
+            'lunar_invoice_generated_at' => 'Factura Lunar generada el',
+            'invoice_emailed_at' => 'Factura enviada por correo el',
         ],
         'shipping_types' => [
             'courier' => 'Mensajería',

@@ -87,3 +87,24 @@ it('exposes customer invoice when erp billing meta exists', function () {
 
     expect(app(InvoiceDocumentService::class)->hasCustomerInvoice($order))->toBeTrue();
 });
+
+it('stores invoice stamps in panel date format', function () {
+    Config::set('lunar.panel.timezone', 'Europe/Bucharest');
+    Config::set('app.timezone', 'UTC');
+
+    $order = Order::factory()->create([
+        'status' => 'completed',
+        'meta' => [],
+    ]);
+
+    $service = app(InvoiceDocumentService::class);
+    $service->markLunarInvoiceGenerated($order);
+    $service->markInvoiceEmailed($order);
+
+    expect($order->meta['lunar_invoice_generated_at'])
+        ->toMatch('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} (am|pm)$/')
+        ->and($order->meta['invoice_emailed_at'])
+        ->toMatch('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} (am|pm)$/')
+        ->and($order->meta['lunar_invoice_generated_at'])
+        ->toBe(now()->timezone('Europe/Bucharest')->format('Y-m-d h:i a'));
+});

@@ -257,6 +257,8 @@ return [
             'isBillingSameAsShipping' => 'Factuuradres gelijk aan verzendadres',
             'billing_series' => 'Factuurreeks',
             'billing_number' => 'Factuurnummer',
+            'lunar_invoice_generated_at' => 'Lunar-factuur gegenereerd op',
+            'invoice_emailed_at' => 'Factuur gemaild op',
         ],
         'shipping_types' => [
             'courier' => 'Koerier',

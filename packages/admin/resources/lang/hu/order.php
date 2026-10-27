@@ -276,6 +276,8 @@ return [
             'isBillingSameAsShipping' => 'Számlázási cím megegyezik a szállítási címmel',
             'billing_series' => 'Számlasorozat',
             'billing_number' => 'Számlaszám',
+            'lunar_invoice_generated_at' => 'Lunar számla generálva',
+            'invoice_emailed_at' => 'Számla elküldve e-mailben',
         ],
         'shipping_types' => [
             'courier' => 'Futárszolgálat',

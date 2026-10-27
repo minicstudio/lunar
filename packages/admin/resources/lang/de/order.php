@@ -250,6 +250,8 @@ return [
             'isBillingSameAsShipping' => 'Rechnungsadresse entspricht Lieferadresse',
             'billing_series' => 'Rechnungsserie',
             'billing_number' => 'Rechnungsnummer',
+            'lunar_invoice_generated_at' => 'Lunar-Rechnung erstellt am',
+            'invoice_emailed_at' => 'Rechnung per E-Mail gesendet am',
         ],
         'shipping_types' => [
             'courier' => 'Kurier',
