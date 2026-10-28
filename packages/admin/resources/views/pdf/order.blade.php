@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Order Invoice</title>
+    <title>Factură comandă</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <style>
         * {
@@ -75,8 +75,8 @@
                                     <h1>{{ config('app.name') }}</h1>
                                 </td>
                                 <td align="right" width="50%">
-                                    Invoice: {{ @$record->reference }} <br>
-                                    Created: {{ $record->placed_at }}<br>
+                                    Factură: {{ @$record->reference }} <br>
+                                    Creată: {{ $record->placed_at }}<br>
                                 </td>
                             </tr>
                         </table>
@@ -90,7 +90,7 @@
                         <table width="100%">
                             <tr>
                                 <td align="left" width="33%">
-                                    <h3>Billing</h3>
+                                    <h3>Adresa de facturare</h3>
                                     {{ $record->billingAddress->fullName }}<br>
                                     @if($record->billingAddress->company_name)
                                       {{ $record->billingAddress->company_name }}<br>
@@ -110,13 +110,13 @@
                                     {{ $record->billingAddress->postcode }}<br>
                                     {{ $record->billingAddress->country->name }}<br>
                                     @if($record->customer?->tax_identifier)
-                                        <p>Tax Identifier: {{ $record->customer?->tax_identifier }}</p>
+                                        <p>Cod fiscal: {{ $record->customer?->tax_identifier }}</p>
                                     @endif
                                 </td>
 
                                 @if ($record->shippingAddress)
                                 <td align="left" width="33%">
-                                    <h3>Shipping</h3>
+                                    <h3>Adresa de livrare</h3>
                                     {{ $record->shippingAddress->fullName }}<br>
                                     @if($record->shippingAddress->company_name)
                                       {{ $record->shippingAddress->company_name }}<br>
@@ -150,28 +150,28 @@
                 <thead class="lines-heading">
                     <tr width="100%">
                         <th width="35%">
-                            Product
+                            Produs
                         </th>
                         <th width="28%">
                             SKU
                         </th>
                         <th width="10%">
-                            Qty
+                            Cant.
                         </th>
                         <th width="15%">
-                            Unit Price
+                            Preț unitar
                         </th>
                         <th width="15%">
-                            Discount
+                            Reducere
                         </th>
                         <th width="15%">
-                            Tax Rate
+                            Cotă TVA
                         </th>
                         <th width="15%">
-                            Tax Amount
+                            Valoare TVA
                         </th>
                         <th width="12%">
-                            Line Total
+                            Total linie
                         </th>
                     </tr>
                 </thead>
@@ -210,14 +210,14 @@
                 <tfoot class="lines-footer">
                     <tr>
                         <td colspan="5"></td>
-                        <td colspan="2"><strong>Sub Total</strong></td>
+                        <td colspan="2"><strong>Subtotal</strong></td>
                         <td>{{ $record->sub_total->formatted }}</td>
                     </tr>
                     @foreach($record->shippingLines as $line)
                       <tr>
                         <td colspan="4"></td>
                         <td colspan="3">
-                          <strong>Shipping</strong><br>
+                          <strong>Livrare</strong><br>
                           <small>{{ strip_tags($line->description) }}</small>
                         </td>
                         <td>{{ $line->sub_total->formatted }}</td>
@@ -225,7 +225,7 @@
                     @endforeach
                     <tr>
                         <td colspan="5"></td>
-                        <td colspan="2"><strong>Tax</strong></td>
+                        <td colspan="2"><strong>Valoare TVA</strong></td>
                         <td>{{ $record->tax_total->formatted }}</td>
                     </tr>
                     <tr>
@@ -237,7 +237,7 @@
             </table>
 
             @if($record->notes)
-            <p><strong>Order Notes</strong><br>
+            <p><strong>Note comandă</strong><br>
             {{ $record->notes }}</p>
             <br>
             @endif
