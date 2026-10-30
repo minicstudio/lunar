@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Lang;
 use Lunar\Base\BaseModel;
 use Lunar\Base\Casts\DiscountBreakdown;
 use Lunar\Base\Casts\Price;
@@ -49,8 +50,8 @@ use Lunar\Exceptions\UnsupportedWeightUnitException;
  * @property ?array $meta
  * @property ?Carbon $created_at
  * @property ?Carbon $updated_at
- * @property-read \Lunar\DataTypes\Price $coupon_total
- * @property-read \Lunar\DataTypes\Price $coupon_total_without_tax
+ * @property-read PriceDataType $coupon_total
+ * @property-read PriceDataType $coupon_total_without_tax
  */
 class Order extends BaseModel implements Contracts\Order
 {
@@ -89,9 +90,19 @@ class Order extends BaseModel implements Contracts\Order
 
     public function getStatusLabelAttribute(): string
     {
-        $statuses = config('lunar.orders.statuses');
+        $label = config('lunar.orders.statuses.'.$this->status.'.label');
 
-        return $statuses[$this->status]['label'] ?? $this->status;
+        if (filled($label)) {
+            return __($label);
+        }
+
+        $key = 'lunarpanel::order.statuses.'.$this->status;
+
+        if (filled($this->status) && Lang::has($key)) {
+            return __($key);
+        }
+
+        return filled($this->status) ? $this->status : 'N/A';
     }
 
     /**

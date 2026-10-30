@@ -20,4 +20,7 @@ return [
     'invalid_fieldtype' => '":class" класс FieldType интерфэйсийг хэрэгжүүлээгүй байна.',
     'discounts.invalid_type' => 'Цуглуулга зөвхөн ":expected" агуулсан байх ёстой, ":actual" олдлоо',
     'disallow_multiple_cart_orders' => 'Сагс зөвхөн нэг захиалгатай холбогдох боломжтой.',
+    'order.unauthorized_split' => 'Та энэ захиалгыг хувааж чадахгүй.',
+    'order.invalid_split' => 'Захиалгыг хувааж чадсангүй.',
+    'order.locked_split' => 'Захиалгыг хувааж болохгүй.',
 ];

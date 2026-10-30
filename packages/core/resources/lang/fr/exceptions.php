@@ -25,4 +25,7 @@ return [
     'order.details' => 'Détails: :details',
     'order.failed_to_extract_error_details' => 'Échec de l\'extraction des informations détaillées sur l\'erreur.',
     'order.failed_to_download_awb_pdf' => 'Échec du téléchargement du PDF de l\'AWB.',
+    'order.unauthorized_split' => 'Vous ne pouvez pas fractionner cette commande.',
+    'order.invalid_split' => 'La commande n\'a pas pu être fractionnée.',
+    'order.locked_split' => 'La commande ne peut pas être fractionnée.',
 ];

@@ -25,4 +25,7 @@ return [
     'order.details' => 'Szczegóły: :details',
     'order.failed_to_extract_error_details' => 'Nie można było wyodrębnić szczegółowych informacji o błędzie.',
     'order.failed_to_download_awb_pdf' => 'Nie można było pobrać PDF AWB.',
+    'order.unauthorized_split' => 'Nie możesz podzielić tego zamówienia.',
+    'order.invalid_split' => 'Nie udało się podzielić zamówienia.',
+    'order.locked_split' => 'Zamówienia nie można podzielić.',
 ];

@@ -23,6 +23,14 @@ function gateOrder(array $attributes = []): Order
     return Order::factory()->create($attributes);
 }
 
+it('rejects a split order and does not reject an awaiting-payment order for that status', function () {
+    $split = gateOrder(['status' => 'split']);
+    $awaiting = gateOrder(['status' => 'awaiting-payment']);
+
+    expect(GetOrderProductLineEditGates::run($split))->toBe(['split'])
+        ->and(GetOrderProductLineEditGates::run($awaiting))->toBe([]);
+});
+
 it('fails each gate on its own', function () {
     $paid = gateOrder(['status' => 'payment-received']);
     $sent = gateOrder(['meta' => ['erp_sent_at' => now()->toIso8601String()]]);

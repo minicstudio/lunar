@@ -20,4 +20,7 @@ return [
     'invalid_fieldtype' => 'Klasa ":class" ne implementira sučelje FieldType.',
     'discounts.invalid_type' => 'Kolekcija smije sadržavati samo ":expected", pronađeno ":actual"',
     'disallow_multiple_cart_orders' => 'Košarica može imati samo jednu povezanu narudžbu.',
+    'order.unauthorized_split' => 'Ne možete podijeliti ovu narudžbu.',
+    'order.invalid_split' => 'Narudžba nije mogla biti podijeljena.',
+    'order.locked_split' => 'Narudžba se ne može podijeliti.',
 ];

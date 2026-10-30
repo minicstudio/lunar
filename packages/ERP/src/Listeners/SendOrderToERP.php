@@ -4,6 +4,7 @@ namespace Lunar\ERP\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Lunar\ERP\Events\OrderPlacedEvent;
+use Lunar\ERP\Events\SplitOfflineOrderReadyForErp;
 use Lunar\ERP\Services\ErpService;
 use Lunar\ERP\Support\OrderStatusUpdater;
 use Lunar\Models\Order;
@@ -40,7 +41,7 @@ class SendOrderToERP implements ShouldQueue
     /**
      * Handle the event.
      */
-    public function handle(OrderPlacedEvent $event): void
+    public function handle(OrderPlacedEvent|SplitOfflineOrderReadyForErp $event): void
     {
         if (! config('lunar.erp.enabled')) {
             return;
@@ -61,7 +62,7 @@ class SendOrderToERP implements ShouldQueue
     /**
      * Handle a queued listener failure after all attempts are exhausted.
      */
-    public function failed(OrderPlacedEvent $event, Throwable $exception): void
+    public function failed(OrderPlacedEvent|SplitOfflineOrderReadyForErp $event, Throwable $exception): void
     {
         $this->stashStatusBeforeFailure($event->order);
 

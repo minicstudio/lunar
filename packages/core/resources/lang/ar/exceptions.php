@@ -20,4 +20,7 @@ return [
     'invalid_fieldtype' => 'الصنف ":class" لا يطبق واجهة FieldType.',
     'discounts.invalid_type' => 'يجب أن تحتوي التشكيلة فقط على ":expected"، وتم العثور على ":actual".',
     'disallow_multiple_cart_orders' => 'لا يمكن ربط أكثر من طلب واحد بالسلة.',
+    'order.unauthorized_split' => 'لا يمكنك تقسيم هذا الطلب.',
+    'order.invalid_split' => 'تعذر تقسيم الطلب.',
+    'order.locked_split' => 'لا يمكن تقسيم الطلب.',
 ];

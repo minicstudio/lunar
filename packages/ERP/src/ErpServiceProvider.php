@@ -3,6 +3,7 @@
 namespace Lunar\ERP;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\LunarPanelManager;
@@ -11,11 +12,15 @@ use Lunar\ERP\Console\SyncErpOrdersCommand;
 use Lunar\ERP\Console\SyncErpProductsCommand;
 use Lunar\ERP\Console\SyncErpStockCommand;
 use Lunar\ERP\Console\SyncLocalitiesCommand;
+use Lunar\ERP\Events\SplitOfflineOrderReadyForErp;
 use Lunar\ERP\Filament\Extensions\ShippingExtension;
+use Lunar\ERP\Listeners\SendOrderToERP;
+use Lunar\ERP\Listeners\SendSplitOrdersToERP;
 use Lunar\ERP\Observers\LunarInvoiceObserver;
 use Lunar\ERP\Observers\OrderObserver;
 use Lunar\ERP\Services\ErpService;
 use Lunar\ERP\Services\InvoiceDocumentService;
+use Lunar\Events\OrdersSplit;
 use Lunar\Facades\ModelManifest;
 use Lunar\Models\Order;
 
@@ -59,6 +64,7 @@ class ErpServiceProvider extends ServiceProvider
         $this->registerErpProviders();
         $this->registerObservers();
         $this->registerSchedule();
+        $this->registerEventListeners();
     }
 
     /**
@@ -137,22 +143,22 @@ class ErpServiceProvider extends ServiceProvider
             $providerConfig = config($providerConfigPath);
 
             if (! isset($providerConfig['enabled']) || ! $providerConfig['enabled']) {
-                throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP provider [{$providerKey}] is added to the list of ERP providers but its config file is missing.");
+                throw new Exceptions\ErpInitializationException("ERP provider [{$providerKey}] is added to the list of ERP providers but its config file is missing.");
             }
 
             if (! isset($providerConfig['provider_class'], $providerConfig['client_class'])) {
-                throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP provider [{$providerKey}] is missing required classes.");
+                throw new Exceptions\ErpInitializationException("ERP provider [{$providerKey}] is missing required classes.");
             }
 
             $providerClass = $providerConfig['provider_class'];
             $clientClass = $providerConfig['client_class'];
 
             if (! class_exists($providerClass)) {
-                throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP provider class [{$providerClass}] not found.");
+                throw new Exceptions\ErpInitializationException("ERP provider class [{$providerClass}] not found.");
             }
 
             if (! class_exists($clientClass)) {
-                throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP client class [{$clientClass}] not found for provider [{$providerKey}].");
+                throw new Exceptions\ErpInitializationException("ERP client class [{$clientClass}] not found for provider [{$providerKey}].");
             }
 
             $this->app->bind($providerClass, function () use ($clientClass, $providerClass) {
@@ -187,12 +193,21 @@ class ErpServiceProvider extends ServiceProvider
                 }
 
                 if (empty($cronExpressions[$feature])) {
-                    throw new \Lunar\ERP\Exceptions\ErpInitializationException("ERP sync feature [{$feature}] has providers configured but no schedule expression.");
+                    throw new Exceptions\ErpInitializationException("ERP sync feature [{$feature}] has providers configured but no schedule expression.");
                 }
 
                 $schedule->command($command)->cron($cronExpressions[$feature]);
             }
         });
+    }
+
+    /**
+     * Queue offline split orders on the placement ERP listener. Unsplit orders stay on OrderPlacedEvent.
+     */
+    protected function registerEventListeners(): void
+    {
+        Event::listen(OrdersSplit::class, SendSplitOrdersToERP::class);
+        Event::listen(SplitOfflineOrderReadyForErp::class, SendOrderToERP::class);
     }
 
     /**

@@ -180,6 +180,33 @@ class Cart extends BaseModel implements Contracts\Cart
     public ?ShippingOption $shippingOptionOverride = null;
 
     /**
+     * Cart line id => unit price to use instead of the catalog price.
+     *
+     * Discounts, coupons, loyalty, and shipping still calculate from this price.
+     *
+     * @var array<int, array{value: int, unit_quantity: int}>
+     */
+    public array $unitPriceOverrides = [];
+
+    /**
+     * Keep a coupon that the original order already qualified for when a split
+     * target is below that coupon's minimum spend.
+     */
+    public bool $waiveCouponMinimumSpend = false;
+
+    /**
+     * Apply a fixed cart coupon up to the target's product total when the
+     * configured amount is larger.
+     */
+    public bool $capFixedCouponToProductTotal = false;
+
+    /**
+     * Re-apply a coupon that already appeared on a source order even when that
+     * discount is now expired or no longer limited to the assigned products.
+     */
+    public bool $preserveOrderCoupon = false;
+
+    /**
      * Additional shipping estimate meta data.
      */
     public array $shippingEstimateMeta = [];

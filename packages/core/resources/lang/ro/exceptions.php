@@ -25,4 +25,7 @@ return [
     'order.details' => 'Detalii: :details',
     'order.failed_to_extract_error_details' => 'Nu s-au putut extrage informații detaliate despre eroare.',
     'order.failed_to_download_awb_pdf' => 'Nu s-a putut descărca PDF-ul AWB.',
+    'order.unauthorized_split' => 'Nu puteți împărți această comandă.',
+    'order.invalid_split' => 'Comanda nu a putut fi împărțită.',
+    'order.locked_split' => 'Comanda nu poate fi împărțită.',
 ];

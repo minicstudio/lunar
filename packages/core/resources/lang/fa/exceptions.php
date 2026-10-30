@@ -20,4 +20,7 @@ return [
     'invalid_fieldtype' => 'کلاس ":class" واسط FieldType را پیاده‌سازی نمی‌کند.',
     'discounts.invalid_type' => 'مجموعه باید فقط شامل ":expected" باشد، ":actual" یافت شد.',
     'disallow_multiple_cart_orders' => 'برای هر سبد فقط یک سفارش می‌تواند وجود داشته باشد.',
+    'order.unauthorized_split' => 'نمی‌توانید این سفارش را تقسیم کنید.',
+    'order.invalid_split' => 'سفارش تقسیم نشد.',
+    'order.locked_split' => 'سفارش قابل تقسیم نیست.',
 ];

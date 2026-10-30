@@ -22,4 +22,7 @@ return [
     'order.details' => 'Details: :details',
     'order.failed_to_extract_error_details' => 'Fehlerdetails konnten nicht extrahiert werden.',
     'order.failed_to_download_awb_pdf' => 'Das Herunterladen des AWB-PDFs ist fehlgeschlagen.',
+    'order.unauthorized_split' => 'Sie können diese Bestellung nicht aufteilen.',
+    'order.invalid_split' => 'Die Bestellung konnte nicht aufgeteilt werden.',
+    'order.locked_split' => 'Die Bestellung kann nicht aufgeteilt werden.',
 ];

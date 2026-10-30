@@ -87,6 +87,12 @@ abstract class AbstractDiscountType implements DiscountTypeInterface
 
         $validMinSpend = $minSpend ? $minSpend < $cartValue : true;
 
+        $preserveUsedCoupon = $cart->preserveOrderCoupon && filled($conditionCoupon) && $validCoupon;
+
+        if ($cart->waiveCouponMinimumSpend && filled($conditionCoupon) && $validCoupon) {
+            $validMinSpend = true;
+        }
+
         if (filled($conditionCoupon) && $validCoupon && ! $validMinSpend) {
             $cart->coupon_code = null;
             $cart->save();
@@ -106,6 +112,12 @@ abstract class AbstractDiscountType implements DiscountTypeInterface
 
         if ($validMaxUses && $this->discount->max_uses_per_user) {
             $validMaxUses = $cart->user && ($this->usesByUser($cart->user) < $this->discount->max_uses_per_user);
+        }
+
+        // A split re-applies a coupon the original order already consumed.
+        // That use must not block the chosen target.
+        if ($preserveUsedCoupon) {
+            $validMaxUses = true;
         }
 
         return $validCoupon && $validMinSpend && $validMaxUses;

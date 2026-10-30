@@ -402,6 +402,10 @@ class DiscountManager implements DiscountManagerInterface
     {
         $this->discounts = $this->getDiscounts($cart);
 
+        if ($cart instanceof Cart && $cart->preserveOrderCoupon && filled($cart->coupon_code)) {
+            $this->ensurePreservedOrderCoupon($cart);
+        }
+
         $amountOffDiscounts = $this->discounts->reject(
             fn (Discount $discount) => $discount->type === BuyXGetY::class
         );
@@ -435,7 +439,9 @@ class DiscountManager implements DiscountManagerInterface
 
         // Apply manually applied coupon discount (non-BXGY; BXGY coupons are handled above via apply()).
         if ($cart->coupon_code) {
-            $discount = $amountOffDiscounts->firstWhere('coupon', $cart->coupon_code);
+            $discount = $amountOffDiscounts->first(
+                fn (Discount $candidate) => strtoupper((string) $candidate->coupon) === strtoupper((string) $cart->coupon_code)
+            );
 
             if ($discount) {
                 $discount->getType()->applyCouponForCart($cart);
@@ -443,6 +449,40 @@ class DiscountManager implements DiscountManagerInterface
         }
 
         return $cart;
+    }
+
+    /**
+     * Keep a coupon that already appeared on a source order available for split
+     * recalculation even when it is expired or no longer product-limited.
+     */
+    protected function ensurePreservedOrderCoupon(Cart $cart): void
+    {
+        $code = strtoupper((string) $cart->coupon_code);
+
+        $alreadyLoaded = $this->discounts->contains(
+            fn (Discount $discount) => strtoupper((string) $discount->coupon) === $code
+        );
+
+        if ($alreadyLoaded) {
+            return;
+        }
+
+        $discount = Discount::query()
+            ->whereNotNull('coupon')
+            ->whereRaw('UPPER(coupon) = ?', [$code])
+            ->with([
+                'discountables',
+                'collections',
+                'brands',
+                'customers',
+            ])
+            ->first();
+
+        if (! $discount || ! $discount->data || empty($discount->data)) {
+            return;
+        }
+
+        $this->discounts = $this->discounts->push($discount)->values();
     }
 
     /**
