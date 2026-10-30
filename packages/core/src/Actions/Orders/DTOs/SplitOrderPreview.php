@@ -1,6 +1,6 @@
 <?php
 
-namespace Lunar\Actions\Orders;
+namespace Lunar\Actions\Orders\DTOs;
 
 /**
  * Server-calculated preview. Opening it does not store a cart or an order.

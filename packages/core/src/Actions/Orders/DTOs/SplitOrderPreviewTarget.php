@@ -1,6 +1,6 @@
 <?php
 
-namespace Lunar\Actions\Orders;
+namespace Lunar\Actions\Orders\DTOs;
 
 /**
  * Calculated amounts for one target. Prices are minor units.

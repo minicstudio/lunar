@@ -4,6 +4,10 @@ namespace Lunar\Actions\Orders;
 
 use Illuminate\Support\Collection;
 use Lunar\Actions\AbstractAction;
+use Lunar\Actions\Orders\DTOs\SplitOrderPreview;
+use Lunar\Actions\Orders\DTOs\SplitOrderPreviewTarget;
+use Lunar\Actions\Orders\DTOs\SplitOrderRequest;
+use Lunar\Actions\Orders\DTOs\SplitOrderTarget;
 use Lunar\Base\DiscountManagerInterface;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;

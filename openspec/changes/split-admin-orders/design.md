@@ -47,7 +47,7 @@ Payment method is `meta.payment_option`. Captures and intents are `transactions`
 The save locks the order and rejects it when any of these is true:
 
 - status is `split` or `dispatched`
-- status is `payment-received`, or any successful capture exists
+- status is `payment-received`, the status history includes `payment-received`, or any successful capture exists
 - `meta.billing_series` and `meta.billing_number` are both filled
 - `meta.awb` is filled
 - `meta.erp_sent_at` is filled

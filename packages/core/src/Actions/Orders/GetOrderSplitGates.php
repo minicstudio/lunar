@@ -54,9 +54,14 @@ final class GetOrderSplitGates extends AbstractAction
         );
     }
 
+    /**
+     * Paid when the order is or was `payment-received`, or a successful capture exists.
+     *
+     * Bank transfer records payment as a status change and then often moves on, with no capture row.
+     */
     private function orderIsPaid(Order $order): bool
     {
-        if ($order->status === 'payment-received') {
+        if ($order->status === 'payment-received' || $this->orderWasPaymentReceived($order)) {
             return true;
         }
 
@@ -64,6 +69,11 @@ final class GetOrderSplitGates extends AbstractAction
             ->where('type', 'capture')
             ->where('success', true)
             ->exists();
+    }
+
+    private function orderWasPaymentReceived(Order $order): bool
+    {
+        return $order->getActivitiesByStatuses(['payment-received'])->isNotEmpty();
     }
 
     private function orderHasInvoice(Order $order): bool

@@ -22,12 +22,17 @@ The order screen MUST offer Split order to a staff member who may manage orders 
 
 ### Requirement: Unsafe orders cannot be split
 
-The system MUST reject a split when the order status is `split` or `dispatched`, when the status is `payment-received`, when a successful capture exists, when an invoice series and number exist, when an AWB exists, or when the order has been sent to the ERP. Stock that was already taken when the order was received MUST NOT reject the split. An order that has none of the rejecting conditions MUST be allowed, including `payment-offline` and an order whose stock was already decreased.
+The system MUST reject a split when the order status is `split` or `dispatched`, when the status is `payment-received` or the status history includes `payment-received`, when a successful capture exists, when an invoice series and number exist, when an AWB exists, or when the order has been sent to the ERP. Stock that was already taken when the order was received MUST NOT reject the split. An order that has none of the rejecting conditions MUST be allowed, including `payment-offline` and an order whose stock was already decreased.
 
 #### Scenario: Paid order is rejected
 
-- **WHEN** the status is `payment-received` or the order has a successful capture
+- **WHEN** the status is `payment-received`, the status history includes `payment-received`, or the order has a successful capture
 - **THEN** the split is rejected and no new order is created
+
+#### Scenario: Bank transfer moved on from payment received is rejected
+
+- **WHEN** the status was `payment-received` and is now another status, and the order has no successful capture
+- **THEN** the split is rejected
 
 #### Scenario: External document is rejected
 
@@ -41,7 +46,7 @@ The system MUST reject a split when the order status is `split` or `dispatched`,
 
 #### Scenario: Unpaid order without those records is allowed
 
-- **WHEN** the status is `awaiting-payment` or `payment-offline`, and the order has no successful capture, invoice, AWB, or ERP send timestamp
+- **WHEN** the status is `awaiting-payment` or `payment-offline`, the status history does not include `payment-received`, and the order has no successful capture, invoice, AWB, or ERP send timestamp
 - **THEN** the split gates do not reject it, whether or not stock was already decreased
 
 #### Scenario: Closed order is rejected

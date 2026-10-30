@@ -45,6 +45,22 @@ it('fails each split gate on its own', function (string $gate, array $attributes
     'erp timestamp' => ['erp', ['meta' => ['erp_sent_at' => '2026-10-28T10:00:00+00:00']]],
 ]);
 
+it('fails when payment-received is only in the status history', function () {
+    activity()->enableLogging();
+
+    $paid = splitGateOrder(['status' => 'awaiting-payment']);
+    $paid->update(['status' => 'payment-received']);
+    $paid->update(['status' => 'confirmed']);
+
+    $unpaid = splitGateOrder(['status' => 'awaiting-payment']);
+    $unpaid->update(['status' => 'confirmed']);
+
+    expect(GetOrderSplitGates::run($paid->fresh())->failed)->toBe(['paid'])
+        ->and(GetOrderSplitGates::run($unpaid->fresh())->failed)->toBe([]);
+
+    activity()->disableLogging();
+});
+
 it('fails when a successful capture exists and ignores an uncaptured intent', function () {
     $captured = splitGateOrder();
     $captured->transactions()->save(Transaction::factory()->make([

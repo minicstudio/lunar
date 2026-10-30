@@ -1,6 +1,6 @@
 <?php
 
-namespace Lunar\Actions\Orders;
+namespace Lunar\Actions\Orders\DTOs;
 
 /**
  * The assignment and choices for a split preview or confirm.
