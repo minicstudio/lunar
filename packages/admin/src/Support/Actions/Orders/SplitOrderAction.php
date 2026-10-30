@@ -10,13 +10,17 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Callout;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\Size;
 use Filament\Support\Enums\TextSize;
 use Filament\Support\Enums\Width;
@@ -188,9 +192,10 @@ class SplitOrderAction extends Action
                                     ->default(fn (): string => (string) Str::uuid()),
                                 Hidden::make('shipping_custom')
                                     ->default(false),
-                                Placeholder::make('preview')
-                                    ->hiddenLabel()
-                                    ->content(fn (Get $get): HtmlString => $this->previewContent($record, $get)),
+                                Group::make()
+                                    ->extraAttributes(['class' => 'split-order-preview'])
+                                    ->gap(false)
+                                    ->schema(fn (Get $get): array => $this->previewEntries($record, $get)),
                                 TextInput::make('shipping')
                                     ->label(__('lunarpanel::order.action.split_order.shipping'))
                                     ->numeric()
@@ -655,7 +660,10 @@ class SplitOrderAction extends Action
         return $options;
     }
 
-    private function previewContent(Order $order, Get $get): HtmlString
+    /**
+     * @return list<Component>
+     */
+    private function previewEntries(Order $order, Get $get): array
     {
         $key = (string) $get('key');
         $data = $this->mountedData();
@@ -664,8 +672,6 @@ class SplitOrderAction extends Action
             fn (SplitOrderPreviewTarget $item): bool => $item->key === $key,
         );
 
-        $blocks = [];
-        $total = null;
         $names = [];
 
         foreach (array_values($data['lines'] ?? []) as $line) {
@@ -677,22 +683,29 @@ class SplitOrderAction extends Action
         }
 
         if ($target instanceof SplitOrderPreviewTarget && $target->lines !== []) {
-            foreach ($target->lines as $line) {
+            $entries = [];
+
+            foreach (array_values($target->lines) as $index => $line) {
                 $lineId = (int) ($line['order_line_id'] ?? 0);
                 $name = $names[$lineId] ?? (string) $line['description'];
-                $details = [[
-                    'label' => e(__('lunarpanel::order.infolist.unit_price.label')),
-                    'amount' => e($this->moneyLabel($order, (int) $line['unit_price'])),
-                ]];
+                $details = [
+                    $this->previewAmountEntry(
+                        "preview_{$index}_unit",
+                        __('lunarpanel::order.infolist.unit_price.label'),
+                        $this->moneyLabel($order, (int) $line['unit_price']),
+                        muted: true,
+                    ),
+                ];
                 $discount = (int) ($line['discount'] ?? 0);
                 $couponDiscount = min($discount, max(0, (int) ($line['coupon_discount'] ?? 0)));
                 $productDiscount = $discount - $couponDiscount;
 
                 if ($productDiscount > 0) {
-                    $details[] = [
-                        'label' => e(__('lunarpanel::order.infolist.discount_breakdown.discount')),
-                        'amount' => e($this->moneyLabel($order, -$productDiscount)),
-                    ];
+                    $details[] = $this->previewAmountEntry(
+                        "preview_{$index}_discount",
+                        __('lunarpanel::order.infolist.discount_breakdown.discount'),
+                        $this->moneyLabel($order, -$productDiscount),
+                    );
                 }
 
                 if ($couponDiscount > 0) {
@@ -701,62 +714,79 @@ class SplitOrderAction extends Action
                         ? __('lunarpanel::order.infolist.discount_breakdown.coupon_with_name', ['name' => $couponCode])
                         : __('lunarpanel::order.infolist.discount_breakdown.coupon');
 
-                    $details[] = [
-                        'label' => e($couponLabel),
-                        'amount' => e($this->moneyLabel($order, -$couponDiscount)),
-                    ];
+                    $details[] = $this->previewAmountEntry(
+                        "preview_{$index}_coupon",
+                        $couponLabel,
+                        $this->moneyLabel($order, -$couponDiscount),
+                    );
                 }
 
-                $blocks[] = [
-                    'label' => e($name.' × '.$line['quantity']),
-                    'amount' => e($this->moneyLabel($order, (int) $line['sub_total'])),
-                    'details' => $details,
-                ];
+                $entries[] = Group::make([
+                    TextEntry::make("preview_{$index}")
+                        ->label($name.' × '.$line['quantity'])
+                        ->inlineLabel()
+                        ->alignEnd()
+                        ->state($this->moneyLabel($order, (int) $line['sub_total'])),
+                    ...$details,
+                ])->gap(false);
             }
 
-            $total = e($this->moneyLabel($order, (int) $target->total));
-        } else {
-            foreach ($this->assignedLineLabels($data, $key) as $label) {
-                $blocks[] = [
-                    'label' => e($label),
-                    'amount' => '',
-                    'details' => [],
-                ];
-            }
+            $entries[] = TextEntry::make('preview_shipping')
+                ->label(__('lunarpanel::order.action.split_order.shipping'))
+                ->inlineLabel()
+                ->alignEnd()
+                ->state($this->moneyLabel($order, (int) $target->shippingMinor));
+            $entries[] = TextEntry::make('preview_total')
+                ->label(__('lunarpanel::order.action.split_order.order_total'))
+                ->inlineLabel()
+                ->alignEnd()
+                ->weight(FontWeight::Bold)
+                ->extraEntryWrapperAttributes(['class' => 'split-order-preview-total'])
+                ->state($this->moneyLabel($order, (int) $target->total));
+
+            return $entries;
         }
 
-        if ($blocks === []) {
-            return new HtmlString(
-                '<p class="text-sm text-gray-500 dark:text-gray-400">'.e(__('lunarpanel::order.action.split_order.empty_preview')).'</p>',
-            );
+        $entries = [];
+
+        foreach ($this->assignedLineLabels($data, $key) as $index => $label) {
+            $entries[] = TextEntry::make('preview_'.$index)
+                ->label($label)
+                ->inlineLabel()
+                ->alignEnd()
+                ->placeholder('');
         }
 
-        $html = '<div class="text-sm">';
-
-        foreach ($blocks as $block) {
-            $html .= '<div style="margin-bottom: 8px">';
-            $html .= '<div class="flex items-baseline justify-between gap-x-4"><span>'.$block['label'].'</span><span>'.$block['amount'].'</span></div>';
-
-            foreach ($block['details'] as $detail) {
-                $html .= '<div class="flex items-baseline justify-between gap-x-4 ps-3 text-gray-500 dark:text-gray-400"><span>'
-                    .$detail['label'].'</span><span>'.$detail['amount'].'</span></div>';
-            }
-
-            $html .= '</div>';
+        if ($entries === []) {
+            return [
+                Text::make(__('lunarpanel::order.action.split_order.empty_preview'))
+                    ->size(TextSize::Small),
+            ];
         }
 
-        if ($total !== null && $target instanceof SplitOrderPreviewTarget) {
-            $html .= '<div class="flex items-baseline justify-between gap-x-4" style="margin-bottom: 8px"><span>'
-                .e(__('lunarpanel::order.action.split_order.shipping'))
-                .'</span><span>'.e($this->moneyLabel($order, (int) $target->shippingMinor)).'</span></div>';
-            $html .= '<div class="flex items-baseline justify-between gap-x-4 font-semibold" style="font-size: 1rem"><span>'
-                .e(__('lunarpanel::order.action.split_order.order_total'))
-                .'</span><span>'.$total.'</span></div>';
+        return $entries;
+    }
+
+    private function previewAmountEntry(string $name, string $label, string $amount, bool $muted = false): TextEntry
+    {
+        $classes = 'ps-3';
+
+        if ($muted) {
+            $classes .= ' split-order-preview-detail split-order-preview-unit';
         }
 
-        $html .= '</div>';
+        $entry = TextEntry::make($name)
+            ->label($label)
+            ->inlineLabel()
+            ->alignEnd()
+            ->extraEntryWrapperAttributes(['class' => $classes])
+            ->state($amount);
 
-        return new HtmlString($html);
+        if ($muted) {
+            $entry->color('gray');
+        }
+
+        return $entry;
     }
 
     /**

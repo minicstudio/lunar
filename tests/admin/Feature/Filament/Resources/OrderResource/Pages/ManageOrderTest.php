@@ -930,7 +930,6 @@ it('updates the preview shipping line and order total when shipping changes', fu
     $lower = $page->getMountedActionModalHtml();
 
     expect($higher)->toContain('50.00 '.$currency->code)
-        ->and($higher)->toContain('font-size: 1rem')
         ->and($lower)->toContain('20.00 '.$currency->code)
         ->and($lower)->not->toContain('50.00 '.$currency->code)
         ->and(previewOrderTotal($higher, $totalLabel))->not->toBe(previewOrderTotal($lower, $totalLabel));
@@ -1224,13 +1223,48 @@ it('hides edits on a split order and links the related orders', function () {
 
 function previewOrderTotal(string $html, string $label): ?string
 {
-    $pattern = '/'.preg_quote($label, '/').'<\/span><span>([^<]+)/';
+    return previewEntryAmounts($html, $label)[0] ?? null;
+}
 
-    if (! preg_match($pattern, $html, $matches)) {
-        return null;
+/**
+ * @return list<string>
+ */
+function previewEntryAmounts(string $html, string $label): array
+{
+    $document = new DOMDocument;
+    $document->loadHTML($html, LIBXML_NOERROR);
+    $xpath = new DOMXPath($document);
+    $labels = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " fi-in-entry-label ")]');
+    $amounts = [];
+
+    if ($labels === false) {
+        return [];
     }
 
-    return $matches[1];
+    foreach ($labels as $node) {
+        if (! $node instanceof DOMElement || trim($node->textContent) !== $label) {
+            continue;
+        }
+
+        $entry = $node->parentNode;
+
+        while ($entry instanceof DOMElement && ! in_array('fi-in-entry', preg_split('/\s+/', $entry->getAttribute('class')) ?: [], true)) {
+            $entry = $entry->parentNode;
+        }
+
+        if (! $entry instanceof DOMElement) {
+            continue;
+        }
+
+        $content = $xpath->query('.//*[contains(@class, "fi-in-entry-content")]', $entry);
+        $amount = $content !== false ? $content->item(0) : null;
+
+        if ($amount instanceof DOMNode) {
+            $amounts[] = trim($amount->textContent);
+        }
+    }
+
+    return $amounts;
 }
 
 function alignedOrderLink(string $html, string $reference): bool
@@ -1401,13 +1435,16 @@ it('offers the stored unit price when a split quantity loses its bulk price', fu
         ->assertMountedActionModalSee($current)
         ->assertMountedActionModalSee($changed);
 
-    $unitPrice = e(__('lunarpanel::order.infolist.unit_price.label'));
+    $unitPrice = __('lunarpanel::order.infolist.unit_price.label');
+    $originalAmounts = implode(' ', previewEntryAmounts($component->getMountedActionModalHtml(), $unitPrice));
 
-    expect($component->getMountedActionModalHtml())->toContain($unitPrice.'</span><span>8.00')
-        ->and($component->getMountedActionModalHtml())->not->toContain($unitPrice.'</span><span>10.00');
+    expect($originalAmounts)->toContain('8.00')
+        ->and($originalAmounts)->not->toContain('10.00');
 
     $component->set('mountedActions.0.data.lines.'.$lineKey.'.price_source', 'current');
 
-    expect($component->getMountedActionModalHtml())->toContain($unitPrice.'</span><span>10.00')
-        ->and($component->getMountedActionModalHtml())->not->toContain($unitPrice.'</span><span>8.00');
+    $currentAmounts = implode(' ', previewEntryAmounts($component->getMountedActionModalHtml(), $unitPrice));
+
+    expect($currentAmounts)->toContain('10.00')
+        ->and($currentAmounts)->not->toContain('8.00');
 });

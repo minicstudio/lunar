@@ -82,6 +82,28 @@
             display: block;
             margin-bottom: 0.375rem;
         }
+
+        .split-order-preview > .fi-sc {
+            gap: 0.5rem;
+        }
+
+        .split-order-preview-unit.fi-in-entry {
+            margin-bottom: 1rem;
+        }
+
+        .split-order-preview-total.fi-in-entry .fi-in-entry-label,
+        .split-order-preview-total.fi-in-entry .fi-in-text-item {
+            font-size: calc(0.875rem + 2px);
+        }
+
+        .split-order-preview-detail.fi-in-entry .fi-in-entry-label {
+            font-weight: 400;
+            color: var(--color-gray-500);
+        }
+
+        .dark .split-order-preview-detail.fi-in-entry .fi-in-entry-label {
+            color: var(--color-gray-400);
+        }
     </style>
     {{ $this->content }}
 </x-filament-panels::page>
