@@ -10,6 +10,7 @@ use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Support\Enums\IconPosition;
 use Illuminate\Support\Facades\Lang;
+use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\Support\OrderStatus;
 use Lunar\Models\Order;
 
@@ -30,8 +31,6 @@ trait DisplaysOrderSummary
 
     /**
      * Build right-aligned entries for visible customer metadata.
-     *
-     * @return Group
      */
     public static function getCustomerDetailsEntry(): Group
     {
@@ -67,6 +66,8 @@ trait DisplaysOrderSummary
             'ga4_session_id',
             'ga4_engagement_time_msec',
             'gift_slot_allocations',
+            'split_into_order_ids',
+            'split_from_order_id',
         ]);
     }
 
@@ -85,8 +86,6 @@ trait DisplaysOrderSummary
 
     /**
      * Build an infolist entry with a translated label and type-appropriate formatting.
-     *
-     * @return Entry
      */
     protected static function getOrderMetaEntry(string $key, mixed $value): Entry
     {
@@ -136,8 +135,6 @@ trait DisplaysOrderSummary
 
     /**
      * Resolve a metadata label using its panel translation when available.
-     *
-     * @return string
      */
     protected static function getOrderMetaLabel(string $key): string
     {
@@ -148,8 +145,6 @@ trait DisplaysOrderSummary
 
     /**
      * Translate known shipping and payment values while preserving unrecognized values.
-     *
-     * @return mixed
      */
     protected static function formatOrderMetaValue(string $key, mixed $value): mixed
     {
@@ -262,7 +257,50 @@ trait DisplaysOrderSummary
             static::getOrderSummaryChannelEntry(),
             static::getOrderSummaryCreatedAtEntry(),
             static::getOrderSummaryPlacedAtEntry(),
+            static::getSplitFromEntry(),
+            static::getSplitIntoEntry(),
         ]);
+    }
+
+    public static function getSplitFromEntry(): TextEntry
+    {
+        return TextEntry::make('split_from_order')
+            ->label(__('lunarpanel::order.infolist.split_from.label'))
+            ->html()
+            ->alignEnd()
+            ->visible(fn (?Order $record): bool => filled(data_get($record?->meta, 'split_from_order_id')))
+            ->state(fn (?Order $record): string => static::relatedOrderLinks(data_get($record?->meta, 'split_from_order_id')));
+    }
+
+    public static function getSplitIntoEntry(): TextEntry
+    {
+        return TextEntry::make('split_into_orders')
+            ->label(__('lunarpanel::order.infolist.split_into.label'))
+            ->html()
+            ->alignEnd()
+            ->visible(fn (?Order $record): bool => filled(data_get($record?->meta, 'split_into_order_ids')))
+            ->state(fn (?Order $record): string => static::relatedOrderLinks(data_get($record?->meta, 'split_into_order_ids')));
+    }
+
+    protected static function relatedOrderLinks(mixed $ids): string
+    {
+        $ids = array_values(array_filter(is_array($ids) ? $ids : [$ids]));
+
+        if ($ids === []) {
+            return '';
+        }
+
+        return Order::query()
+            ->whereIn('id', $ids)
+            ->orderBy('id')
+            ->get()
+            ->map(function (Order $order): string {
+                $url = e(ManageOrder::getUrl(['record' => $order]));
+                $label = e($order->reference ?: (string) $order->id);
+
+                return '<a href="'.$url.'">'.$label.'</a>';
+            })
+            ->implode(', ');
     }
 
     public static function getDefaultOrderSummaryInfolist(): Section

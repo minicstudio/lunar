@@ -30,6 +30,10 @@ final class GetOrderProductLineEditGates extends AbstractAction
         /** @var Order $order */
         $failed = [];
 
+        if ($order->status === 'split') {
+            $failed[] = 'split';
+        }
+
         if ($this->orderIsPaid($order)) {
             $failed[] = 'paid';
         }

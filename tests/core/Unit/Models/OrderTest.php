@@ -391,6 +391,21 @@ test('can retrieve order lines in ascending id order', function () {
         ->toBe($expectedOrder);
 });
 
+test('split status is excluded from reports and is not a processing status', function () {
+    expect(config('lunar.orders.statuses.split'))
+        ->label->toBe('lunarpanel::order.statuses.split')
+        ->mailers->toBe([])
+        ->notifications->toBe([])
+        ->exclude_from_reports->toBeTrue();
+
+    $split = Order::factory()->create(['status' => 'split']);
+    $open = Order::factory()->create(['status' => 'awaiting-payment']);
+
+    expect(Order::reportable()->pluck('id')->all())
+        ->not->toContain($split->id)
+        ->and(Order::reportable()->pluck('id')->all())->toContain($open->id);
+});
+
 test('test order status is configured and excluded from reports', function () {
     expect(config('lunar.orders.statuses.test-order'))
         ->label->toBe('Test Order')

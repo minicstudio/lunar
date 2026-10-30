@@ -25,4 +25,7 @@ return [
     'order.details' => 'Részletek: :details',
     'order.failed_to_extract_error_details' => 'Nem sikerült részletes hiba információt kinyerni.',
     'order.failed_to_download_awb_pdf' => 'Nem sikerült letölteni az AWB PDF-et.',
+    'order.unauthorized_split' => 'Nincs jogosultsága a rendelés bontásához.',
+    'order.invalid_split' => 'A rendelést nem sikerült szétbontani.',
+    'order.locked_split' => 'A rendelés nem bontható szét.',
 ];

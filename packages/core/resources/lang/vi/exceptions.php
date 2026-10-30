@@ -25,4 +25,7 @@ return [
     'order.details' => 'Chi tiết: :details',
     'order.failed_to_extract_error_details' => 'Không thể trích xuất thông tin lỗi chi tiết.',
     'order.failed_to_download_awb_pdf' => 'Không thể tải xuống PDF của AWB.',
+    'order.unauthorized_split' => 'Bạn không thể tách đơn hàng này.',
+    'order.invalid_split' => 'Không thể tách đơn hàng.',
+    'order.locked_split' => 'Đơn hàng không thể được tách.',
 ];

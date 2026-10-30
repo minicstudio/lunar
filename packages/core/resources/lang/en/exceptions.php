@@ -25,4 +25,7 @@ return [
     'order.details' => 'Details: :details',
     'order.failed_to_extract_error_details' => 'Failed to extract detailed error information.',
     'order.failed_to_download_awb_pdf' => 'Failed to download AWB PDF.',
+    'order.unauthorized_split' => 'You cannot split this order.',
+    'order.invalid_split' => 'The order could not be split.',
+    'order.locked_split' => 'The order cannot be split.',
 ];

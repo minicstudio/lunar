@@ -1,6 +1,6 @@
 # Order Processing — Software Design Document (Engine)
 
-Last verified: 2026-06-03 against `lunarphp/lunar-minic` at repository HEAD.
+Last verified: 2026-10-28 against `lunarphp/lunar-minic` at repository HEAD.
 
 ## Purpose and scope
 
@@ -75,7 +75,7 @@ Computed on `Order` for reporting and integrations:
 
 **Config:** `packages/core/config/orders.php` → `draft_status`, `statuses`
 
-Core defaults include: `awaiting-payment`, `payment-offline`, `payment-received`, `dispatched`.
+Core defaults include: `awaiting-payment`, `payment-offline`, `payment-received`, `dispatched`, `split`.
 
 Each status entry may define:
 
@@ -88,6 +88,10 @@ Each status entry may define:
 | `favourite` | Admin filter |
 
 Production hosts typically **publish** a larger status set (`prepare-shipment`, `canceled`, `completed`, `failed-awb-generation`, etc.). Engine observers reference status **strings** from config; missing published statuses break AWB/invoice triggers if not aligned.
+
+`split` is the status of an order that staff have divided into two or more new orders. It has an empty mailer list, an empty notification list, and `exclude_from_reports`, so the original order drops out of report revenue. A host that publishes `lunar.orders.statuses` must add `split` itself, with `exclude_from_reports` and empty `mailers` and `notifications`. The published file does not pick up new core statuses on its own.
+
+Staff split an eligible order from a preview on the order page. Each product unit goes to one new order, and a quantity above one can be divided. The unit price stays the one stored on the order unless that price differs from the catalog price for an assigned quantity and staff choose the catalog price. Discounts, the coupon, loyalty, and shipping are recalculated either way. The shipping cost can be edited on each new order; the shipping identifier stays the original one. A coupon goes to one chosen order even when that order is below the original minimum spend, and even when that coupon has since expired, the original order already used up its limit, or it no longer lists the assigned products. A loyalty redemption goes to one chosen order. Stock still decreases once when the order is received. The order can be split after that, including when it mixes an in-stock product with a preorder product. The split does not move stock and does not dispatch `OrderPlacedEvent`. A later status that would normally decrease stock does not decrease it again on a new order whose source order already took stock. Canceling that new order restores its quantities. An order that is not split is still forwarded to the ERP once when the host dispatches `OrderPlacedEvent` (`SendOrderToERP` is unchanged). New orders with an offline payment method are queued on that same listener after the split commits, so a send that exhausts its retries becomes `failed-erp-sync`.
 
 ---
 
@@ -139,7 +143,7 @@ Payment drivers create `capture` / `intent` rows; admin can inspect via order re
 
 **Event:** `Lunar\ERP\Events\OrderPlacedEvent` (`packages/ERP/src/Events/OrderPlacedEvent.php`)
 
-Carries the placed `Order` model. **Not dispatched by any provider in this repository** — the host must fire it after successful payment authorization.
+Carries the placed `Order` model. **Not dispatched by any provider in this repository** — the host must fire it after successful payment authorization. A staff split does not dispatch it. An order that is not split is still forwarded to the ERP once when the host does dispatch it.
 
 ### Listener in this repo
 
@@ -301,6 +305,8 @@ Admin order line tables may show current variant stock vs `meta.stock_level` cap
 | `billing_series`, `billing_number` | ERP `generateInvoice` | Smartbill (or other) invoice identity |
 | `shipping_zone` | Table-rate observer | Admin search / reporting |
 | Host-only keys | Host after placement | e.g. analytics IDs — not set by core |
+| `split_into_order_ids` | Admin order split | New order ids created from this order. The original order status is `split`. |
+| `split_from_order_id` | Admin order split | The original order this new order was split from. |
 
 ---
 

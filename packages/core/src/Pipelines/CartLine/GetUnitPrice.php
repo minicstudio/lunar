@@ -7,6 +7,7 @@ use Lunar\DataTypes\Price;
 use Lunar\Exceptions\Carts\CartNotFoundException;
 use Lunar\Exceptions\Carts\PurchasableNotFoundException;
 use Lunar\Facades\Pricing;
+use Lunar\Models\Cart;
 use Lunar\Models\CartLine;
 use Lunar\Models\Contracts\CartLine as CartLineContract;
 use Spatie\LaravelBlink\BlinkFacade as Blink;
@@ -42,6 +43,21 @@ class GetUnitPrice
 
         if (! $purchasable) {
             throw new PurchasableNotFoundException('Purchasable not found for cart line.');
+        }
+
+        $override = $cart instanceof Cart ? ($cart->unitPriceOverrides[$cartLine->id] ?? null) : null;
+
+        if (is_array($override) && array_key_exists('value', $override)) {
+            $unitQuantity = max(1, (int) ($override['unit_quantity'] ?? $purchasable->getUnitQuantity()));
+            $value = (int) $override['value'];
+            $inclusive = prices_inc_tax()
+                ? $value
+                : (int) round($value * (1 + $purchasable->getTaxRate()));
+
+            $cartLine->unitPrice = new Price($value, $cart->currency, $unitQuantity);
+            $cartLine->unitPriceInclTax = new Price($inclusive, $cart->currency, $unitQuantity);
+
+            return $next($cartLine);
         }
 
         $priceResponse = Pricing::currency($currency)

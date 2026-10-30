@@ -124,6 +124,15 @@ return [
             'exclude_from_reports' => true,
         ],
 
+        'split' => [
+            'label' => 'lunarpanel::order.statuses.split',
+            'color' => '#64748b',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => true,
+            'exclude_from_reports' => true,
+        ],
+
     ],
 
     /*

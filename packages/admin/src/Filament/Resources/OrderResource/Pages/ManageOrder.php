@@ -35,6 +35,7 @@ use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysOrderTotals;
 use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysShippingInfo;
 use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysTransactions;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\Components\OrderItemsTable;
+use Lunar\Admin\Support\Actions\Orders\SplitOrderAction;
 use Lunar\Admin\Support\Actions\Orders\UpdateStatusAction;
 use Lunar\Admin\Support\Actions\PdfDownload;
 use Lunar\Admin\Support\ActivityLog\Concerns\CanDispatchActivityUpdated;
@@ -553,7 +554,9 @@ class ManageOrder extends BaseViewRecord
     {
         return [
             $this->getCaptureAction(),
+            SplitOrderAction::make('split_order'),
             UpdateStatusAction::make('update_status')
+                ->visible(fn (): bool => $this->record->status !== 'split')
                 ->after(
                     function () {
                         $this->dispatchActivityUpdated();
@@ -625,6 +628,12 @@ class ManageOrder extends BaseViewRecord
                     ]),
             ])
             ->action(function ($data, $record, Action $action) {
+                if ($record->status === 'split') {
+                    $action->halt();
+
+                    return;
+                }
+
                 $transaction = Transaction::findOrFail($data['transaction']);
 
                 $response = $transaction->capture(bcmul($data['amount'], $record->currency->factor));
@@ -645,7 +654,7 @@ class ManageOrder extends BaseViewRecord
             })
             ->successNotificationTitle(__('lunarpanel::order.action.capture_payment.notification.success'))
             ->failureNotificationTitle(__('lunarpanel::order.action.capture_payment.notification.error'))
-            ->visible($this->requiresCapture && $this->intents->count());
+            ->visible(fn (): bool => $this->record->status !== 'split' && $this->requiresCapture && $this->intents->count());
     }
 
     #[Computed]

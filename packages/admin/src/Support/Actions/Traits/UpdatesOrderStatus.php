@@ -126,6 +126,15 @@ trait UpdatesOrderStatus
 
     protected function updateStatus(Order $record, array $data)
     {
+        if ($record->status === 'split') {
+            Notification::make()
+                ->title(__('lunarpanel::order.action.split_order.gates.closed'))
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $record->update([
             'status' => $data['status'],
         ]);

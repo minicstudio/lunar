@@ -15,6 +15,7 @@ use Lunar\Admin\Filament\Resources\CustomerResource;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\LunarPanelManager;
 use Lunar\Events\OrderProductLinesRecalculated;
+use Lunar\Events\OrderSplitLoyaltyMoving;
 use Lunar\Facades\ModelManifest;
 use Lunar\Loyalty\Console\AwardBirthdayPointsCommand;
 use Lunar\Loyalty\Console\ExpireLoyaltyPointsCommand;
@@ -24,6 +25,7 @@ use Lunar\Loyalty\Database\State\EnsureLoyaltyPermissions;
 use Lunar\Loyalty\Enums\LoyaltyTransactionType;
 use Lunar\Loyalty\Filament\Extensions\ManageOrderExtension;
 use Lunar\Loyalty\Listeners\AdjustLoyaltyForOrderProductLineEdit;
+use Lunar\Loyalty\Listeners\MoveLoyaltyForOrderSplit;
 use Lunar\Loyalty\Listeners\RegistrationListener;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Models\LoyaltyTransaction;
@@ -208,6 +210,11 @@ class LoyaltyServiceProvider extends ServiceProvider
         Event::listen(
             OrderProductLinesRecalculated::class,
             AdjustLoyaltyForOrderProductLineEdit::class,
+        );
+
+        Event::listen(
+            OrderSplitLoyaltyMoving::class,
+            MoveLoyaltyForOrderSplit::class,
         );
     }
 

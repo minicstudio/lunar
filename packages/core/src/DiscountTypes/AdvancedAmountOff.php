@@ -5,6 +5,7 @@ namespace Lunar\DiscountTypes;
 use Lunar\Base\ValueObjects\Cart\DiscountBreakdown;
 use Lunar\Base\ValueObjects\Cart\DiscountBreakdownLine;
 use Lunar\DataTypes\Price;
+use Lunar\Models\Cart;
 use Lunar\Models\Collection;
 use Lunar\Models\Contracts\Cart as CartContract;
 use Lunar\Models\Contracts\CartLine as CartLineContract;
@@ -363,8 +364,18 @@ class AdvancedAmountOff extends AbstractDiscountType
             return ($line->subTotalDiscounted ?? $line->subTotal)->value;
         });
 
-        if (! $value || $linesSubtotal < $value) {
+        $capToProductTotal = $cart instanceof Cart && $cart->capFixedCouponToProductTotal;
+
+        if (! $value || $linesSubtotal <= 0) {
             return $cart;
+        }
+
+        if ($linesSubtotal < $value) {
+            if (! $capToProductTotal) {
+                return $cart;
+            }
+
+            $value = $linesSubtotal;
         }
 
         $divisionalAmount = $value / $linesSubtotal;
@@ -473,6 +484,18 @@ class AdvancedAmountOff extends AbstractDiscountType
      */
     protected function getEligibleLines(CartContract $cart): \Illuminate\Support\Collection
     {
+        // A split that re-applies the original order coupon must price every
+        // assigned line, even when the discount no longer lists those products.
+        if (
+            $cart instanceof Cart
+            && $cart->preserveOrderCoupon
+            && filled($this->discount->coupon)
+            && filled($cart->coupon_code)
+            && strtoupper((string) $this->discount->coupon) === strtoupper((string) $cart->coupon_code)
+        ) {
+            return $cart->lines;
+        }
+
         $collectionIds = $this->discount->collections->where('pivot.type', 'limitation')->pluck('id');
         $collectionExclusionIds = $this->discount->collections->where('pivot.type', 'exclusion')->pluck('id');
 

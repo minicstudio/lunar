@@ -25,4 +25,7 @@ return [
     'order.details' => 'Detaylar: :details',
     'order.failed_to_extract_error_details' => 'Hata detayları çıkarılamadı.',
     'order.failed_to_download_awb_pdf' => 'AWB PDF\'i indirilemedi.',
+    'order.unauthorized_split' => 'Bu siparişi bölemezsiniz.',
+    'order.invalid_split' => 'Sipariş bölünemedi.',
+    'order.locked_split' => 'Sipariş bölünemez.',
 ];

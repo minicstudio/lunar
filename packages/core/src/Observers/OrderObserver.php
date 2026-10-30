@@ -2,6 +2,7 @@
 
 namespace Lunar\Observers;
 
+use Lunar\Exceptions\Orders\LockedOrderSplitException;
 use Lunar\Models\Contracts\Order as OrderContract;
 use Lunar\Models\Order;
 
@@ -15,6 +16,10 @@ class OrderObserver
     public function updating(OrderContract $order)
     {
         /** @var Order $order */
+        if ($order->getOriginal('status') === 'split' && $order->status !== 'split') {
+            throw new LockedOrderSplitException(['closed']);
+        }
+
         if ($order->getOriginal('status') != $order->status) {
             activity()
                 ->causedBy(auth()->user())

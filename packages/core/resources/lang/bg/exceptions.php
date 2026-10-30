@@ -20,4 +20,7 @@ return [
     'invalid_fieldtype' => 'Класът ":class" не имплементира интерфейса FieldType.',
     'discounts.invalid_type' => 'Колекцията трябва да съдържа само ":expected", намерено ":actual"',
     'disallow_multiple_cart_orders' => 'Количките могат да имат само една свързана поръчка.',
+    'order.unauthorized_split' => 'Не можете да разделите тази поръчка.',
+    'order.invalid_split' => 'Поръчката не можа да бъде разделена.',
+    'order.locked_split' => 'Поръчката не може да бъде разделена.',
 ];
