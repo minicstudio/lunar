@@ -25,6 +25,11 @@ class AverageOrderValueChart extends ApexChartWidget
         return __('lunarpanel::widgets.dashboard.orders.average_order_value.heading');
     }
 
+    protected function getSubheading(): ?string
+    {
+        return __('lunarpanel::widgets.dashboard.orders.order_values_by_status.description');
+    }
+
     protected function getOrderQuery(DateTime|CarbonInterface|null $from = null, DateTime|CarbonInterface|null $to = null)
     {
         return Order::reportable()
@@ -88,7 +93,12 @@ class AverageOrderValueChart extends ApexChartWidget
                 $month = $result->first(function ($month) use ($date) {
                     return $month->date == $date->format('Y-m');
                 });
-                $data->push($month?->sub_total->decimal ?: 0);
+
+                // Order value after discounts and without shipping (same basis as OrderValuesByStatusChart)
+                $data->push(round(
+                    (float) ($month?->total->decimal ?: 0) - (float) ($month?->shipping_total->decimal ?: 0),
+                    2
+                ));
             }
 
             return [
