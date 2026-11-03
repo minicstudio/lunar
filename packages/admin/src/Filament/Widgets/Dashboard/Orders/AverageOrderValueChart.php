@@ -56,30 +56,21 @@ class AverageOrderValueChart extends ApexChartWidget
              * $format = '%Y-%m';
              * $displayFormat = '%M %Y';
              */
-            $guestOrders = collect();
+            $result = $query->where(function ($query) use ($group) {
+                $query->whereHas(
+                    'customer',
+                    fn ($relation) => $relation->whereHas(
+                        'customerGroups',
+                        fn ($subRelation) => $subRelation->where("{$group->getTable()}.id", '=', $group->id)
+                    )
+                );
 
-            if ($group->default) {
-                $guestOrders = $query->clone()->with(['currency'])->whereNull('user_id')->whereNull('customer_id')
-                    ->select(
-                        DB::RAW('MAX(currency_code) as currency_code'),
-                        DB::RAW('ROUND(AVG(total), 0) as total'),
-                        DB::RAW('ROUND(AVG(shipping_total), 0) as shipping_total'),
-                        DB::RAW('ROUND(AVG(discount_total), 0) as discount_total'),
-                        DB::RAW('ROUND(AVG(sub_total), 0) as sub_total'),
-                        DB::RAW('ROUND(AVG(tax_total), 0) as tax_total'),
-                        DB::RAW(db_date('placed_at', '%Y-%m', 'date'))
-                    )->groupBy(
-                        DB::RAW('date')
-                    )->orderBy(DB::RAW('date'), 'desc')->get();
-            }
-
-            $result = $query->whereHas(
-                'customer',
-                fn ($relation) => $relation->whereHas(
-                    'customerGroups',
-                    fn ($subRelation) => $subRelation->where("{$group->getTable()}.id", '=', $group->id)
-                )
-            )->select(
+                if ($group->default) {
+                    $query->orWhere(function ($query) {
+                        $query->whereNull('user_id')->whereNull('customer_id');
+                    });
+                }
+            })->select(
                 DB::RAW('MAX(currency_code) as currency_code'),
                 DB::RAW('ROUND(AVG(total), 0) as total'),
                 DB::RAW('ROUND(AVG(shipping_total), 0) as shipping_total'),
@@ -91,18 +82,13 @@ class AverageOrderValueChart extends ApexChartWidget
                 DB::RAW('date')
             )->orderBy(DB::RAW('date'), 'desc')->get();
 
-            $merged = collect([
-                ...$result,
-                ...$guestOrders,
-            ]);
-
             $data = collect();
 
             foreach ($period as $date) {
-                $result = $merged->first(function ($month) use ($date) {
+                $month = $result->first(function ($month) use ($date) {
                     return $month->date == $date->format('Y-m');
                 });
-                $data->push($result?->sub_total->decimal ?: 0);
+                $data->push($month?->sub_total->decimal ?: 0);
             }
 
             return [
