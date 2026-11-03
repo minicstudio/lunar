@@ -26,6 +26,11 @@ class OrdersSalesChart extends ApexChartWidget
         return __('lunarpanel::widgets.dashboard.orders.order_sales_chart.heading');
     }
 
+    protected function getSubheading(): ?string
+    {
+        return __('lunarpanel::widgets.dashboard.orders.order_values_by_status.description');
+    }
+
     protected function getOrderQuery(DateTime|CarbonInterface|null $from = null, DateTime|CarbonInterface|null $to = null)
     {
         return Order::reportable()
@@ -69,7 +74,11 @@ class OrdersSalesChart extends ApexChartWidget
         foreach ($orders as $order) {
             $labels[] = \Carbon\Carbon::parse($order->date)->locale(app()->getLocale())->isoFormat('MMMM YYYY');
             $ordersData[] = $order->count;
-            $salesData[] = $order->sub_total->decimal;
+            // Order value after discounts and without shipping (same basis as OrderValuesByStatusChart)
+            $salesData[] = round(
+                (float) ($order->total->decimal ?: 0) - (float) ($order->shipping_total->decimal ?: 0),
+                2
+            );
         }
 
         return [
