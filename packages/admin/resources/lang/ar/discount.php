@@ -83,8 +83,8 @@ return [
             'label' => 'النسبة المئوية',
         ],
         'free_shipping' => [
-            'label' => 'Free shipping',
-            'helper_text' => 'With a coupon code: every shipping option is free when the coupon is used. Without a coupon code: shipping is free when at least one cart product is eligible for the discount. The percentage or fixed value can be left empty if the discount only gives free shipping. Every order shipped this way counts as one use.',
+            'label' => 'شحن مجاني',
+            'helper_text' => 'مع رمز كوبون: تكون جميع خيارات الشحن مجانية عند استخدام الكوبون. بدون رمز كوبون: يكون الشحن مجانيًا عندما يكون منتج واحد على الأقل في السلة مؤهلًا للخصم. يمكن ترك النسبة المئوية أو القيمة الثابتة فارغة إذا كان الخصم يمنح الشحن المجاني فقط. يُحتسب كل طلب يُشحن بهذه الطريقة استخدامًا واحدًا.',
         ],
     ],
     'table' => [

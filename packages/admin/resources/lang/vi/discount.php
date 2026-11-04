@@ -83,8 +83,8 @@ return [
             'label' => 'Phần trăm',
         ],
         'free_shipping' => [
-            'label' => 'Free shipping',
-            'helper_text' => 'With a coupon code: every shipping option is free when the coupon is used. Without a coupon code: shipping is free when at least one cart product is eligible for the discount. The percentage or fixed value can be left empty if the discount only gives free shipping. Every order shipped this way counts as one use.',
+            'label' => 'Miễn phí vận chuyển',
+            'helper_text' => 'Có mã giảm giá: mọi phương thức vận chuyển đều miễn phí khi sử dụng mã giảm giá. Không có mã giảm giá: miễn phí vận chuyển khi có ít nhất một sản phẩm trong giỏ hàng đủ điều kiện được giảm giá. Có thể để trống phần trăm hoặc giá trị cố định nếu chương trình giảm giá chỉ miễn phí vận chuyển. Mỗi đơn hàng được giao theo cách này được tính là một lần sử dụng.',
         ],
     ],
     'table' => [

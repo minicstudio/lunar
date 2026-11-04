@@ -83,8 +83,8 @@ return [
             'label' => 'Процент',
         ],
         'free_shipping' => [
-            'label' => 'Free shipping',
-            'helper_text' => 'With a coupon code: every shipping option is free when the coupon is used. Without a coupon code: shipping is free when at least one cart product is eligible for the discount. The percentage or fixed value can be left empty if the discount only gives free shipping. Every order shipped this way counts as one use.',
+            'label' => 'Безплатна доставка',
+            'helper_text' => 'С код на купон: всички опции за доставка са безплатни, когато купонът е използван. Без код на купон: доставката е безплатна, когато поне един продукт в количката отговаря на условията за отстъпката. Процентът или фиксираната стойност могат да останат празни, ако отстъпката дава само безплатна доставка. Всяка поръчка, доставена по този начин, се брои за едно използване.',
         ],
     ],
     'table' => [

@@ -79,8 +79,8 @@ return [
             'label' => 'Procent',
         ],
         'free_shipping' => [
-            'label' => 'Free shipping',
-            'helper_text' => 'With a coupon code: every shipping option is free when the coupon is used. Without a coupon code: shipping is free when at least one cart product is eligible for the discount. The percentage or fixed value can be left empty if the discount only gives free shipping. Every order shipped this way counts as one use.',
+            'label' => 'Darmowa dostawa',
+            'helper_text' => 'Z kodem kuponu: wszystkie opcje dostawy są darmowe, gdy kupon zostanie użyty. Bez kodu kuponu: dostawa jest darmowa, gdy co najmniej jeden produkt w koszyku kwalifikuje się do rabatu. Procent lub stałą wartość można pozostawić puste, jeśli rabat daje tylko darmową dostawę. Każde zamówienie wysłane w ten sposób liczy się jako jedno użycie.',
         ],
     ],
     'table' => [

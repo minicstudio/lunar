@@ -83,8 +83,8 @@ return [
             'label' => 'Percentual',
         ],
         'free_shipping' => [
-            'label' => 'Free shipping',
-            'helper_text' => 'With a coupon code: every shipping option is free when the coupon is used. Without a coupon code: shipping is free when at least one cart product is eligible for the discount. The percentage or fixed value can be left empty if the discount only gives free shipping. Every order shipped this way counts as one use.',
+            'label' => 'Frete grátis',
+            'helper_text' => 'Com código de cupom: todas as opções de frete são gratuitas quando o cupom é usado. Sem código de cupom: o frete é grátis quando pelo menos um produto do carrinho é elegível para o desconto. O percentual ou o valor fixo podem ficar em branco se o desconto oferecer apenas frete grátis. Cada pedido enviado dessa forma conta como um uso.',
         ],
     ],
     'table' => [
