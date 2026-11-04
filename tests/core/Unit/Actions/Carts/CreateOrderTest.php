@@ -25,6 +25,7 @@ use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Tests\Core\Stubs\Models\CustomOrder;
+use Lunar\Tests\Core\Stubs\User;
 use Lunar\Tests\Core\TestCase;
 
 uses(TestCase::class);
@@ -781,3 +782,139 @@ test('can still enforce other conditions on a discount the cart consumed', funct
 //     expect($orderB->discount_total->value)->toEqual(500);
 //     expect($discount->refresh()->uses)->toEqual(1);
 // });
+
+/**
+ * A cart ready for an order: one 10.00 line, both addresses, and a 19.90 courier option.
+ */
+function freeShippingOrderCart(?string $coupon = null, ?int $userId = null): Cart
+{
+    $currency = Currency::factory()->create([
+        'code' => 'GBP',
+        'decimal_places' => 2,
+        'default' => true,
+    ]);
+
+    $channel = Channel::factory()->create(['default' => true]);
+    CustomerGroup::factory()->create(['default' => true]);
+    $taxClass = TaxClass::factory()->create(['default' => true]);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+        'coupon_code' => $coupon,
+        'user_id' => $userId,
+    ]);
+
+    $purchasable = ProductVariant::factory()->create([
+        'tax_class_id' => $taxClass->id,
+    ]);
+
+    Price::factory()->create([
+        'price' => 1000,
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+        'priceable_type' => $purchasable->getMorphClass(),
+        'priceable_id' => $purchasable->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $purchasable->getMorphClass(),
+        'purchasable_id' => $purchasable->id,
+        'quantity' => 1,
+    ]);
+
+    foreach (['billing', 'shipping'] as $type) {
+        $cart->addresses()->create(CartAddress::factory()->make([
+            'type' => $type,
+            'country_id' => Country::factory(),
+            'first_name' => 'Santa',
+            'line_one' => '123 Elf Road',
+            'city' => 'Lapland',
+            'postcode' => 'SHIPP',
+            'shipping_option' => $type === 'shipping' ? 'COURIER' : null,
+        ])->toArray());
+    }
+
+    ShippingManifest::addOption(new ShippingOption(
+        name: 'Courier',
+        description: 'Courier',
+        identifier: 'COURIER',
+        price: new PriceDataType(1990, $cart->currency, 1),
+        taxClass: $taxClass
+    ));
+
+    return $cart;
+}
+
+/**
+ * An active shipping-only discount with up to 100 uses.
+ */
+function freeShippingOrderDiscount(?string $coupon): Discount
+{
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => $coupon,
+        'uses' => 0,
+        'max_uses' => 100,
+        'starts_at' => now()->subHour(),
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ],
+    ]);
+
+    $discount->channels()->sync([
+        Channel::getDefault()->id => ['enabled' => true, 'starts_at' => now()->subHour()],
+    ]);
+
+    $discount->customerGroups()->sync([
+        CustomerGroup::getDefault()->id => ['enabled' => true, 'starts_at' => now()->subHour()],
+    ]);
+
+    return $discount;
+}
+
+test('an order from a shipping-only coupon cart stores the waived shipping and the coupon', function () {
+    setAuthUserConfig();
+    $user = User::factory()->create();
+
+    $cart = freeShippingOrderCart('SHIPFREE', $user->id);
+    $discount = freeShippingOrderDiscount('SHIPFREE');
+
+    $order = $cart->createOrder();
+
+    expect($order->shipping_total->value)->toBe(0)
+        ->and($order->shipping_discount_total->value)->toBe(1990)
+        ->and($order->shippingLines->first()->unit_price->value)->toBe(1990)
+        ->and($order->appliedCoupon?->id)->toBe($discount->id)
+        ->and($order->coupon_total->value)->toBe(0)
+        ->and($order->discount_breakdown)->toHaveCount(1)
+        ->and($order->discount_breakdown->first()->discount_id)->toBe($discount->id);
+
+    $order->discount_breakdown->each(
+        fn ($entry) => Discount::find($entry->discount_id)->getType()->markAsUsed($cart)->discount->save()
+    );
+
+    expect($discount->fresh()->uses)->toBe(1)
+        ->and($discount->users()->whereKey($user->id)->exists())->toBeTrue();
+});
+
+test('an order from a shipping-only automatic discount cart stores the waived shipping and the discount', function () {
+    $cart = freeShippingOrderCart();
+    $discount = freeShippingOrderDiscount(null);
+
+    $order = $cart->createOrder();
+
+    expect($order->shipping_total->value)->toBe(0)
+        ->and($order->shipping_discount_total->value)->toBe(1990)
+        ->and($order->appliedCoupon)->toBeNull()
+        ->and($order->discount_breakdown)->toHaveCount(1)
+        ->and($order->discount_breakdown->first()->discount_id)->toBe($discount->id);
+
+    $order->discount_breakdown->each(
+        fn ($entry) => Discount::find($entry->discount_id)->getType()->markAsUsed($cart)->discount->save()
+    );
+
+    expect($discount->fresh()->uses)->toBe(1);
+});

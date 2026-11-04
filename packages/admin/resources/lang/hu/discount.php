@@ -104,6 +104,10 @@ return [
         'percentage' => [
             'label' => 'Százalék',
         ],
+        'free_shipping' => [
+            'label' => 'Ingyenes szállítás',
+            'helper_text' => 'Kuponkóddal: a kupon használatakor minden szállítási mód ingyenes. Kuponkód nélkül: ha a kosárban van legalább egy termék, amire a kedvezmény érvényes. A százalék vagy fix összeg üresen hagyható, ha csak ingyenes szállítást ad. Minden így kiszolgált rendelés egy felhasználásnak számít.',
+        ],
     ],
     'table' => [
         'name' => [

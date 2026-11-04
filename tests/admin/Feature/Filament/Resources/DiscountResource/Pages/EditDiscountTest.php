@@ -4,6 +4,7 @@ use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\DiscountResource;
 use Lunar\Admin\Filament\Resources\DiscountResource\Pages\EditDiscount;
 use Lunar\DiscountTypes\AdvancedAmountOff;
+use Lunar\DiscountTypes\BuyXGetY;
 use Lunar\Models\Discount;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
 
@@ -215,6 +216,63 @@ it('does not require the minimum cart amount to cover the fixed value when there
         'id' => $discount->id,
         'coupon' => null,
     ]);
+});
+
+it('can save free shipping with a coupon code', function () {
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
+
+    Livewire::test(EditDiscount::class,
+        ['record' => $discount->getKey()]
+    )->fillForm([
+        'coupon' => 'SHIPFREE',
+        'data.fixed_value' => false,
+        'data.percentage' => 10,
+        'data.free_shipping' => true,
+    ])->call('save')->assertHasNoErrors();
+
+    $discount->refresh();
+
+    expect($discount->coupon)->toBe('SHIPFREE')
+        ->and($discount->data['free_shipping'])->toBeTrue();
+
+    Livewire::test(EditDiscount::class,
+        ['record' => $discount->getKey()]
+    )->assertFormFieldVisible('data.free_shipping')->assertFormSet([
+        'data.free_shipping' => true,
+    ]);
+});
+
+it('can save a shipping-only discount without a coupon code or percentage', function () {
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+    ]);
+
+    Livewire::test(EditDiscount::class,
+        ['record' => $discount->getKey()]
+    )->fillForm([
+        'coupon' => null,
+        'data.fixed_value' => false,
+        'data.percentage' => null,
+        'data.free_shipping' => true,
+    ])->call('save')->assertHasNoErrors();
+
+    $discount->refresh();
+
+    expect($discount->coupon)->toBeNull()
+        ->and($discount->data['free_shipping'])->toBeTrue()
+        ->and($discount->data['percentage'] ?? null)->toBeNull();
+});
+
+it('does not show the free shipping toggle for buy x get y discounts', function () {
+    $discount = Discount::factory()->create([
+        'type' => BuyXGetY::class,
+    ]);
+
+    Livewire::test(EditDiscount::class,
+        ['record' => $discount->getKey()]
+    )->assertFormFieldHidden('data.free_shipping');
 });
 
 it('only shows one toast per problem category across multiple currencies', function () {

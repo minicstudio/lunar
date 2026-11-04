@@ -543,7 +543,7 @@ final class UpdateOrderProductLines extends AbstractAction
             'unit_quantity' => $option->getUnitQuantity(),
             'quantity' => 1,
             'sub_total' => $address?->shippingSubTotal?->value ?? $option->price->value,
-            'discount_total' => $address?->shippingSubTotal?->discountTotal?->value ?: 0,
+            'discount_total' => $cart->shippingDiscountTotal?->value ?? 0,
             'tax_breakdown' => $address?->taxBreakdown ?? new TaxBreakdown,
             'tax_total' => $address?->shippingTaxTotal?->value ?? 0,
             'total' => $address?->shippingTotal?->value ?? $option->price->value,

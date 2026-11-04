@@ -327,6 +327,11 @@ class DiscountResource extends BaseResource
                 ->helperText(
                     __('lunarpanel::discount.form.fixed_value.helper_text')
                 ),
+            Toggle::make('data.free_shipping')
+                ->label(__('lunarpanel::discount.form.free_shipping.label'))
+                ->helperText(
+                    __('lunarpanel::discount.form.free_shipping.helper_text')
+                ),
             TextInput::make('data.percentage')
                 ->label(__('lunarpanel::discount.form.percentage.label'))
                 ->visible(

@@ -76,6 +76,10 @@ return [
             'label' => 'Belohnungen automatisch hinzufügen',
             'helper_text' => 'Einschalten, um Belohnungsprodukte hinzuzufügen, wenn sie nicht im Warenkorb vorhanden sind.',
         ],
+        'free_shipping' => [
+            'label' => 'Free shipping',
+            'helper_text' => 'With a coupon code: every shipping option is free when the coupon is used. Without a coupon code: shipping is free when at least one cart product is eligible for the discount. The percentage or fixed value can be left empty if the discount only gives free shipping. Every order shipped this way counts as one use.',
+        ],
     ],
     'table' => [
         'name' => [

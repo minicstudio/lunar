@@ -141,8 +141,9 @@ Executed on `$cart->recalculate()` (and indirectly after many mutating actions):
 | 1 | `Pipelines\Cart\CalculateLines` | Line subtotals; per-line pipeline includes `GetUnitPrice` |
 | 2 | `Pipelines\Cart\ApplyShipping` | Applies selected `ShippingOption` from manifest |
 | 3 | `Pipelines\Cart\ApplyDiscounts` | `DiscountManager` — automatic + coupon (`AdvancedAmountOff`) |
-| 4 | `Pipelines\Cart\CalculateTax` | Tax breakdown on lines and cart |
-| 5 | `Pipelines\Cart\Calculate` | Cart-level total properties |
+| 4 | `Pipelines\Cart\ApplyDiscountFreeShipping` | Charges the selected shipping at 0 when the cart has a free-shipping discount |
+| 5 | `Pipelines\Cart\CalculateTax` | Tax breakdown on lines and cart |
+| 6 | `Pipelines\Cart\Calculate` | Cart-level total properties |
 
 **Line pipeline:** `pipelines.cart_lines` → `Pipelines\CartLine\GetUnitPrice` (uses `PricingManager`).
 
@@ -195,6 +196,7 @@ Hosts may add validators to `lunar.cart.validators.order_create` for stricter ch
 
 - Modifiers register via `ShippingModifiers` and contribute options for a calculated cart.
 - `$cart->setShippingOption()` validates then stores selection; `getShippingOption()` reads it post-calculate.
+- **Free-shipping discount:** when `cart.freeShippingDiscount` is set (an Advanced amount off discount with `data.free_shipping`, coupon or automatic), the `ApplyDiscountFreeShipping` cart stage charges the selected option at 0 for that calculation, whichever option it is. The waived amount is `cart.shippingDiscountTotal`. Options returned by `ShippingManifest::getOptions()` keep their full price; the storefront labels them from the cart. A `shippingOptionOverride` (order split targets, `CartSessionManager::estimateShipping()`) keeps its price. See [pricing_and_discounts.md](./pricing_and_discounts.md).
 
 ### Table-rate shipping (`packages/table-rate-shipping`)
 
@@ -260,7 +262,7 @@ Hosts may append pipeline stages in published `config/lunar/orders.php` (not def
 | 1 | `FillOrderFromCart` | Recalculates cart; copies totals, customer, channel, currency, **meta**; sets `draft_status`; generates `reference` |
 | 2 | `CreateOrderLines` | Syncs lines from cart; matches existing order lines by purchasable + meta diff |
 | 3 | `CreateOrderAddresses` | Copies cart billing/shipping to `OrderAddress` |
-| 4 | `CreateShippingLine` | Shipping order line from selected option |
+| 4 | `CreateShippingLine` | Shipping order line from selected option. `unit_price` is the option price; `discount_total` is the waived free-shipping amount (`cart.shippingDiscountTotal`, else 0), with `sub_total` / `tax_total` / `total` 0 when waived. Admin product-line edits rewrite the line the same way |
 | 5 | `CleanUpOrderLines` | Removes order lines no longer in cart |
 | 6 | `MapDiscountBreakdown` | Persists discount breakdown on order |
 

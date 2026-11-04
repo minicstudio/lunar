@@ -4,6 +4,7 @@ uses(\Lunar\Tests\Core\TestCase::class);
 
 use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Models\Channel;
+use Lunar\Models\Collection;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
@@ -284,4 +285,107 @@ test('getDiscountLabels returns no label when the fixed value discount is not gr
     activateFixedValueDiscount($discount, $channel, $customerGroup);
 
     expect($variant->fresh()->getDiscountLabels())->toBeEmpty();
+});
+
+test('a shipping-only discount does not hide a lower tier discount in the catalog', function () {
+    $currency = Currency::factory()->create([
+        'code' => 'GBP',
+        'decimal_places' => 2,
+        'default' => true,
+    ]);
+
+    $customerGroup = CustomerGroup::factory()->create(['default' => true]);
+    $channel = Channel::factory()->create(['default' => true]);
+
+    $variant = ProductVariant::factory()->create();
+
+    Price::factory()->create([
+        'price' => 1000, // £10
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+
+    $collection = Collection::factory()->create();
+    $variant->product->collections()->attach($collection->id);
+
+    $shippingOnly = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => null,
+        'starts_at' => now(),
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ],
+    ]);
+
+    $shippingOnly->discountables()->create([
+        'discountable_type' => ProductVariant::morphName(),
+        'discountable_id' => $variant->id,
+        'type' => 'limitation',
+    ]);
+
+    $collectionDiscount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => null,
+        'starts_at' => now(),
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => 10,
+        ],
+    ]);
+
+    $collectionDiscount->collections()->attach($collection->id, ['type' => 'limitation']);
+
+    activateFixedValueDiscount($shippingOnly, $channel, $customerGroup);
+    activateFixedValueDiscount($collectionDiscount, $channel, $customerGroup);
+
+    $variant = $variant->fresh();
+
+    expect($variant->hasDiscount())->toBeTrue()
+        ->and($variant->getDiscountedPrices()->first()->value)->toBe(900)
+        ->and($variant->getDiscountLabels()->get('GBP'))->toEqual('10%');
+});
+
+test('a product whose only discount is shipping-only shows no discount', function () {
+    $currency = Currency::factory()->create([
+        'code' => 'GBP',
+        'decimal_places' => 2,
+        'default' => true,
+    ]);
+
+    $customerGroup = CustomerGroup::factory()->create(['default' => true]);
+    $channel = Channel::factory()->create(['default' => true]);
+
+    $variant = ProductVariant::factory()->create();
+
+    Price::factory()->create([
+        'price' => 1000, // £10
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => null,
+        'starts_at' => now(),
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ],
+    ]);
+
+    activateFixedValueDiscount($discount, $channel, $customerGroup);
+
+    $variant = $variant->fresh();
+
+    expect($variant->hasDiscount())->toBeFalse()
+        ->and($variant->getDiscountLabels())->toBeEmpty()
+        ->and($variant->getDiscountAmounts())->toBeEmpty()
+        ->and($variant->getCurrentPrices()->first()->value)->toBe($variant->getOriginalPrices()->first()->value);
 });
