@@ -219,6 +219,9 @@ return [
         'date_placed' => [
             'label' => 'Fecha de Pedido',
         ],
+        'consultation_done_at' => [
+            'label' => 'Consulta hecha el',
+        ],
         'new_returning' => [
             'label' => 'Nuevo / Recurrente',
         ],
@@ -275,6 +278,7 @@ return [
             'cash-on-delivery' => 'Contra reembolso',
             'bank-transfer' => 'Transferencia bancaria',
             'stripe-card' => 'Tarjeta de crédito',
+            'bt-ipay' => 'Pago con tarjeta (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Pago online con tarjeta',
         ],
@@ -293,6 +297,8 @@ return [
             'requires_capture' => 'Este pedido aún requiere que se capture el pago.',
             'partially_refunded' => 'Este pedido ha sido parcialmente reembolsado.',
             'refunded' => 'Este pedido ha sido reembolsado.',
+            'preorder_consultation' => 'Este pedido incluye un producto en preventa. Llame al cliente antes de cobrar o de organizar el envío.',
+            'preorder_consultation_no_phone' => 'No hay ningún número de teléfono guardado.',
             'product_line_gates' => [
                 'paid' => 'Pagado: este pedido no se puede modificar porque ha sido pagado.',
                 'erp' => 'ERP: este pedido no se puede modificar porque se ha enviado al ERP.',
@@ -328,6 +334,11 @@ return [
                 'label' => 'Destinatario adicional de correo electrónico',
                 'placeholder' => 'opcional',
             ],
+            'preorder_warning' => [
+                'description' => '¿Seguro que desea actualizar el estado antes de confirmar la consulta telefónica, la forma de pago y el precio de envío?',
+                'proceed' => 'Continuar',
+                'cancel' => 'Cancelar',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Descargar PDF',
@@ -350,6 +361,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Editar',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Consulta hecha',
+            'mixed_description' => 'Este pedido contiene productos en stock y productos en preventa. Manténgalos en un solo pedido o divídalos en pedidos separados.',
+            'keep' => 'Mantener en un solo pedido',
+            'split' => 'Dividir en pedidos separados',
         ],
         'capture_payment' => [
             'label' => 'Capturar Pago',

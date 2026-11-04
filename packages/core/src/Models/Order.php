@@ -173,6 +173,92 @@ class Order extends BaseModel implements Contracts\Order
     }
 
     /**
+     * Whether staff still need to call the customer about a recorded preorder line.
+     */
+    public function awaitsPreorderConsultation(): bool
+    {
+        $this->loadMissing('productLines');
+
+        return $this->productLines->contains(function (object $line): bool {
+            if (! $this->lineIsRecordedPreorder($line)) {
+                return false;
+            }
+
+            return blank($this->lineMeta($line)['preorder_consultation_completed_at'] ?? null);
+        });
+    }
+
+    /**
+     * When staff marked the phone consultation done, from the latest stamped product line.
+     */
+    public function preorderConsultationCompletedAt(): ?Carbon
+    {
+        $this->loadMissing('productLines');
+
+        $completedAt = null;
+
+        foreach ($this->productLines as $line) {
+            $value = $this->lineMeta($line)['preorder_consultation_completed_at'] ?? null;
+
+            if (! is_string($value) || blank($value)) {
+                continue;
+            }
+
+            try {
+                $parsed = Carbon::parse($value);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ($completedAt === null || $parsed->greaterThan($completedAt)) {
+                $completedAt = $parsed;
+            }
+        }
+
+        return $completedAt;
+    }
+
+    /**
+     * The order has a recorded preorder line and another product line.
+     */
+    public function hasMixedPreorderLines(): bool
+    {
+        $this->loadMissing('productLines');
+
+        $recorded = false;
+        $other = false;
+
+        foreach ($this->productLines as $line) {
+            if ($this->lineIsRecordedPreorder($line)) {
+                $recorded = true;
+            } else {
+                $other = true;
+            }
+        }
+
+        return $recorded && $other;
+    }
+
+    private function lineIsRecordedPreorder(object $line): bool
+    {
+        return ($this->lineMeta($line)['preorder'] ?? null) === true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lineMeta(object $line): array
+    {
+        $meta = $line->meta ?? null;
+
+        if ($meta instanceof \ArrayObject) {
+            return $meta->getArrayCopy();
+        }
+
+        return is_array($meta) ? $meta : [];
+    }
+
+    /**
      * @return BelongsTo<Currency, $this>
      */
     public function currency(): BelongsTo

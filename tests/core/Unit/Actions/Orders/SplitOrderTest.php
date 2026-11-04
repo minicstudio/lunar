@@ -5,9 +5,9 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
-use Lunar\Actions\Orders\SplitOrder;
 use Lunar\Actions\Orders\DTOs\SplitOrderRequest;
 use Lunar\Actions\Orders\DTOs\SplitOrderTarget;
+use Lunar\Actions\Orders\SplitOrder;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
 use Lunar\DataTypes\Price as PriceDataType;
@@ -160,7 +160,7 @@ function pricedSplitVariant(int $price, array $attributes = []): ProductVariant
 /**
  * @param  list<int>  $catalogPricedLineIds
  */
-function splitRequest(array $targets, ?string $couponTarget = null, bool $applyCoupon = false, ?string $loyaltyTarget = null, bool $applyLoyalty = false, array $catalogPricedLineIds = []): SplitOrderRequest
+function splitRequest(array $targets, ?string $couponTarget = null, bool $applyCoupon = false, ?string $loyaltyTarget = null, bool $applyLoyalty = false, array $catalogPricedLineIds = [], bool $completePreorderConsultation = false): SplitOrderRequest
 {
     return new SplitOrderRequest(
         targets: array_map(fn (array $target): SplitOrderTarget => new SplitOrderTarget(
@@ -175,6 +175,7 @@ function splitRequest(array $targets, ?string $couponTarget = null, bool $applyC
         loyaltyTarget: $loyaltyTarget,
         applyLoyalty: $applyLoyalty,
         catalogPricedLineIds: $catalogPricedLineIds,
+        completePreorderConsultation: $completePreorderConsultation,
     );
 }
 
@@ -915,4 +916,87 @@ it('keeps a bulk unit price unless the current catalog price is chosen', functio
         ->and($chosen->discount_total->value)->toBe(160)
         ->and($chosen->shippingLines()->first()->sub_total->value)->toBe(250)
         ->and($chosen->shipping_total->value)->toBe($chosen->shippingLines()->first()->total->value);
+});
+
+it('makes only the child that receives a preorder line wait for consultation', function () {
+    $completedAt = '2026-10-01T10:00:00+00:00';
+    $preorder = pricedSplitVariant(1000);
+    $other = pricedSplitVariant(500);
+    $order = splittableOrder([
+        ['variant' => $preorder, 'quantity' => 1, 'price' => 1000, 'meta' => [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $completedAt,
+        ]],
+        ['variant' => $other, 'quantity' => 1, 'price' => 500],
+    ]);
+    $lines = $order->productLines()->orderBy('id')->get();
+
+    SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$lines[0]->id => 1]],
+        ['key' => '2', 'quantities' => [$lines[1]->id => 1]],
+    ]));
+
+    $children = Order::query()->where('id', '!=', $order->id)->get();
+    $waiting = $children->first(fn (Order $child) => $child->productLines->contains('purchasable_id', $preorder->id));
+    $plain = $children->first(fn (Order $child) => $child->productLines->contains('purchasable_id', $other->id));
+    $waitingLine = $waiting->productLines->first();
+
+    expect($waiting->awaitsPreorderConsultation())->toBeTrue()
+        ->and($plain->awaitsPreorderConsultation())->toBeFalse()
+        ->and($waitingLine->meta['preorder'])->toBeTrue()
+        ->and($waitingLine->meta['preorder_consultation_completed_at'] ?? null)->toBeNull()
+        ->and($waiting->meta['preorder_consultation_completed_at'] ?? null)->toBeNull();
+});
+
+it('finishes the consultation on both children when the split comes from the call', function () {
+    $preorder = pricedSplitVariant(1000);
+    $other = pricedSplitVariant(500);
+    $order = splittableOrder([
+        ['variant' => $preorder, 'quantity' => 1, 'price' => 1000, 'meta' => ['preorder' => true]],
+        ['variant' => $other, 'quantity' => 1, 'price' => 500],
+    ]);
+    $lines = $order->productLines()->orderBy('id')->get();
+    $preorderLine = $lines->first(fn (OrderLine $line): bool => (int) $line->purchasable_id === $preorder->id);
+    $otherLine = $lines->first(fn (OrderLine $line): bool => (int) $line->purchasable_id === $other->id);
+
+    SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$preorderLine->id => 1], 'payment' => 'bank-transfer', 'shipping' => 1500],
+        ['key' => '2', 'quantities' => [$otherLine->id => 1], 'payment' => 'cash-on-delivery', 'shipping' => 400],
+    ], completePreorderConsultation: true));
+
+    $children = Order::query()->where('id', '!=', $order->id)->get();
+    $preorderChild = $children->first(fn (Order $child): bool => $child->productLines->contains('purchasable_id', $preorder->id));
+    $plain = $children->first(fn (Order $child): bool => $child->productLines->contains('purchasable_id', $other->id));
+    $preorderMeta = $preorderChild->productLines->first()->meta;
+
+    expect($order->fresh()->status)->toBe('split')
+        ->and($preorderChild->status)->toBe('awaiting-bank-transfer')
+        ->and($preorderChild->meta['payment_option'])->toBe('bank-transfer')
+        ->and($preorderChild->awaitsPreorderConsultation())->toBeFalse()
+        ->and($preorderMeta['preorder'])->toBeTrue()
+        ->and($preorderMeta['preorder_consultation_completed_at'] ?? null)->not->toBeNull()
+        ->and($plain->status)->toBe('payment-offline')
+        ->and($plain->meta['payment_option'])->toBe('cash-on-delivery')
+        ->and($plain->awaitsPreorderConsultation())->toBeFalse();
+});
+
+it('keeps bank transfer on a normal split at awaiting payment', function () {
+    $left = pricedSplitVariant(1000);
+    $right = pricedSplitVariant(500);
+    $order = splittableOrder([
+        ['variant' => $left, 'quantity' => 1, 'price' => 1000],
+        ['variant' => $right, 'quantity' => 1, 'price' => 500],
+    ]);
+    $lines = $order->productLines()->orderBy('id')->get();
+
+    SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$lines[0]->id => 1], 'payment' => 'bank-transfer'],
+        ['key' => '2', 'quantities' => [$lines[1]->id => 1], 'payment' => 'cash-on-delivery'],
+    ]));
+
+    $bank = Order::query()->where('id', '!=', $order->id)->get()->first(
+        fn (Order $child): bool => ($child->meta['payment_option'] ?? null) === 'bank-transfer'
+    );
+
+    expect($bank->status)->toBe('awaiting-payment');
 });

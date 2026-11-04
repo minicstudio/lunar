@@ -11,20 +11,27 @@ use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\Entry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\View\Components\TextEntryComponent\ItemComponent;
+use Filament\Infolists\View\Components\TextEntryComponent\ItemComponent\IconComponent;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
+use Filament\Support\Enums\IconSize;
 use Filament\Support\Enums\Size;
 use Filament\Support\Enums\TextSize;
 use Filament\Support\Enums\Width;
 use Filament\Support\Facades\FilamentIcon;
+use Filament\Support\View\ComponentAttributeBag as FilamentComponentAttributeBag;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
+use Lunar\Actions\Orders\CompletePreorderConsultation;
 use Lunar\Actions\Orders\GetOrderProductLineEditGates;
 use Lunar\Admin\Filament\Resources\CustomerResource;
 use Lunar\Admin\Filament\Resources\OrderResource;
@@ -45,9 +52,13 @@ use Lunar\Admin\Support\Infolists\Components\Livewire;
 use Lunar\Admin\Support\Infolists\Components\Tags;
 use Lunar\Admin\Support\Pages\BaseViewRecord;
 use Lunar\Models\Contracts\OrderLine;
+use Lunar\Models\Currency;
 use Lunar\Models\Order;
 use Lunar\Models\Tag;
 use Lunar\Models\Transaction;
+
+use function Filament\Support\generate_href_html;
+use function Filament\Support\generate_icon_html;
 
 /**
  * @property Order $record
@@ -75,6 +86,11 @@ class ManageOrder extends BaseViewRecord
     protected string $view = 'lunarpanel::resources.order-resource.pages.manage-order';
 
     protected Width|string|null $maxContentWidth = 'screen-2xl';
+
+    /**
+     * The open split was started from Consultation done, so confirming it ends the call.
+     */
+    public bool $consultationSplit = false;
 
     #[On('order-product-lines-updated')]
     public function refreshAfterProductLineEdit(): void
@@ -386,6 +402,33 @@ class ManageOrder extends BaseViewRecord
             ->all();
     }
 
+    /**
+     * The consultation notice, with the customer's phone shown as on the shipping address.
+     */
+    protected function preorderConsultationNotice(): Htmlable
+    {
+        $message = e(__('lunarpanel::order.infolist.alert.preorder_consultation'));
+        $phone = $this->record->shippingAddress?->contact_phone
+            ?: $this->record->billingAddress?->contact_phone;
+
+        if (blank($phone)) {
+            return new HtmlString($message.' '.e(__('lunarpanel::order.infolist.alert.preorder_consultation_no_phone')));
+        }
+
+        $phone = (string) $phone;
+        $icon = generate_icon_html(
+            'heroicon-o-phone',
+            attributes: (new FilamentComponentAttributeBag)
+                ->color(IconComponent::class, Color::Green),
+            size: IconSize::Small,
+        );
+        $linkAttributes = (new FilamentComponentAttributeBag)
+            ->class(['fi-in-text-item', 'inline-flex', 'items-center', 'gap-x-1.5', 'align-middle'])
+            ->color(ItemComponent::class, Color::Sky);
+
+        return new HtmlString($message.' <a '.generate_href_html('tel:'.$phone)->toHtml().' '.$linkAttributes->toHtml().'>'.$icon?->toHtml().e($phone).'</a>');
+    }
+
     public function getDefaultInfolist(Schema $schema): Schema
     {
         return $schema
@@ -393,6 +436,10 @@ class ManageOrder extends BaseViewRecord
                 Group::make()
                     ->schema([
                         Group::make()->key('shouts')->schema([
+                            Shout::make('preorder_consultation')
+                                ->type('warning')
+                                ->content(fn (): Htmlable => $this->preorderConsultationNotice())
+                                ->visible(fn (): bool => $this->showPreorderConsultation()),
                             Shout::make('product_line_gates')
                                 ->type('warning')
                                 ->content(fn (): string => collect(GetOrderProductLineEditGates::run($this->record))
@@ -553,10 +600,26 @@ class ManageOrder extends BaseViewRecord
     protected function getDefaultHeaderActions(): array
     {
         return [
+            $this->getPreorderConsultationAction(),
+            $this->getPreorderConsultationKeepAction(),
             $this->getCaptureAction(),
             SplitOrderAction::make('split_order'),
+            $this->getPreorderStatusWarningAction(),
             UpdateStatusAction::make('update_status')
-                ->visible(fn (): bool => $this->record->status !== 'split')
+                ->visible(function (): bool {
+                    if ($this->record->status === 'split') {
+                        return false;
+                    }
+
+                    if (! $this->record->awaitsPreorderConsultation()) {
+                        return true;
+                    }
+
+                    // A hidden action cannot be mounted. Keep the form available after Proceed.
+                    return collect($this->mountedActions)->contains(
+                        fn (array $mountedAction): bool => ($mountedAction['name'] ?? null) === 'update_status',
+                    );
+                })
                 ->after(
                     function () {
                         $this->dispatchActivityUpdated();
@@ -569,6 +632,198 @@ class ManageOrder extends BaseViewRecord
                     return "Order-{$record->reference}.pdf";
                 }),
         ];
+    }
+
+    /**
+     * Confirm before the status form while the phone consultation is unfinished.
+     */
+    protected function getPreorderStatusWarningAction(): Action
+    {
+        return Action::make('confirm_preorder_status_update')
+            ->label(__('lunarpanel::actions.orders.update_status.label'))
+            ->visible(function (): bool {
+                if ($this->record->status === 'split' || ! $this->record->awaitsPreorderConsultation()) {
+                    return false;
+                }
+
+                return ! collect($this->mountedActions)->contains(
+                    fn (array $mountedAction): bool => ($mountedAction['name'] ?? null) === 'update_status',
+                );
+            })
+            ->requiresConfirmation()
+            ->modalIconColor('warning')
+            ->modalDescription(__('lunarpanel::order.action.update_status.preorder_warning.description'))
+            ->modalSubmitActionLabel(__('lunarpanel::order.action.update_status.preorder_warning.proceed'))
+            ->modalCancelActionLabel(__('lunarpanel::order.action.update_status.preorder_warning.cancel'))
+            ->action(function (): void {
+                $this->replaceMountedAction('update_status');
+            });
+    }
+
+    protected function getPreorderConsultationAction(): Action
+    {
+        return Action::make('preorder_consultation_done')
+            ->label(__('lunarpanel::order.action.preorder_consultation_done.label'))
+            ->modalHeading(__('lunarpanel::order.action.preorder_consultation_done.label'))
+            ->modalDescription(fn (): ?string => $this->consultationIsMixed()
+                ? __('lunarpanel::order.action.preorder_consultation_done.mixed_description')
+                : null)
+            ->modalSubmitActionLabel(fn (): string => $this->consultationIsMixed()
+                ? __('lunarpanel::order.action.preorder_consultation_done.keep')
+                : __('lunarpanel::order.action.preorder_consultation_done.label'))
+            ->visible(fn (): bool => $this->showPreorderConsultation())
+            ->extraModalFooterActions(function (): array {
+                if (! $this->consultationIsMixed()) {
+                    return [];
+                }
+
+                return [
+                    Action::make('split_after_consultation')
+                        ->label(__('lunarpanel::order.action.preorder_consultation_done.split'))
+                        ->modal(false)
+                        ->action(function (): void {
+                            $this->consultationSplit = true;
+                            $this->replaceMountedAction('split_order');
+                        }),
+                ];
+            })
+            ->fillForm(fn (): array => $this->consultationIsMixed() ? [] : [
+                'shipping' => $this->consultationShippingDefault(),
+            ])
+            ->schema(fn (): array => $this->consultationIsMixed() ? [] : $this->consultationPaymentSchema())
+            ->action(function (array $data): void {
+                if ($this->consultationIsMixed()) {
+                    $this->consultationSplit = false;
+                    $this->replaceMountedAction('preorder_consultation_keep');
+
+                    return;
+                }
+
+                $this->submitPreorderConsultation($data);
+            });
+    }
+
+    /**
+     * Payment and shipping for a mixed order that stays together.
+     * Hidden until Consultation done chooses to keep the order.
+     */
+    protected function getPreorderConsultationKeepAction(): Action
+    {
+        return Action::make('preorder_consultation_keep')
+            ->label(__('lunarpanel::order.action.preorder_consultation_done.keep'))
+            ->modalHeading(__('lunarpanel::order.action.preorder_consultation_done.label'))
+            ->modalSubmitActionLabel(__('lunarpanel::order.action.preorder_consultation_done.label'))
+            ->visible(function (): bool {
+                return collect($this->mountedActions)->contains(
+                    fn (array $mountedAction): bool => ($mountedAction['name'] ?? null) === 'preorder_consultation_keep',
+                );
+            })
+            ->fillForm(fn (): array => [
+                'shipping' => $this->consultationShippingDefault(),
+            ])
+            ->schema(fn (): array => $this->consultationPaymentSchema())
+            ->action(function (array $data): void {
+                $this->submitPreorderConsultation($data);
+            });
+    }
+
+    private function showPreorderConsultation(): bool
+    {
+        return $this->record->status !== 'split' && $this->record->awaitsPreorderConsultation();
+    }
+
+    private function consultationIsMixed(): bool
+    {
+        return $this->showPreorderConsultation() && $this->record->hasMixedPreorderLines();
+    }
+
+    /**
+     * @return array<int, Select|TextInput>
+     */
+    private function consultationPaymentSchema(): array
+    {
+        return [
+            Select::make('payment_option')
+                ->label(__('lunarpanel::order.infolist.meta.payment_option'))
+                ->options($this->consultationPaymentOptions())
+                ->required(),
+            TextInput::make('shipping')
+                ->label(__('lunarpanel::order.infolist.shipping_total.label'))
+                ->numeric()
+                ->minValue(0)
+                ->required()
+                ->visible(fn (): bool => ! CompletePreorderConsultation::isStoreCollection($this->record)),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function submitPreorderConsultation(array $data): void
+    {
+        $shipping = CompletePreorderConsultation::isStoreCollection($this->record)
+            ? null
+            : $this->minorFromDecimal($data['shipping'] ?? null);
+
+        CompletePreorderConsultation::run(
+            $this->record,
+            (string) $data['payment_option'],
+            $shipping,
+        );
+
+        $this->record->unsetRelation('lines');
+        $this->record->unsetRelation('productLines');
+        $this->record->refresh();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function consultationPaymentOptions(): array
+    {
+        $options = [];
+
+        foreach ([
+            'bt-ipay',
+            'stripe-card',
+            'bank-transfer',
+            'cash-on-delivery',
+        ] as $key) {
+            $options[$key] = __('lunarpanel::order.infolist.payment_methods.'.$key);
+        }
+
+        return $options;
+    }
+
+    private function consultationShippingDefault(): ?string
+    {
+        if (CompletePreorderConsultation::isStoreCollection($this->record)) {
+            return null;
+        }
+
+        return $this->decimalFromMinor(
+            CompletePreorderConsultation::suggestedShippingMinor($this->record)
+        );
+    }
+
+    private function minorFromDecimal(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $factor = (int) ($this->record->currency?->factor ?: 1);
+
+        return (int) round(((float) $value) * $factor);
+    }
+
+    private function decimalFromMinor(int $minor): string
+    {
+        $currency = $this->record->currency ?? Currency::getDefault();
+        $factor = (int) ($currency?->factor ?: 1);
+        $places = (int) ($currency?->decimal_places ?? 2);
+
+        return number_format($minor / $factor, $places, '.', '');
     }
 
     protected function getCaptureAction(): Action

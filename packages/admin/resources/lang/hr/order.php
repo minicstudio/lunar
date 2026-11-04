@@ -209,6 +209,9 @@ return [
         'date_placed' => [
             'label' => 'Datum narudžbe',
         ],
+        'consultation_done_at' => [
+            'label' => 'Dogovor obavljen',
+        ],
         'new_returning' => [
             'label' => 'Novi / Stalni',
         ],
@@ -265,6 +268,7 @@ return [
             'cash-on-delivery' => 'Plaćanje pouzećem',
             'bank-transfer' => 'Bankovni prijenos',
             'stripe-card' => 'Kreditna kartica',
+            'bt-ipay' => 'Plaćanje karticom (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online plaćanje karticom',
         ],
@@ -282,6 +286,8 @@ return [
             'requires_capture' => 'Za ovu narudžbu još uvijek je potrebno evidentirati plaćanje.',
             'partially_refunded' => 'Za ovu narudžbu je djelomično izvršen povrat sredstava',
             'refunded' => 'Ova narudžba je vraćena.',
+            'preorder_consultation' => 'Ova narudžba sadrži proizvod za prednarudžbu. Nazovite kupca prije naplate ili organiziranja dostave.',
+            'preorder_consultation_no_phone' => 'Nije spremljen broj telefona.',
             'product_line_gates' => [
                 'paid' => 'Plaćeno: ova narudžba ne može se izmijeniti jer je plaćena.',
                 'erp' => 'ERP: ova narudžba ne može se izmijeniti jer je poslana u ERP.',
@@ -317,6 +323,11 @@ return [
                 'label' => 'Dodatni primatelj e-maila',
                 'placeholder' => 'neobavezno',
             ],
+            'preorder_warning' => [
+                'description' => 'Jeste li sigurni da želite ažurirati status prije potvrde telefonskog dogovora, načina plaćanja i cijene dostave?',
+                'proceed' => 'Nastavi',
+                'cancel' => 'Odustani',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Preuzmi PDF',
@@ -339,6 +350,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Uredi',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Dogovor obavljen',
+            'mixed_description' => 'Ova narudžba sadrži proizvode na zalihi i proizvode za prednarudžbu. Zadržite ih u jednoj narudžbi ili ih podijelite u zasebne narudžbe.',
+            'keep' => 'Zadrži u jednoj narudžbi',
+            'split' => 'Podijeli u zasebne narudžbe',
         ],
         'capture_payment' => [
             'label' => 'Naplati uplatu',

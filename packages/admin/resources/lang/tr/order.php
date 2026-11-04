@@ -219,6 +219,9 @@ return [
         'date_placed' => [
             'label' => 'Sipariş Tarihi',
         ],
+        'consultation_done_at' => [
+            'label' => 'Görüşme tamamlanma zamanı',
+        ],
         'new_returning' => [
             'label' => 'Yeni / Geri Dönen',
         ],
@@ -275,6 +278,7 @@ return [
             'cash-on-delivery' => 'Kapıda ödeme',
             'bank-transfer' => 'Banka havalesi',
             'stripe-card' => 'Kredi kartı',
+            'bt-ipay' => 'Kartla ödeme (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online kartla ödeme',
         ],
@@ -293,6 +297,8 @@ return [
             'requires_capture' => 'Bu sipariş hala ödemenin tahsil edilmesini gerektiriyor.',
             'partially_refunded' => 'Bu sipariş kısmen iade edildi.',
             'refunded' => 'Bu sipariş iade edildi.',
+            'preorder_consultation' => 'Bu sipariş bir ön sipariş ürünü içeriyor. Ödeme almadan veya kargoyu ayarlamadan önce müşteriyi arayın.',
+            'preorder_consultation_no_phone' => 'Kayıtlı telefon numarası yok.',
             'product_line_gates' => [
                 'paid' => 'Ödendi: bu sipariş değiştirilemez, çünkü ödendi.',
                 'erp' => 'ERP: bu sipariş değiştirilemez, çünkü ERP sistemine gönderildi.',
@@ -326,6 +332,11 @@ return [
                 'label' => 'Ek e-posta alıcısı',
                 'placeholder' => 'opsiyonel',
             ],
+            'preorder_warning' => [
+                'description' => 'Telefon görüşmesini, ödeme yöntemini ve kargo ücretini onaylamadan durumu güncellemek istediğinizden emin misiniz?',
+                'proceed' => 'Devam et',
+                'cancel' => 'Vazgeç',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'PDF İndir',
@@ -354,6 +365,12 @@ return [
                     'helper_text' => 'Etiketleri Enter, Tab veya virgül (,) tuşuna basarak ayırın',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Görüşme tamam',
+            'mixed_description' => 'Bu sipariş hem stoktaki ürünleri hem de ön sipariş ürünlerini içerir. Bunları tek siparişte tutun veya ayrı siparişlere bölün.',
+            'keep' => 'Tek siparişte tut',
+            'split' => 'Ayrı siparişlere böl',
         ],
         'capture_payment' => [
             'label' => 'Ödemeyi Tahsil Et',

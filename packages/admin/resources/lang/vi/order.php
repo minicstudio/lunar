@@ -211,6 +211,9 @@ return [
         'date_placed' => [
             'label' => 'Ngày đặt hàng',
         ],
+        'consultation_done_at' => [
+            'label' => 'Đã tư vấn lúc',
+        ],
         'new_returning' => [
             'label' => 'Mới/Quay lại',
         ],
@@ -267,6 +270,7 @@ return [
             'cash-on-delivery' => 'Thanh toán khi nhận hàng',
             'bank-transfer' => 'Chuyển khoản ngân hàng',
             'stripe-card' => 'Thẻ tín dụng',
+            'bt-ipay' => 'Thanh toán thẻ (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Thanh toán thẻ trực tuyến',
         ],
@@ -285,6 +289,8 @@ return [
             'requires_capture' => 'Đơn hàng này vẫn cần thu tiền thanh toán',
             'partially_refunded' => 'Đơn hàng này đã được hoàn tiền một phần',
             'refunded' => 'Đơn hàng này đã được hoàn tiền',
+            'preorder_consultation' => 'Đơn hàng này có sản phẩm đặt trước. Hãy gọi cho khách trước khi nhận thanh toán hoặc sắp xếp giao hàng.',
+            'preorder_consultation_no_phone' => 'Không có số điện thoại nào được lưu.',
             'product_line_gates' => [
                 'paid' => 'Đã thanh toán: đơn hàng này không thể sửa vì đã được thanh toán.',
                 'erp' => 'ERP: đơn hàng này không thể sửa vì đã được gửi tới ERP.',
@@ -320,6 +326,11 @@ return [
                 'label' => 'Người nhận email bổ sung',
                 'placeholder' => 'tùy chọn',
             ],
+            'preorder_warning' => [
+                'description' => 'Bạn có chắc muốn cập nhật trạng thái trước khi xác nhận cuộc gọi tư vấn, phương thức thanh toán và giá vận chuyển?',
+                'proceed' => 'Tiếp tục',
+                'cancel' => 'Hủy',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Tải PDF',
@@ -339,6 +350,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Chỉnh sửa',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Đã tư vấn',
+            'mixed_description' => 'Đơn hàng này gồm cả sản phẩm có sẵn và sản phẩm đặt trước. Giữ chúng trong một đơn hoặc tách thành các đơn riêng.',
+            'keep' => 'Giữ trong một đơn',
+            'split' => 'Tách thành các đơn riêng',
         ],
         'capture_payment' => [
             'label' => 'Thu tiền thanh toán',

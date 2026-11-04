@@ -54,11 +54,45 @@ class InvoiceDocumentService
             return true;
         }
 
-        if ($this->isErpBillingActive()) {
+        if ($this->isErpBillingActive() && ! $this->hasLunarInvoiceStamp($order)) {
             return false;
         }
 
         return $this->isLunarInvoiceEligible($order);
+    }
+
+    /**
+     * Whether a bank-transfer order should receive the Lunar invoice while ERP billing is on.
+     *
+     * ERP providers invoice only the statuses in their generate_invoice list. A bank transfer
+     * that is not in that list still needs the Lunar PDF so the customer email can include
+     * the bank details and the invoice. Card and cash statuses stay on the ERP list.
+     */
+    public function bankTransferNeedsLunarInvoice(Order $order): bool
+    {
+        if (($order->meta['payment_option'] ?? null) !== 'bank-transfer') {
+            return false;
+        }
+
+        if ($this->hasErpBillingMeta($order)) {
+            return false;
+        }
+
+        $expectedStatus = ((array) config('lunar.invoicing.statuses_by_payment_option', []))['bank-transfer'] ?? null;
+
+        if (! filled($expectedStatus) || $order->status !== $expectedStatus) {
+            return false;
+        }
+
+        foreach ($this->erpService->getAllowedProviders('actions', 'billing') as $provider) {
+            $statuses = (array) config("lunar.erp.{$provider->value}.generate_invoice", []);
+
+            if (in_array($order->status, $statuses, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -78,7 +112,7 @@ class InvoiceDocumentService
             return $this->resolveErpPdf($order);
         }
 
-        if ($this->isErpBillingActive()) {
+        if ($this->isErpBillingActive() && ! $this->hasLunarInvoiceStamp($order)) {
             return null;
         }
 
@@ -152,6 +186,14 @@ class InvoiceDocumentService
     protected function hasErpBillingMeta(Order $order): bool
     {
         return isset($order->meta['billing_series'], $order->meta['billing_number']);
+    }
+
+    /**
+     * Whether Lunar already issued a DomPDF invoice for the order.
+     */
+    protected function hasLunarInvoiceStamp(Order $order): bool
+    {
+        return filled($order->meta['lunar_invoice_generated_at'] ?? null);
     }
 
     /**

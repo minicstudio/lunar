@@ -27,12 +27,13 @@ use Filament\Support\Enums\Width;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
-use Lunar\Actions\Orders\GetOrderSplitGates;
-use Lunar\Actions\Orders\SplitOrder;
+use Lunar\Actions\Orders\CompletePreorderConsultation;
 use Lunar\Actions\Orders\DTOs\SplitOrderPreview;
 use Lunar\Actions\Orders\DTOs\SplitOrderPreviewTarget;
 use Lunar\Actions\Orders\DTOs\SplitOrderRequest;
 use Lunar\Actions\Orders\DTOs\SplitOrderTarget;
+use Lunar\Actions\Orders\GetOrderSplitGates;
+use Lunar\Actions\Orders\SplitOrder;
 use Lunar\Actions\Orders\UpdateOrderProductLines;
 use Lunar\Exceptions\Orders\InvalidOrderSplitException;
 use Lunar\Exceptions\Orders\LockedOrderSplitException;
@@ -47,6 +48,7 @@ use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use Lunar\Models\ProductVariant;
+use Lunar\Shipping\PreorderConsultationShipping;
 use Throwable;
 
 class SplitOrderAction extends Action
@@ -70,14 +72,32 @@ class SplitOrderAction extends Action
         $this->modalSubmitActionLabel(__('lunarpanel::order.action.split_order.confirm'));
         $this->modalWidth(Width::SevenExtraLarge);
 
-        $this->visible(fn (?Order $record): bool => $record instanceof Order
-            && UpdateOrderProductLines::userCanManageOrders()
-            && GetOrderSplitGates::run($record)->passes()
-            && $this->orderHasMoreThanOneUnit($record));
+        $this->visible(function (?Order $record): bool {
+            if (! $record instanceof Order
+                || ! UpdateOrderProductLines::userCanManageOrders()
+                || ! GetOrderSplitGates::run($record)->passes()
+                || ! $this->orderHasMoreThanOneUnit($record)
+            ) {
+                return false;
+            }
+
+            $livewire = $this->getLivewire();
+            $mounted = is_object($livewire) && collect($livewire->mountedActions ?? [])->contains(
+                fn (array $mountedAction): bool => ($mountedAction['name'] ?? null) === 'split_order',
+            );
+
+            if ($mounted) {
+                return true;
+            }
+
+            return ! ($record->awaitsPreorderConsultation() && $record->hasMixedPreorderLines());
+        });
 
         $this->fillForm(fn (Order $record): array => $this->initialState($record));
 
         $this->schema(fn (Order $record): array => [
+            Hidden::make('complete_consultation')
+                ->default(fn (): bool => $this->completesConsultation()),
             Callout::make(__('lunarpanel::order.action.split_order.helper'))
                 ->info()
                 ->columnSpanFull(),
@@ -202,14 +222,15 @@ class SplitOrderAction extends Action
                                     ->minValue(0)
                                     ->suffix(fn (): string => $record->currency?->code ?? '')
                                     ->helperText(fn (Get $get): ?string => $this->shippingHelper($record, $get))
-                                    ->required()
+                                    ->hidden(fn (): bool => $this->consultationSplitSkipsShipping($record))
+                                    ->required(fn (): bool => ! $this->consultationSplitSkipsShipping($record))
                                     ->live()
                                     ->afterStateUpdated(function (Set $set): void {
                                         $set('shipping_custom', true);
                                     }),
                                 Select::make('payment_option')
                                     ->label(__('lunarpanel::order.action.split_order.payment_method'))
-                                    ->options($this->paymentOptions())
+                                    ->options(fn (): array => $this->paymentOptions())
                                     ->required()
                                     ->live(),
                             ]),
@@ -300,6 +321,11 @@ class SplitOrderAction extends Action
     private function initialState(Order $order): array
     {
         $payment = (string) (data_get($order->meta, 'payment_option') ?: 'cash-on-delivery');
+
+        if ($this->completesConsultation() && ! in_array($payment, CompletePreorderConsultation::PAYMENT_OPTIONS, true)) {
+            $payment = 'cash-on-delivery';
+        }
+
         $lines = $order->productLines()->with('purchasable')->orderBy('id')->get()->values();
         $orders = [
             ['key' => '1', 'shipping' => null, 'payment_option' => $payment],
@@ -327,6 +353,7 @@ class SplitOrderAction extends Action
         }
 
         $state = [
+            'complete_consultation' => $this->completesConsultation(),
             'orders' => $orders,
             'lines' => $lineState,
             'coupon' => filled($this->couponCode($order)) ? '1' : 'none',
@@ -342,8 +369,15 @@ class SplitOrderAction extends Action
                         continue;
                     }
 
-                    $state['orders'][$index]['shipping'] = $this->decimalFromMinor($order, $target->shippingMinor);
+                    $minor = $this->displayedShippingMinor($order, $state, $target->key, $target->shippingMinor);
+                    $state['orders'][$index]['shipping'] = $this->decimalFromMinor($order, $minor);
                 }
+            }
+        }
+
+        if ($this->consultationSplitSkipsShipping($order)) {
+            foreach ($state['orders'] as $index => $orderState) {
+                $state['orders'][$index]['shipping'] = $this->decimalFromMinor($order, 0);
             }
         }
 
@@ -352,6 +386,16 @@ class SplitOrderAction extends Action
 
     private function lineIsPreorder(OrderLine $line): bool
     {
+        $meta = $line->meta;
+
+        if ($meta instanceof \ArrayObject) {
+            $meta = $meta->getArrayCopy();
+        }
+
+        if (is_array($meta) && ($meta['preorder'] ?? null) === true) {
+            return true;
+        }
+
         return $line->purchasable_type === ProductVariant::morphName()
             && $line->purchasable?->purchasable === 'preorder';
     }
@@ -370,6 +414,8 @@ class SplitOrderAction extends Action
     private function requestFromState(Order $order, array $data): SplitOrderRequest
     {
         $quantities = $this->quantitiesByTarget($data);
+        $completeConsultation = (bool) ($data['complete_consultation'] ?? false);
+        $skipShipping = $completeConsultation && CompletePreorderConsultation::isStoreCollection($order);
         $targets = [];
 
         foreach (array_values($data['orders'] ?? []) as $orderState) {
@@ -382,7 +428,9 @@ class SplitOrderAction extends Action
             $targets[] = new SplitOrderTarget(
                 key: $key,
                 quantities: $quantities[$key] ?? [],
-                shippingMinor: $this->minorFromDecimal($order, $orderState['shipping'] ?? null),
+                shippingMinor: $skipShipping
+                    ? 0
+                    : $this->minorFromDecimal($order, $orderState['shipping'] ?? null),
                 paymentOption: (string) ($orderState['payment_option'] ?? ''),
                 paymentType: $this->paymentType($order, (string) ($orderState['payment_option'] ?? '')),
             );
@@ -416,6 +464,7 @@ class SplitOrderAction extends Action
             loyaltyTarget: $applyLoyalty ? $loyalty : null,
             applyLoyalty: $applyLoyalty,
             catalogPricedLineIds: $catalogPricedLineIds,
+            completePreorderConsultation: $completeConsultation,
         );
     }
 
@@ -432,6 +481,8 @@ class SplitOrderAction extends Action
         }
 
         $blockers = [];
+        $completeConsultation = (bool) ($data['complete_consultation'] ?? false);
+        $skipShipping = $completeConsultation && CompletePreorderConsultation::isStoreCollection($order);
         $orders = array_values(is_array($data['orders'] ?? null) ? $data['orders'] : []);
 
         if (count($orders) < 2) {
@@ -458,13 +509,15 @@ class SplitOrderAction extends Action
                 $keys[$key] = true;
             }
 
-            if ($shipping === null) {
+            if (! $skipShipping && $shipping === null) {
                 $blockers[] = 'shipping_required';
-            } elseif ($shipping < 0) {
+            } elseif ($shipping !== null && $shipping < 0) {
                 $blockers[] = 'negative_shipping';
             }
 
-            if (blank($orderState['payment_option'] ?? null)) {
+            $payment = (string) ($orderState['payment_option'] ?? '');
+
+            if ($payment === '' || ($completeConsultation && ! in_array($payment, CompletePreorderConsultation::PAYMENT_OPTIONS, true))) {
                 $blockers[] = 'payment_required';
             }
         }
@@ -950,11 +1003,13 @@ class SplitOrderAction extends Action
                     continue;
                 }
 
-                if ($this->minorFromDecimal($order, $orderState['shipping'] ?? null) === $target->shippingMinor) {
+                $minor = $this->displayedShippingMinor($order, $data, $target->key, $target->shippingMinor);
+
+                if ($this->minorFromDecimal($order, $orderState['shipping'] ?? null) === $minor) {
                     continue;
                 }
 
-                $data['orders'][$orderIndex]['shipping'] = $this->decimalFromMinor($order, $target->shippingMinor);
+                $data['orders'][$orderIndex]['shipping'] = $this->decimalFromMinor($order, $minor);
             }
         }
 
@@ -1066,15 +1121,17 @@ class SplitOrderAction extends Action
      */
     private function paymentOptions(): array
     {
-        $keys = [
-            'offline',
-            'cash-in-hand',
-            'cash-on-delivery',
-            'bank-transfer',
-            'stripe-card',
-            'stripe-wallet-pay',
-            'hosted-payment',
-        ];
+        $keys = $this->completesConsultation()
+            ? CompletePreorderConsultation::PAYMENT_OPTIONS
+            : [
+                'offline',
+                'cash-in-hand',
+                'cash-on-delivery',
+                'bank-transfer',
+                'stripe-card',
+                'stripe-wallet-pay',
+                'hosted-payment',
+            ];
         $options = [];
 
         foreach ($keys as $key) {
@@ -1178,5 +1235,78 @@ class SplitOrderAction extends Action
         return $translated === $key
             ? __('lunarpanel::order.action.split_order.invalid')
             : $translated;
+    }
+
+    /**
+     * The split was opened from Consultation done on a mixed order.
+     */
+    private function completesConsultation(): bool
+    {
+        $data = $this->mountedData();
+
+        if (array_key_exists('complete_consultation', $data)) {
+            return (bool) $data['complete_consultation'];
+        }
+
+        $livewire = $this->getLivewire();
+
+        return (bool) ($livewire->consultationSplit ?? false);
+    }
+
+    private function consultationSplitSkipsShipping(Order $order): bool
+    {
+        return $this->completesConsultation() && CompletePreorderConsultation::isStoreCollection($order);
+    }
+
+    /**
+     * In-stock orders keep the calculated price. A preorder order starts from the
+     * simple-product quote for its own lines. Store collection stays at 0.
+     *
+     * @param  array<string, mixed>  $state
+     */
+    private function displayedShippingMinor(Order $order, array $state, string $key, int $calculated): int
+    {
+        if (! $this->completesConsultation()) {
+            return $calculated;
+        }
+
+        if (CompletePreorderConsultation::isStoreCollection($order)) {
+            return 0;
+        }
+
+        $lineIds = array_keys(array_filter(
+            $this->quantitiesByTarget($state)[$key] ?? [],
+            fn (int $quantity): bool => $quantity > 0,
+        ));
+
+        if (! $this->assignmentIsPreorderOnly($order, $lineIds) || ! class_exists(PreorderConsultationShipping::class)) {
+            return $calculated;
+        }
+
+        return PreorderConsultationShipping::suggestedMinor($order, $lineIds) ?? $calculated;
+    }
+
+    /**
+     * @param  list<int>  $lineIds
+     */
+    private function assignmentIsPreorderOnly(Order $order, array $lineIds): bool
+    {
+        if ($lineIds === []) {
+            return false;
+        }
+
+        $lines = $order->relationLoaded('productLines')
+            ? $order->productLines->keyBy('id')
+            : $order->productLines()->with('purchasable')->get()->keyBy('id');
+
+        foreach ($lineIds as $lineId) {
+            $line = $lines->get($lineId);
+
+            if (! $line instanceof OrderLine || ! $this->lineIsPreorder($line)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

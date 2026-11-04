@@ -3,11 +3,11 @@
 namespace Lunar\Actions\Orders;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Lunar\Actions\AbstractAction;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
-use Lunar\DataTypes\ShippingOption;
 use Lunar\Events\OrderProductLinesRecalculated;
 use Lunar\Exceptions\InsufficientStockException;
 use Lunar\Exceptions\NonPurchasableItemException;
@@ -204,7 +204,7 @@ final class UpdateOrderProductLines extends AbstractAction
         }
 
         if ($change->type === 'add') {
-            $this->addVariant($cart, $change);
+            $this->addVariant($order, $cart, $change);
 
             return;
         }
@@ -235,7 +235,7 @@ final class UpdateOrderProductLines extends AbstractAction
         ]);
     }
 
-    private function addVariant(Cart $cart, OrderProductLineChange $change): void
+    private function addVariant(Order $order, Cart $cart, OrderProductLineChange $change): void
     {
         $variant = ProductVariant::query()->find($change->purchasableId);
 
@@ -254,11 +254,23 @@ final class UpdateOrderProductLines extends AbstractAction
         )->validate();
 
         $meta = [];
-        $existing = $this->findCartLine($cart, $variant->getMorphClass(), $variant->id, $meta);
+
+        if ($variant->isPreorder()) {
+            $meta['preorder'] = true;
+        }
+
+        $existing = $cart->lines()
+            ->where('purchasable_type', $variant->getMorphClass())
+            ->where('purchasable_id', $variant->id)
+            ->get()
+            ->first(fn (CartLine $line): bool => $this->metaMatches(
+                $this->withoutConsultationTimestamp($this->metaArray($line->meta)),
+                $meta,
+            ));
 
         if ($existing) {
             $resulting = $existing->quantity + (int) $change->quantity;
-            $this->assertQuantity($cart, $variant, $resulting, $meta, $existing->id);
+            $this->assertQuantity($cart, $variant, $resulting, $this->metaArray($existing->meta), $existing->id);
             $existing->update([
                 'quantity' => $resulting,
             ]);
@@ -267,6 +279,14 @@ final class UpdateOrderProductLines extends AbstractAction
         }
 
         $this->assertQuantity($cart, $variant, (int) $change->quantity, $meta);
+
+        if ($variant->isPreorder()) {
+            $completedAt = $this->consultationCompletedAt($order);
+
+            if ($completedAt !== null) {
+                $meta['preorder_consultation_completed_at'] = $completedAt;
+            }
+        }
 
         $cart->lines()->create([
             'purchasable_id' => $variant->id,
@@ -637,8 +657,50 @@ final class UpdateOrderProductLines extends AbstractAction
     }
 
     /**
+     * The consultation stamp is ignored when matching an existing preorder line.
+     *
+     * @param  array<string, mixed>  $meta
      * @return array<string, mixed>
      */
+    private function withoutConsultationTimestamp(array $meta): array
+    {
+        unset($meta['preorder_consultation_completed_at']);
+
+        return $meta;
+    }
+
+    /**
+     * Stored consultation time, kept when another preorder line is added.
+     */
+    private function consultationCompletedAt(Order $order): ?string
+    {
+        $order->loadMissing('productLines');
+
+        $latest = null;
+        $latestValue = null;
+
+        foreach ($order->productLines as $line) {
+            $value = $this->metaArray($line->meta)['preorder_consultation_completed_at'] ?? null;
+
+            if (! is_string($value) || blank($value)) {
+                continue;
+            }
+
+            try {
+                $parsed = Carbon::parse($value);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ($latest === null || $parsed->greaterThan($latest)) {
+                $latest = $parsed;
+                $latestValue = $value;
+            }
+        }
+
+        return $latestValue;
+    }
+
     private function metaArray(mixed $meta): array
     {
         if ($meta instanceof \ArrayObject) {

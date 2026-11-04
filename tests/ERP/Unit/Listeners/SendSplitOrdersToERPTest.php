@@ -12,6 +12,8 @@ use Lunar\ERP\Listeners\SendSplitOrdersToERP;
 use Lunar\ERP\Services\ErpService;
 use Lunar\Events\OrdersSplit;
 use Lunar\Models\Order;
+use Lunar\Models\OrderLine;
+use Lunar\Models\ProductVariant;
 use Lunar\Tests\ERP\TestCase;
 
 uses(TestCase::class);
@@ -115,4 +117,47 @@ it('moves an offline split order to failed-erp-sync when the send fails and stil
         ->and($failing->meta['status_before_erp_failure'])->toBe('payment-offline')
         ->and(Order::query()->find($failing->id))->not->toBeNull()
         ->and(Order::query()->find($other->id))->not->toBeNull();
+});
+
+it('does not queue a waiting offline split child', function () {
+    Config::set('lunar.erp.enabled', true);
+    $this->createLanguages();
+    Event::fake([OrderPlacedEvent::class]);
+    Queue::fake();
+
+    $waiting = Order::factory()->create([
+        'status' => 'payment-offline',
+        'meta' => ['payment_option' => 'cash-on-delivery'],
+    ]);
+    $variant = ProductVariant::factory()->create();
+
+    OrderLine::factory()->create([
+        'order_id' => $waiting->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => ['preorder' => true],
+    ]);
+
+    $ready = Order::factory()->create([
+        'status' => 'payment-offline',
+        'meta' => ['payment_option' => 'cash-on-delivery'],
+    ]);
+
+    $service = Mockery::mock(ErpService::class);
+    $service->shouldReceive('getEnabledProviders')->once()->andReturn([ErpProviderEnum::magister]);
+    $service->shouldNotReceive('sendOrder');
+    app()->instance(ErpService::class, $service);
+
+    (new SendSplitOrdersToERP)->handle(new OrdersSplit([$waiting, $ready]));
+
+    $queuedOrders = Queue::listenersPushed(SendOrderToERP::class)
+        ->map(fn ($job) => $job->data[0] ?? null)
+        ->filter(fn ($event) => $event instanceof SplitOfflineOrderReadyForErp)
+        ->map(fn (SplitOfflineOrderReadyForErp $event) => $event->order->id)
+        ->all();
+
+    expect($queuedOrders)->toBe([$ready->id])
+        ->and($waiting->fresh()->status)->toBe('payment-offline')
+        ->and($ready->fresh()->status)->toBe('payment-offline');
 });

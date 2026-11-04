@@ -57,6 +57,23 @@ it('exposes customer invoice when lunar eligible without generation stamp', func
     expect(app(InvoiceDocumentService::class)->hasCustomerInvoice($order))->toBeTrue();
 });
 
+it('exposes the lunar invoice when erp billing is active and lunar already issued it', function () {
+    Config::set('lunar.erp.enabled', true);
+    Config::set('lunar.erp.providers', ['smartbill']);
+    Config::set('lunar.erp.smartbill.enabled', true);
+    Config::set('lunar.erp.actions.billing', ['smartbill']);
+
+    $order = Order::factory()->create([
+        'status' => 'awaiting-bank-transfer',
+        'meta' => [
+            'payment_option' => 'bank-transfer',
+            'lunar_invoice_generated_at' => '2026-11-02 01:42 pm',
+        ],
+    ]);
+
+    expect(app(InvoiceDocumentService::class)->hasCustomerInvoice($order))->toBeTrue();
+});
+
 it('hides customer invoice when erp billing is active without billing meta', function () {
     Config::set('lunar.erp.enabled', true);
     Config::set('lunar.erp.providers', ['smartbill']);

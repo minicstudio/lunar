@@ -43,6 +43,10 @@ class SendOrderToERP implements ShouldQueue
      */
     public function handle(OrderPlacedEvent|SplitOfflineOrderReadyForErp $event): void
     {
+        if ($event->order->awaitsPreorderConsultation()) {
+            return;
+        }
+
         if (! config('lunar.erp.enabled')) {
             return;
         }

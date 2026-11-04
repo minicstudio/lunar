@@ -246,6 +246,21 @@ trait DisplaysOrderSummary
         return self::callStaticLunarHook('extendOrderSummaryPlacedAtEntry', static::getDefaultOrderSummaryPlacedAtEntry());
     }
 
+    public static function getDefaultOrderSummaryConsultationCompletedAtEntry(): TextEntry
+    {
+        return TextEntry::make('preorder_consultation_completed_at')
+            ->label(__('lunarpanel::order.infolist.consultation_done_at.label'))
+            ->alignEnd()
+            ->state(fn (?Order $record): ?Carbon => $record?->preorderConsultationCompletedAt())
+            ->dateTime('Y-m-d h:i a', timezone: config('lunar.panel.timezone'))
+            ->visible(fn (?Order $record): bool => filled($record?->preorderConsultationCompletedAt()));
+    }
+
+    public static function getOrderSummaryConsultationCompletedAtEntry(): Entry
+    {
+        return self::callStaticLunarHook('extendOrderSummaryConsultationCompletedAtEntry', static::getDefaultOrderSummaryConsultationCompletedAtEntry());
+    }
+
     public static function getOrderSummarySchema(): array
     {
         return self::callStaticLunarHook('extendOrderSummarySchema', [
@@ -257,6 +272,7 @@ trait DisplaysOrderSummary
             static::getOrderSummaryChannelEntry(),
             static::getOrderSummaryCreatedAtEntry(),
             static::getOrderSummaryPlacedAtEntry(),
+            static::getOrderSummaryConsultationCompletedAtEntry(),
             static::getSplitFromEntry(),
             static::getSplitIntoEntry(),
         ]);
