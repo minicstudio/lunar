@@ -104,6 +104,10 @@ return [
         'percentage' => [
             'label' => 'Procent',
         ],
+        'free_shipping' => [
+            'label' => 'Livrare gratuită',
+            'helper_text' => 'Cu cod de cupon: toate metodele de livrare sunt gratuite când cuponul este folosit. Fără cod de cupon: dacă în coș există cel puțin un produs eligibil pentru reducere. Procentul sau valoarea fixă pot rămâne goale dacă reducerea oferă doar livrare gratuită. Fiecare comandă livrată astfel contează ca o utilizare.',
+        ],
     ],
     'table' => [
         'name' => [

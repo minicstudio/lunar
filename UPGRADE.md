@@ -32,6 +32,28 @@ This document outlines the key changes and new features in the Admin, Core, Blog
 - `php artisan vendor:publish --tag="lunar.feedback.config"`
 - `php artisan vendor:publish --tag="lunar.feedback.migrations"`
 
+### Core Package
+
+#### ✨ Free shipping discounts
+
+- Advanced amount off discounts have a **Free shipping** toggle (`data.free_shipping`). It works with a coupon code (free shipping when the coupon qualifies) or without one (free shipping when any cart line is eligible). The percentage or fixed value may be left empty for a shipping-only discount. Buy X Get Y has no toggle.
+- A cart with free shipping charges every shipping option at 0. New runtime cart properties: `freeShippingDiscount` (the recorded discount, coupon first) and `shippingDiscountTotal` (the waived amount). The order shipping line keeps the option price in `unit_price` and stores the waived amount in `discount_total`; `Order::shipping_discount_total` sums it.
+- A shipping-only discount gets a 0 entry in the cart and order discount breakdown, so `markAsUsed()` counts the order as one use and a shipping-only coupon is the order's `appliedCoupon`.
+
+#### ⚠️ Behavior changes
+
+- A 0-value automatic discount (empty or 0 percentage, or a fixed value with no positive amount) no longer hides lower-tier discounts. Products it is limited to now get the next tier's discount in the cart and the catalog.
+- Order split targets and other carts with a `shippingOptionOverride` keep the entered shipping price. Staff can enter 0 on a split target to keep free shipping.
+
+#### ⚙️ New/modified configs
+
+- `pipelines.cart` in `config/lunar/cart.php` lists the new stage `Lunar\Pipelines\Cart\ApplyDiscountFreeShipping` directly before `CalculateTax`.
+
+#### 💻 Host responsibilities
+
+- Add `Lunar\Pipelines\Cart\ApplyDiscountFreeShipping::class` to the published `pipelines.cart` in `config/lunar/cart.php`, directly before `CalculateTax::class` (or before the host's own tax stage), in whatever order `ApplyDiscounts` and `ApplyShipping` run. Without it, free-shipping discounts are recorded and the storefront labels options "FREE", but shipping is charged.
+- The storefront (`lunar-frontend`) labels shipping options and rows from `freeShippingDiscount` and `shippingDiscountTotal`; option prices from `ShippingManifest::getOptions()` are unchanged.
+
 ## ⬆️ From 1.15.1 → 2.0.0
 
 ### 📋 Summing up what to do at upgrade

@@ -82,6 +82,10 @@ return [
         'percentage' => [
             'label' => 'Percentage',
         ],
+        'free_shipping' => [
+            'label' => 'Gratis verzending',
+            'helper_text' => 'Met couponcode: alle verzendopties zijn gratis wanneer de coupon wordt gebruikt. Zonder couponcode: verzending is gratis wanneer ten minste één product in de winkelwagen in aanmerking komt voor de korting. Het percentage of de vaste waarde kan leeg blijven als de korting alleen gratis verzending geeft. Elke bestelling die zo wordt verzonden, telt als één gebruik.',
+        ],
     ],
     'table' => [
         'name' => [

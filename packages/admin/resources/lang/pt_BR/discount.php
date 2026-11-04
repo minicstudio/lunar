@@ -82,6 +82,10 @@ return [
         'percentage' => [
             'label' => 'Percentual',
         ],
+        'free_shipping' => [
+            'label' => 'Frete grátis',
+            'helper_text' => 'Com código de cupom: todas as opções de frete são gratuitas quando o cupom é usado. Sem código de cupom: o frete é grátis quando pelo menos um produto do carrinho é elegível para o desconto. O percentual ou o valor fixo podem ficar em branco se o desconto oferecer apenas frete grátis. Cada pedido enviado dessa forma conta como um uso.',
+        ],
     ],
     'table' => [
         'name' => [

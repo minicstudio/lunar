@@ -52,6 +52,7 @@ use Lunar\Exceptions\UnsupportedWeightUnitException;
  * @property ?Carbon $updated_at
  * @property-read PriceDataType $coupon_total
  * @property-read PriceDataType $coupon_total_without_tax
+ * @property-read PriceDataType $shipping_discount_total
  */
 class Order extends BaseModel implements Contracts\Order
 {
@@ -327,7 +328,7 @@ class Order extends BaseModel implements Contracts\Order
                 continue;
             }
 
-            $percentage = $breakdown->discount->data->percentage;
+            $percentage = $breakdown->discount->data->percentage ?? 0;
 
             foreach ($breakdown->lines as $lineData) {
                 $orderLine = $lineData->line;
@@ -411,6 +412,18 @@ class Order extends BaseModel implements Contracts\Order
         return EloquentAttribute::make(
             get: function () {
                 return new PriceDataType((int) $this->shipping_breakdown->items->sum('price.value'), $this->currency, 1);
+            },
+        );
+    }
+
+    /**
+     * Get the shipping amount waived by a free-shipping discount.
+     */
+    protected function shippingDiscountTotal(): EloquentAttribute
+    {
+        return EloquentAttribute::make(
+            get: function () {
+                return new PriceDataType((int) $this->shippingLines->sum('discount_total.value'), $this->currency, 1);
             },
         );
     }

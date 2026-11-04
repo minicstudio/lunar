@@ -39,6 +39,7 @@ use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\FingerprintMismatchException;
 use Lunar\Facades\DB;
 use Lunar\Facades\ShippingManifest;
+use Lunar\Models\Contracts\Discount as DiscountContract;
 use Lunar\Models\Contracts\TaxZone as TaxZoneContract;
 use Lunar\Pipelines\Cart\Calculate;
 use Lunar\Validation\Cart\ValidateCartForOrderCreation;
@@ -86,6 +87,8 @@ class Cart extends BaseModel implements Contracts\Cart
         'taxBreakdown',
         'promotions',
         'freeItems',
+        'freeShippingDiscount',
+        'shippingDiscountTotal',
     ];
 
     /**
@@ -249,6 +252,18 @@ class Cart extends BaseModel implements Contracts\Cart
      * @var null|Collection<FreeItem>
      */
     public ?Collection $freeItems = null;
+
+    /**
+     * The discount that makes shipping free for this calculation.
+     */
+    public ?DiscountContract $freeShippingDiscount = null;
+
+    /**
+     * The shipping amount waived by the free-shipping discount.
+     *
+     * Null when nothing was waived, for example with no option or a 0 priced one.
+     */
+    public ?Price $shippingDiscountTotal = null;
 
     /**
      * Return a new factory instance for the model.

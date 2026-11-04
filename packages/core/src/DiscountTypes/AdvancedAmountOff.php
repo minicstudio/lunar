@@ -29,11 +29,85 @@ class AdvancedAmountOff extends AbstractDiscountType
             return $cart;
         }
 
+        // The coupon path handles both amounts and records free shipping.
+        if (filled($this->discount->coupon)) {
+            return $this->applyCouponForCart($cart);
+        }
+
         if ($this->discount->data['fixed_value'] ?? false) {
             return $this->applyFixedValueForCart($cart);
         }
 
         return $this->applyCouponForCart($cart);
+    }
+
+    /**
+     * Whether this discount makes shipping free for the cart.
+     *
+     * Coupons and automatic discounts use the same rules: the free shipping
+     * flag, the discount conditions, and at least one eligible cart line.
+     */
+    public function grantsFreeShipping(CartContract $cart): bool
+    {
+        return $this->offersFreeShipping($cart) && $this->checkDiscountConditions($cart);
+    }
+
+    /**
+     * Record this discount as the cart's free-shipping discount.
+     *
+     * A discount that took nothing off the lines gets a 0 breakdown entry
+     * with no lines, so marking discounts as used, the order's applied coupon,
+     * and reporting still see it.
+     */
+    public function recordFreeShipping(CartContract $cart): CartContract
+    {
+        /** @var Cart $cart */
+        $cart->freeShippingDiscount = $this->discount;
+
+        $this->addFreeShippingBreakdown($cart);
+
+        return $cart;
+    }
+
+    /**
+     * Whether free shipping is switched on and reaches at least one cart line.
+     *
+     * The caller checks the discount conditions.
+     */
+    protected function offersFreeShipping(CartContract $cart): bool
+    {
+        if (! ($this->discount->data['free_shipping'] ?? false)) {
+            return false;
+        }
+
+        return $this->getEligibleLines($cart)->isNotEmpty();
+    }
+
+    /**
+     * Add a 0 breakdown entry when this discount has no entry of its own.
+     */
+    protected function addFreeShippingBreakdown(CartContract $cart): void
+    {
+        /** @var Cart $cart */
+        $hasBreakdown = ($cart->discountBreakdown ?? collect())->contains(
+            fn ($breakdown) => $breakdown->discount->id === $this->discount->id
+        );
+
+        if ($hasBreakdown) {
+            return;
+        }
+
+        if (! $cart->discounts) {
+            $cart->discounts = collect();
+        }
+
+        $cart->discounts->push($this);
+
+        $this->addDiscountBreakdown($cart, new DiscountBreakdown(
+            price: new Price(0, $cart->currency, 1),
+            lines: collect(),
+            discount: $this->discount,
+        ));
     }
 
     /**
@@ -267,15 +341,32 @@ class AdvancedAmountOff extends AbstractDiscountType
     }
 
     /**
-     * Apply the percentage to the cart line. Code was taken from the lunar core package.
+     * Apply the coupon to the cart: its amount, and free shipping when it offers it.
      */
     public function applyCouponForCart(CartContract $cart): CartContract
     {
-        $data = $this->discount->data;
-
         if (! $this->checkDiscountConditions($cart)) {
             return $cart;
         }
+
+        $grantsFreeShipping = filled($this->discount->coupon) && $this->offersFreeShipping($cart);
+
+        $this->applyCouponAmountForCart($cart);
+
+        if ($grantsFreeShipping) {
+            $this->recordFreeShipping($cart);
+        }
+
+        return $cart;
+    }
+
+    /**
+     * Apply the coupon's percentage or fixed amount to the eligible lines.
+     * Percentage code was taken from the lunar core package.
+     */
+    protected function applyCouponAmountForCart(CartContract $cart): CartContract
+    {
+        $data = $this->discount->data;
 
         if ($data['fixed_value'] ?? false) {
             return $this->applyFixedValueForCart($cart);
@@ -295,7 +386,7 @@ class AdvancedAmountOff extends AbstractDiscountType
                 $subTotal = $subTotalDiscounted;
             }
 
-            $amount = (int) ($subTotal * ($data['percentage'] / 100));
+            $amount = (int) ($subTotal * (($data['percentage'] ?? 0) / 100));
 
             $totalDiscount += $amount;
 

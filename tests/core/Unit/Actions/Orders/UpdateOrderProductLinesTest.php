@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Gate;
 use Lunar\Actions\Orders\OrderProductLineChange;
 use Lunar\Actions\Orders\UpdateOrderProductLines;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
+use Lunar\DataTypes\Price as PriceDataType;
+use Lunar\DataTypes\ShippingOption;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\InsufficientStockException;
 use Lunar\Exceptions\NonPurchasableItemException;
@@ -14,15 +17,19 @@ use Lunar\Exceptions\Orders\LockedOrderProductLineEditException;
 use Lunar\Exceptions\Orders\MissingOrderCartException;
 use Lunar\Exceptions\Orders\UnauthorizedOrderProductLineEditException;
 use Lunar\Exceptions\Orders\UnpricedOrderShippingException;
+use Lunar\Facades\ShippingManifest;
 use Lunar\Models\Cart;
 use Lunar\Models\CartAddress;
 use Lunar\Models\Channel;
+use Lunar\Models\Collection;
 use Lunar\Models\Currency;
+use Lunar\Models\Discount;
 use Lunar\Models\Language;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use Lunar\Models\Price;
 use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
 use Lunar\Models\Transaction;
 use Lunar\Tests\Core\Stubs\User;
 use Lunar\Tests\Core\TestCase;
@@ -356,4 +363,127 @@ it('leaves the order and stock unchanged when the shipping option cannot be pric
     expect($line->fresh()->quantity)->toBe(2)
         ->and($variant->fresh()->stock)->toBe(10)
         ->and($order->fresh()->total->value)->toBe(1);
+});
+
+/**
+ * Give the order a 19.90 courier shipping line that was placed free.
+ */
+function freeShippingCourierLine(Order $order, Cart $cart): void
+{
+    ShippingManifest::addOption(new ShippingOption(
+        name: 'Courier',
+        description: 'Courier',
+        identifier: 'COURIER',
+        price: new PriceDataType(1990, test()->currency, 1),
+        taxClass: TaxClass::factory()->create(),
+    ));
+
+    CartAddress::factory()->create([
+        'cart_id' => $cart->id,
+        'type' => 'shipping',
+        'shipping_option' => 'COURIER',
+    ]);
+
+    $order->lines()->create([
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Courier',
+        'identifier' => 'COURIER',
+        'unit_price' => 1990,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 0,
+        'discount_total' => 1990,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 0,
+    ]);
+}
+
+/**
+ * @param  array<string, mixed>  $data
+ */
+function freeShippingEditDiscount(?string $coupon, array $data = []): Discount
+{
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => $coupon,
+        'starts_at' => now()->subHour(),
+        'data' => array_merge([
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ], $data),
+    ]);
+
+    $discount->channels()->sync([
+        test()->channel->id => ['enabled' => true, 'starts_at' => now()->subHour()],
+    ]);
+
+    return $discount;
+}
+
+it('keeps shipping free with the waived amount on the line while the free shipping coupon still qualifies', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 2, price: 1000);
+    freeShippingCourierLine($order, $cart);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+    freeShippingEditDiscount('SHIPFREE', ['min_prices' => [test()->currency->code => 1500]]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 3));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($saved->shipping_total->value)->toBe(0)
+        ->and($saved->shipping_discount_total->value)->toBe(1990)
+        ->and($saved->appliedCoupon?->coupon)->toBe('SHIPFREE')
+        ->and($shippingLine->unit_price->value)->toBe(1990)
+        ->and($shippingLine->discount_total->value)->toBe(1990)
+        ->and($shippingLine->sub_total->value)->toBe(0)
+        ->and($shippingLine->tax_total->value)->toBe(0)
+        ->and($shippingLine->total->value)->toBe(0)
+        ->and($saved->total->value)->toBe($saved->sub_total->value + $saved->tax_total->value);
+});
+
+it('charges full shipping when the free shipping coupon no longer meets its minimum cart amount', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 2, price: 1000);
+    freeShippingCourierLine($order, $cart);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+    freeShippingEditDiscount('SHIPFREE', ['min_prices' => [test()->currency->code => 1500]]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 1));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($shippingLine->discount_total->value)->toBe(0)
+        ->and($shippingLine->sub_total->value)->toBe(1990)
+        ->and($saved->shipping_total->value)->toBe($shippingLine->total->value)
+        ->and($saved->shipping_total->value)->toBeGreaterThanOrEqual(1990)
+        ->and($saved->shipping_discount_total->value)->toBe(0)
+        ->and($saved->total->value)->toBe(1000 + $saved->shipping_total->value + $saved->productLines()->sum('tax_total'));
+});
+
+it('charges full shipping when the only line eligible for an automatic free shipping discount is removed', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line, 'variant' => $variant] = editableOrder(quantity: 1, price: 1000);
+    $otherLine = productLine($order, pricedVariant(500), 1, 500);
+    freeShippingCourierLine($order, $cart);
+
+    $collection = Collection::factory()->create();
+    $variant->product->collections()->attach($collection->id);
+
+    $discount = freeShippingEditDiscount(null);
+    $discount->collections()->attach($collection->id, ['type' => 'limitation']);
+
+    $kept = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($otherLine->id, 2));
+
+    expect($kept->shipping_total->value)->toBe(0)
+        ->and($kept->shipping_discount_total->value)->toBe(1990);
+
+    $saved = UpdateOrderProductLines::run($kept->fresh(), OrderProductLineChange::remove($line->id));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($saved->productLines()->count())->toBe(1)
+        ->and($shippingLine->discount_total->value)->toBe(0)
+        ->and($shippingLine->sub_total->value)->toBe(1990)
+        ->and($saved->shipping_total->value)->toBe($shippingLine->total->value)
+        ->and($saved->shipping_total->value)->toBeGreaterThanOrEqual(1990)
+        ->and($saved->shipping_discount_total->value)->toBe(0);
 });
