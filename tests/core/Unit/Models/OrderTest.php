@@ -507,15 +507,17 @@ test('the consultation time is the latest stamp on a product line', function () 
     expect($order->refresh()->preorderConsultationCompletedAt()?->equalTo(Carbon::parse($later)))->toBeTrue();
 });
 
-test('reportable scope keeps every order when no status is excluded from reports', function () {
+test('reportable scope keeps reportable orders when no status is flagged, and still skips split originals', function () {
     config()->set('lunar.orders.statuses', [
         'payment-received' => ['label' => 'Payment Received'],
         'test-order' => ['label' => 'Test Order'],
     ]);
 
-    Order::factory()->create(['status' => 'payment-received']);
-    Order::factory()->create(['status' => 'test-order']);
+    $paid = Order::factory()->create(['status' => 'payment-received']);
+    $testOrder = Order::factory()->create(['status' => 'test-order']);
+    $split = Order::factory()->create(['status' => 'split']);
 
-    expect(Order::reportable()->count())->toBe(2)
-        ->and(Order::reportable()->toRawSql())->toBe(Order::query()->toRawSql());
+    expect(Order::reportable()->pluck('id')->all())
+        ->toEqualCanonicalizing([$paid->id, $testOrder->id])
+        ->not->toContain($split->id);
 });

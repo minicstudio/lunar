@@ -89,6 +89,23 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
         return $this->morphTo();
     }
 
+    /**
+     * Smallest quantity that can be placed on one order when this line is split.
+     *
+     * Uses the variant's purchase step and the pack size stored on the line.
+     */
+    public function splitQuantityStep(): int
+    {
+        $stored = max(1, (int) $this->unit_quantity);
+        $purchasable = $this->purchasable;
+
+        if (! $purchasable instanceof ProductVariant) {
+            return $stored;
+        }
+
+        return max($stored, $purchasable->effectiveQuantityIncrement());
+    }
+
     public function currency(): HasOneThrough
     {
         return $this->hasOneThrough(

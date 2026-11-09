@@ -772,6 +772,7 @@ it('has split order copy in every admin locale', function () {
         'lunarpanel::order.action.split_order.do_not_apply',
         'lunarpanel::order.action.split_order.confirm',
         'lunarpanel::order.action.split_order.notification',
+        'lunarpanel::order.action.split_order.coupon_exceeds_order',
         'lunarpanel::order.action.split_order.gates.shipping_required',
         'lunarpanel::order.action.split_order.gates.payment_required',
         'lunarpanel::order.action.split_order.gates.loyalty_spent',
@@ -793,6 +794,7 @@ it('has split order copy in every admin locale', function () {
         ->and(__('lunarpanel::order.action.split_order.products'))->toBe('Products')
         ->and(__('lunarpanel::order.action.split_order.preview'))->toBe('Preview')
         ->and(__('lunarpanel::order.action.split_order.do_not_apply'))->toBe('Do not apply')
+        ->and(__('lunarpanel::order.action.split_order.coupon_exceeds_order'))->toBe('This order\'s product total is less than or equal to the coupon value.')
         ->and(__('lunarpanel::order.action.split_order.move_to_order'))->toBe('Move to order:')
         ->and(__('lunarpanel::order.action.split_order.price_changed'))->toBe('The price of this product has changed since the order was placed.')
         ->and(__('lunarpanel::order.action.split_order.original_price'))->toBe('Original price')
@@ -807,6 +809,7 @@ it('has split order copy in every admin locale', function () {
         ->and(__('lunarpanel::order.action.split_order.products'))->toBe('Termékek')
         ->and(__('lunarpanel::order.action.split_order.preview'))->toBe('Előnézet')
         ->and(__('lunarpanel::order.action.split_order.do_not_apply'))->toBe('Nem alkalmazom')
+        ->and(__('lunarpanel::order.action.split_order.coupon_exceeds_order'))->toBe('Ennek a rendelésnek a termékösszege kisebb vagy egyenlő a kupon értékénél.')
         ->and(__('lunarpanel::order.action.split_order.move_to_order'))->toBe('Áthelyezés a rendelésbe:')
         ->and(__('lunarpanel::order.action.split_order.price_changed'))->toBe('A termék ára a rendelés leadása óta megváltozott.')
         ->and(__('lunarpanel::order.action.split_order.original_price'))->toBe('Eredeti ár')
@@ -848,6 +851,101 @@ it('explains why split confirmation is unavailable', function () {
         ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.discount_breakdown.discount'))
         ->assertMountedActionModalSee(__('lunarpanel::order.action.split_order.gates.too_few_targets'))
         ->assertMountedActionModalSee(__('lunarpanel::order.action.split_order.gates.shipping_required'));
+});
+
+it('lists only the configured payment methods on a split', function () {
+    $currency = Currency::getDefault();
+    $variant = ProductVariant::factory()->create();
+    ModelsPrice::factory()->create([
+        'price' => 1000,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+    $this->order->update([
+        'meta' => ['payment_option' => 'cash-in-hand'],
+    ]);
+    $this->order->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'identifier' => 'only-sku',
+        'description' => 'Only product',
+        'quantity' => 2,
+        'unit_quantity' => 1,
+        'unit_price' => 1000,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->mountAction('split_order');
+
+    foreach ($component->get('mountedActions')[0]['data']['orders'] as $orderState) {
+        expect($orderState['payment_option'])->toBe('cash-on-delivery');
+    }
+
+    $component->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.bt-ipay'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.stripe-card'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.bank-transfer'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.cash-on-delivery'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.cash-in-hand'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.offline'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.stripe-wallet-pay'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.hosted-payment'));
+});
+
+it('rejects a pack split that is not a whole pack', function () {
+    $currency = Currency::getDefault();
+    $variant = ProductVariant::factory()->create([
+        'unit_quantity' => 4,
+        'quantity_increment' => 4,
+    ]);
+    ModelsPrice::factory()->create([
+        'price' => 1000,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+    $this->order->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'identifier' => 'pack-sku',
+        'description' => 'Pack product',
+        'quantity' => 8,
+        'unit_quantity' => 4,
+        'unit_price' => 1000,
+        'sub_total' => 8000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 8000,
+    ]);
+
+    $message = __('lunarpanel::order.action.split_order.gates.quantity_increment');
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->mountAction('split_order');
+
+    $data = $component->get('mountedActions')[0]['data'];
+    $lineKey = array_key_first($data['lines']);
+    $partKeys = array_keys($data['lines'][$lineKey]['parts']);
+
+    $component->set('mountedActions.0.data.lines.'.$lineKey.'.divided', true)
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[0].'.target', '1')
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[0].'.quantity', 3)
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[1].'.target', '2')
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[1].'.quantity', 5)
+        ->assertMountedActionModalSee($message)
+        ->assertMountedActionModalSee(__('lunarpanel::order.action.split_order.quantity_step', ['increment' => 4]))
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[0].'.quantity', 4)
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[1].'.quantity', 4)
+        ->assertMountedActionModalDontSee($message);
 });
 
 it('fills calculated shipping on each order when a quantity is divided', function () {
@@ -1401,6 +1499,204 @@ it('keeps the coupon on the order named in the coupon select', function () {
 
     $component->set('mountedActions.0.data.coupon', array_search($newOrder.' 1', $options, true))
         ->assertMountedActionModalDontSee(__('lunarpanel::order.action.split_order.gates.coupon'));
+});
+
+it('moves a fixed coupon onto the order that can still absorb it', function () {
+    $currency = Currency::getDefault();
+    $group = CustomerGroup::factory()->create(['default' => true]);
+    $small = ProductVariant::factory()->create();
+    $large = ProductVariant::factory()->create();
+    $smallLine = $this->order->lines()->create([
+        'purchasable_type' => $small->getMorphClass(),
+        'purchasable_id' => $small->id,
+        'type' => 'physical',
+        'identifier' => 'small-sku',
+        'description' => 'Small product',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 10000,
+        'sub_total' => 10000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 10000,
+    ]);
+    $largeLine = $this->order->lines()->create([
+        'purchasable_type' => $large->getMorphClass(),
+        'purchasable_id' => $large->id,
+        'type' => 'physical',
+        'identifier' => 'large-sku',
+        'description' => 'Large product',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 20000,
+        'sub_total' => 20000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 20000,
+    ]);
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'ASDD',
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => [
+                $currency->code => 10000,
+            ],
+        ],
+    ]);
+    $discount->channels()->attach([
+        $this->order->channel_id => [
+            'enabled' => true,
+            'starts_at' => now()->subMinute(),
+        ],
+    ]);
+    $discount->customerGroups()->attach([
+        $group->id => [
+            'enabled' => true,
+            'starts_at' => now()->subMinute(),
+        ],
+    ]);
+    $this->order->update([
+        'discount_breakdown' => collect([
+            (object) [
+                'discount_id' => $discount->id,
+                'lines' => collect(),
+                'total' => new Price(0, $currency, 1),
+            ],
+        ]),
+    ]);
+
+    $page = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('split_order');
+
+    $data = $page->get('mountedActions')[0]['data'];
+    $totalLabel = __('lunarpanel::order.action.split_order.order_total');
+    $money = fn (int $minor): string => trim(number_format(
+        $minor / (int) ($currency->factor ?: 1),
+        (int) $currency->decimal_places,
+        '.',
+        ''
+    ).' '.$currency->code);
+
+    $openedTotals = previewEntryAmounts($page->getMountedActionModalHtml(), $totalLabel);
+
+    expect($data['coupon'])->toBe('2')
+        ->and($openedTotals[0])->toBe($money(10000))
+        ->and($openedTotals[1])->not->toBe($money(20000));
+
+    $page->set('mountedActions.0.data.coupon', '1')
+        ->assertNotified(__('lunarpanel::order.action.split_order.coupon_exceeds_order'));
+
+    expect($page->get('mountedActions')[0]['data']['coupon'])->toBe('1');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->callAction('split_order', [
+        'orders' => [
+            ['key' => '1', 'shipping' => '0.00', 'payment_option' => 'cash-on-delivery'],
+            ['key' => '2', 'shipping' => '0.00', 'payment_option' => 'cash-on-delivery'],
+        ],
+        'lines' => [
+            [
+                'order_line_id' => $smallLine->id,
+                'quantity' => 1,
+                'description' => 'Small product',
+                'divided' => false,
+                'price_source' => 'original',
+                'target' => '1',
+                'parts' => [],
+            ],
+            [
+                'order_line_id' => $largeLine->id,
+                'quantity' => 1,
+                'description' => 'Large product',
+                'divided' => false,
+                'price_source' => 'original',
+                'target' => '2',
+                'parts' => [],
+            ],
+        ],
+        'coupon' => '1',
+    ]);
+
+    $children = Order::query()->where('id', '!=', $this->order->id)->get();
+    $withSmall = $children->first(fn (Order $order) => $order->productLines->contains('purchasable_id', $small->id));
+    $withLarge = $children->first(fn (Order $order) => $order->productLines->contains('purchasable_id', $large->id));
+
+    expect($withSmall)->not->toBeNull()
+        ->and($withLarge)->not->toBeNull()
+        ->and((int) $withSmall->discount_total->value)->toBe(10000)
+        ->and((int) $withLarge->discount_total->value)->toBe(0)
+        ->and($withSmall->discount_breakdown->pluck('discount_id')->all())->toContain($discount->id);
+});
+
+it('leaves a fixed coupon where the admin put it when that order can absorb it', function () {
+    $currency = Currency::getDefault();
+    $variants = ProductVariant::factory(2)->create();
+
+    foreach ([10000, 20000] as $index => $price) {
+        $this->order->lines()->create([
+            'purchasable_type' => $variants[$index]->getMorphClass(),
+            'purchasable_id' => $variants[$index]->id,
+            'type' => 'physical',
+            'identifier' => 'sku-'.$index,
+            'description' => 'Product '.$index,
+            'quantity' => 1,
+            'unit_quantity' => 1,
+            'unit_price' => $price,
+            'sub_total' => $price,
+            'discount_total' => 0,
+            'tax_breakdown' => new TaxBreakdown,
+            'tax_total' => 0,
+            'total' => $price,
+        ]);
+    }
+
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'FIXED',
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => [
+                $currency->code => 5000,
+            ],
+        ],
+    ]);
+    $this->order->update([
+        'discount_breakdown' => collect([
+            (object) [
+                'discount_id' => $discount->id,
+                'lines' => collect(),
+                'total' => new Price(0, $currency, 1),
+            ],
+        ]),
+    ]);
+
+    $fitting = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('split_order');
+
+    expect($fitting->get('mountedActions')[0]['data']['coupon'])->toBe('1');
+
+    $discount->update([
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => [
+                $currency->code => 25000,
+            ],
+        ],
+    ]);
+
+    $neither = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('split_order');
+
+    expect($neither->get('mountedActions')[0]['data']['coupon'])->toBe('1');
 });
 
 it('starts a mixed order with preorders on one order and the other products on the other', function () {
