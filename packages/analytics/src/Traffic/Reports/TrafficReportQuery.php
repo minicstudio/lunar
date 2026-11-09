@@ -6,7 +6,9 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Carbon\CarbonPeriod;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Collection;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
 use Lunar\Facades\DB;
 use Lunar\Models\Cart;
@@ -16,10 +18,22 @@ use Lunar\Models\Order;
  * Computes every figure of the traffic sources report for one period.
  *
  * Visits count by `created_at`, carts by `created_at` (only carts with a
- * traffic source) and orders by `placed_at` (only placed, reportable orders).
+ * traffic source) and orders by `placed_at` (only placed orders that count).
  * The funnel compares these totals per source and medium; it does not follow
  * individual visits. Order value is `total - shipping_total`, summed without
  * currency conversion, like the dashboard.
+ *
+ * An order counts when `Order::reportable()` keeps its current status, placed
+ * or not. A `split` original counts when one of the orders it was split into
+ * counts, following orders that were split again. A split counts as one
+ * order, the original, with its own `placed_at` and value; its new orders
+ * are not counted (unlike the dashboard, which counts the new orders).
+ *
+ * Carts whose orders (by `cart_id`) all do not count, and visits whose orders
+ * (by `meta.traffic_source.visit_id`) all do not count, are left out of every
+ * figure. Carts and visits without orders are counted. The lookup runs once
+ * per instance and reads only orders with an excluded status created or
+ * placed from the period start.
  */
 class TrafficReportQuery
 {
@@ -28,9 +42,22 @@ class TrafficReportQuery
      */
     public const UNKNOWN_KEY = 'unknown';
 
+    /**
+     * Status of an order that was split into new orders.
+     */
+    protected const SPLIT_STATUS = 'split';
+
     protected CarbonImmutable $from;
 
     protected CarbonImmutable $to;
+
+    /**
+     * Visits and carts left out because of their orders, and the split
+     * originals that count; null until looked up.
+     *
+     * @var array{visit_ids: list<int>, cart_ids: list<int>, split_original_ids: list<int>}|null
+     */
+    protected ?array $orderExclusions = null;
 
     /**
      * @param  CarbonInterface  $from  First day of the period, included.
@@ -69,9 +96,7 @@ class TrafficReportQuery
      */
     public function visitsBySource(): array
     {
-        return TrafficVisit::query()
-            ->toBase()
-            ->whereBetween('created_at', [$this->from, $this->to])
+        return $this->visitsQuery()
             ->select('source', 'medium', DB::raw('COUNT(*) as visits'))
             ->groupBy('source', 'medium')
             ->orderByDesc('visits')
@@ -94,9 +119,7 @@ class TrafficReportQuery
      */
     public function visitsPerDay(): array
     {
-        $counts = TrafficVisit::query()
-            ->toBase()
-            ->whereBetween('created_at', [$this->from, $this->to])
+        $counts = $this->visitsQuery()
             ->selectRaw('DATE(created_at) as day, COUNT(*) as visits')
             ->groupByRaw('DATE(created_at)')
             ->pluck('visits', 'day');
@@ -146,7 +169,7 @@ class TrafficReportQuery
      * Carts created in the period with a traffic source, per source and medium.
      *
      * Carts without a source are left out; they include admin-created carts,
-     * for example from order splits.
+     * for example from order splits. So are carts whose orders all do not count.
      *
      * @return list<array{source: string, medium: ?string, carts: int}>
      */
@@ -155,6 +178,7 @@ class TrafficReportQuery
         return Cart::query()
             ->toBase()
             ->whereBetween('created_at', [$this->from, $this->to])
+            ->whereNotIn('id', $this->orderExclusions()['cart_ids'])
             ->whereNotNull('meta->traffic_source->source')
             ->select([
                 'meta->traffic_source->source as source',
@@ -173,16 +197,27 @@ class TrafficReportQuery
     }
 
     /**
-     * Placed, reportable orders of the period per source and medium, with
+     * Orders placed in the period that count, per source and medium, with
      * count and order value. Orders without a source have a null source.
+     *
+     * Orders split from another order are left out; their split original
+     * counts in their place, by its own `placed_at` and value.
      *
      * @return list<array{source: ?string, medium: ?string, orders: int, order_value: int}>
      */
     public function ordersBySource(): array
     {
-        return Order::reportable()
+        $splitOriginalIds = $this->orderExclusions()['split_original_ids'];
+
+        return Order::query()
             ->whereNotNull('placed_at')
             ->whereBetween('placed_at', [$this->from, $this->to])
+            ->where(fn (EloquentBuilder $query) => $query
+                ->where(fn (EloquentBuilder $query) => $query
+                    ->reportable()
+                    ->whereNull('meta->split_from_order_id'))
+                ->when($splitOriginalIds !== [], fn (EloquentBuilder $query) => $query
+                    ->orWhereIn('id', $splitOriginalIds)))
             ->toBase()
             ->select([
                 'meta->traffic_source->source as source',
@@ -304,17 +339,189 @@ class TrafficReportQuery
     }
 
     /**
-     * Grouped landing path query, most visited first.
+     * The period's visits, without those left out because of their orders.
      */
-    protected function landingPagesQuery(): Builder
+    protected function visitsQuery(): Builder
     {
         return TrafficVisit::query()
             ->toBase()
             ->whereBetween('created_at', [$this->from, $this->to])
+            ->whereNotIn('id', $this->orderExclusions()['visit_ids']);
+    }
+
+    /**
+     * Grouped landing path query, most visited first.
+     */
+    protected function landingPagesQuery(): Builder
+    {
+        return $this->visitsQuery()
             ->select('landing_path', DB::raw('COUNT(*) as visits'))
             ->groupBy('landing_path')
             ->orderByDesc('visits')
             ->orderBy('landing_path');
+    }
+
+    /**
+     * Look up, once, the visits and carts left out because none of their
+     * orders counts, and the split originals that count.
+     *
+     * Every order is created after its cart and visit, so the orders with an
+     * excluded status created or placed from the period start cover every
+     * order of the period's carts and visits and every split original placed
+     * in the period. Their cart and visit ids are candidates, except those of
+     * split originals that count. A candidate stays out unless another order
+     * that counts has the same `cart_id` or `meta.traffic_source.visit_id`;
+     * split new orders carry their original's visit id.
+     *
+     * @return array{visit_ids: list<int>, cart_ids: list<int>, split_original_ids: list<int>}
+     */
+    protected function orderExclusions(): array
+    {
+        if ($this->orderExclusions !== null) {
+            return $this->orderExclusions;
+        }
+
+        $excludedOrders = Order::query()
+            ->whereNot(fn (EloquentBuilder $query) => $query->reportable())
+            ->where(fn (EloquentBuilder $query) => $query
+                ->where('created_at', '>=', $this->from)
+                ->orWhere('placed_at', '>=', $this->from))
+            ->get(['id', 'cart_id', 'status', 'meta']);
+
+        $splitOriginalIds = $this->countingSplitOriginalIds($excludedOrders);
+
+        [$countingOrders, $notCountingOrders] = $excludedOrders
+            ->partition(fn (Order $order): bool => in_array((int) $order->id, $splitOriginalIds, true));
+
+        $candidateCartIds = $this->ids($notCountingOrders->pluck('cart_id'))
+            ->diff($this->ids($countingOrders->pluck('cart_id')))
+            ->values()
+            ->all();
+
+        $candidateVisitIds = $this->ids($notCountingOrders->map(fn (Order $order): mixed => $this->visitIdOf($order)))
+            ->diff($this->ids($countingOrders->map(fn (Order $order): mixed => $this->visitIdOf($order))))
+            ->values()
+            ->all();
+
+        $keptCartIds = $candidateCartIds === [] ? [] : $this->ids(
+            Order::reportable()
+                ->whereIn('cart_id', $candidateCartIds)
+                ->distinct()
+                ->pluck('cart_id')
+        )->all();
+
+        $keptVisitIds = $candidateVisitIds === [] ? [] : $this->ids(
+            Order::reportable()
+                ->whereIn('meta->traffic_source->visit_id', $candidateVisitIds)
+                ->toBase()
+                ->select('meta->traffic_source->visit_id as visit_id')
+                ->distinct()
+                ->pluck('visit_id')
+        )->all();
+
+        return $this->orderExclusions = [
+            'visit_ids' => array_values(array_diff($candidateVisitIds, $keptVisitIds)),
+            'cart_ids' => array_values(array_diff($candidateCartIds, $keptCartIds)),
+            'split_original_ids' => $splitOriginalIds,
+        ];
+    }
+
+    /**
+     * Ids of the split originals among the given orders that count.
+     *
+     * An original is a `split` order not split from another order. It counts
+     * when one of its new orders counts, or is itself split and has a new
+     * order that counts, and so on. One query per split level.
+     *
+     * @param  Collection<int, Order>  $orders
+     * @return list<int>
+     */
+    protected function countingSplitOriginalIds(Collection $orders): array
+    {
+        /** @var array<int, int> $pending new order id => original id */
+        $pending = [];
+
+        foreach ($orders as $order) {
+            if ($order->status !== self::SPLIT_STATUS || data_get($order->meta, 'split_from_order_id') !== null) {
+                continue;
+            }
+
+            foreach ($this->splitIntoOrderIdsOf($order) as $newOrderId) {
+                $pending[$newOrderId] = (int) $order->id;
+            }
+        }
+
+        /** @var array<int, int> $counting */
+        $counting = [];
+        $seen = [];
+
+        while ($pending !== []) {
+            $seen += $pending;
+            $next = [];
+
+            $newOrders = Order::query()
+                ->whereIn('id', array_keys($pending))
+                ->where(fn (EloquentBuilder $query) => $query
+                    ->reportable()
+                    ->orWhere('status', self::SPLIT_STATUS))
+                ->get(['id', 'status', 'meta']);
+
+            foreach ($newOrders as $newOrder) {
+                $originalId = $pending[(int) $newOrder->id];
+
+                if ($newOrder->status !== self::SPLIT_STATUS) {
+                    $counting[$originalId] = $originalId;
+
+                    continue;
+                }
+
+                foreach ($this->splitIntoOrderIdsOf($newOrder) as $newOrderId) {
+                    if (! isset($seen[$newOrderId])) {
+                        $next[$newOrderId] = $originalId;
+                    }
+                }
+            }
+
+            $pending = array_filter($next, fn (int $originalId): bool => ! isset($counting[$originalId]));
+        }
+
+        return array_values($counting);
+    }
+
+    /**
+     * The ids in an order's `meta.split_into_order_ids`.
+     *
+     * @return list<int>
+     */
+    protected function splitIntoOrderIdsOf(Order $order): array
+    {
+        $ids = data_get($order->meta, 'split_into_order_ids');
+
+        return is_array($ids) ? $this->ids(collect($ids))->all() : [];
+    }
+
+    /**
+     * The visit id in an order's `meta.traffic_source`.
+     */
+    protected function visitIdOf(Order $order): mixed
+    {
+        return data_get($order->meta, 'traffic_source.visit_id');
+    }
+
+    /**
+     * Distinct positive integer ids from the given values.
+     *
+     * @param  Collection<array-key, mixed>  $values
+     * @return Collection<int, int>
+     */
+    protected function ids(Collection $values): Collection
+    {
+        return $values
+            ->toBase()
+            ->filter(fn (mixed $value): bool => is_numeric($value) && (int) $value > 0)
+            ->map(fn (mixed $value): int => (int) $value)
+            ->unique()
+            ->values();
     }
 
     /**

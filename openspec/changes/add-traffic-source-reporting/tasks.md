@@ -193,9 +193,26 @@
 
   Verify that `CODE_MAP.md` mentions `TrafficVisitRecorder` and `TrafficSourcesPage`.
 
+- [x] 7.4 Leave out carts and visits of orders that do not count:
+  - In `TrafficReportQuery`, add the lookup from design.md ("Carts and visits of orders that do not count are left out"), run once per instance. Apply it to `visitsBySource()`, `visitsPerDay()`, the landing page query and `cartsBySource()`. In `ordersBySource()`, leave out orders with `meta.split_from_order_id` and add the split originals that count. Update the class PHPDoc.
+  - Extend `tests/analytics/Feature/Traffic/TrafficReportQueryTest.php` for the scenarios of "Carts and visits of orders that do not count are left out" and "An order counts by its current status" in `specs/analytics/traffic-report/spec.md`:
+    - a Google visit on `/sale` whose cart's order is moved to `test-order` is missing from visits by source, visits per day, landing pages, the funnel and the totals, and its cart is not counted;
+    - a visit and a cart without an order are counted;
+    - an unplaced `awaiting-payment` order keeps its visit and cart;
+    - one visit with a `test-order` cart and a counted cart: the visit and only the counted cart count;
+    - replace the 7.1 test "a split original is not counted and its new orders are": a split into two orders that count gives one visit, one cart and one order with the original's value; with all new orders in `test-order`, the order, the visit and the cart are left out;
+    - 10 visits, 7 carts and 5 orders, one split into two and one into three, give 5 orders and an order rate of 50%;
+    - an order placed on 30 September and split on 2 October counts in September and not in 1–7 October;
+    - a new order that is split again still counts its original once;
+    - an order created after the period and moved to `test-order` leaves out the period's visit and cart;
+    - a status flagged `exclude_from_reports` through config leaves out its visit and cart.
+  - Docs: in the report bullet of `UPGRADE.md` `### Analytics Package` and in the report entry of `docs/changelog/2026-11-05.md`, add that visits and carts whose orders do not count are left out, and that a split order counts once, as its original on its placement date, unlike the dashboard.
+
+  Verify with `vendor/bin/pest tests/analytics/Feature/Traffic/TrafficReportQueryTest.php`.
+
 ## 8. Integration check
 
-- [ ] 8.1 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
+- [x] 8.1 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
 
 ## Workflow follow-up
 

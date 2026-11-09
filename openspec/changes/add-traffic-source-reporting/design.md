@@ -26,10 +26,11 @@ See proposal.md (Why). Facts from this repository and lunar-frontend that shape 
   - Filament's `isServing()` is true for panel routes and for Livewire requests from panel pages.
 - **Orders.**
   - `FillOrderFromCart` sets `'meta' => $cart->meta` on every creation run. Order processing depends on this copy. lunar-frontend reads `payment_option` from order meta 17 times, and `shippingType`, `isBillingSameAsShipping`, `language_locale`, `is_guest`, `locker_id`, the loyalty keys and `wallet_type` reach the order the same way.
-  - `SplitOrder` builds new orders' meta from `COPIED_META_KEYS` (`language_locale`, `shippingType`, `is_guest`, `isBillingSameAsShipping`), which are storefront-written keys. It drops every other key. The original becomes `split`, which is excluded from reports.
+  - `SplitOrder` builds new orders' meta from `COPIED_META_KEYS` (`language_locale`, `shippingType`, `is_guest`, `isBillingSameAsShipping`), which are storefront-written keys. It drops every other key. The original becomes `split`, which is excluded from reports, and lists its new orders in `meta.split_into_order_ids`. It keeps its lines, totals and `placed_at`. The new orders get `placed_at` at the split and `meta.split_from_order_id`, and can be split again. `GetOrderSplitGates` does not block test orders.
+  - An order points to its cart through `cart_id`, and a cart can have several orders (`Cart::orders()`). An order's `traffic_source` holds the visit id, also on split orders.
 - **Models.**
   - `HasModelExtending::observe()` registers an observer on the model-manifest replacement when one exists. lunar-frontend replaces `Order` but not `Cart`.
-  - `Order::reportable()` skips statuses flagged `exclude_from_reports`. `OrderStatsOverview` combines it with `whereNotNull('placed_at')` and sums `total - shipping_total` without currency conversion.
+  - `Order::reportable()` skips statuses flagged `exclude_from_reports`. Core flags `test-order` and `split`, and hosts can flag more. Every dashboard order chart uses it, so a split counts as its new orders. `OrderStatsOverview` combines it with `whereNotNull('placed_at')` and sums `total - shipping_total` without currency conversion.
 - **Filament v4.**
   - A page with a `filters` property passes them to its widgets as `pageFilters`.
   - A table can take array records through `records()`.
@@ -283,14 +284,45 @@ The widgets live in `Traffic/Filament/Widgets/`. Each uses `InteractsWithPageFil
 
 `Traffic/Reports/TrafficReportQuery` takes `CarbonInterface $from, $to` and widens them to whole days. It computes:
 
-- `visitsBySource()`, `visitsPerDay()` and `landingPages()`: `TrafficVisit` by `created_at`;
-- `cartsBySource()`: carts by `created_at` whose `meta->traffic_source->source` is not null, grouped by source and medium. Carts without a source are left out, because they include admin-created carts, for example from splits;
-- `ordersBySource()`: `Order::reportable()->whereNotNull('placed_at')` by `placed_at`, grouped the same way, with count and `sum(total - shipping_total)`;
+- `visitsBySource()`, `visitsPerDay()` and `landingPages()`: `TrafficVisit` by `created_at`, without the visits left out because of their orders (next section);
+- `cartsBySource()`: carts by `created_at` whose `meta->traffic_source->source` is not null, grouped by source and medium. Carts without a source are left out, because they include admin-created carts, for example from splits. So are the carts left out because of their orders (next section);
+- `ordersBySource()`: placed orders by `placed_at`, grouped the same way, with count and `sum(total - shipping_total)`. It takes the `Order::reportable()` orders without `meta.split_from_order_id`, plus the split originals that count (next section), so a split is one order with the original's date and value;
 - `funnel()`: merges these by source and medium. Orders without a source form the unknown row, with no visits, carts or rate.
 
 Laravel JSON paths compile on MySQL and SQLite.
 
 *Alternative:* join to visits through `visit_id`. Rejected: JSON joins over carts, and orders from older carts would drop out.
+
+### Carts and visits of orders that do not count are left out
+
+Visits and carts whose orders all have a status excluded from reports, for example `test-order`, drop out of every figure (user decision). The rules:
+
+- An order counts when `Order::reportable()` would keep its status. `placed_at` does not matter, so an unplaced order awaiting payment keeps its cart and visit.
+- A `split` original counts when one of the orders in its `split_into_order_ids` counts, following new orders that were split again. In the order figures it counts once in place of its new orders, with its own `placed_at` and order value (user decision: a split order stays one order, unlike on the dashboard). Its visit and cart count once too, because the new orders' carts are created in the admin panel and have no source.
+- A cart is left out when it has orders and none of them counts. It is linked to them through `cart_id`.
+- A visit is left out when orders carry its id in `traffic_source` and none of them counts.
+
+`TrafficReportQuery` finds the left-out ids and the split originals that count once per instance:
+
+1. It loads the orders with an excluded status created or placed from the period start, with `id`, `cart_id`, `status`, `placed_at` and `meta`. An order is created after its cart and visit, so this covers every order of the period's carts and visits, and every split original placed in the period.
+2. For the `split` originals among them, it loads the statuses of their new orders, one query per split level. An original counts when one of them counts.
+3. The orders that do not count give the candidate cart ids (`cart_id`) and visit ids (`meta.traffic_source.visit_id`). The split originals that count take their cart id and visit id out of the candidates.
+4. One query each drops the candidates that also have a reportable order: by `cart_id` for carts, and by `meta->traffic_source->visit_id` for visits. Split new orders carry the visit id, so they keep their original's visit.
+5. The visit queries and `cartsBySource()` add `whereNotIn('id', …)` for the ids that remain. `ordersBySource()` adds the split originals that count.
+
+The current status decides, so marking an order as a test later also changes past periods.
+
+*Alternative:* a `NOT EXISTS` subquery on `lunar_orders.meta->traffic_source->visit_id` for every visit. Rejected: the JSON path has no index, and it would scan orders for every visit of the period. Orders with an excluded status are few.
+
+*Alternative:* flag the visit and the cart when an order's status changes. Rejected: it needs a column, a status listener and a backfill, and a status can change back.
+
+*Alternative:* treat `split` like the other excluded statuses. Rejected: every split order would drop out of the report with its visit and cart.
+
+*Alternative:* ignore `split` originals. Rejected: a split test order's cart would still count.
+
+*Alternative:* count a split's new orders, like the dashboard (the previous plan). Rejected (user decision): a split into three orders would count three times, raise the order rate and move the order to the split date.
+
+*Alternative:* one order per split, valued at the sum of the new orders that count. Rejected: it groups new orders by their original, and the value differs from the original's only when a new order is edited or marked as a test later.
 
 ### Permission `analytics:traffic-sources`
 
@@ -305,7 +337,10 @@ Laravel JSON paths compile on MySQL and SQLite.
 - [Table growth: one row per session] → Rows are small and indexed on `created_at`. Pruning can come later.
 - [Report queries group JSON paths on `lunar_carts`, which has no `created_at` index] → The period limits the scan, and the widgets do not poll. An index can come later.
 - [Multi-currency shops] → Order value is summed without conversion, like the dashboard.
-- [A split turns one order into several] → The dashboard does the same, and the original is excluded.
+- [The traffic report and the dashboard count splits differently] → The dashboard counts the new orders on the split date. The traffic report counts the original once, on its placement date.
+- [A split's new orders are edited or partly marked as a test] → The report keeps the original's value, and counts it while one new order counts.
+- [Marking an order as a test later changes past figures] → A period's visits and carts drop when one of their orders is marked later, even after the period. This is intended: the report follows the current status, like its order figures.
+- [Orders with an excluded status accumulate (test orders, split originals)] → The lookup reads only those created from the period start. If they grow large, it can move to a subquery without a spec change.
 - [Hosts with `lunar.cart_session.auto_create = true` create the cart on the landing request, before the visit is recorded] → That cart and its order have no source. The order counts as unknown. lunar-frontend's default is `false`.
 - [Two simultaneous first requests in a new session] → They can record two visits. Low impact, and not worth a lock.
 - [A customer who logs in only after landing] → The visit is recorded before their cart is known, and it counts. Remember-me logins are known on the landing request.

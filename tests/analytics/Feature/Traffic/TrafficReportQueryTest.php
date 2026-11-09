@@ -63,6 +63,89 @@ function facebookSocial(): array
     return ['source' => 'facebook', 'medium' => 'social'];
 }
 
+function googleOrganic(): array
+{
+    return ['source' => 'google', 'medium' => 'organic'];
+}
+
+/**
+ * @param  array{source: string, medium: ?string}  $source
+ */
+function reportVisit(array $source, string $at, string $landingPath = '/'): TrafficVisit
+{
+    return TrafficVisit::factory()->create([
+        ...$source,
+        'landing_path' => $landingPath,
+        'created_at' => CarbonImmutable::parse($at),
+    ]);
+}
+
+/**
+ * A cart created in the visit, stamped with its traffic source.
+ */
+function reportCartOf(TrafficVisit $visit, ?string $at = null): Cart
+{
+    return Cart::factory()->create([
+        'meta' => ['traffic_source' => [
+            'visit_id' => $visit->id,
+            'source' => $visit->source,
+            'medium' => $visit->medium,
+            'campaign' => $visit->campaign,
+        ]],
+        'created_at' => $at === null ? $visit->created_at : CarbonImmutable::parse($at),
+    ]);
+}
+
+/**
+ * An order created from the cart, which copies its traffic source.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function reportOrderOf(Cart $cart, ?string $placedAt, array $attributes = []): Order
+{
+    return Order::factory()->create(array_merge([
+        'cart_id' => $cart->id,
+        'meta' => ['traffic_source' => $cart->meta['traffic_source']],
+        'placed_at' => $placedAt === null ? null : CarbonImmutable::parse($placedAt),
+        'created_at' => $placedAt === null ? $cart->created_at : CarbonImmutable::parse($placedAt),
+        'status' => 'payment-received',
+        'total' => 10000,
+        'shipping_total' => 1500,
+    ], $attributes));
+}
+
+/**
+ * Split the order as `SplitOrder` does: each new order gets an admin cart
+ * without a source, `split_from_order_id`, the original's traffic source and
+ * `placed_at` at the split; the original becomes `split`.
+ *
+ * @param  list<string>  $statuses  One new order per status.
+ * @return list<Order>
+ */
+function splitReportOrder(Order $original, string $at, array $statuses): array
+{
+    $meta = $original->meta->getArrayCopy();
+
+    $newOrders = array_map(fn (string $status): Order => Order::factory()->create([
+        'cart_id' => Cart::factory()->create(['meta' => ['shippingType' => 'courier'], 'created_at' => CarbonImmutable::parse($at)])->id,
+        'meta' => array_filter([
+            'traffic_source' => $meta['traffic_source'] ?? null,
+            'split_from_order_id' => $original->id,
+        ]),
+        'status' => $status,
+        'placed_at' => CarbonImmutable::parse($at),
+        'created_at' => CarbonImmutable::parse($at),
+        'total' => 4000,
+        'shipping_total' => 500,
+    ]), $statuses);
+
+    $original->meta = [...$meta, 'split_into_order_ids' => array_map(fn (Order $order): int => $order->id, $newOrders)];
+    $original->status = 'split';
+    $original->save();
+
+    return $newOrders;
+}
+
 test('visits are split by source and medium', function () {
     reportVisits(60, 'google', 'organic', '2026-10-02 10:00');
     reportVisits(30, 'facebook', 'social', '2026-10-03 10:00');
@@ -150,12 +233,170 @@ test('test orders and orders never placed are not counted', function () {
         ->and(octoberReport()->totals()['orders'])->toBe(0);
 });
 
-test('a split original is not counted and its new orders are', function () {
-    $original = reportOrder(facebookSocial(), '2026-10-02 10:00', ['status' => 'split']);
-    reportOrder(facebookSocial(), '2026-10-03 10:00', ['meta' => ['split_from_order_id' => $original->id, 'traffic_source' => ['visit_id' => 1, ...facebookSocial(), 'campaign' => null]]]);
-    reportOrder(facebookSocial(), '2026-10-03 10:00', ['meta' => ['split_from_order_id' => $original->id, 'traffic_source' => ['visit_id' => 1, ...facebookSocial(), 'campaign' => null]]]);
+test('a split order counts once, as its original, with its visit and cart', function () {
+    $original = reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-10-02 09:00')), '2026-10-02 10:00');
+    splitReportOrder($original, '2026-10-03 10:00', ['payment-received', 'awaiting-payment']);
 
-    expect(collect(octoberReport()->funnel())->firstWhere('source', 'facebook')['orders'])->toBe(2);
+    $report = octoberReport();
+
+    expect($report->ordersBySource())->toBe([
+        ['source' => 'facebook', 'medium' => 'social', 'orders' => 1, 'order_value' => 8500],
+    ])->and($report->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 1,
+        'order_value' => 8500,
+    ]);
+});
+
+test('a split order whose new orders are all test orders is left out with its visit and cart', function () {
+    $original = reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-10-02 09:00')), '2026-10-02 10:00');
+    splitReportOrder($original, '2026-10-03 10:00', ['test-order', 'test-order']);
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 0,
+        'carts' => 0,
+        'orders' => 0,
+        'order_value' => 0,
+    ]);
+});
+
+test('ten visits with two split orders give five orders and an order rate of 50%', function () {
+    $visits = collect(range(1, 10))->map(fn (): TrafficVisit => reportVisit(facebookSocial(), '2026-10-02 10:00'));
+    $carts = $visits->take(7)->map(fn (TrafficVisit $visit): Cart => reportCartOf($visit));
+    $orders = $carts->take(5)->map(fn (Cart $cart): Order => reportOrderOf($cart, '2026-10-03 10:00'))->values();
+
+    splitReportOrder($orders[0], '2026-10-04 10:00', ['payment-received', 'payment-received']);
+    splitReportOrder($orders[1], '2026-10-04 10:00', ['payment-received', 'payment-received', 'payment-received']);
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 10,
+        'carts' => 7,
+        'orders' => 5,
+        'order_rate' => 0.5,
+    ]);
+});
+
+test('an order placed on 30 September and split on 2 October counts in September only', function () {
+    $original = reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-09-30 09:00')), '2026-09-30 10:00');
+    splitReportOrder($original, '2026-10-02 10:00', ['payment-received', 'payment-received']);
+
+    $september = new TrafficReportQuery(CarbonImmutable::parse('2026-09-01'), CarbonImmutable::parse('2026-09-30'));
+
+    expect($september->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 1,
+        'order_value' => 8500,
+    ])->and(octoberReport()->totals())->toMatchArray([
+        'visits' => 0,
+        'carts' => 0,
+        'orders' => 0,
+    ]);
+});
+
+test('a new order that is split again still counts its original once', function () {
+    $original = reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-10-02 09:00')), '2026-10-02 10:00');
+    [$splitAgain] = splitReportOrder($original, '2026-10-03 10:00', ['payment-received', 'test-order']);
+    splitReportOrder($splitAgain, '2026-10-04 10:00', ['payment-received', 'payment-received']);
+
+    $report = octoberReport();
+
+    expect($report->ordersBySource())->toBe([
+        ['source' => 'facebook', 'medium' => 'social', 'orders' => 1, 'order_value' => 8500],
+    ])->and($report->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 1,
+    ]);
+});
+
+test('a visit whose order was moved to test-order is left out of every figure', function () {
+    reportOrderOf(reportCartOf(reportVisit(googleOrganic(), '2026-10-02 10:00', '/sale')), '2026-10-02 11:00', ['status' => 'test-order']);
+    reportVisits(2, 'google', 'organic', '2026-10-03 10:00');
+
+    $report = octoberReport();
+
+    expect($report->visitsBySource())->toBe([
+        ['source' => 'google', 'medium' => 'organic', 'visits' => 2],
+    ])->and($report->visitsPerDay())->toMatchArray([
+        '2026-10-02' => 0,
+        '2026-10-03' => 2,
+    ])->and($report->landingPages())->toBe([
+        ['landing_path' => '/', 'visits' => 2],
+    ])->and($report->cartsBySource())->toBe([])
+        ->and($report->ordersBySource())->toBe([])
+        ->and($report->funnel())->toHaveCount(1)
+        ->and($report->funnel()[0])->toMatchArray([
+            'source' => 'google',
+            'medium' => 'organic',
+            'visits' => 2,
+            'carts' => 0,
+            'orders' => 0,
+        ])->and($report->totals())->toMatchArray([
+            'visits' => 2,
+            'carts' => 0,
+            'orders' => 0,
+        ]);
+});
+
+test('a visit and a cart without an order are counted', function () {
+    reportCartOf(reportVisit(googleOrganic(), '2026-10-02 10:00'));
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 0,
+    ]);
+});
+
+test('an unplaced order awaiting payment keeps its visit and cart', function () {
+    reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-10-02 10:00')), null, ['status' => 'awaiting-payment']);
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 0,
+    ]);
+});
+
+test('a visit with a test order cart and a counted cart counts the visit and only the counted cart', function () {
+    $visit = reportVisit(facebookSocial(), '2026-10-02 10:00');
+    reportOrderOf(reportCartOf($visit), '2026-10-02 11:00', ['status' => 'test-order']);
+    reportOrderOf(reportCartOf($visit, '2026-10-03 10:00'), '2026-10-03 11:00');
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 1,
+    ]);
+});
+
+test('an order created after the period and moved to test-order leaves out the period\'s visit and cart', function () {
+    reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-10-05 10:00')), '2026-10-09 10:00', ['status' => 'test-order']);
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 0,
+        'carts' => 0,
+        'orders' => 0,
+    ]);
+});
+
+test('a status excluded from reports through config leaves out its visit and cart', function () {
+    config(['lunar.orders.statuses.fraud' => ['label' => 'Fraud', 'exclude_from_reports' => true]]);
+
+    reportOrderOf(reportCartOf(reportVisit(facebookSocial(), '2026-10-02 10:00')), '2026-10-02 11:00', ['status' => 'fraud']);
+    reportCartOf(reportVisit(googleOrganic(), '2026-10-02 12:00'));
+
+    $report = octoberReport();
+
+    expect($report->visitsBySource())->toBe([
+        ['source' => 'google', 'medium' => 'organic', 'visits' => 1],
+    ])->and($report->totals())->toMatchArray([
+        'visits' => 1,
+        'carts' => 1,
+        'orders' => 0,
+    ]);
 });
 
 test('orders without a source form the unknown row, and carts without a source are not counted', function () {

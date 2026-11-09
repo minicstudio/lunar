@@ -51,6 +51,7 @@ lunar-frontend (change `track-visitor-traffic-sources`) only attaches the record
   - visits by source;
   - visits per day;
   - per source and medium: visits, carts, placed and reportable orders, order value and order rate. Orders without a source appear as "unknown";
+  - visits and carts whose orders all have a status excluded from reports, for example `test-order`, are left out of every figure (user decision). A split order counts as one order, the original, with its own placement date and value, unlike the dashboard, which counts the new orders (user decision). Its visit and cart count once. Visits and carts without orders still count;
   - the most visited landing pages, not linked to carts or orders.
 - A migration state class creates the permission on `php artisan migrate`. No role is created. Admins grant the permission to the development and marketing staff.
 

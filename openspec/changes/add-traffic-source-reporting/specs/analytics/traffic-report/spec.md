@@ -44,7 +44,7 @@ Every figure in the report SHALL cover one period, given by a start date and an 
 - **THEN** visits, carts and orders from before 1 October or after 7 October are not counted
 
 ### Requirement: Visits by source
-The report SHALL show the number of visits in the period, its split by source and medium, and the number of visits on each day of the period.
+The report SHALL show the number of visits in the period, its split by source and medium, and the number of visits on each day of the period. Visits left out because of their orders, as "Carts and visits of orders that do not count are left out" defines, SHALL NOT be counted.
 
 #### Scenario: Split of visits
 - **WHEN** the period holds 60 `google` / `organic`, 30 `facebook` / `social` and 10 `direct` / `none` visits
@@ -62,14 +62,14 @@ For each source and medium, the report SHALL show:
 - the order value of those orders;
 - their number divided by the visits.
 
-The order value SHALL be the order total without shipping, as in the dashboard sales figures.
+The order value SHALL be the order total without shipping, as in the dashboard sales figures. Visits and carts left out because of their orders SHALL NOT be counted.
 
 #### Scenario: Facebook row
 - **WHEN** the period holds 30 `facebook` / `social` visits, and 6 carts and 3 placed orders with that source
 - **THEN** the Facebook row shows 30 visits, 6 carts, 3 orders, their order value and an order rate of 10%
 
 ### Requirement: Only reportable placed orders count
-The report SHALL count an order only when it was placed and its status is not excluded from reports.
+The report SHALL count an order only when it was placed and it counts, as "An order counts by its current status" defines. A split order SHALL count once, as the original order with its own placement date and order value, and the orders it was split into SHALL NOT be counted.
 
 #### Scenario: Test order
 - **WHEN** an order with a Facebook source is placed in the period and then moved to `test-order`
@@ -80,8 +80,50 @@ The report SHALL count an order only when it was placed and its status is not ex
 - **THEN** it is not counted
 
 #### Scenario: Split order
-- **WHEN** a placed Facebook order is split into two orders in the period
-- **THEN** the two new orders are counted and the original order is not
+- **WHEN** a placed Facebook order is split into two orders whose status counts
+- **THEN** it counts as one order, with the original order's placement date and order value, and the two new orders are not counted
+
+#### Scenario: Ten visits with two split orders
+- **WHEN** the period holds 10 visits, 7 of them with a cart and 5 with a placed order, and one order is split into two orders and another into three
+- **THEN** the report shows 10 visits, 7 carts, 5 orders and an order rate of 50%
+
+#### Scenario: Order split after the period
+- **WHEN** an order placed on 30 September is split on 2 October
+- **THEN** a report for September counts it once, and a report for 1 to 7 October does not count it
+
+### Requirement: Carts and visits of orders that do not count are left out
+The report SHALL NOT count a cart that has orders when none of them counts. It SHALL NOT count a visit in any figure, including visits by source, visits per day and landing pages, when orders carry it as their traffic source and none of them counts. Carts and visits without orders SHALL be counted. Which orders count is defined by "An order counts by its current status".
+
+#### Scenario: Visit that led to a test order
+- **WHEN** a visitor lands on `/sale` from `https://www.google.com/`, creates a cart and places an order, and the order is then moved to `test-order`
+- **THEN** the visit, the cart and the order are not counted in any figure, and `/sale` does not get that visit
+
+#### Scenario: Visit and cart without an order
+- **WHEN** another visitor lands from `https://www.google.com/` and creates a cart but no order
+- **THEN** the visit and the cart are counted
+
+#### Scenario: Test order and counted order in one visit
+- **WHEN** one cart of a visit becomes an order moved to `test-order`, and a second cart of the same visit becomes an order whose status counts
+- **THEN** the visit and the second cart are counted, and the first cart is not
+
+### Requirement: An order counts by its current status
+An order SHALL count when its status is not excluded from reports, whether or not it has been placed. A split order SHALL count when at least one of the orders it was split into counts, also when that order was split again. The orders' current status SHALL decide, also for orders created after the period.
+
+#### Scenario: Order not placed yet
+- **WHEN** a visit's cart has an order awaiting payment that has not been placed
+- **THEN** the visit and the cart are counted, and the order is not
+
+#### Scenario: Split order keeps its visit and cart
+- **WHEN** a Facebook visit's cart becomes an order that is split into two orders whose status counts
+- **THEN** the report counts one visit, one cart and one order
+
+#### Scenario: Split test order
+- **WHEN** all orders a split order was split into are moved to `test-order`
+- **THEN** neither the order, nor its visit, nor its cart is counted
+
+#### Scenario: Order marked as test after the period
+- **WHEN** a visit and its cart from 1 to 7 October led to an order placed on 9 October and later moved to `test-order`
+- **THEN** a report for 1 to 7 October counts neither the visit nor the cart
 
 ### Requirement: Orders without a source are shown as unknown
 The report SHALL count orders without a traffic source under an unknown source, with no visits, no carts and no order rate. Carts without a traffic source SHALL NOT be counted.
