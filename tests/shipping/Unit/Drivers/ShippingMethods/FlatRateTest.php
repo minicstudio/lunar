@@ -68,3 +68,95 @@ test('can get flat rate shipping', function () {
 
     expect($shippingOption->price->value)->toEqual(600);
 });
+
+test('a mixed cart flat rate uses only the non-preorder subtotal', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'flat-rate',
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->createMany([
+        [
+            'price' => 600,
+            'min_quantity' => 1,
+            'currency_id' => $currency->id,
+        ],
+        [
+            'price' => 200,
+            'min_quantity' => 800,
+            'currency_id' => $currency->id,
+        ],
+    ]);
+
+    ['cart' => $cart] = $this->cartWithVariantLines($currency, [
+        ['price' => 500],
+        ['price' => 10000, 'variant' => ['purchasable' => 'preorder']],
+    ]);
+
+    $shippingOption = (new FlatRate)->resolve(new ShippingOptionRequest(
+        cart: $cart,
+        shippingRate: $shippingRate,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(600)
+        ->and($shippingOption->meta)->not->toHaveKey('preorder_shipping_pending');
+});
+
+test('a preorder-only cart is offered flat rate at price 0 with the pending marker', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'flat-rate',
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->create([
+        'price' => 600,
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+    ]);
+
+    ['cart' => $cart] = $this->cartWithVariantLines($currency, [
+        ['price' => 10000, 'variant' => ['purchasable' => 'preorder']],
+    ]);
+
+    $shippingOption = (new FlatRate)->resolve(new ShippingOptionRequest(
+        cart: $cart,
+        shippingRate: $shippingRate,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(0)
+        ->and($shippingOption->meta['preorder_shipping_pending'])->toBeTrue();
+});

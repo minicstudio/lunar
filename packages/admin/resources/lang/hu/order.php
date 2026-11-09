@@ -231,6 +231,9 @@ return [
         'date_placed' => [
             'label' => 'Rendelés dátuma',
         ],
+        'consultation_done_at' => [
+            'label' => 'Egyeztetés kész ekkor',
+        ],
         'new_returning' => [
             'label' => 'Új / Visszatérő',
         ],
@@ -294,6 +297,7 @@ return [
             'cash-on-delivery' => 'Utánvét',
             'bank-transfer' => 'Banki átutalás',
             'stripe-card' => 'Bankkártya',
+            'bt-ipay' => 'Bankkártyás fizetés (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online bankkártyás fizetés',
         ],
@@ -312,6 +316,8 @@ return [
             'requires_capture' => 'Ennél a rendelésnél még fizetést kell lekönyvelni.',
             'partially_refunded' => 'Ennél a rendelésnél részleges visszatérítés történt.',
             'refunded' => 'Ennél a rendelésnél visszatérítés történt.',
+            'preorder_consultation' => 'Ez a rendelés előrendelhető terméket tartalmaz. Hívja fel az ügyfelet, mielőtt a fizetést vagy a szállítást elindítja.',
+            'preorder_consultation_no_phone' => 'Nincs megadva telefonszám.',
             'product_line_gates' => [
                 'paid' => 'Fizetve: ez a rendelés nem módosítható, mert ki van fizetve.',
                 'erp' => 'ERP: ez a rendelés nem módosítható, mert el lett küldve az ERP-nek.',
@@ -351,6 +357,11 @@ return [
             'email_addresses' => [
                 'label' => 'E-mail címek',
             ],
+            'preorder_warning' => [
+                'description' => 'Biztosan módosítja a státuszt a telefonos egyeztetés, a fizetési mód és a szállítási díj megerősítése előtt?',
+                'proceed' => 'Folytatás',
+                'cancel' => 'Mégse',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'PDF letöltése',
@@ -379,6 +390,12 @@ return [
                     'helper_text' => 'A címkék elválasztásához használjon Entert, Tabot vagy vesszőt (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Egyeztetés kész',
+            'mixed_description' => 'Ez a rendelés raktáron lévő és előrendelhető termékeket is tartalmaz. Tartsa egy rendelésben, vagy bontsa külön rendelésekre.',
+            'keep' => 'Egy rendelésben marad',
+            'split' => 'Bontás külön rendelésekre',
         ],
         'capture_payment' => [
             'label' => 'Fizetés lekönyvelése',
@@ -444,6 +461,7 @@ return [
             'new_order' => 'Új rendelés',
             'move_to_order' => 'Áthelyezés a rendelésbe:',
             'divide_quantity' => 'Mennyiség osztása',
+            'quantity_step' => ':increment többszörösét add meg.',
             'price' => 'Ár',
             'price_changed' => 'A termék ára a rendelés leadása óta megváltozott.',
             'original_price' => 'Eredeti ár',
@@ -457,6 +475,7 @@ return [
             'do_not_apply' => 'Nem alkalmazom',
             'confirm' => 'Rendelés bontása',
             'notification' => 'A rendelés szét lett bontva',
+            'coupon_exceeds_order' => 'Ennek a rendelésnek a termékösszege kisebb vagy egyenlő a kupon értékénél.',
             'invalid' => 'A bontás még nem erősíthető meg.',
             'gates' => [
                 'closed' => 'Ez a rendelés már nem bontható.',
@@ -477,6 +496,7 @@ return [
                 'loyalty_cannot_accept' => 'A kiválasztott rendelés nem tudja fogadni az összes már felhasznált hűségpontot.',
                 'shipping_required' => 'Minden rendeléshez adj meg szállítási költséget.',
                 'payment_required' => 'Minden rendeléshez válassz fizetési módot.',
+                'quantity_increment' => 'A csomagban értékesített terméket csak egész csomagokra lehet bontani.',
             ],
         ],
     ],

@@ -18,5 +18,6 @@ final class SplitOrderRequest
         public ?string $loyaltyTarget,
         public bool $applyLoyalty,
         public array $catalogPricedLineIds = [],
+        public bool $completePreorderConsultation = false,
     ) {}
 }

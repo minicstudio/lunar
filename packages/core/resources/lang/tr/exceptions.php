@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'Bu siparişi bölemezsiniz.',
     'order.invalid_split' => 'Sipariş bölünemedi.',
     'order.locked_split' => 'Sipariş bölünemez.',
+    'order.unknown_preorder_payment' => 'Bilinmeyen ön sipariş görüşmesi ödeme yöntemi.',
+    'order.negative_consultation_shipping' => 'Görüşme kargo ücreti negatif olamaz.',
 ];

@@ -87,6 +87,32 @@
             gap: 0.5rem;
         }
 
+        .split-order-preview .fi-in-entry.fi-in-entry-has-inline-label {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .split-order-preview .fi-in-entry.fi-in-entry-has-inline-label > .fi-in-entry-label-col {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .split-order-preview .fi-in-entry.fi-in-entry-has-inline-label > .fi-in-entry-content-col {
+            flex: 0 0 auto;
+            width: auto;
+        }
+
+        .split-order-preview .fi-in-entry.fi-in-entry-has-inline-label .fi-in-entry-content-ctn,
+        .split-order-preview .fi-in-entry.fi-in-entry-has-inline-label .fi-in-entry-content {
+            width: auto;
+        }
+
+        .split-order-preview .fi-in-entry.fi-in-entry-has-inline-label .fi-in-entry-label {
+            overflow-wrap: break-word;
+        }
+
         .split-order-preview-unit.fi-in-entry {
             margin-bottom: 1rem;
         }

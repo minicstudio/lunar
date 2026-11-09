@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Vânzare superioară',
         'alternate' => 'Alternativă',
     ],
+    'orders' => [
+        'shipping' => 'Livrare',
+    ],
 ];

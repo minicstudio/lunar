@@ -23,4 +23,6 @@ return [
     'order.unauthorized_split' => 'نمی‌توانید این سفارش را تقسیم کنید.',
     'order.invalid_split' => 'سفارش تقسیم نشد.',
     'order.locked_split' => 'سفارش قابل تقسیم نیست.',
+    'order.unknown_preorder_payment' => 'روش پرداخت ناشناخته برای مشاوره پیش‌سفارش.',
+    'order.negative_consultation_shipping' => 'هزینه ارسال مشاوره نمی‌تواند منفی باشد.',
 ];

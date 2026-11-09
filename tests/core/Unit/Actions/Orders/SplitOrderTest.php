@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\Gate;
 use Lunar\Actions\Orders\DTOs\SplitOrderRequest;
 use Lunar\Actions\Orders\DTOs\SplitOrderTarget;
 use Lunar\Actions\Orders\SplitOrder;
-use Lunar\Analytics\AnalyticsServiceProvider;
-use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
 use Lunar\DataTypes\Price as PriceDataType;
@@ -165,7 +163,7 @@ function pricedSplitVariant(int $price, array $attributes = []): ProductVariant
 /**
  * @param  list<int>  $catalogPricedLineIds
  */
-function splitRequest(array $targets, ?string $couponTarget = null, bool $applyCoupon = false, ?string $loyaltyTarget = null, bool $applyLoyalty = false, array $catalogPricedLineIds = []): SplitOrderRequest
+function splitRequest(array $targets, ?string $couponTarget = null, bool $applyCoupon = false, ?string $loyaltyTarget = null, bool $applyLoyalty = false, array $catalogPricedLineIds = [], bool $completePreorderConsultation = false): SplitOrderRequest
 {
     return new SplitOrderRequest(
         targets: array_map(fn (array $target): SplitOrderTarget => new SplitOrderTarget(
@@ -180,6 +178,7 @@ function splitRequest(array $targets, ?string $couponTarget = null, bool $applyC
         loyaltyTarget: $loyaltyTarget,
         applyLoyalty: $applyLoyalty,
         catalogPricedLineIds: $catalogPricedLineIds,
+        completePreorderConsultation: $completePreorderConsultation,
     );
 }
 
@@ -922,26 +921,16 @@ it('keeps a bulk unit price unless the current catalog price is chosen', functio
         ->and($chosen->shipping_total->value)->toBe($chosen->shippingLines()->first()->total->value);
 });
 
-it('copies the original traffic source to every new order, and none when the original has none', function () {
-    $trafficSource = [
-        'visit_id' => 12,
-        'source' => 'facebook',
-        'medium' => 'social',
-        'campaign' => null,
-    ];
-
-    $variant = pricedSplitVariant(1000);
-    $other = pricedSplitVariant(1000);
+it('makes only the child that receives a preorder line wait for consultation', function () {
+    $completedAt = '2026-10-01T10:00:00+00:00';
+    $preorder = pricedSplitVariant(1000);
+    $other = pricedSplitVariant(500);
     $order = splittableOrder([
-        ['variant' => $variant, 'quantity' => 1, 'price' => 1000],
-        ['variant' => $other, 'quantity' => 1, 'price' => 1000],
-    ], [
-        'meta' => [
-            'payment_option' => 'cash-on-delivery',
-            'payment_type' => 'cod',
-            'language_locale' => 'en',
-            'traffic_source' => $trafficSource,
-        ],
+        ['variant' => $preorder, 'quantity' => 1, 'price' => 1000, 'meta' => [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $completedAt,
+        ]],
+        ['variant' => $other, 'quantity' => 1, 'price' => 500],
     ]);
     $lines = $order->productLines()->orderBy('id')->get();
 
@@ -950,67 +939,115 @@ it('copies the original traffic source to every new order, and none when the ori
         ['key' => '2', 'quantities' => [$lines[1]->id => 1]],
     ]));
 
-    $children = Order::query()->where('meta->split_from_order_id', $order->id)->get();
+    $children = Order::query()->where('id', '!=', $order->id)->get();
+    $waiting = $children->first(fn (Order $child) => $child->productLines->contains('purchasable_id', $preorder->id));
+    $plain = $children->first(fn (Order $child) => $child->productLines->contains('purchasable_id', $other->id));
+    $waitingLine = $waiting->productLines->first();
 
-    expect($children)->toHaveCount(2)
-        ->and($children->every(fn (Order $child): bool => ($child->meta['traffic_source'] ?? null) === $trafficSource))->toBeTrue();
-
-    $unsourced = splittableOrder([
-        ['variant' => $variant, 'quantity' => 1, 'price' => 1000],
-        ['variant' => $other, 'quantity' => 1, 'price' => 1000],
-    ]);
-    $unsourcedLines = $unsourced->productLines()->orderBy('id')->get();
-
-    SplitOrder::run($unsourced, splitRequest([
-        ['key' => '1', 'quantities' => [$unsourcedLines[0]->id => 1]],
-        ['key' => '2', 'quantities' => [$unsourcedLines[1]->id => 1]],
-    ]));
-
-    $unsourcedChildren = Order::query()->where('meta->split_from_order_id', $unsourced->id)->get();
-
-    expect($unsourcedChildren)->toHaveCount(2)
-        ->and($unsourcedChildren->every(fn (Order $child): bool => ! array_key_exists('traffic_source', $child->meta->getArrayCopy())))->toBeTrue();
+    expect($waiting->awaitsPreorderConsultation())->toBeTrue()
+        ->and($plain->awaitsPreorderConsultation())->toBeFalse()
+        ->and($waitingLine->meta['preorder'])->toBeTrue()
+        ->and($waitingLine->meta['preorder_consultation_completed_at'] ?? null)->toBeNull()
+        ->and($waiting->meta['preorder_consultation_completed_at'] ?? null)->toBeNull();
 });
 
-it('gives the split carts no traffic source while the panel serves the request', function () {
-    $this->app->register(AnalyticsServiceProvider::class);
-
-    $filament = new FilamentManager;
-    $this->app->instance('filament', $filament);
-    Facade::clearResolvedInstance('filament');
-
-    $request = Request::create('https://shop.test/lunar/orders');
-    $request->setLaravelSession($this->app['session.store']);
-    $this->app->instance('request', $request);
-
-    session()->put(TrafficVisitRecorder::SESSION_KEY, [
-        'visit_id' => 7,
-        'source' => 'google',
-        'medium' => 'organic',
-        'campaign' => null,
-    ]);
-
-    expect(Cart::factory()->create()->meta['traffic_source']['source'])->toBe('google');
-
-    $filament->setServingStatus(true);
-
-    $variant = pricedSplitVariant(1000);
-    $other = pricedSplitVariant(1000);
+it('finishes the consultation on both children when the split comes from the call', function () {
+    $preorder = pricedSplitVariant(1000);
+    $other = pricedSplitVariant(500);
     $order = splittableOrder([
-        ['variant' => $variant, 'quantity' => 1, 'price' => 1000],
-        ['variant' => $other, 'quantity' => 1, 'price' => 1000],
+        ['variant' => $preorder, 'quantity' => 1, 'price' => 1000, 'meta' => ['preorder' => true]],
+        ['variant' => $other, 'quantity' => 1, 'price' => 500],
+    ]);
+    $lines = $order->productLines()->orderBy('id')->get();
+    $preorderLine = $lines->first(fn (OrderLine $line): bool => (int) $line->purchasable_id === $preorder->id);
+    $otherLine = $lines->first(fn (OrderLine $line): bool => (int) $line->purchasable_id === $other->id);
+
+    SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$preorderLine->id => 1], 'payment' => 'bank-transfer', 'shipping' => 1500],
+        ['key' => '2', 'quantities' => [$otherLine->id => 1], 'payment' => 'cash-on-delivery', 'shipping' => 400],
+    ], completePreorderConsultation: true));
+
+    $children = Order::query()->where('id', '!=', $order->id)->get();
+    $preorderChild = $children->first(fn (Order $child): bool => $child->productLines->contains('purchasable_id', $preorder->id));
+    $plain = $children->first(fn (Order $child): bool => $child->productLines->contains('purchasable_id', $other->id));
+    $preorderMeta = $preorderChild->productLines->first()->meta;
+
+    expect($order->fresh()->status)->toBe('split')
+        ->and($preorderChild->status)->toBe('awaiting-bank-transfer')
+        ->and($preorderChild->meta['payment_option'])->toBe('bank-transfer')
+        ->and($preorderChild->awaitsPreorderConsultation())->toBeFalse()
+        ->and($preorderMeta['preorder'])->toBeTrue()
+        ->and($preorderMeta['preorder_consultation_completed_at'] ?? null)->not->toBeNull()
+        ->and($plain->status)->toBe('payment-offline')
+        ->and($plain->meta['payment_option'])->toBe('cash-on-delivery')
+        ->and($plain->awaitsPreorderConsultation())->toBeFalse();
+});
+
+it('keeps bank transfer on a normal split at awaiting payment', function () {
+    $left = pricedSplitVariant(1000);
+    $right = pricedSplitVariant(500);
+    $order = splittableOrder([
+        ['variant' => $left, 'quantity' => 1, 'price' => 1000],
+        ['variant' => $right, 'quantity' => 1, 'price' => 500],
     ]);
     $lines = $order->productLines()->orderBy('id')->get();
 
     SplitOrder::run($order, splitRequest([
-        ['key' => '1', 'quantities' => [$lines[0]->id => 1]],
-        ['key' => '2', 'quantities' => [$lines[1]->id => 1]],
+        ['key' => '1', 'quantities' => [$lines[0]->id => 1], 'payment' => 'bank-transfer'],
+        ['key' => '2', 'quantities' => [$lines[1]->id => 1], 'payment' => 'cash-on-delivery'],
     ]));
 
-    $splitCarts = Cart::query()
-        ->whereIn('id', Order::query()->where('meta->split_from_order_id', $order->id)->pluck('cart_id'))
-        ->get();
+    $bank = Order::query()->where('id', '!=', $order->id)->get()->first(
+        fn (Order $child): bool => ($child->meta['payment_option'] ?? null) === 'bank-transfer'
+    );
 
-    expect($splitCarts)->toHaveCount(2)
-        ->and($splitCarts->every(fn (Cart $cart): bool => ! array_key_exists('traffic_source', $cart->meta?->getArrayCopy() ?? [])))->toBeTrue();
+    expect($bank->status)->toBe('awaiting-payment');
+});
+
+it('splits a pack product only in whole packs', function () {
+    $variant = pricedSplitVariant(1000, [
+        'unit_quantity' => 4,
+        'quantity_increment' => 4,
+    ]);
+    $order = splittableOrder([
+        ['variant' => $variant, 'quantity' => 8, 'price' => 1000],
+    ]);
+    $line = $order->productLines()->first();
+    $before = Order::count();
+
+    expect(fn () => SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$line->id => 3]],
+        ['key' => '2', 'quantities' => [$line->id => 5]],
+    ])))->toThrow(fn (InvalidOrderSplitException $exception) => expect($exception->reasons)->toContain('quantity_increment'));
+
+    expect(Order::count())->toBe($before)
+        ->and($order->fresh()->status)->not->toBe('split');
+
+    $saved = SplitOrder::run($order->fresh(), splitRequest([
+        ['key' => '1', 'quantities' => [$line->id => 4]],
+        ['key' => '2', 'quantities' => [$line->id => 4]],
+    ]));
+
+    $quantities = Order::query()->where('id', '!=', $order->id)->get()
+        ->flatMap(fn (Order $child) => $child->productLines->pluck('quantity'))
+        ->sort()->values()->all();
+
+    expect($saved->status)->toBe('split')
+        ->and($quantities)->toBe([4, 4]);
+});
+
+it('uses the quantity increment when it is larger than the unit quantity', function () {
+    $variant = pricedSplitVariant(1000, [
+        'unit_quantity' => 4,
+        'quantity_increment' => 8,
+    ]);
+    $order = splittableOrder([
+        ['variant' => $variant, 'quantity' => 16, 'price' => 1000],
+    ]);
+    $line = $order->productLines()->first();
+
+    expect(fn () => SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$line->id => 4]],
+        ['key' => '2', 'quantities' => [$line->id => 12]],
+    ])))->toThrow(fn (InvalidOrderSplitException $exception) => expect($exception->reasons)->toContain('quantity_increment'));
 });

@@ -23,4 +23,6 @@ return [
     'order.unauthorized_split' => 'Та энэ захиалгыг хувааж чадахгүй.',
     'order.invalid_split' => 'Захиалгыг хувааж чадсангүй.',
     'order.locked_split' => 'Захиалгыг хувааж болохгүй.',
+    'order.unknown_preorder_payment' => 'Урьдчилсан захиалгын зөвлөгөөний төлбөрийн арга тодорхойгүй.',
+    'order.negative_consultation_shipping' => 'Зөвлөгөөний хүргэлтийн үнэ сөрөг байж болохгүй.',
 ];

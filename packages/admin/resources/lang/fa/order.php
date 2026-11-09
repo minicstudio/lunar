@@ -216,6 +216,9 @@ return [
         'date_placed' => [
             'label' => 'Date Placed',
         ],
+        'consultation_done_at' => [
+            'label' => 'مشاوره انجام شد در',
+        ],
         'new_returning' => [
             'label' => 'New / Returning',
         ],
@@ -272,6 +275,7 @@ return [
             'cash-on-delivery' => 'پرداخت در محل',
             'bank-transfer' => 'انتقال بانکی',
             'stripe-card' => 'کارت اعتباری',
+            'bt-ipay' => 'پرداخت با کارت (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'پرداخت آنلاین با کارت',
         ],
@@ -289,6 +293,8 @@ return [
             'requires_capture' => 'This order still requires payment to be captured.',
             'partially_refunded' => 'This order has been partially refunded.',
             'refunded' => 'This order has been refunded.',
+            'preorder_consultation' => 'این سفارش شامل یک محصول پیش‌سفارش است. پیش از دریافت پرداخت یا ترتیب ارسال با مشتری تماس بگیرید.',
+            'preorder_consultation_no_phone' => 'شماره تلفنی ذخیره نشده است.',
             'product_line_gates' => [
                 'paid' => 'پرداخت‌شده: این سفارش قابل تغییر نیست چون پرداخت شده است.',
                 'erp' => 'ERP: این سفارش قابل تغییر نیست چون به ERP ارسال شده است.',
@@ -322,6 +328,11 @@ return [
                 'label' => 'Additional email recipient',
                 'placeholder' => 'optional',
             ],
+            'preorder_warning' => [
+                'description' => 'آیا مطمئن هستید که می‌خواهید وضعیت را پیش از تأیید مشاوره تلفنی، روش پرداخت و هزینه ارسال به‌روزرسانی کنید؟',
+                'proceed' => 'ادامه',
+                'cancel' => 'لغو',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Download PDF',
@@ -350,6 +361,12 @@ return [
                     'helper_text' => 'Separate tags by pressing Enter, Tab or comma (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'مشاوره انجام شد',
+            'mixed_description' => 'این سفارش شامل کالاهای موجود و کالاهای پیش‌سفارش است. آن‌ها را در یک سفارش نگه دارید یا به سفارش‌های جدا تقسیم کنید.',
+            'keep' => 'نگه داشتن در یک سفارش',
+            'split' => 'تقسیم به سفارش‌های جدا',
         ],
         'capture_payment' => [
             'label' => 'Capture Payment',
@@ -415,6 +432,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -428,6 +446,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'جمع محصولات این سفارش کمتر یا مساوی مقدار کوپن است.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -448,6 +467,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

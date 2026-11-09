@@ -8,6 +8,7 @@ use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
 use Lunar\Shipping\Interfaces\ShippingRateInterface;
 use Lunar\Shipping\Models\ShippingRate;
+use Lunar\Shipping\ShippingBasis;
 
 class Collection implements ShippingRateInterface
 {
@@ -39,9 +40,11 @@ class Collection implements ShippingRateInterface
         $shippingZone = $shippingRate->shippingZone;
         $cart = $shippingOptionRequest->cart;
 
-        // Do we have any products in our exclusions list?
-        // If so, we do not want to return this option regardless.
-        $productIds = $cart->lines->load('purchasable')->pluck('purchasable.product_id');
+        $cart->lines->load('purchasable');
+
+        // Preorder products are left out of the exclusion list. Collection stays
+        // price 0 and does not record a shipping amount still to be agreed.
+        $productIds = ShippingBasis::lines($cart)->pluck('purchasable.product_id');
 
         $hasExclusions = $shippingZone->shippingExclusions()
             ->whereHas('exclusions', function ($query) use ($productIds) {

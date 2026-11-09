@@ -2,6 +2,7 @@
 
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrdersByStatusChart;
 use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderValuesByStatusChart;
 use Lunar\DataTypes\Price;
 use Lunar\Models\Currency;
 use Lunar\Models\Order;
@@ -29,6 +30,13 @@ beforeEach(function () {
         'total' => 50000,
         'shipping_total' => 0,
     ]);
+
+    Order::factory()->create([
+        'status' => 'split',
+        'placed_at' => now(),
+        'total' => 80000,
+        'shipping_total' => 0,
+    ]);
 });
 
 function callProtectedWidgetMethod(object $widget, string $method): mixed
@@ -51,5 +59,17 @@ it('does not show a test order series in the orders by status chart', function (
 
     expect(collect($options['series'])->pluck('name')->all())
         ->toContain('Payment Received')
-        ->not->toContain('Test Order');
+        ->not->toContain('Test Order')
+        ->not->toContain('Splitted')
+        ->not->toContain('lunarpanel::order.statuses.split');
+
+    $values = callProtectedWidgetMethod(new OrderValuesByStatusChart, 'getOptions');
+
+    expect(collect($values['series'])->pluck('name')->all())
+        ->toContain('Payment Received')
+        ->not->toContain('Test Order')
+        ->not->toContain('Splitted')
+        ->not->toContain('lunarpanel::order.statuses.split')
+        ->and(collect($values['series'])->firstWhere('name', 'Payment Received')['data'] ?? [])
+        ->each->toBeIn([0, 0.0, 100.0]);
 });

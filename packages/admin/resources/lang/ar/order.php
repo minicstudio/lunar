@@ -216,6 +216,9 @@ return [
         'date_placed' => [
             'label' => 'تاريخ الطلب',
         ],
+        'consultation_done_at' => [
+            'label' => 'تمت الاستشارة في',
+        ],
         'new_returning' => [
             'label' => 'جديد / عائد',
         ],
@@ -272,6 +275,7 @@ return [
             'cash-on-delivery' => 'الدفع عند الاستلام',
             'bank-transfer' => 'تحويل بنكي',
             'stripe-card' => 'بطاقة ائتمان',
+            'bt-ipay' => 'الدفع بالبطاقة (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'الدفع الإلكتروني بالبطاقة',
         ],
@@ -289,6 +293,8 @@ return [
             'requires_capture' => 'هذا الطلب لا يزال يتطلب استلام الدفع.',
             'partially_refunded' => 'تم استرجاع هذا الطلب جزئيًا.',
             'refunded' => 'تم استرجاع هذا الطلب بالكامل.',
+            'preorder_consultation' => 'يتضمن هذا الطلب منتجًا للطلب المسبق. اتصل بالعميل قبل تحصيل الدفع أو ترتيب الشحن.',
+            'preorder_consultation_no_phone' => 'لا يوجد رقم هاتف محفوظ.',
             'product_line_gates' => [
                 'paid' => 'مدفوع: لا يمكن تعديل هذا الطلب لأنه تم دفعه.',
                 'erp' => 'ERP: لا يمكن تعديل هذا الطلب لأنه تم إرساله إلى ERP.',
@@ -322,6 +328,11 @@ return [
                 'label' => 'مستلم ايميل إضافي',
                 'placeholder' => 'اختياري',
             ],
+            'preorder_warning' => [
+                'description' => 'هل أنت متأكد أنك تريد تحديث الحالة قبل تأكيد الاستشارة الهاتفية وخيار الدفع وسعر الشحن؟',
+                'proceed' => 'متابعة',
+                'cancel' => 'إلغاء',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'تحميل PDF',
@@ -350,6 +361,12 @@ return [
                     'helper_text' => 'افصل الوسوم بالضغط على Enter أو Tab أو الفاصلة (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'تمت الاستشارة',
+            'mixed_description' => 'يحتوي هذا الطلب على منتجات متوفرة ومنتجات للطلب المسبق. أبقها في طلب واحد أو قسّمها إلى طلبات منفصلة.',
+            'keep' => 'الإبقاء على طلب واحد',
+            'split' => 'التقسيم إلى طلبات منفصلة',
         ],
         'capture_payment' => [
             'label' => 'استلام الدفع',
@@ -415,6 +432,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -428,6 +446,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'إجمالي منتجات هذا الطلب أقل من قيمة القسيمة أو يساويها.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -448,6 +467,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

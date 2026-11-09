@@ -216,6 +216,9 @@ return [
         'date_placed' => [
             'label' => 'Дата на поръчка',
         ],
+        'consultation_done_at' => [
+            'label' => 'Консултацията е готова на',
+        ],
         'new_returning' => [
             'label' => 'Нов / Връщащ се',
         ],
@@ -272,6 +275,7 @@ return [
             'cash-on-delivery' => 'Наложен платеж',
             'bank-transfer' => 'Банков превод',
             'stripe-card' => 'Кредитна карта',
+            'bt-ipay' => 'Плащане с карта (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Онлайн плащане с карта',
         ],
@@ -289,6 +293,8 @@ return [
             'requires_capture' => 'Тази поръчка все още изисква каптуриране на плащане.',
             'partially_refunded' => 'Тази поръчка е частично възстановена.',
             'refunded' => 'Тази поръчка е възстановена.',
+            'preorder_consultation' => 'Тази поръчка включва продукт за предварителна поръчка. Обадете се на клиента, преди да приемете плащане или да организирате доставка.',
+            'preorder_consultation_no_phone' => 'Няма записан телефонен номер.',
             'product_line_gates' => [
                 'paid' => 'Платено: тази поръчка не може да бъде променена, защото е платена.',
                 'erp' => 'ERP: тази поръчка не може да бъде променена, защото е изпратена към ERP.',
@@ -322,6 +328,11 @@ return [
                 'label' => 'Допълнителен получател на имейл',
                 'placeholder' => 'по избор',
             ],
+            'preorder_warning' => [
+                'description' => 'Сигурни ли сте, че искате да обновите статуса, преди да потвърдите телефонната консултация, начина на плащане и цената за доставка?',
+                'proceed' => 'Продължи',
+                'cancel' => 'Отказ',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Изтегляне на PDF',
@@ -350,6 +361,12 @@ return [
                     'helper_text' => 'Разделяйте етикетите с Enter, Tab или запетая (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Консултацията е готова',
+            'mixed_description' => 'Тази поръчка съдържа налични продукти и продукти за предварителна поръчка. Запазете ги в една поръчка или ги разделете в отделни поръчки.',
+            'keep' => 'Запази в една поръчка',
+            'split' => 'Раздели на отделни поръчки',
         ],
         'capture_payment' => [
             'label' => 'Каптуриране на плащане',
@@ -415,6 +432,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -428,6 +446,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'Общата стойност на продуктите в тази поръчка е по-малка или равна на стойността на купона.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -448,6 +467,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

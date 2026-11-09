@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -208,6 +209,68 @@ it('shows a preorder notice under the product name', function () {
         ->html();
 
     expect(substr_count($html, $notice))->toBe(1);
+});
+
+it('shows when the consultation was completed under the date placed', function () {
+    $label = __('lunarpanel::order.infolist.consultation_done_at.label');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertDontSee($label);
+
+    $currency = Currency::getDefault();
+    $variant = ProductVariant::factory()
+        ->has(ModelsPrice::factory()->state([
+            'currency_id' => $currency->id,
+        ]))
+        ->create([
+            'purchasable' => 'preorder',
+        ]);
+
+    $completedAt = Carbon::parse('2026-11-03 09:34:00');
+    $taxBreakdown = new TaxBreakdown;
+    $taxBreakdown->addAmount(new TaxBreakdownAmount(
+        price: new Price(value: 0, currency: $currency),
+        identifier: $currency->code,
+        description: 'VAT',
+        percentage: 0,
+    ));
+
+    $this->order->lines()->create([
+        'quantity' => 1,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'description' => $variant->product->translateAttribute('name'),
+        'identifier' => $variant->sku,
+        'unit_price' => 1000,
+        'unit_quantity' => 1,
+        'sub_total' => 1000,
+        'discount_total' => 0,
+        'tax_total' => 0,
+        'total' => 1000,
+        'tax_breakdown' => $taxBreakdown,
+        'meta' => [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $completedAt->toIso8601String(),
+        ],
+    ]);
+
+    $formatted = $completedAt->copy()
+        ->setTimezone(config('lunar.panel.timezone') ?? config('app.timezone'))
+        ->translatedFormat('Y-m-d h:i a');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSuccessful()
+        ->assertSeeInOrder([
+            __('lunarpanel::order.infolist.date_placed.label'),
+            $label,
+            $formatted,
+        ]);
 });
 
 it('can download order pdf', function () {
@@ -709,6 +772,7 @@ it('has split order copy in every admin locale', function () {
         'lunarpanel::order.action.split_order.do_not_apply',
         'lunarpanel::order.action.split_order.confirm',
         'lunarpanel::order.action.split_order.notification',
+        'lunarpanel::order.action.split_order.coupon_exceeds_order',
         'lunarpanel::order.action.split_order.gates.shipping_required',
         'lunarpanel::order.action.split_order.gates.payment_required',
         'lunarpanel::order.action.split_order.gates.loyalty_spent',
@@ -730,6 +794,7 @@ it('has split order copy in every admin locale', function () {
         ->and(__('lunarpanel::order.action.split_order.products'))->toBe('Products')
         ->and(__('lunarpanel::order.action.split_order.preview'))->toBe('Preview')
         ->and(__('lunarpanel::order.action.split_order.do_not_apply'))->toBe('Do not apply')
+        ->and(__('lunarpanel::order.action.split_order.coupon_exceeds_order'))->toBe('This order\'s product total is less than or equal to the coupon value.')
         ->and(__('lunarpanel::order.action.split_order.move_to_order'))->toBe('Move to order:')
         ->and(__('lunarpanel::order.action.split_order.price_changed'))->toBe('The price of this product has changed since the order was placed.')
         ->and(__('lunarpanel::order.action.split_order.original_price'))->toBe('Original price')
@@ -744,6 +809,7 @@ it('has split order copy in every admin locale', function () {
         ->and(__('lunarpanel::order.action.split_order.products'))->toBe('Termékek')
         ->and(__('lunarpanel::order.action.split_order.preview'))->toBe('Előnézet')
         ->and(__('lunarpanel::order.action.split_order.do_not_apply'))->toBe('Nem alkalmazom')
+        ->and(__('lunarpanel::order.action.split_order.coupon_exceeds_order'))->toBe('Ennek a rendelésnek a termékösszege kisebb vagy egyenlő a kupon értékénél.')
         ->and(__('lunarpanel::order.action.split_order.move_to_order'))->toBe('Áthelyezés a rendelésbe:')
         ->and(__('lunarpanel::order.action.split_order.price_changed'))->toBe('A termék ára a rendelés leadása óta megváltozott.')
         ->and(__('lunarpanel::order.action.split_order.original_price'))->toBe('Eredeti ár')
@@ -785,6 +851,101 @@ it('explains why split confirmation is unavailable', function () {
         ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.discount_breakdown.discount'))
         ->assertMountedActionModalSee(__('lunarpanel::order.action.split_order.gates.too_few_targets'))
         ->assertMountedActionModalSee(__('lunarpanel::order.action.split_order.gates.shipping_required'));
+});
+
+it('lists only the configured payment methods on a split', function () {
+    $currency = Currency::getDefault();
+    $variant = ProductVariant::factory()->create();
+    ModelsPrice::factory()->create([
+        'price' => 1000,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+    $this->order->update([
+        'meta' => ['payment_option' => 'cash-in-hand'],
+    ]);
+    $this->order->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'identifier' => 'only-sku',
+        'description' => 'Only product',
+        'quantity' => 2,
+        'unit_quantity' => 1,
+        'unit_price' => 1000,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->mountAction('split_order');
+
+    foreach ($component->get('mountedActions')[0]['data']['orders'] as $orderState) {
+        expect($orderState['payment_option'])->toBe('cash-on-delivery');
+    }
+
+    $component->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.bt-ipay'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.stripe-card'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.bank-transfer'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.cash-on-delivery'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.cash-in-hand'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.offline'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.stripe-wallet-pay'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.hosted-payment'));
+});
+
+it('rejects a pack split that is not a whole pack', function () {
+    $currency = Currency::getDefault();
+    $variant = ProductVariant::factory()->create([
+        'unit_quantity' => 4,
+        'quantity_increment' => 4,
+    ]);
+    ModelsPrice::factory()->create([
+        'price' => 1000,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+    $this->order->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'identifier' => 'pack-sku',
+        'description' => 'Pack product',
+        'quantity' => 8,
+        'unit_quantity' => 4,
+        'unit_price' => 1000,
+        'sub_total' => 8000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 8000,
+    ]);
+
+    $message = __('lunarpanel::order.action.split_order.gates.quantity_increment');
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->mountAction('split_order');
+
+    $data = $component->get('mountedActions')[0]['data'];
+    $lineKey = array_key_first($data['lines']);
+    $partKeys = array_keys($data['lines'][$lineKey]['parts']);
+
+    $component->set('mountedActions.0.data.lines.'.$lineKey.'.divided', true)
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[0].'.target', '1')
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[0].'.quantity', 3)
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[1].'.target', '2')
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[1].'.quantity', 5)
+        ->assertMountedActionModalSee($message)
+        ->assertMountedActionModalSee(__('lunarpanel::order.action.split_order.quantity_step', ['increment' => 4]))
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[0].'.quantity', 4)
+        ->set('mountedActions.0.data.lines.'.$lineKey.'.parts.'.$partKeys[1].'.quantity', 4)
+        ->assertMountedActionModalDontSee($message);
 });
 
 it('fills calculated shipping on each order when a quantity is divided', function () {
@@ -1198,6 +1359,7 @@ it('hides edits on a split order and links the related orders', function () {
         'record' => $this->order->getRouteKey(),
     ])
         ->assertActionHidden('split_order')
+        ->assertActionHidden('confirm_preorder_status_update')
         ->assertActionHidden('update_status')
         ->assertActionHidden('capture')
         ->assertSee('CHILD-REF')
@@ -1339,6 +1501,204 @@ it('keeps the coupon on the order named in the coupon select', function () {
         ->assertMountedActionModalDontSee(__('lunarpanel::order.action.split_order.gates.coupon'));
 });
 
+it('moves a fixed coupon onto the order that can still absorb it', function () {
+    $currency = Currency::getDefault();
+    $group = CustomerGroup::factory()->create(['default' => true]);
+    $small = ProductVariant::factory()->create();
+    $large = ProductVariant::factory()->create();
+    $smallLine = $this->order->lines()->create([
+        'purchasable_type' => $small->getMorphClass(),
+        'purchasable_id' => $small->id,
+        'type' => 'physical',
+        'identifier' => 'small-sku',
+        'description' => 'Small product',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 10000,
+        'sub_total' => 10000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 10000,
+    ]);
+    $largeLine = $this->order->lines()->create([
+        'purchasable_type' => $large->getMorphClass(),
+        'purchasable_id' => $large->id,
+        'type' => 'physical',
+        'identifier' => 'large-sku',
+        'description' => 'Large product',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 20000,
+        'sub_total' => 20000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 20000,
+    ]);
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'ASDD',
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => [
+                $currency->code => 10000,
+            ],
+        ],
+    ]);
+    $discount->channels()->attach([
+        $this->order->channel_id => [
+            'enabled' => true,
+            'starts_at' => now()->subMinute(),
+        ],
+    ]);
+    $discount->customerGroups()->attach([
+        $group->id => [
+            'enabled' => true,
+            'starts_at' => now()->subMinute(),
+        ],
+    ]);
+    $this->order->update([
+        'discount_breakdown' => collect([
+            (object) [
+                'discount_id' => $discount->id,
+                'lines' => collect(),
+                'total' => new Price(0, $currency, 1),
+            ],
+        ]),
+    ]);
+
+    $page = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('split_order');
+
+    $data = $page->get('mountedActions')[0]['data'];
+    $totalLabel = __('lunarpanel::order.action.split_order.order_total');
+    $money = fn (int $minor): string => trim(number_format(
+        $minor / (int) ($currency->factor ?: 1),
+        (int) $currency->decimal_places,
+        '.',
+        ''
+    ).' '.$currency->code);
+
+    $openedTotals = previewEntryAmounts($page->getMountedActionModalHtml(), $totalLabel);
+
+    expect($data['coupon'])->toBe('2')
+        ->and($openedTotals[0])->toBe($money(10000))
+        ->and($openedTotals[1])->not->toBe($money(20000));
+
+    $page->set('mountedActions.0.data.coupon', '1')
+        ->assertNotified(__('lunarpanel::order.action.split_order.coupon_exceeds_order'));
+
+    expect($page->get('mountedActions')[0]['data']['coupon'])->toBe('1');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->callAction('split_order', [
+        'orders' => [
+            ['key' => '1', 'shipping' => '0.00', 'payment_option' => 'cash-on-delivery'],
+            ['key' => '2', 'shipping' => '0.00', 'payment_option' => 'cash-on-delivery'],
+        ],
+        'lines' => [
+            [
+                'order_line_id' => $smallLine->id,
+                'quantity' => 1,
+                'description' => 'Small product',
+                'divided' => false,
+                'price_source' => 'original',
+                'target' => '1',
+                'parts' => [],
+            ],
+            [
+                'order_line_id' => $largeLine->id,
+                'quantity' => 1,
+                'description' => 'Large product',
+                'divided' => false,
+                'price_source' => 'original',
+                'target' => '2',
+                'parts' => [],
+            ],
+        ],
+        'coupon' => '1',
+    ]);
+
+    $children = Order::query()->where('id', '!=', $this->order->id)->get();
+    $withSmall = $children->first(fn (Order $order) => $order->productLines->contains('purchasable_id', $small->id));
+    $withLarge = $children->first(fn (Order $order) => $order->productLines->contains('purchasable_id', $large->id));
+
+    expect($withSmall)->not->toBeNull()
+        ->and($withLarge)->not->toBeNull()
+        ->and((int) $withSmall->discount_total->value)->toBe(10000)
+        ->and((int) $withLarge->discount_total->value)->toBe(0)
+        ->and($withSmall->discount_breakdown->pluck('discount_id')->all())->toContain($discount->id);
+});
+
+it('leaves a fixed coupon where the admin put it when that order can absorb it', function () {
+    $currency = Currency::getDefault();
+    $variants = ProductVariant::factory(2)->create();
+
+    foreach ([10000, 20000] as $index => $price) {
+        $this->order->lines()->create([
+            'purchasable_type' => $variants[$index]->getMorphClass(),
+            'purchasable_id' => $variants[$index]->id,
+            'type' => 'physical',
+            'identifier' => 'sku-'.$index,
+            'description' => 'Product '.$index,
+            'quantity' => 1,
+            'unit_quantity' => 1,
+            'unit_price' => $price,
+            'sub_total' => $price,
+            'discount_total' => 0,
+            'tax_breakdown' => new TaxBreakdown,
+            'tax_total' => 0,
+            'total' => $price,
+        ]);
+    }
+
+    $discount = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'FIXED',
+        'starts_at' => now()->subMinute(),
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => [
+                $currency->code => 5000,
+            ],
+        ],
+    ]);
+    $this->order->update([
+        'discount_breakdown' => collect([
+            (object) [
+                'discount_id' => $discount->id,
+                'lines' => collect(),
+                'total' => new Price(0, $currency, 1),
+            ],
+        ]),
+    ]);
+
+    $fitting = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('split_order');
+
+    expect($fitting->get('mountedActions')[0]['data']['coupon'])->toBe('1');
+
+    $discount->update([
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => [
+                $currency->code => 25000,
+            ],
+        ],
+    ]);
+
+    $neither = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('split_order');
+
+    expect($neither->get('mountedActions')[0]['data']['coupon'])->toBe('1');
+});
+
 it('starts a mixed order with preorders on one order and the other products on the other', function () {
     $preorder = ProductVariant::factory()->create(['purchasable' => 'preorder']);
     $firstSimple = ProductVariant::factory()->create(['purchasable' => 'in_stock']);
@@ -1448,3 +1808,489 @@ it('offers the stored unit price when a split quantity loses its bulk price', fu
     expect($currentAmounts)->toContain('10.00')
         ->and($currentAmounts)->not->toContain('8.00');
 });
+
+it('shows the preorder consultation notice and the customer phone while the order is waiting', function () {
+    $variant = ProductVariant::factory()->create();
+    $notice = __('lunarpanel::order.infolist.alert.preorder_consultation');
+
+    OrderLine::factory()->create([
+        'order_id' => $this->order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => ['preorder' => true],
+    ]);
+
+    $this->order->shippingAddress->update(['contact_phone' => '0700111222']);
+    $this->order->billingAddress->update(['contact_phone' => '0700333444']);
+
+    $html = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertSee($notice.' <a href="tel:0700111222"', false)
+        ->assertActionVisible('preorder_consultation_done')
+        ->html();
+
+    preg_match('/'.preg_quote($notice, '/').' <a href="tel:0700111222".*?<\/a>/s', $html, $phoneLink);
+
+    expect($phoneLink[0] ?? '')->toContain('fi-icon');
+
+    $this->order->shippingAddress->update(['contact_phone' => null]);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->id,
+    ])->assertSee($notice.' <a href="tel:0700333444"', false);
+
+    $this->order->billingAddress->update(['contact_phone' => null]);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->id,
+    ])->assertSee($notice)
+        ->assertSee(__('lunarpanel::order.infolist.alert.preorder_consultation_no_phone'))
+        ->assertDontSee('tel:', false);
+});
+
+it('starts the consultation shipping field from the stored total when a weight price cannot be resolved', function () {
+    prepareConsultationOrder($this->order);
+    $this->order->update([
+        'shipping_total' => 500,
+        'total' => 10500,
+    ]);
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->mountAction('preorder_consultation_done');
+
+    expect((float) $component->get('mountedActions')[0]['data']['shipping'])->toBe(5.0);
+
+    $component->assertMountedActionModalDontSee(__('lunarpanel::order.action.preorder_consultation_done.mixed_description'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.cash-on-delivery'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.cash-in-hand'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.offline'));
+});
+
+it('finishes the consultation from the modal and stores shipping before the status changes', function (string $payment, string $status) {
+    $notice = __('lunarpanel::order.infolist.alert.preorder_consultation');
+    prepareConsultationOrder($this->order);
+
+    $duringStatusChange = null;
+
+    Order::updating(function (Order $order) use (&$duringStatusChange): void {
+        if (! $order->isDirty('status')) {
+            return;
+        }
+
+        $stored = Order::query()->find($order->id);
+        $shipping = $stored->shippingLines()->first();
+        $meta = $shipping->meta instanceof ArrayObject
+            ? $shipping->meta->getArrayCopy()
+            : (array) $shipping->meta;
+
+        $duringStatusChange = [
+            'shipping' => (int) $stored->shipping_total->value,
+            'total' => (int) $stored->total->value,
+            'waiting' => $stored->awaitsPreorderConsultation(),
+            'pending' => $meta['preorder_shipping_pending'] ?? null,
+            'payment' => data_get($order->meta, 'payment_option'),
+            'previous_status' => $order->getOriginal('status'),
+        ];
+    });
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->callAction('preorder_consultation_done', [
+        'payment_option' => $payment,
+        'shipping' => '12.50',
+    ])->assertDontSee($notice)
+        ->assertActionHidden('preorder_consultation_done');
+
+    $saved = $this->order->fresh();
+
+    expect($duringStatusChange)->toMatchArray([
+        'shipping' => 1250,
+        'total' => 11250,
+        'waiting' => false,
+        'pending' => null,
+        'payment' => $payment,
+        'previous_status' => 'awaiting-phone-consultation',
+    ])->and($saved->status)->toBe($status)
+        ->and($saved->awaitsPreorderConsultation())->toBeFalse()
+        ->and($saved->meta['payment_option'])->toBe($payment)
+        ->and($saved->meta['awb'])->toBe('AWB-1')
+        ->and($saved->meta['billing_series'])->toBe('S')
+        ->and($saved->meta['billing_number'])->toBe('9')
+        ->and($saved->meta['erp_sent_at'])->toBe('2026-01-01T00:00:00+00:00')
+        ->and((int) $saved->shippingLines()->first()->unit_price->value)->toBe(1250);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $saved->id,
+    ])->assertDontSee($notice)
+        ->assertActionHidden('preorder_consultation_done');
+})->with([
+    'stripe card' => ['stripe-card', 'awaiting-payment'],
+    'bt ipay' => ['bt-ipay', 'awaiting-payment'],
+    'bank transfer' => ['bank-transfer', 'awaiting-bank-transfer'],
+    'cash on delivery' => ['cash-on-delivery', 'payment-offline'],
+]);
+
+it('keeps store collection at zero and hides the shipping field', function () {
+    prepareConsultationOrder($this->order, [
+        'shippingType' => 'pickup',
+    ]);
+
+    $shippingLabel = __('lunarpanel::order.infolist.shipping_total.label');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->mountAction('preorder_consultation_done')
+        ->assertMountedActionModalDontSee($shippingLabel)
+        ->setActionData([
+            'payment_option' => 'cash-on-delivery',
+        ])
+        ->callMountedAction();
+
+    $saved = $this->order->fresh();
+
+    expect($saved->status)->toBe('payment-offline')
+        ->and((int) $saved->shipping_total->value)->toBe(0)
+        ->and($saved->awaitsPreorderConsultation())->toBeFalse();
+});
+
+it('warns before the status form while the phone consultation is unfinished', function () {
+    foreach (['ar', 'bg', 'de', 'es', 'fa', 'fr', 'hr', 'hu', 'mn', 'nl', 'pl', 'pt_BR', 'ro', 'tr', 'vi', 'en'] as $locale) {
+        expect(Lang::has('lunarpanel::order.action.update_status.preorder_warning.description', $locale, false))->toBeTrue()
+            ->and(Lang::has('lunarpanel::order.action.update_status.preorder_warning.proceed', $locale, false))->toBeTrue()
+            ->and(Lang::has('lunarpanel::order.action.update_status.preorder_warning.cancel', $locale, false))->toBeTrue();
+    }
+
+    $warning = __('lunarpanel::order.action.update_status.preorder_warning.description');
+    $proceed = __('lunarpanel::order.action.update_status.preorder_warning.proceed');
+    $cancel = __('lunarpanel::order.action.update_status.preorder_warning.cancel');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertActionHidden('confirm_preorder_status_update')
+        ->assertActionVisible('update_status');
+
+    prepareConsultationOrder($this->order);
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertActionVisible('confirm_preorder_status_update')
+        ->assertActionHidden('update_status')
+        ->mountAction('confirm_preorder_status_update')
+        ->assertMountedActionModalSee($warning)
+        ->assertMountedActionModalSee($proceed)
+        ->assertMountedActionModalSee($cancel)
+        ->call('unmountAction');
+
+    expect($this->order->fresh()->status)->toBe('awaiting-phone-consultation');
+
+    $component->mountAction('confirm_preorder_status_update')
+        ->callMountedAction()
+        ->assertActionMounted('update_status')
+        ->assertMountedActionModalSee(__('lunarpanel::order.action.update_status.new_status.label'))
+        ->setActionData([
+            'status' => 'payment-offline',
+        ])
+        ->callMountedAction();
+
+    expect($this->order->fresh()->status)->toBe('payment-offline')
+        ->and($this->order->fresh()->awaitsPreorderConsultation())->toBeTrue();
+});
+
+it('hides the consultation action when the order is not waiting', function () {
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertDontSee(__('lunarpanel::order.infolist.alert.preorder_consultation'))
+        ->assertActionHidden('preorder_consultation_done');
+});
+
+it('asks a mixed order to stay together or split, and keeping it sets one payment and one shipping total', function () {
+    foreach (['ar', 'bg', 'de', 'es', 'fa', 'fr', 'hr', 'hu', 'mn', 'nl', 'pl', 'pt_BR', 'ro', 'tr', 'vi', 'en'] as $locale) {
+        expect(Lang::has('lunarpanel::order.action.preorder_consultation_done.mixed_description', $locale, false))->toBeTrue()
+            ->and(Lang::has('lunarpanel::order.action.preorder_consultation_done.keep', $locale, false))->toBeTrue()
+            ->and(Lang::has('lunarpanel::order.action.preorder_consultation_done.split', $locale, false))->toBeTrue();
+    }
+
+    prepareConsultationOrder($this->order);
+    $simple = ProductVariant::factory()->create();
+    OrderLine::factory()->create([
+        'order_id' => $this->order->id,
+        'purchasable_type' => $simple->getMorphClass(),
+        'purchasable_id' => $simple->id,
+        'type' => 'physical',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 2000,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+
+    $description = __('lunarpanel::order.action.preorder_consultation_done.mixed_description');
+    $keep = __('lunarpanel::order.action.preorder_consultation_done.keep');
+    $split = __('lunarpanel::order.action.preorder_consultation_done.split');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertActionHidden('split_order')
+        ->assertActionHidden('preorder_consultation_keep')
+        ->mountAction('preorder_consultation_done')
+        ->assertMountedActionModalSee($description)
+        ->assertMountedActionModalSee($keep)
+        ->assertMountedActionModalSee($split)
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.meta.payment_option'))
+        ->callMountedAction()
+        ->assertActionMounted('preorder_consultation_keep')
+        ->setActionData([
+            'payment_option' => 'bank-transfer',
+            'shipping' => '12.50',
+        ])
+        ->callMountedAction();
+
+    $saved = $this->order->fresh();
+
+    expect(Order::query()->count())->toBe(1)
+        ->and($saved->status)->toBe('awaiting-bank-transfer')
+        ->and($saved->awaitsPreorderConsultation())->toBeFalse()
+        ->and((int) $saved->shipping_total->value)->toBe(1250)
+        ->and($saved->meta['payment_option'])->toBe('bank-transfer');
+});
+
+it('splits a mixed order from the consultation and finishes the call on both orders', function () {
+    $preorder = ProductVariant::factory()->create();
+    $simple = ProductVariant::factory()->create();
+
+    $this->order->update([
+        'status' => 'awaiting-phone-consultation',
+        'meta' => ['shippingType' => 'courier'],
+    ]);
+
+    foreach ([$preorder, $simple] as $index => $variant) {
+        OrderLine::factory()->create([
+            'order_id' => $this->order->id,
+            'purchasable_type' => $variant->getMorphClass(),
+            'purchasable_id' => $variant->id,
+            'type' => 'physical',
+            'description' => 'Product '.$index,
+            'quantity' => 1,
+            'unit_quantity' => 1,
+            'unit_price' => 1000,
+            'sub_total' => 1000,
+            'discount_total' => 0,
+            'tax_breakdown' => new TaxBreakdown,
+            'tax_total' => 0,
+            'total' => 1000,
+            'meta' => $variant->is($preorder) ? ['preorder' => true] : null,
+        ]);
+    }
+
+    $this->order->lines()->create([
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'identifier' => 'courier',
+        'description' => 'Courier',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 0,
+        'sub_total' => 0,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 0,
+    ]);
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertActionHidden('split_order')
+        ->mountAction(['preorder_consultation_done', 'split_after_consultation']);
+
+    expect($component->get('mountedActions')[0]['name'] ?? null)->toBe('split_order')
+        ->and($component->get('mountedActions')[0]['data']['complete_consultation'] ?? false)->toBeTrue();
+
+    $component->assertMountedActionModalSee(__('lunarpanel::order.infolist.payment_methods.bt-ipay'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.infolist.payment_methods.cash-in-hand'));
+
+    foreach ($component->get('mountedActions')[0]['data']['orders'] as $key => $orderState) {
+        $payment = ($orderState['key'] ?? null) === '1' ? 'bank-transfer' : 'cash-on-delivery';
+        $component->set('mountedActions.0.data.orders.'.$key.'.payment_option', $payment)
+            ->set('mountedActions.0.data.orders.'.$key.'.shipping', '4.00');
+    }
+
+    $component->callMountedAction();
+
+    $saved = $this->order->fresh();
+    $children = Order::query()->where('id', '!=', $saved->id)->get();
+    $preorderChild = $children->first(
+        fn (Order $order): bool => $order->productLines->contains('purchasable_id', $preorder->id)
+    );
+    $plain = $children->first(
+        fn (Order $order): bool => $order->productLines->contains('purchasable_id', $simple->id)
+    );
+
+    expect($saved->status)->toBe('split')
+        ->and($children)->toHaveCount(2)
+        ->and($preorderChild->status)->toBe('awaiting-bank-transfer')
+        ->and($preorderChild->awaitsPreorderConsultation())->toBeFalse()
+        ->and($preorderChild->productLines->first()->meta['preorder_consultation_completed_at'] ?? null)->not->toBeNull()
+        ->and($plain->status)->toBe('payment-offline')
+        ->and($plain->awaitsPreorderConsultation())->toBeFalse();
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $saved->id,
+    ])->assertDontSee(__('lunarpanel::order.infolist.alert.preorder_consultation'))
+        ->assertActionHidden('preorder_consultation_done');
+});
+
+it('keeps store collection shipping at zero when a mixed order is split from the consultation', function () {
+    $preorder = ProductVariant::factory()->create();
+    $simple = ProductVariant::factory()->create();
+
+    $this->order->update([
+        'status' => 'awaiting-phone-consultation',
+        'meta' => ['shippingType' => 'pickup'],
+    ]);
+
+    foreach ([$preorder, $simple] as $index => $variant) {
+        OrderLine::factory()->create([
+            'order_id' => $this->order->id,
+            'purchasable_type' => $variant->getMorphClass(),
+            'purchasable_id' => $variant->id,
+            'type' => 'physical',
+            'description' => 'Product '.$index,
+            'quantity' => 1,
+            'unit_quantity' => 1,
+            'unit_price' => 1000,
+            'sub_total' => 1000,
+            'discount_total' => 0,
+            'tax_breakdown' => new TaxBreakdown,
+            'tax_total' => 0,
+            'total' => 1000,
+            'meta' => $variant->is($preorder) ? ['preorder' => true] : null,
+        ]);
+    }
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->mountAction(['preorder_consultation_done', 'split_after_consultation']);
+
+    $schema = $component->instance()->getSchema('mountedActionSchema0');
+    $shippingFields = collect($schema->getFlatComponents(withHidden: true))
+        ->filter(fn ($field, string $key): bool => str_ends_with($key, '.shipping') || $key === 'shipping');
+
+    expect($shippingFields->isNotEmpty())->toBeTrue()
+        ->and($shippingFields->every(fn ($field): bool => $field->isHidden()))->toBeTrue();
+
+    foreach ($component->get('mountedActions')[0]['data']['orders'] as $key => $orderState) {
+        $payment = ($orderState['key'] ?? null) === '1' ? 'bank-transfer' : 'cash-on-delivery';
+        $component->set('mountedActions.0.data.orders.'.$key.'.payment_option', $payment);
+    }
+
+    $component->callMountedAction();
+
+    $children = Order::query()->where('id', '!=', $this->order->id)->get();
+
+    expect($this->order->fresh()->status)->toBe('split')
+        ->and($children)->toHaveCount(2)
+        ->and($children->every(fn (Order $order): bool => (int) $order->shipping_total->value === 0))->toBeTrue();
+});
+
+it('opens the payment form for a preorder-only order and still offers split', function () {
+    $variant = ProductVariant::factory()->create();
+
+    $this->order->update([
+        'status' => 'awaiting-phone-consultation',
+    ]);
+
+    OrderLine::factory()->create([
+        'order_id' => $this->order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'quantity' => 2,
+        'unit_quantity' => 1,
+        'unit_price' => 1000,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+        'meta' => ['preorder' => true],
+    ]);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->id,
+    ])->assertActionVisible('split_order')
+        ->mountAction('preorder_consultation_done')
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.action.preorder_consultation_done.mixed_description'))
+        ->assertMountedActionModalDontSee(__('lunarpanel::order.action.preorder_consultation_done.split'))
+        ->assertMountedActionModalSee(__('lunarpanel::order.infolist.meta.payment_option'));
+});
+
+it('hides the consultation notice and action when the order is split', function () {
+    prepareConsultationOrder($this->order);
+    $this->order->update(['status' => 'split']);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->id,
+    ])->assertDontSee(__('lunarpanel::order.infolist.alert.preorder_consultation'))
+        ->assertActionHidden('preorder_consultation_done');
+});
+
+function prepareConsultationOrder(Order $order, array $meta = []): void
+{
+    $variant = ProductVariant::factory()->create();
+
+    $order->update([
+        'status' => 'awaiting-phone-consultation',
+        'sub_total' => 10000,
+        'discount_total' => 0,
+        'shipping_total' => 0,
+        'tax_total' => 0,
+        'total' => 10000,
+        'meta' => array_merge([
+            'additional_info' => 'keep',
+            'awb' => 'AWB-1',
+            'billing_series' => 'S',
+            'billing_number' => '9',
+            'erp_sent_at' => '2026-01-01T00:00:00+00:00',
+            'shippingType' => 'courier',
+        ], $meta),
+    ]);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 10000,
+        'sub_total' => 10000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 10000,
+        'meta' => ['preorder' => true],
+    ]);
+
+    $order->lines()->create([
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'identifier' => 'courier',
+        'description' => 'Courier',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 0,
+        'sub_total' => 0,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 0,
+        'meta' => ['preorder_shipping_pending' => true],
+    ]);
+}

@@ -23,4 +23,6 @@ return [
     'order.unauthorized_split' => 'Не можете да разделите тази поръчка.',
     'order.invalid_split' => 'Поръчката не можа да бъде разделена.',
     'order.locked_split' => 'Поръчката не може да бъде разделена.',
+    'order.unknown_preorder_payment' => 'Неизвестен метод на плащане за консултацията по предварителна поръчка.',
+    'order.negative_consultation_shipping' => 'Цената за доставка на консултацията не може да бъде отрицателна.',
 ];

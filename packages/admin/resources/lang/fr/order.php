@@ -219,6 +219,9 @@ return [
         'date_placed' => [
             'label' => 'Date de placement',
         ],
+        'consultation_done_at' => [
+            'label' => 'Consultation terminée le',
+        ],
         'new_returning' => [
             'label' => 'Nouveau / Récurrent',
         ],
@@ -275,6 +278,7 @@ return [
             'cash-on-delivery' => 'Paiement à la livraison',
             'bank-transfer' => 'Virement bancaire',
             'stripe-card' => 'Carte bancaire',
+            'bt-ipay' => 'Paiement par carte (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Paiement en ligne par carte',
         ],
@@ -293,6 +297,8 @@ return [
             'requires_capture' => 'Cette commande nécessite toujours que le paiement soit capturé.',
             'partially_refunded' => 'Cette commande a été partiellement remboursée.',
             'refunded' => 'Cette commande a été remboursée.',
+            'preorder_consultation' => 'Cette commande contient un produit en précommande. Appelez le client avant d\'encaisser le paiement ou d\'organiser la livraison.',
+            'preorder_consultation_no_phone' => 'Aucun numéro de téléphone n\'est enregistré.',
             'product_line_gates' => [
                 'paid' => 'Payée : cette commande ne peut pas être modifiée, car elle a été payée.',
                 'erp' => 'ERP : cette commande ne peut pas être modifiée, car elle a été envoyée vers ERP.',
@@ -328,6 +334,11 @@ return [
                 'label' => 'Destinataire email supplémentaire',
                 'placeholder' => 'facultatif',
             ],
+            'preorder_warning' => [
+                'description' => 'Voulez-vous vraiment mettre à jour le statut avant de confirmer la consultation téléphonique, le mode de paiement et le prix de livraison ?',
+                'proceed' => 'Continuer',
+                'cancel' => 'Annuler',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Télécharger le PDF',
@@ -350,6 +361,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Modifier',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Consultation terminée',
+            'mixed_description' => 'Cette commande contient des produits en stock et des produits en précommande. Gardez-les dans une seule commande ou séparez-les en commandes distinctes.',
+            'keep' => 'Garder dans une seule commande',
+            'split' => 'Séparer en commandes distinctes',
         ],
         'capture_payment' => [
             'label' => 'Capturer le paiement',
@@ -415,6 +432,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -428,6 +446,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'Le total des produits de cette commande est inférieur ou égal à la valeur du coupon.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -448,6 +467,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

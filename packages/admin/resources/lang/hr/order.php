@@ -209,6 +209,9 @@ return [
         'date_placed' => [
             'label' => 'Datum narudžbe',
         ],
+        'consultation_done_at' => [
+            'label' => 'Dogovor obavljen',
+        ],
         'new_returning' => [
             'label' => 'Novi / Stalni',
         ],
@@ -265,6 +268,7 @@ return [
             'cash-on-delivery' => 'Plaćanje pouzećem',
             'bank-transfer' => 'Bankovni prijenos',
             'stripe-card' => 'Kreditna kartica',
+            'bt-ipay' => 'Plaćanje karticom (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online plaćanje karticom',
         ],
@@ -282,6 +286,8 @@ return [
             'requires_capture' => 'Za ovu narudžbu još uvijek je potrebno evidentirati plaćanje.',
             'partially_refunded' => 'Za ovu narudžbu je djelomično izvršen povrat sredstava',
             'refunded' => 'Ova narudžba je vraćena.',
+            'preorder_consultation' => 'Ova narudžba sadrži proizvod za prednarudžbu. Nazovite kupca prije naplate ili organiziranja dostave.',
+            'preorder_consultation_no_phone' => 'Nije spremljen broj telefona.',
             'product_line_gates' => [
                 'paid' => 'Plaćeno: ova narudžba ne može se izmijeniti jer je plaćena.',
                 'erp' => 'ERP: ova narudžba ne može se izmijeniti jer je poslana u ERP.',
@@ -317,6 +323,11 @@ return [
                 'label' => 'Dodatni primatelj e-maila',
                 'placeholder' => 'neobavezno',
             ],
+            'preorder_warning' => [
+                'description' => 'Jeste li sigurni da želite ažurirati status prije potvrde telefonskog dogovora, načina plaćanja i cijene dostave?',
+                'proceed' => 'Nastavi',
+                'cancel' => 'Odustani',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Preuzmi PDF',
@@ -339,6 +350,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Uredi',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Dogovor obavljen',
+            'mixed_description' => 'Ova narudžba sadrži proizvode na zalihi i proizvode za prednarudžbu. Zadržite ih u jednoj narudžbi ili ih podijelite u zasebne narudžbe.',
+            'keep' => 'Zadrži u jednoj narudžbi',
+            'split' => 'Podijeli u zasebne narudžbe',
         ],
         'capture_payment' => [
             'label' => 'Naplati uplatu',
@@ -404,6 +421,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -417,6 +435,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'Zbroj proizvoda ove narudžbe manji je ili jednak vrijednosti kupona.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -437,6 +456,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

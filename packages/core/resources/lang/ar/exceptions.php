@@ -23,4 +23,6 @@ return [
     'order.unauthorized_split' => 'لا يمكنك تقسيم هذا الطلب.',
     'order.invalid_split' => 'تعذر تقسيم الطلب.',
     'order.locked_split' => 'لا يمكن تقسيم الطلب.',
+    'order.unknown_preorder_payment' => 'طريقة دفع غير معروفة لاستشارة الطلب المسبق.',
+    'order.negative_consultation_shipping' => 'لا يمكن أن يكون سعر شحن الاستشارة سالبًا.',
 ];

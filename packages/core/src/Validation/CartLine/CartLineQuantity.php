@@ -9,6 +9,7 @@ use Lunar\Exceptions\Carts\MinimumQuantityException;
 use Lunar\Exceptions\Carts\QuantityIncrementException;
 use Lunar\Facades\CartSession;
 use Lunar\Models\CartLine;
+use Lunar\Models\ProductVariant;
 use Lunar\Validation\BaseValidator;
 
 class CartLineQuantity extends BaseValidator
@@ -89,14 +90,10 @@ class CartLineQuantity extends BaseValidator
      */
     protected function effectiveQuantityIncrement(Purchasable $purchasable): int
     {
-        $increment = max(1, (int) ($purchasable->quantity_increment ?? 1));
-        $unitQuantity = max(1, (int) $purchasable->getUnitQuantity());
-
-        if ($increment % $unitQuantity === 0) {
-            return $increment;
-        }
-
-        return (int) (ceil($increment / $unitQuantity) * $unitQuantity);
+        return ProductVariant::effectiveQuantityIncrementFrom(
+            (int) ($purchasable->quantity_increment ?? 1),
+            (int) $purchasable->getUnitQuantity(),
+        );
     }
 
     /**

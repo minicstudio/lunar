@@ -3,8 +3,12 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
+use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Events\OrderInvoiceGenerated;
+use Lunar\ERP\Services\ErpService;
 use Lunar\Models\Order;
+use Lunar\Models\OrderLine;
+use Lunar\Models\ProductVariant;
 use Lunar\Tests\ERP\TestCase;
 
 uses(TestCase::class);
@@ -99,6 +103,85 @@ it('skips lunar invoicing when erp billing is active', function () {
     $order->refresh();
 
     expect($order->meta['lunar_invoice_generated_at'] ?? null)->toBeNull();
+    Event::assertNotDispatched(OrderInvoiceGenerated::class);
+});
+
+it('issues a lunar invoice for bank transfer when erp billing leaves that status out', function () {
+    Event::fake([OrderInvoiceGenerated::class]);
+
+    Config::set('lunar.erp.enabled', true);
+    Config::set('lunar.erp.providers', ['smartbill']);
+    Config::set('lunar.erp.smartbill.enabled', true);
+    Config::set('lunar.erp.smartbill.generate_invoice', ['payment-received']);
+    Config::set('lunar.erp.actions.billing', ['smartbill']);
+
+    $order = Order::factory()->create([
+        'status' => 'awaiting-phone-consultation',
+        'meta' => ['payment_option' => 'bank-transfer'],
+    ]);
+
+    $order->update(['status' => 'awaiting-bank-transfer']);
+
+    $order->refresh();
+
+    expect($order->meta['lunar_invoice_generated_at'] ?? null)->not->toBeNull();
+
+    Event::assertDispatched(OrderInvoiceGenerated::class, function (OrderInvoiceGenerated $event) use ($order) {
+        return $event->order->is($order) && $event->source === 'lunar';
+    });
+});
+
+it('leaves bank transfer to erp when that status is an erp invoice trigger', function () {
+    Event::fake([OrderInvoiceGenerated::class]);
+
+    Config::set('lunar.erp.enabled', true);
+    Config::set('lunar.erp.providers', ['smartbill']);
+    Config::set('lunar.erp.smartbill.enabled', true);
+    Config::set('lunar.erp.smartbill.generate_invoice', ['awaiting-bank-transfer']);
+    Config::set('lunar.erp.actions.billing', ['smartbill']);
+
+    $service = Mockery::mock(ErpService::class);
+    $service->shouldReceive('getAllowedProviders')->with('actions', 'billing')->andReturn([ErpProviderEnum::smartbill]);
+    $service->shouldReceive('generateInvoice')->once();
+    app()->instance(ErpService::class, $service);
+
+    $order = Order::factory()->create([
+        'status' => 'awaiting-phone-consultation',
+        'meta' => ['payment_option' => 'bank-transfer'],
+    ]);
+
+    $order->update(['status' => 'awaiting-bank-transfer']);
+
+    $order->refresh();
+
+    expect($order->meta['lunar_invoice_generated_at'] ?? null)->toBeNull();
+
+    Event::assertDispatched(OrderInvoiceGenerated::class, function (OrderInvoiceGenerated $event) use ($order) {
+        return $event->order->is($order) && $event->source === 'smartbill';
+    });
+});
+
+it('does not invoice a bank transfer while preorder consultation is still open', function () {
+    Event::fake([OrderInvoiceGenerated::class]);
+    $this->createLanguages();
+
+    $order = Order::factory()->create([
+        'status' => 'awaiting-phone-consultation',
+        'meta' => ['payment_option' => 'bank-transfer'],
+    ]);
+    $variant = ProductVariant::factory()->create();
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => ['preorder' => true],
+    ]);
+
+    $order->update(['status' => 'awaiting-bank-transfer']);
+
+    expect($order->fresh()->meta['lunar_invoice_generated_at'] ?? null)->toBeNull();
     Event::assertNotDispatched(OrderInvoiceGenerated::class);
 });
 

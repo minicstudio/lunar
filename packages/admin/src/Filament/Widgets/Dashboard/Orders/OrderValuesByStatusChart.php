@@ -93,6 +93,10 @@ class OrderValuesByStatusChart extends ApexChartWidget
 
         // Initialize series arrays for each status
         foreach ($statuses as $statusKey => $statusConfig) {
+            if (($statusConfig['exclude_from_reports'] ?? false) || $statusKey === 'split') {
+                continue;
+            }
+
             $seriesValue[$statusKey] = [
                 'name' => $statusConfig['label'] ?? ucfirst($statusKey),
                 'data' => array_fill(0, count($labels), 0),

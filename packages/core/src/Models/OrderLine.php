@@ -89,6 +89,23 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
         return $this->morphTo();
     }
 
+    /**
+     * Smallest quantity that can be placed on one order when this line is split.
+     *
+     * Uses the variant's purchase step and the pack size stored on the line.
+     */
+    public function splitQuantityStep(): int
+    {
+        $stored = max(1, (int) $this->unit_quantity);
+        $purchasable = $this->purchasable;
+
+        if (! $purchasable instanceof ProductVariant) {
+            return $stored;
+        }
+
+        return max($stored, $purchasable->effectiveQuantityIncrement());
+    }
+
     public function currency(): HasOneThrough
     {
         return $this->hasOneThrough(
@@ -102,7 +119,11 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
     }
 
     /**
-     * Get the unit price excluding tax before coupon discount.
+     * Get the unit price excluding tax before coupon and loyalty discounts.
+     *
+     * Matches cart `unitPriceWithoutCoupon`: after catalog discounts, before coupon
+     * and before loyalty redemption (which is stored on line totals but shown as a
+     * separate order-level row).
      */
     protected function unitPriceWithoutCoupon(): Attribute
     {
@@ -116,9 +137,13 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
                     $taxTotal = $this->tax_total->value;
                 }
 
+                // Loyalty is folded into line totals at placement; add this line's
+                // share back so storefront prices match the checkout summary.
+                $net = ($this->total->value - $taxTotal) + $this->loyaltyDiscountAmount();
+
                 // If no coupon then return the original unit price
                 if (! $breakdown) {
-                    return new PriceDataType((int) (($this->total->value - $taxTotal) / $this->quantity), $this->order->currency, 1);
+                    return new PriceDataType((int) ($net / $this->quantity), $this->order->currency, 1);
                 }
 
                 // Fixed-value coupons have no percentage to reverse, so instead add this
@@ -129,7 +154,7 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
 
                     $couponAmount = $breakdownLine ? ($breakdownLine->amount?->value ?? 0) : 0;
 
-                    $value = (($this->total->value - $taxTotal) + $couponAmount) / $this->quantity;
+                    $value = ($net + $couponAmount) / $this->quantity;
 
                     return new PriceDataType((int) $value, $this->order->currency);
                 }
@@ -137,11 +162,33 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
                 $percentage = $breakdown->discount->data->percentage;
 
                 // We need to calculate the original price without the percentage discount applied.
-                $value = ($this->total->value - $taxTotal) / (1 - ($percentage / 100)) / $this->quantity;
+                $value = $net / (1 - ($percentage / 100)) / $this->quantity;
 
                 return new PriceDataType((int) $value, $this->order->currency);
             },
         );
+    }
+
+    /**
+     * Loyalty discount attributed to this line (ex-tax minor units).
+     *
+     * Loyalty is not recorded in `discount_breakdown`; it is the residual of
+     * `discount_total` after every breakdown amount for this line.
+     */
+    protected function loyaltyDiscountAmount(): int
+    {
+        $orderLoyalty = (int) ($this->order->meta['loyalty_discount_minor'] ?? 0);
+
+        if ($orderLoyalty <= 0) {
+            return 0;
+        }
+
+        $attributed = $this->order->discount_breakdown
+            ->flatMap(fn ($breakdown) => $breakdown->lines)
+            ->filter(fn ($lineData) => $lineData->line?->id === $this->id)
+            ->sum(fn ($lineData) => $lineData->amount?->value ?? 0);
+
+        return max(0, $this->discount_total->value - $attributed);
     }
 
     /**

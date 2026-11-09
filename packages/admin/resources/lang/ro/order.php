@@ -237,6 +237,9 @@ return [
         'date_placed' => [
             'label' => 'Data plasării',
         ],
+        'consultation_done_at' => [
+            'label' => 'Consultație făcută la',
+        ],
         'new_returning' => [
             'label' => 'Nou / Revenit',
         ],
@@ -300,6 +303,7 @@ return [
             'cash-on-delivery' => 'Ramburs',
             'bank-transfer' => 'Transfer bancar',
             'stripe-card' => 'Card bancar',
+            'bt-ipay' => 'Plată cu cardul (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Plată online cu cardul',
         ],
@@ -318,6 +322,8 @@ return [
             'requires_capture' => 'Această comandă necesită în continuare capturarea plății.',
             'partially_refunded' => 'Această comandă a fost rambursată parțial.',
             'refunded' => 'Această comandă a fost rambursată.',
+            'preorder_consultation' => 'Această comandă include un produs în precomandă. Sunați clientul înainte de a încasa plata sau de a organiza livrarea.',
+            'preorder_consultation_no_phone' => 'Nu este salvat niciun număr de telefon.',
             'product_line_gates' => [
                 'paid' => 'Plătit: această comandă nu poate fi modificată, deoarece a fost plătită.',
                 'erp' => 'ERP: această comandă nu poate fi modificată, deoarece a fost trimisă către ERP.',
@@ -351,6 +357,11 @@ return [
                 'label' => 'Destinatar e-mail suplimentar',
                 'placeholder' => 'opțional',
             ],
+            'preorder_warning' => [
+                'description' => 'Sigur doriți să actualizați starea înainte de a confirma consultația telefonică, metoda de plată și prețul livrării?',
+                'proceed' => 'Continuă',
+                'cancel' => 'Anulează',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Descarcă PDF',
@@ -379,6 +390,12 @@ return [
                     'helper_text' => 'Separați etichetele apăsând Enter, Tab sau virgulă (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Consultație făcută',
+            'mixed_description' => 'Această comandă conține produse în stoc și produse în precomandă. Păstrați-le într-o singură comandă sau împărțiți-le în comenzi separate.',
+            'keep' => 'Păstrează comanda împreună',
+            'split' => 'Împarte în comenzi separate',
         ],
         'capture_payment' => [
             'label' => 'Capturează plata',
@@ -444,6 +461,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -457,6 +475,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'Totalul produselor din această comandă este mai mic sau egal cu valoarea cuponului.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -477,6 +496,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

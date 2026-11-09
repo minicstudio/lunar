@@ -11,4 +11,7 @@ return [
         'up-sell' => 'فروش ارتقایی',
         'alternate' => 'جایگزین',
     ],
+    'orders' => [
+        'shipping' => 'ارسال',
+    ],
 ];

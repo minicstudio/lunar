@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'You cannot split this order.',
     'order.invalid_split' => 'The order could not be split.',
     'order.locked_split' => 'The order cannot be split.',
+    'order.unknown_preorder_payment' => 'Unknown preorder consultation payment method.',
+    'order.negative_consultation_shipping' => 'The consultation shipping price cannot be negative.',
 ];

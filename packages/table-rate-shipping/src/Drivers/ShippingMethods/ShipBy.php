@@ -2,15 +2,17 @@
 
 namespace Lunar\Shipping\Drivers\ShippingMethods;
 
-use Cartalyst\Converter\Laravel\Facades\Converter;
+use Illuminate\Support\Collection;
+use Lunar\DataTypes\Price;
 use Lunar\DataTypes\ShippingOption;
 use Lunar\Exceptions\MissingCurrencyPriceException;
 use Lunar\Facades\Pricing;
-use Lunar\Models\Contracts\Cart;
+use Lunar\Models\CartLine;
 use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
 use Lunar\Shipping\Interfaces\ShippingRateInterface;
 use Lunar\Shipping\Models\ShippingRate;
+use Lunar\Shipping\ShippingBasis;
 use Spatie\LaravelBlink\BlinkFacade as Blink;
 
 class ShipBy implements ShippingRateInterface
@@ -63,13 +65,9 @@ class ShipBy implements ShippingRateInterface
             }) ?? collect([]);
         }
 
-        // Use discounted subtotal instead of base subtotal for shipping calculations
-        // This ensures free shipping thresholds use discounted prices (excluding coupon codes)
-        $subTotal = $cart->lines->sum(function ($line) {
-            // Use subTotalDiscounted if available (includes automatic discounts)
-            // Fall back to subTotal if subTotalDiscounted is not set
-            return $line->subTotalDiscountedWithoutCouponIncTax?->value ?? $line->subTotal?->value;
-        });
+        $cart->loadMissing('lines.purchasable');
+
+        $basisLines = ShippingBasis::lines($cart);
 
         // Check allowed customer types for this shipping method
         $address = $cart->shippingAddress ?? $cart->address ?? null;
@@ -82,7 +80,8 @@ class ShipBy implements ShippingRateInterface
 
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
-        $productIds = $cart->lines->pluck('purchasable.product_id')->filter()->sort()->values();
+        // Preorder lines are not part of the basis, so they cannot exclude the option.
+        $productIds = $basisLines->pluck('purchasable.product_id')->filter()->sort()->values();
 
         $hasExclusions = $productIds->isNotEmpty() && Blink::once(
             'shipping_zone_'.$shippingZone->id.'_excludes_'.$productIds->implode(','),
@@ -99,6 +98,30 @@ class ShipBy implements ShippingRateInterface
             return null;
         }
 
+        if (ShippingBasis::isPreorderOnly($cart)) {
+            return new ShippingOption(
+                name: $shippingMethod->name,
+                description: $shippingMethod->description,
+                identifier: $shippingRate->getIdentifier(),
+                price: new Price(0, $cart->currency, 1),
+                taxClass: $shippingRate->getTaxClass(),
+                taxReference: $shippingRate->getTaxReference(),
+                option: $shippingZone->name,
+                meta: [
+                    'shipping_zone' => $shippingZone->name,
+                    'preorder_shipping_pending' => true,
+                ],
+            );
+        }
+
+        // Use discounted subtotal instead of base subtotal for shipping calculations
+        // This ensures free shipping thresholds use discounted prices (excluding coupon codes)
+        $subTotal = $basisLines->sum(function ($line) {
+            // Use subTotalDiscounted if available (includes automatic discounts)
+            // Fall back to subTotal if subTotalDiscounted is not set
+            return $line->subTotalDiscountedWithoutCouponIncTax?->value ?? $line->subTotal?->value;
+        });
+
         $chargeBy = $data['charge_by'] ?? null;
 
         if (! $chargeBy) {
@@ -112,7 +135,7 @@ class ShipBy implements ShippingRateInterface
             // weight converts from its own purchasable unit.
             $weightUnit = $shippingMethod->weight_unit ?: 'kg';
 
-            $tier = $this->cartWeightInUnit($cart, $weightUnit);
+            $tier = $this->weightInUnit($basisLines, $weightUnit);
         }
 
         $shippingRate->loadMissing('prices');
@@ -190,11 +213,13 @@ class ShipBy implements ShippingRateInterface
     }
 
     /**
-     * Sum the cart lines' weight, converted into the given unit.
+     * Sum the given lines' weight, converted into the given unit.
+     *
+     * @param  Collection<int, CartLine>  $lines
      */
-    private function cartWeightInUnit(Cart $cart, string $unit): float
+    private function weightInUnit(Collection $lines, string $unit): float
     {
-        return $cart->lines->sum(
+        return $lines->sum(
             fn ($line) => $line->purchasable->weight->to("weight.{$unit}")->convert()->getValue() * $line->quantity
         );
     }

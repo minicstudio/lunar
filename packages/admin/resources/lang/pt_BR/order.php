@@ -219,6 +219,9 @@ return [
         'date_placed' => [
             'label' => 'Data do pedido',
         ],
+        'consultation_done_at' => [
+            'label' => 'Consulta feita em',
+        ],
         'new_returning' => [
             'label' => 'Novo / Recorrente',
         ],
@@ -275,6 +278,7 @@ return [
             'cash-on-delivery' => 'Pagamento na entrega',
             'bank-transfer' => 'Transferência bancária',
             'stripe-card' => 'Cartão de crédito',
+            'bt-ipay' => 'Pagamento com cartão (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Pagamento online com cartão',
         ],
@@ -293,6 +297,8 @@ return [
             'requires_capture' => 'Este pedido ainda requer captura do pagamento.',
             'partially_refunded' => 'Este pedido foi parcialmente reembolsado.',
             'refunded' => 'Este pedido foi reembolsado.',
+            'preorder_consultation' => 'Este pedido inclui um produto em pré-venda. Ligue para o cliente antes de receber o pagamento ou organizar o envio.',
+            'preorder_consultation_no_phone' => 'Nenhum número de telefone foi salvo.',
             'product_line_gates' => [
                 'paid' => 'Pago: este pedido não pode ser modificado porque foi pago.',
                 'erp' => 'ERP: este pedido não pode ser modificado porque foi enviado ao ERP.',
@@ -326,6 +332,11 @@ return [
                 'label' => 'Destinatário de e-mail adicional',
                 'placeholder' => 'opcional',
             ],
+            'preorder_warning' => [
+                'description' => 'Tem certeza de que deseja atualizar o status antes de confirmar a consulta por telefone, a forma de pagamento e o preço do frete?',
+                'proceed' => 'Continuar',
+                'cancel' => 'Cancelar',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Baixar PDF',
@@ -354,6 +365,12 @@ return [
                     'helper_text' => 'Separe tags pressionando Enter, Tab ou vírgula (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Consulta feita',
+            'mixed_description' => 'Este pedido contém produtos em estoque e produtos em pré-venda. Mantenha-os em um único pedido ou separe-os em pedidos distintos.',
+            'keep' => 'Manter em um único pedido',
+            'split' => 'Separar em pedidos distintos',
         ],
         'capture_payment' => [
             'label' => 'Capturar pagamento',
@@ -419,6 +436,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -432,6 +450,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'O total dos produtos deste pedido é menor ou igual ao valor do cupom.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -452,6 +471,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

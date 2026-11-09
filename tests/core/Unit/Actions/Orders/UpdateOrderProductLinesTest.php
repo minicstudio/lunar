@@ -365,6 +365,82 @@ it('leaves the order and stock unchanged when the shipping option cannot be pric
         ->and($order->fresh()->total->value)->toBe(1);
 });
 
+it('merges an added preorder variant with the existing preorder line', function () {
+    ['order' => $order, 'variant' => $variant, 'line' => $line] = editableOrder(
+        quantity: 1,
+        lineMeta: ['preorder' => true],
+    );
+    $variant->update(['purchasable' => 'preorder']);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::add($variant->fresh(), 2));
+    $updated = $saved->productLines()->first();
+
+    expect($saved->productLines()->count())->toBe(1)
+        ->and($updated->id)->toBe($line->id)
+        ->and($updated->quantity)->toBe(3)
+        ->and($updated->meta['preorder'])->toBeTrue();
+});
+
+it('keeps the preorder record and consultation timestamp when the quantity changes', function () {
+    $completedAt = '2026-10-01T10:00:00+00:00';
+    ['order' => $order, 'line' => $line] = editableOrder(
+        quantity: 1,
+        lineMeta: [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $completedAt,
+        ],
+    );
+
+    $saved = UpdateOrderProductLines::run($order, OrderProductLineChange::setQuantity($line->id, 4));
+    $updated = $saved->productLines()->first();
+
+    expect($updated->quantity)->toBe(4)
+        ->and($updated->meta['preorder'])->toBeTrue()
+        ->and($updated->meta['preorder_consultation_completed_at'])->toBe($completedAt)
+        ->and($saved->awaitsPreorderConsultation())->toBeFalse();
+});
+
+it('keeps the consultation and the status when a new preorder line is added', function () {
+    $completedAt = '2026-10-01T10:00:00+00:00';
+    ['order' => $order, 'line' => $line] = editableOrder(
+        lineMeta: [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $completedAt,
+        ],
+    );
+    $status = $order->status;
+    $added = pricedVariant(500, ['purchasable' => 'preorder']);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::add($added, 1));
+    $existing = $saved->productLines()->whereKey($line->id)->first();
+    $newLine = $saved->productLines()->where('purchasable_id', $added->id)->first();
+
+    expect($saved->status)->toBe($status)
+        ->and($saved->awaitsPreorderConsultation())->toBeFalse()
+        ->and($newLine->meta['preorder'])->toBeTrue()
+        ->and($newLine->meta['preorder_consultation_completed_at'])->toBe($completedAt)
+        ->and($existing->meta['preorder'])->toBeTrue()
+        ->and($existing->meta['preorder_consultation_completed_at'])->toBe($completedAt);
+});
+
+it('still waits for consultation when a preorder line is added before it is complete', function () {
+    ['order' => $order, 'line' => $line] = editableOrder(
+        lineMeta: ['preorder' => true],
+    );
+    $status = $order->status;
+    $added = pricedVariant(500, ['purchasable' => 'preorder']);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::add($added, 1));
+    $existing = $saved->productLines()->whereKey($line->id)->first();
+    $newLine = $saved->productLines()->where('purchasable_id', $added->id)->first();
+
+    expect($saved->status)->toBe($status)
+        ->and($saved->awaitsPreorderConsultation())->toBeTrue()
+        ->and($newLine->meta['preorder'])->toBeTrue()
+        ->and($newLine->meta['preorder_consultation_completed_at'] ?? null)->toBeNull()
+        ->and($existing->meta['preorder_consultation_completed_at'] ?? null)->toBeNull();
+});
+
 /**
  * Give the order a 19.90 courier shipping line that was placed free.
  */

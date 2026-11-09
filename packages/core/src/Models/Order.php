@@ -107,20 +107,23 @@ class Order extends BaseModel implements Contracts\Order
     }
 
     /**
-     * Exclude orders whose status is flagged with `exclude_from_reports`
-     * (e.g. test orders) from revenue figures, statistics and charts.
+     * Leave test orders and split originals out of revenue figures, statistics, and charts.
+     *
+     * Statuses flagged with `exclude_from_reports` are skipped. `split` is always
+     * skipped, including when a published status list omits that flag, so the
+     * original order is not counted again beside the orders it was split into.
      */
     public function scopeReportable(Builder $query): Builder
     {
         $excludedStatuses = collect(config('lunar.orders.statuses', []))
-            ->filter(fn (array $status) => $status['exclude_from_reports'] ?? false)
-            ->keys();
+            ->filter(fn (array $status): bool => (bool) ($status['exclude_from_reports'] ?? false))
+            ->keys()
+            ->push('split')
+            ->filter(fn (mixed $status): bool => is_string($status) && $status !== '')
+            ->unique()
+            ->values();
 
-        if ($excludedStatuses->isEmpty()) {
-            return $query;
-        }
-
-        return $query->whereNotIn($query->qualifyColumn('status'), $excludedStatuses);
+        return $query->whereNotIn($query->qualifyColumn('status'), $excludedStatuses->all());
     }
 
     /**
@@ -171,6 +174,92 @@ class Order extends BaseModel implements Contracts\Order
     public function productLines(): HasMany
     {
         return $this->lines()->where('type', '!=', 'shipping');
+    }
+
+    /**
+     * Whether staff still need to call the customer about a recorded preorder line.
+     */
+    public function awaitsPreorderConsultation(): bool
+    {
+        $this->loadMissing('productLines');
+
+        return $this->productLines->contains(function (object $line): bool {
+            if (! $this->lineIsRecordedPreorder($line)) {
+                return false;
+            }
+
+            return blank($this->lineMeta($line)['preorder_consultation_completed_at'] ?? null);
+        });
+    }
+
+    /**
+     * When staff marked the phone consultation done, from the latest stamped product line.
+     */
+    public function preorderConsultationCompletedAt(): ?Carbon
+    {
+        $this->loadMissing('productLines');
+
+        $completedAt = null;
+
+        foreach ($this->productLines as $line) {
+            $value = $this->lineMeta($line)['preorder_consultation_completed_at'] ?? null;
+
+            if (! is_string($value) || blank($value)) {
+                continue;
+            }
+
+            try {
+                $parsed = Carbon::parse($value);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ($completedAt === null || $parsed->greaterThan($completedAt)) {
+                $completedAt = $parsed;
+            }
+        }
+
+        return $completedAt;
+    }
+
+    /**
+     * The order has a recorded preorder line and another product line.
+     */
+    public function hasMixedPreorderLines(): bool
+    {
+        $this->loadMissing('productLines');
+
+        $recorded = false;
+        $other = false;
+
+        foreach ($this->productLines as $line) {
+            if ($this->lineIsRecordedPreorder($line)) {
+                $recorded = true;
+            } else {
+                $other = true;
+            }
+        }
+
+        return $recorded && $other;
+    }
+
+    private function lineIsRecordedPreorder(object $line): bool
+    {
+        return ($this->lineMeta($line)['preorder'] ?? null) === true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lineMeta(object $line): array
+    {
+        $meta = $line->meta ?? null;
+
+        if ($meta instanceof \ArrayObject) {
+            return $meta->getArrayCopy();
+        }
+
+        return is_array($meta) ? $meta : [];
     }
 
     /**

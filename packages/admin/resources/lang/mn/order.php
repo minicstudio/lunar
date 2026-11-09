@@ -213,6 +213,9 @@ return [
         'date_placed' => [
             'label' => 'Захиалсан огноо',
         ],
+        'consultation_done_at' => [
+            'label' => 'Зөвлөгөө дууссан',
+        ],
         'new_returning' => [
             'label' => 'Шинэ / Дахин ирсэн',
         ],
@@ -269,6 +272,7 @@ return [
             'cash-on-delivery' => 'Хүлээн авахдаа төлөх',
             'bank-transfer' => 'Банкны шилжүүлэг',
             'stripe-card' => 'Кредит карт',
+            'bt-ipay' => 'Картаар төлөх (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Онлайн картын төлбөр',
         ],
@@ -286,6 +290,8 @@ return [
             'requires_capture' => 'Энэ захиалгын төлбөрийг баталгаажуулах шаардлагатай байна.',
             'partially_refunded' => 'Энэ захиалгад хэсэгчлэн буцаах үйлдэл хийгдсэн.',
             'refunded' => 'Энэ захиалга буцаагдсан.',
+            'preorder_consultation' => 'Энэ захиалгад урьдчилсан захиалгын бүтээгдэхүүн байна. Төлбөр авах эсвэл хүргэлт зохион байгуулахаас өмнө үйлчлүүлэгч рүү залгана уу.',
+            'preorder_consultation_no_phone' => 'Утасны дугаар хадгалагдаагүй.',
             'product_line_gates' => [
                 'paid' => 'Төлөгдсөн: энэ захиалгыг өөрчлөх боломжгүй, учир нь төлөгдсөн.',
                 'erp' => 'ERP: энэ захиалгыг өөрчлөх боломжгүй, учир нь ERP рүү илгээсэн.',
@@ -321,6 +327,11 @@ return [
                 'label' => 'Нэмэлт имэйл хүлээн авагч',
                 'placeholder' => 'сонголттой',
             ],
+            'preorder_warning' => [
+                'description' => 'Утасны зөвлөгөөг, төлбөрийн хэлбэрийг болон хүргэлтийн үнийг баталгаажуулахаас өмнө статусыг шинэчлэхдээ итгэлтэй байна уу?',
+                'proceed' => 'Үргэлжлүүлэх',
+                'cancel' => 'Болих',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'PDF татах',
@@ -346,6 +357,12 @@ return [
                     'helper_text' => 'Тагыг Enter, Tab эсвэл таслал (,) дарж тусгаарлана уу',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Зөвлөгөө дууссан',
+            'mixed_description' => 'Энэ захиалгад бэлэн болон урьдчилсан захиалгын бараа хамт байна. Нэг захиалгад үлдээнэ үү, эсвэл тусдаа захиалга болгон хуваана уу.',
+            'keep' => 'Нэг захиалгад үлдээх',
+            'split' => 'Тусдаа захиалга болгон хуваах',
         ],
         'capture_payment' => [
             'label' => 'Төлбөр баталгаажуулах',
@@ -409,6 +426,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -422,6 +440,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'Энэ захиалгын бүтээгдэхүүний нийт дүн купоны дүнтэй тэнцүү эсвэл түүнээс бага байна.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -442,6 +461,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],

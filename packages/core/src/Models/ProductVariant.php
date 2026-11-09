@@ -155,6 +155,30 @@ class ProductVariant extends BaseModel implements Contracts\ProductVariant, HasT
     }
 
     /**
+     * Purchase step. An increment that is not a multiple of the unit quantity
+     * is raised to the next multiple, so a pack is never split into pieces.
+     */
+    public function effectiveQuantityIncrement(): int
+    {
+        return self::effectiveQuantityIncrementFrom(
+            (int) $this->quantity_increment,
+            (int) $this->unit_quantity,
+        );
+    }
+
+    public static function effectiveQuantityIncrementFrom(int $quantityIncrement, int $unitQuantity): int
+    {
+        $increment = max(1, $quantityIncrement);
+        $unitQuantity = max(1, $unitQuantity);
+
+        if ($increment % $unitQuantity === 0) {
+            return $increment;
+        }
+
+        return (int) (ceil($increment / $unitQuantity) * $unitQuantity);
+    }
+
+    /**
      * Map cart/ATC piece quantity to Buy X Get Y condition units.
      *
      * Pack-priced variants (`unit_quantity` > 1) count each full pack as one

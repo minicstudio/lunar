@@ -31,7 +31,7 @@ class OrderObserver
 
         $awbGenerationStatus = config('lunar.shipping.generate_awb_on_status');
 
-        if ($order->isDirty('status') && $order->status === $awbGenerationStatus && ! isset($order->meta['awb'])) {
+        if ($order->isDirty('status') && $order->status === $awbGenerationStatus && ! isset($order->meta['awb']) && ! $order->awaitsPreorderConsultation()) {
             $this->generateAWBForOrder($order);
         }
     }

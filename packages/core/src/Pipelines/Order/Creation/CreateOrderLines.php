@@ -27,6 +27,8 @@ class CreateOrderLines
         $cart->recalculate();
 
         foreach ($cart->lines as $cartLine) {
+            $this->recordPreorder($cartLine);
+
             /** @var OrderLine $orderLine */
             $orderLine = $order->lines->first(function ($line) use ($cartLine) {
                 $diff = Arr::diff($line->meta, $cartLine->meta);
@@ -60,5 +62,45 @@ class CreateOrderLines
         }
 
         return $next($order->refresh());
+    }
+
+    /**
+     * Record a preorder variant on the cart line before the order line is matched.
+     *
+     * The key is never removed, so a variant that later leaves preorder stays recorded.
+     */
+    private function recordPreorder(object $cartLine): void
+    {
+        $purchasable = $cartLine->purchasable ?? null;
+
+        if (! is_object($purchasable) || ! method_exists($purchasable, 'isPreorder') || ! $purchasable->isPreorder()) {
+            return;
+        }
+
+        $meta = $this->lineMeta($cartLine->meta ?? null);
+
+        if (($meta['preorder'] ?? null) === true) {
+            return;
+        }
+
+        $meta['preorder'] = true;
+        $cartLine->meta = $meta;
+        $cartLine->save();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function lineMeta(mixed $meta): array
+    {
+        if ($meta instanceof \ArrayObject) {
+            return $meta->getArrayCopy();
+        }
+
+        if (is_array($meta)) {
+            return $meta;
+        }
+
+        return [];
     }
 }

@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Дээд борлуулалт',
         'alternate' => 'Хувилбар',
     ],
+    'orders' => [
+        'shipping' => 'Хүргэлт',
+    ],
 ];
