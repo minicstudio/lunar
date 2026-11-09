@@ -107,20 +107,23 @@ class Order extends BaseModel implements Contracts\Order
     }
 
     /**
-     * Exclude orders whose status is flagged with `exclude_from_reports`
-     * (e.g. test orders) from revenue figures, statistics and charts.
+     * Leave test orders and split originals out of revenue figures, statistics, and charts.
+     *
+     * Statuses flagged with `exclude_from_reports` are skipped. `split` is always
+     * skipped, including when a published status list omits that flag, so the
+     * original order is not counted again beside the orders it was split into.
      */
     public function scopeReportable(Builder $query): Builder
     {
         $excludedStatuses = collect(config('lunar.orders.statuses', []))
-            ->filter(fn (array $status) => $status['exclude_from_reports'] ?? false)
-            ->keys();
+            ->filter(fn (array $status): bool => (bool) ($status['exclude_from_reports'] ?? false))
+            ->keys()
+            ->push('split')
+            ->filter(fn (mixed $status): bool => is_string($status) && $status !== '')
+            ->unique()
+            ->values();
 
-        if ($excludedStatuses->isEmpty()) {
-            return $query;
-        }
-
-        return $query->whereNotIn($query->qualifyColumn('status'), $excludedStatuses);
+        return $query->whereNotIn($query->qualifyColumn('status'), $excludedStatuses->all());
     }
 
     /**

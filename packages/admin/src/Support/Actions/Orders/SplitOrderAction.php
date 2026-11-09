@@ -63,6 +63,11 @@ class SplitOrderAction extends Action
      */
     private array $catalogPrices = [];
 
+    /**
+     * @var array<int, array{code: ?string, fixed: ?int}>
+     */
+    private array $couponFacts = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -175,6 +180,18 @@ class SplitOrderAction extends Action
                                             ->label(__('lunarpanel::order.infolist.quantity.label'))
                                             ->numeric()
                                             ->minValue(0)
+                                            ->step(fn (Get $get): int => $this->lineSplitStep($record, $get('../../order_line_id')))
+                                            ->helperText(function (Get $get) use ($record): ?string {
+                                                $step = $this->lineSplitStep($record, $get('../../order_line_id'));
+
+                                                if ($step <= 1) {
+                                                    return null;
+                                                }
+
+                                                return __('lunarpanel::order.action.split_order.quantity_step', [
+                                                    'increment' => $step,
+                                                ]);
+                                            })
                                             ->live(),
                                     ]),
                             ]),
@@ -188,7 +205,10 @@ class SplitOrderAction extends Action
                             ->options(fn (Get $get): array => $this->choiceOptions($this->targetOptions($get('orders'))))
                             ->visible(fn (): bool => filled($this->couponCode($record)))
                             ->required(fn (): bool => filled($this->couponCode($record)))
-                            ->live(),
+                            ->live()
+                            ->afterStateUpdated(function (mixed $state) use ($record): void {
+                                $this->warnWhenFixedCouponExceedsOrder($record, (string) $state);
+                            }),
                         Select::make('loyalty')
                             ->label(__('lunarpanel::order.action.split_order.loyalty'))
                             ->options(fn (Get $get): array => $this->choiceOptions($this->targetOptions($get('orders'))))
@@ -323,7 +343,7 @@ class SplitOrderAction extends Action
         $options = CompletePreorderConsultation::paymentOptions();
         $payment = (string) (data_get($order->meta, 'payment_option') ?: 'cash-on-delivery');
 
-        if ($this->completesConsultation() && ! in_array($payment, $options, true)) {
+        if (! in_array($payment, $options, true)) {
             $payment = in_array('cash-on-delivery', $options, true)
                 ? 'cash-on-delivery'
                 : (string) ($options[0] ?? '');
@@ -362,6 +382,11 @@ class SplitOrderAction extends Action
             'coupon' => filled($this->couponCode($order)) ? '1' : 'none',
             'loyalty' => (int) data_get($order->meta, 'loyalty_points_to_redeem') > 0 ? '1' : 'none',
         ];
+        $fixedCouponTarget = $this->fixedCouponTarget($order, $state);
+
+        if ($fixedCouponTarget !== null) {
+            $state['coupon'] = $fixedCouponTarget;
+        }
 
         $preview = $this->rememberPreview($order, $state);
 
@@ -520,7 +545,7 @@ class SplitOrderAction extends Action
 
             $payment = (string) ($orderState['payment_option'] ?? '');
 
-            if ($payment === '' || ($completeConsultation && ! in_array($payment, CompletePreorderConsultation::paymentOptions(), true))) {
+            if ($payment === '' || ! in_array($payment, CompletePreorderConsultation::paymentOptions(), true)) {
                 $blockers[] = 'payment_required';
             }
         }
@@ -534,7 +559,7 @@ class SplitOrderAction extends Action
             }
         }
 
-        $lines = $order->productLines()->get();
+        $lines = $order->productLines()->with('purchasable')->get();
 
         if ($lines->isEmpty()) {
             $blockers[] = 'lines_mismatch';
@@ -550,6 +575,20 @@ class SplitOrderAction extends Action
                 $unassigned = true;
             } elseif ($sum > (int) $line->quantity) {
                 $assignedTwice = true;
+            }
+
+            $step = $line->splitQuantityStep();
+
+            if ($step <= 1) {
+                continue;
+            }
+
+            foreach ($quantities as $lineQuantities) {
+                $portion = (int) ($lineQuantities[$line->id] ?? 0);
+
+                if ($portion > 0 && $portion % $step !== 0) {
+                    $blockers[] = 'quantity_increment';
+                }
             }
         }
 
@@ -614,6 +653,13 @@ class SplitOrderAction extends Action
         return $translated === $key
             ? __('lunarpanel::order.action.split_order.invalid')
             : $translated;
+    }
+
+    private function lineSplitStep(Order $order, mixed $lineId): int
+    {
+        $line = $order->productLines->firstWhere('id', (int) $lineId);
+
+        return $line instanceof OrderLine ? $line->splitQuantityStep() : 1;
     }
 
     /**
@@ -1124,20 +1170,9 @@ class SplitOrderAction extends Action
      */
     private function paymentOptions(): array
     {
-        $keys = $this->completesConsultation()
-            ? CompletePreorderConsultation::paymentOptions()
-            : [
-                'offline',
-                'cash-in-hand',
-                'cash-on-delivery',
-                'bank-transfer',
-                'stripe-card',
-                'stripe-wallet-pay',
-                'hosted-payment',
-            ];
         $options = [];
 
-        foreach ($keys as $key) {
+        foreach (CompletePreorderConsultation::paymentOptions() as $key) {
             $options[$key] = __('lunarpanel::order.infolist.payment_methods.'.$key);
         }
 
@@ -1146,22 +1181,186 @@ class SplitOrderAction extends Action
 
     private function couponCode(Order $order): ?string
     {
+        return $this->couponFacts($order)['code'];
+    }
+
+    /**
+     * @return array{code: ?string, fixed: ?int}
+     */
+    private function couponFacts(Order $order): array
+    {
+        if (array_key_exists($order->id, $this->couponFacts)) {
+            return $this->couponFacts[$order->id];
+        }
+
         $discountIds = collect($order->discount_breakdown ?? [])
             ->pluck('discount_id')
             ->filter()
             ->unique()
             ->values();
+        $discount = $discountIds->isEmpty()
+            ? null
+            : Discount::query()
+                ->whereIn('id', $discountIds)
+                ->whereNotNull('coupon')
+                ->first();
+        $data = is_array($discount?->data) ? $discount->data : [];
+        $fixed = null;
 
-        if ($discountIds->isEmpty()) {
+        if ($discount instanceof Discount && ($data['fixed_value'] ?? false)) {
+            $code = (string) ($order->currency_code ?: $order->currency?->code);
+            $value = (int) ($data['fixed_values'][$code] ?? 0);
+            $fixed = $value > 0 ? $value : null;
+        }
+
+        return $this->couponFacts[$order->id] = [
+            'code' => filled($discount?->coupon) ? (string) $discount->coupon : null,
+            'fixed' => $fixed,
+        ];
+    }
+
+    /**
+     * Fixed coupon amount in minor units, or null when this order's coupon is not a fixed value.
+     */
+    private function fixedCouponMinor(Order $order): ?int
+    {
+        return $this->couponFacts($order)['fixed'];
+    }
+
+    /**
+     * Product totals before the coupon and without shipping, in minor units.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, int>
+     */
+    private function merchandiseTotals(Order $order, array $data): array
+    {
+        $sources = [];
+
+        foreach (array_values(is_array($data['lines'] ?? null) ? $data['lines'] : []) as $line) {
+            if (! is_array($line)) {
+                continue;
+            }
+
+            $sources[(int) ($line['order_line_id'] ?? 0)] = (string) ($line['price_source'] ?? 'original');
+        }
+
+        $lines = $order->relationLoaded('productLines')
+            ? $order->productLines->keyBy('id')
+            : $order->productLines()->with('purchasable')->get()->keyBy('id');
+        $totals = [];
+
+        foreach ($this->quantitiesByTarget($data) as $key => $lineQuantities) {
+            $total = 0;
+
+            foreach ($lineQuantities as $lineId => $quantity) {
+                $line = $lines->get($lineId);
+
+                if (! $line instanceof OrderLine || $quantity < 1) {
+                    continue;
+                }
+
+                $unit = ($sources[$lineId] ?? 'original') === 'current'
+                    ? ($this->catalogUnitPrice($order, $line, $quantity) ?? $this->storedUnitPrice($line))
+                    : $this->storedUnitPrice($line);
+                $total += $unit * $quantity;
+            }
+
+            $totals[(string) $key] = $total;
+        }
+
+        return $totals;
+    }
+
+    /**
+     * The order that should receive a fixed coupon when the modal opens.
+     *
+     * Later choices stay where the admin puts them. Equality counts: a coupon that
+     * matches the product total leaves no product value. When several orders can
+     * absorb it, the largest product total is used.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function fixedCouponTarget(Order $order, array $data): ?string
+    {
+        $couponMinor = $this->fixedCouponMinor($order);
+
+        if ($couponMinor === null) {
             return null;
         }
 
-        $coupon = Discount::query()
-            ->whereIn('id', $discountIds)
-            ->whereNotNull('coupon')
-            ->value('coupon');
+        $selected = (string) ($data['coupon'] ?? '');
 
-        return filled($coupon) ? (string) $coupon : null;
+        if ($selected === '' || $selected === 'none') {
+            return null;
+        }
+
+        $totals = $this->merchandiseTotals($order, $data);
+
+        if (($totals[$selected] ?? 0) > $couponMinor) {
+            return null;
+        }
+
+        $replacement = null;
+        $best = $couponMinor;
+
+        foreach (array_values(is_array($data['orders'] ?? null) ? $data['orders'] : []) as $orderState) {
+            if (! is_array($orderState)) {
+                continue;
+            }
+
+            $key = (string) ($orderState['key'] ?? '');
+            $total = $totals[$key] ?? 0;
+
+            if ($key === '' || $total <= $best) {
+                continue;
+            }
+
+            $replacement = $key;
+            $best = $total;
+        }
+
+        return $replacement;
+    }
+
+    /**
+     * A fixed coupon uses up this order's products, or more than its products.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function fixedCouponExceedsOrder(Order $order, array $data, string $target): bool
+    {
+        $couponMinor = $this->fixedCouponMinor($order);
+
+        if ($couponMinor === null || $target === '' || $target === 'none') {
+            return false;
+        }
+
+        $totals = $this->merchandiseTotals($order, $data);
+
+        if (! array_key_exists($target, $totals)) {
+            return false;
+        }
+
+        return $totals[$target] <= $couponMinor;
+    }
+
+    /**
+     * Tell the admin the chosen order cannot absorb a fixed coupon. The choice stays.
+     */
+    private function warnWhenFixedCouponExceedsOrder(Order $order, string $target): void
+    {
+        $data = $this->mountedData();
+        $data['coupon'] = $target;
+
+        if (! $this->fixedCouponExceedsOrder($order, $data, $target)) {
+            return;
+        }
+
+        Notification::make()
+            ->title(__('lunarpanel::order.action.split_order.coupon_exceeds_order'))
+            ->warning()
+            ->send();
     }
 
     private function loyaltySpendExists(Order $order): bool

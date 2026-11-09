@@ -461,6 +461,7 @@ return [
             'new_order' => 'Új rendelés',
             'move_to_order' => 'Áthelyezés a rendelésbe:',
             'divide_quantity' => 'Mennyiség osztása',
+            'quantity_step' => ':increment többszörösét add meg.',
             'price' => 'Ár',
             'price_changed' => 'A termék ára a rendelés leadása óta megváltozott.',
             'original_price' => 'Eredeti ár',
@@ -474,6 +475,7 @@ return [
             'do_not_apply' => 'Nem alkalmazom',
             'confirm' => 'Rendelés bontása',
             'notification' => 'A rendelés szét lett bontva',
+            'coupon_exceeds_order' => 'Ennek a rendelésnek a termékösszege kisebb vagy egyenlő a kupon értékénél.',
             'invalid' => 'A bontás még nem erősíthető meg.',
             'gates' => [
                 'closed' => 'Ez a rendelés már nem bontható.',
@@ -494,6 +496,7 @@ return [
                 'loyalty_cannot_accept' => 'A kiválasztott rendelés nem tudja fogadni az összes már felhasznált hűségpontot.',
                 'shipping_required' => 'Minden rendeléshez adj meg szállítási költséget.',
                 'payment_required' => 'Minden rendeléshez válassz fizetési módot.',
+                'quantity_increment' => 'A csomagban értékesített terméket csak egész csomagokra lehet bontani.',
             ],
         ],
     ],

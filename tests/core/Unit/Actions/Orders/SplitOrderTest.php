@@ -1000,3 +1000,51 @@ it('keeps bank transfer on a normal split at awaiting payment', function () {
 
     expect($bank->status)->toBe('awaiting-payment');
 });
+
+it('splits a pack product only in whole packs', function () {
+    $variant = pricedSplitVariant(1000, [
+        'unit_quantity' => 4,
+        'quantity_increment' => 4,
+    ]);
+    $order = splittableOrder([
+        ['variant' => $variant, 'quantity' => 8, 'price' => 1000],
+    ]);
+    $line = $order->productLines()->first();
+    $before = Order::count();
+
+    expect(fn () => SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$line->id => 3]],
+        ['key' => '2', 'quantities' => [$line->id => 5]],
+    ])))->toThrow(fn (InvalidOrderSplitException $exception) => expect($exception->reasons)->toContain('quantity_increment'));
+
+    expect(Order::count())->toBe($before)
+        ->and($order->fresh()->status)->not->toBe('split');
+
+    $saved = SplitOrder::run($order->fresh(), splitRequest([
+        ['key' => '1', 'quantities' => [$line->id => 4]],
+        ['key' => '2', 'quantities' => [$line->id => 4]],
+    ]));
+
+    $quantities = Order::query()->where('id', '!=', $order->id)->get()
+        ->flatMap(fn (Order $child) => $child->productLines->pluck('quantity'))
+        ->sort()->values()->all();
+
+    expect($saved->status)->toBe('split')
+        ->and($quantities)->toBe([4, 4]);
+});
+
+it('uses the quantity increment when it is larger than the unit quantity', function () {
+    $variant = pricedSplitVariant(1000, [
+        'unit_quantity' => 4,
+        'quantity_increment' => 8,
+    ]);
+    $order = splittableOrder([
+        ['variant' => $variant, 'quantity' => 16, 'price' => 1000],
+    ]);
+    $line = $order->productLines()->first();
+
+    expect(fn () => SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$line->id => 4]],
+        ['key' => '2', 'quantities' => [$line->id => 12]],
+    ])))->toThrow(fn (InvalidOrderSplitException $exception) => expect($exception->reasons)->toContain('quantity_increment'));
+});

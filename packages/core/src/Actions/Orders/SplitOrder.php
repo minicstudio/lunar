@@ -207,6 +207,20 @@ final class SplitOrder extends AbstractAction
             } elseif ($sum > (int) $line->quantity) {
                 $errors[] = 'assigned_twice';
             }
+
+            $step = $line->splitQuantityStep();
+
+            if ($step <= 1) {
+                continue;
+            }
+
+            foreach ($request->targets as $target) {
+                $quantity = (int) ($target->quantities[$line->id] ?? 0);
+
+                if ($quantity > 0 && $quantity % $step !== 0) {
+                    $errors[] = 'quantity_increment';
+                }
+            }
         }
 
         $nonEmpty = 0;

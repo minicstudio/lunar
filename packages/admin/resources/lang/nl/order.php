@@ -432,6 +432,7 @@ return [
             'new_order' => 'New order',
             'move_to_order' => 'Move to order:',
             'divide_quantity' => 'Divide quantity',
+            'quantity_step' => 'Enter a multiple of :increment.',
             'price' => 'Price',
             'price_changed' => 'The price of this product has changed since the order was placed.',
             'original_price' => 'Original price',
@@ -445,6 +446,7 @@ return [
             'do_not_apply' => 'Do not apply',
             'confirm' => 'Split order',
             'notification' => 'Order split',
+            'coupon_exceeds_order' => 'Het producttotaal van deze bestelling is kleiner dan of gelijk aan de couponwaarde.',
             'invalid' => 'The split is not ready to confirm.',
             'gates' => [
                 'closed' => 'This order can no longer be split.',
@@ -465,6 +467,7 @@ return [
                 'loyalty_cannot_accept' => 'The chosen order cannot take all of the loyalty points that were already spent.',
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
+                'quantity_increment' => 'A product sold in packs must be split into whole packs.',
             ],
         ],
     ],
