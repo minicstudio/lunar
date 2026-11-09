@@ -82,6 +82,10 @@ return [
         'percentage' => [
             'label' => 'Pourcentage',
         ],
+        'free_shipping' => [
+            'label' => 'Livraison gratuite',
+            'helper_text' => 'Avec un code de coupon : toutes les options de livraison sont gratuites lorsque le coupon est utilisé. Sans code de coupon : la livraison est gratuite lorsqu\'au moins un produit du panier est éligible à la réduction. Le pourcentage ou la valeur fixe peut rester vide si la réduction offre uniquement la livraison gratuite. Chaque commande livrée de cette façon compte comme une utilisation.',
+        ],
     ],
     'table' => [
         'name' => [

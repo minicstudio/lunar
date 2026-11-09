@@ -82,6 +82,10 @@ return [
         'percentage' => [
             'label' => 'Yüzde',
         ],
+        'free_shipping' => [
+            'label' => 'Ücretsiz kargo',
+            'helper_text' => 'Kupon koduyla: kupon kullanıldığında tüm kargo seçenekleri ücretsizdir. Kupon kodu olmadan: sepetteki en az bir ürün indirime uygunsa kargo ücretsizdir. İndirim yalnızca ücretsiz kargo sağlıyorsa yüzde veya sabit değer boş bırakılabilir. Bu şekilde gönderilen her sipariş bir kullanım sayılır.',
+        ],
     ],
     'table' => [
         'name' => [

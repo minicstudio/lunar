@@ -78,6 +78,10 @@ return [
         'percentage' => [
             'label' => 'Procent',
         ],
+        'free_shipping' => [
+            'label' => 'Darmowa dostawa',
+            'helper_text' => 'Z kodem kuponu: wszystkie opcje dostawy są darmowe, gdy kupon zostanie użyty. Bez kodu kuponu: dostawa jest darmowa, gdy co najmniej jeden produkt w koszyku kwalifikuje się do rabatu. Procent lub stałą wartość można pozostawić puste, jeśli rabat daje tylko darmową dostawę. Każde zamówienie wysłane w ten sposób liczy się jako jedno użycie.',
+        ],
     ],
     'table' => [
         'name' => [

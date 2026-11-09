@@ -82,7 +82,7 @@ Tax **amounts** on carts are computed later in `CalculateTax` via `TaxManager` /
 | Area | Behavior |
 | --- | --- |
 | **Type** | PHP class name (active: `AdvancedAmountOff`) |
-| **`data` JSON** | Reward config: `percentage`, optional `fixed_value` / `fixed_values`, `min_prices` per currency |
+| **`data` JSON** | Reward config: `percentage`, optional `fixed_value` / `fixed_values`, `min_prices` per currency, optional `free_shipping` (Advanced amount off only, see "Free shipping" below) |
 | **Coupon** | Optional code (`CouponString` cast, uppercased) |
 | **Schedule** | `starts_at` / `ends_at`; `scopeActive()` |
 | **Usage** | `uses`, `max_uses`, `max_uses_per_user` (+ user pivot) |
@@ -138,6 +138,23 @@ Also configurable: `lunar.discounts.fixed_value_minimum_remaining_percentage` (d
 
 **Usage recording:** `markAsUsed()` increments `uses` and attaches the user pivot. Cart `apply()` does not call it. The host marks discounts used after payment (e.g. `MarkDiscountsAsUsed` in `lunar-frontend`); not invoked by core `CreateOrder` or cart pipelines.
 
+### Free shipping (`data.free_shipping`)
+
+An Advanced amount off discount with the admin **Free shipping** toggle on makes every shipping option free for the cart (courier, locker, and personal pickup). It may also take a percentage or fixed amount off products, or nothing (empty or 0 percentage, empty fixed amount). Buy X Get Y has no toggle. The disabled table-rate `ShippingDiscount` type is unrelated.
+
+| Source | Grants free shipping when |
+| --- | --- |
+| **Coupon** | `cart.coupon_code` matches, the coupon passes `checkDiscountConditions()` (customer list, minimum cart amount, max uses, max uses per user), and at least one line passes `getEligibleLines()`. Decided in `applyCouponForCart()` **before** the coupon's own amount is applied, so the minimum is not measured on lines the coupon has just reduced. |
+| **Automatic (no coupon)** | The discount is loaded for the cart (active, channel, customer groups), passes the same conditions, and has at least one eligible line. Which discount prices that line does not matter: one eligible product out of five is enough, and a stronger variant-level discount on that line does not remove it. Checked by a separate pass in `DiscountManager::apply()` after the per-line and Buy X Get Y passes, before the coupon. |
+
+Both sources use `AdvancedAmountOff::grantsFreeShipping()`. A global automatic free-shipping discount makes shipping free for every cart in its channel and customer groups.
+
+**One recorded discount:** the cart records exactly one as `cart.freeShippingDiscount`. A qualifying coupon wins. Otherwise the first qualifying automatic discount in the loaded order (priority desc, then lowest id) is recorded.
+
+**Zero-amount breakdown entry:** when the recorded discount took nothing off any line, `recordFreeShipping()` pushes it to `cart.discounts` and adds one `DiscountBreakdown` with price 0 and no lines. A discount that also took an amount off keeps its usual entry and gets no second one. So `markAsUsed()` (each order counts as one use), `Order::appliedCoupon`, and reporting still see it, while `couponTotal` does not change.
+
+**Cart runtime properties** (both in `cachableProperties`): `freeShippingDiscount` (null when none qualified) and `shippingDiscountTotal` (the waived shipping in the stored price basis; null when nothing was waived, for example a 0-priced pickup or no option yet). The storefront labels options and rows from them; option prices from `ShippingManifest::getOptions()` keep their full price.
+
 ---
 
 ## Price calculation flow
@@ -148,7 +165,8 @@ Cart recalculation runs `lunar.cart.pipelines.cart` (see [checkout.md](./checkou
 flowchart TD
   A[CalculateLines] --> B[ApplyShipping]
   B --> C[ApplyDiscounts]
-  C --> D[CalculateTax]
+  C --> F[ApplyDiscountFreeShipping]
+  F --> D[CalculateTax]
   D --> E[Calculate]
 
   subgraph lines ["Per cart line"]
@@ -168,9 +186,14 @@ flowchart TD
 | --- | --- |
 | **CalculateLines** | Each line through `GetUnitPrice` → `PricingManager`; compute `subTotal`; seed discount-related line attributes (zero discount, “without coupon” mirrors) |
 | **ApplyShipping** | Applies already-selected shipping option to breakdown (tier resolution happens in `ShippingManifest::getOptions`, not here) |
-| **ApplyDiscounts** | Clears breakdown; `Discounts::apply($cart)` |
+| **ApplyDiscounts** | Clears breakdown and `freeShippingDiscount`; `Discounts::apply($cart)` |
+| **ApplyDiscountFreeShipping** | Charges the selected shipping at 0 when `freeShippingDiscount` is set (see below) |
 | **CalculateTax** | Tax on `subTotalDiscounted` when set; builds line/cart/shipping tax |
 | **Calculate** | Sums line discounts; sets cart `subTotal`, `subTotalDiscounted`, `discountTotal`, `couponTotal`, `discountTotalWithoutCoupon`, inc-tax aggregates, and **final `total`** |
+
+**Free-shipping waiver:** the cart stage `Lunar\Pipelines\Cart\ApplyDiscountFreeShipping` does the waiver. When `freeShippingDiscount` is set, `shippingOptionOverride` is empty, and the shipping breakdown has items, it stores the summed item prices in `shippingDiscountTotal`, replaces each item with a 0-priced copy, and sets `shippingSubTotal` and the shipping address `shippingSubTotal` / `shippingTotal` to 0. Shipping tax, `shippingTotal`, and `total` are then calculated on 0.
+
+The stage needs both this pass's discount (from `ApplyDiscounts`) and this pass's breakdown (from `ApplyShipping`). This repository's default config runs `ApplyShipping` first; `lunar-frontend` and every checked host run `ApplyDiscounts` first, and some hosts omit `CalculateShippingSubTotal`. Directly before `CalculateTax` is after both stages in every one of those orders, and the stage sets `shippingSubTotal` itself, so it needs no `CalculateShippingSubTotal`. Every published `config/lunar/cart.php` must list it there (or before the host's own tax stage), because a published config replaces the package's `pipelines` key. Without it, the free-shipping discount is recorded but shipping is charged.
 
 ### Final cart total (fork)
 
@@ -183,6 +206,8 @@ Automatic discounts reduce the inc-tax subtotal base; coupon discount is subtrac
 ### Order snapshot
 
 On order creation, line unit prices and totals are copied from the cart; `MapDiscountBreakdown` persists cart `discountBreakdown` onto the order. Order/line accessors recompute coupon vs non-coupon views from stored breakdown (e.g. `Order::coupon_total`, `OrderLine::unit_price_without_coupon`).
+
+The shipping line keeps the option price in `unit_price` and stores `cart.shippingDiscountTotal` in `discount_total` (0 without free shipping), with `sub_total`, `tax_total`, and `total` from the waived cart. `Order::shipping_discount_total` sums the shipping lines' `discount_total`.
 
 ---
 
@@ -198,12 +223,17 @@ flowchart TD
   One --> Fixed{data.fixed_value?}
   Fixed -->|yes| FixedLineApply[applyFixedValueForLine - per unit, reject if below min %]
   Fixed -->|no| LineApply[applyPercentageForLine]
-  Filter --> Coupon{cart.coupon_code set?}
+  Filter --> AutoShip[First qualifying automatic free-shipping discount]
+  AutoShip --> Coupon{cart.coupon_code set?}
   Coupon -->|yes| Match[Find discount with matching coupon]
-  Match --> CartApply[applyCouponForCart on eligible lines]
+  Match --> CartApply[applyCouponForCart on eligible lines, records coupon free shipping]
+  Coupon -->|no| Record
+  CartApply --> Record{Coupon recorded free shipping?}
+  Record -->|no| RecordAuto[recordFreeShipping for the automatic candidate]
   LineApply --> Next[Continue pipeline]
   FixedLineApply --> Next
-  CartApply --> Next
+  Record -->|yes| Next
+  RecordAuto --> Next
 ```
 
 ### When discounts are evaluated
@@ -233,8 +263,9 @@ flowchart TD
 | **Coupons** | Separate pass; can stack on top of line automatic discounts; only lines passing `getEligibleLines()` |
 | **Coupon codes** | Only one `cart.coupon_code`; first matching discount in loaded set wins |
 | **Between automatic discounts** | No stacking — single winner per line |
+| **Free shipping** | Separate from the per-line choice: a coupon or automatic free-shipping discount grants it without pricing any line, and one discount is recorded (coupon first) |
 
-Coupons are excluded from automatic priority selection (`filterDiscountsByPriority` skips `coupon` not empty).
+Coupons are excluded from automatic priority selection (`filterDiscountsByPriority` skips `coupon` not empty). Discounts that take nothing off products (`fixed_value` off and `percentage` empty or 0, or `fixed_value` on and no positive `fixed_values`) are skipped too, **before** tiering. A shipping-only discount therefore cannot fill a tier and hide a lower-tier discount, in the cart or in the catalog (`getDiscountForPurchasable()`, `HasDiscount` labels, discounted prices, and index prices built from them).
 
 ---
 
@@ -253,6 +284,8 @@ Rules verified in code that change runtime behavior:
 9. **Automatic discount winner** compares candidates by the actual monetary amount they'd deduct (`getHighestValueDiscount`), covering both percentage and coupon-less fixed-value discounts — with a line context (cart application) or against the purchasable's original price (catalog preview via `getDiscountForPurchasable()`); a discount that estimates to `0` (e.g. a rejected fixed-value discount) never wins.
 9a. **Coupon-less fixed-value discounts** are applied per line via `applyFixedValueForLine`: the configured amount is deducted **per unit** (`fixed_values[currency] * quantity`) directly from that line — not distributed across the cart. The discount only applies when at least `lunar.discounts.fixed_value_minimum_remaining_percentage` (default 10%) of the line's subtotal remains afterwards (and never when the deduction would exceed the subtotal); otherwise it is skipped entirely — never partially applied. A `0%` setting allows the full price to be deducted, making the line free. Fixed-value discounts **with** a coupon are unaffected: `applyFixedValueForCart` still distributes the amount proportionally across all eligible lines, exactly as before.
 10. **Discounts without `data`** never apply (filtered at load).
+10a. **Discounts that take nothing off products** are skipped by `filterDiscountsByPriority()` before tiering, so a 0-value automatic discount never wins a line or shows in the catalog and never blocks a lower tier. They can still grant free shipping (see "Free shipping").
+10b. **Free shipping** waives every shipping option for the calculation, except a `shippingOptionOverride` (order split targets keep the price staff entered). Product lines, product discounts, product tax, and `couponTotal` are calculated as without free shipping.
 11. **Coupon validation** — core `CouponValidator` checks active discounts (including disabled types `AmountOff` / `BuyXGetY` in its query). Per-user limits are enforced in `checkDiscountConditions` at apply time; hosts may add pre-apply validation before setting `cart.coupon_code`.
 12. **Product channel visibility** is independent of price rows — unavailable products should be excluded before pricing via `Product::scopeAvailable()`, not `PricingManager`.
 

@@ -19,6 +19,7 @@ final class ApplyDiscounts
         /** @var Cart $cart */
         $cart->discounts = collect([]);
         $cart->discountBreakdown = collect([]);
+        $cart->freeShippingDiscount = null;
 
         Discounts::apply($cart);
 

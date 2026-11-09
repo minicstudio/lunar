@@ -8,6 +8,7 @@ use Lunar\Actions\Carts\GetExistingCartLine;
 use Lunar\Actions\Carts\RemovePurchasable;
 use Lunar\Actions\Carts\SetShippingOption;
 use Lunar\Actions\Carts\UpdateCartLine;
+use Lunar\Pipelines\Cart\ApplyDiscountFreeShipping;
 use Lunar\Pipelines\Cart\ApplyDiscounts;
 use Lunar\Pipelines\Cart\ApplyShipping;
 use Lunar\Pipelines\Cart\Calculate;
@@ -68,6 +69,7 @@ return [
             ApplyShipping::class,
             CalculateShippingSubTotal::class,
             ApplyDiscounts::class,
+            ApplyDiscountFreeShipping::class,
             CalculateTax::class,
             Calculate::class,
         ],

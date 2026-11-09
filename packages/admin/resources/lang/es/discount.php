@@ -82,6 +82,10 @@ return [
         'percentage' => [
             'label' => 'Porcentaje',
         ],
+        'free_shipping' => [
+            'label' => 'Envío gratuito',
+            'helper_text' => 'Con código de cupón: todas las opciones de envío son gratuitas cuando se usa el cupón. Sin código de cupón: el envío es gratuito cuando al menos un producto del carrito es elegible para el descuento. El porcentaje o el valor fijo pueden dejarse en blanco si el descuento solo ofrece envío gratuito. Cada pedido enviado de esta forma cuenta como un uso.',
+        ],
     ],
     'table' => [
         'name' => [

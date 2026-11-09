@@ -437,6 +437,8 @@ class DiscountManager implements DiscountManagerInterface
             }
         }
 
+        $freeShippingDiscount = $this->getAutomaticFreeShippingDiscount($cart);
+
         // Apply manually applied coupon discount (non-BXGY; BXGY coupons are handled above via apply()).
         if ($cart->coupon_code) {
             $discount = $amountOffDiscounts->first(
@@ -448,7 +450,30 @@ class DiscountManager implements DiscountManagerInterface
             }
         }
 
+        // A qualifying free-shipping coupon wins over automatic discounts.
+        if (! $cart->freeShippingDiscount && $freeShippingDiscount) {
+            $freeShippingDiscount->getType()->recordFreeShipping($cart);
+        }
+
         return $cart;
+    }
+
+    /**
+     * Return the automatic discount that makes shipping free for the cart.
+     *
+     * It does not depend on which discount priced a line: one eligible line is
+     * enough. The discounts are already ordered by priority desc, then id, so
+     * the first qualifying one wins. Its minimum cart amount is measured after
+     * the automatic line discounts and before the coupon.
+     */
+    protected function getAutomaticFreeShippingDiscount(CartContract $cart): ?Discount
+    {
+        return $this->discounts->first(function (Discount $discount) use ($cart) {
+            return blank($discount->coupon)
+                && $discount->type === AdvancedAmountOff::class
+                && ($discount->data['free_shipping'] ?? false)
+                && $discount->getType()->grantsFreeShipping($cart);
+        });
     }
 
     /**
@@ -522,6 +547,11 @@ class DiscountManager implements DiscountManagerInterface
     /**
      * Filter discounts based on priority: variant, product, collection, anything left, exclude coupons
      * Returns the discount with the highest value within each priority level
+     *
+     * Discounts that take nothing off products (a shipping-only free-shipping
+     * discount) are skipped before tiering. Otherwise one would fill its tier,
+     * win nothing, and hide a real discount from a lower tier in the cart and
+     * in the catalog.
      */
     public function filterDiscountsByPriority($availableDiscounts, null|Product|ProductVariant $purchasable = null, ?CartLineContract $cartLine = null): Collection
     {
@@ -539,6 +569,10 @@ class DiscountManager implements DiscountManagerInterface
 
             // Skip coupon discounts
             if (! empty($discount->coupon)) {
+                continue;
+            }
+
+            if (! $this->takesAmountOffProducts($discount)) {
                 continue;
             }
 
@@ -579,6 +613,20 @@ class DiscountManager implements DiscountManagerInterface
 
         // No discounts found
         return collect();
+    }
+
+    /**
+     * Whether the discount data takes any amount off products.
+     */
+    protected function takesAmountOffProducts($discount): bool
+    {
+        $data = $discount->data ?? [];
+
+        if ($data['fixed_value'] ?? false) {
+            return collect($data['fixed_values'] ?? [])->contains(fn ($value) => (int) $value > 0);
+        }
+
+        return (float) ($data['percentage'] ?? 0) > 0;
     }
 
     /**

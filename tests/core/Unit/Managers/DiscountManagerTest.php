@@ -12,6 +12,7 @@ use Lunar\Managers\DiscountManager;
 use Lunar\Models\Cart;
 use Lunar\Models\CartLine;
 use Lunar\Models\Channel;
+use Lunar\Models\Collection as LunarCollection;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
@@ -1405,4 +1406,250 @@ test('stop=false discount lets further discounts apply', function () {
 
     expect($cart->discounts)->toHaveCount(1);
     expect($cart->discounts->first()->discount->name)->toBe('Second');
+});
+
+/**
+ * @return array{currency: Currency, channel: Channel, customerGroup: CustomerGroup, cart: Cart}
+ */
+function freeShippingCart(): array
+{
+    $currency = Currency::factory()->create([
+        'code' => 'GBP',
+        'decimal_places' => 2,
+        'default' => true,
+    ]);
+
+    $channel = Channel::factory()->create([
+        'default' => true,
+    ]);
+
+    $customerGroup = CustomerGroup::factory()->create([
+        'default' => true,
+    ]);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+    ]);
+
+    return compact('currency', 'channel', 'customerGroup', 'cart');
+}
+
+function addFreeShippingCartLine(Cart $cart, int $price = 1000): ProductVariant
+{
+    $variant = ProductVariant::factory()->create();
+
+    Price::factory()->create([
+        'price' => $price,
+        'min_quantity' => 1,
+        'currency_id' => $cart->currency_id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+
+    $cart->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'quantity' => 1,
+    ]);
+
+    return $variant;
+}
+
+/**
+ * An active Advanced amount off discount with free shipping and no amount, unless overridden.
+ *
+ * @param  array<string, mixed>  $data
+ * @param  array<string, mixed>  $attributes
+ */
+function freeShippingDiscount(Channel $channel, CustomerGroup $customerGroup, array $data = [], array $attributes = []): Discount
+{
+    $discount = Discount::factory()->create(array_merge([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => null,
+        'starts_at' => now()->subMinute(),
+        'data' => array_merge([
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ], $data),
+    ], $attributes));
+
+    // Sync, not attach: a new discount is already enabled for the default channel and group.
+    $discount->channels()->sync([
+        $channel->id => ['enabled' => true, 'starts_at' => now()->subMinute()],
+    ]);
+
+    $discount->customerGroups()->sync([
+        $customerGroup->id => ['enabled' => true, 'starts_at' => now()->subMinute()],
+    ]);
+
+    return $discount;
+}
+
+test('an automatic free shipping discount qualifies through one eligible line out of five', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    $variants = collect(range(1, 5))->map(fn () => addFreeShippingCartLine($cart));
+
+    $collection = LunarCollection::factory()->create();
+    $variants->first()->product->collections()->attach($collection->id);
+
+    $discount = freeShippingDiscount($channel, $customerGroup);
+    $discount->collections()->attach($collection->id, ['type' => 'limitation']);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->discount->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown->first()->price->value)->toBe(0)
+        ->and($cart->discountBreakdown->first()->lines)->toBeEmpty()
+        ->and($cart->lines->sum(fn ($line) => $line->discountTotal?->value ?? 0))->toBe(0);
+});
+
+test('an automatic free shipping discount qualifies when another discount prices its line', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    $variant = addFreeShippingCartLine($cart);
+
+    $collection = LunarCollection::factory()->create();
+    $variant->product->collections()->attach($collection->id);
+
+    $freeShipping = freeShippingDiscount($channel, $customerGroup, ['percentage' => 5]);
+    $freeShipping->collections()->attach($collection->id, ['type' => 'limitation']);
+
+    $variantDiscount = freeShippingDiscount($channel, $customerGroup, ['percentage' => 20, 'free_shipping' => false]);
+    $variantDiscount->discountables()->create([
+        'discountable_type' => ProductVariant::morphName(),
+        'discountable_id' => $variant->id,
+        'type' => 'limitation',
+    ]);
+
+    $cart = $cart->calculate();
+
+    $breakdown = $cart->discountBreakdown->keyBy(fn ($entry) => $entry->discount->id);
+
+    expect($cart->lines->first()->discountTotal->value)->toBe(200)
+        ->and($cart->freeShippingDiscount?->id)->toBe($freeShipping->id)
+        ->and($breakdown)->toHaveCount(2)
+        ->and($breakdown[$variantDiscount->id]->price->value)->toBe(200)
+        ->and($breakdown[$freeShipping->id]->price->value)->toBe(0);
+});
+
+test('a global automatic free shipping discount qualifies for any cart', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart, 'currency' => $currency] = freeShippingCart();
+
+    addFreeShippingCartLine($cart);
+
+    $otherCart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => $channel->id,
+    ]);
+    addFreeShippingCartLine($otherCart, 5000);
+
+    $discount = freeShippingDiscount($channel, $customerGroup);
+
+    expect($cart->calculate()->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($otherCart->calculate()->freeShippingDiscount?->id)->toBe($discount->id);
+});
+
+test('an automatic free shipping discount out of scope does not grant free shipping', function (string $case) {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    addFreeShippingCartLine($cart);
+
+    match ($case) {
+        'inactive' => freeShippingDiscount($channel, $customerGroup, attributes: [
+            'starts_at' => now()->subWeek(),
+            'ends_at' => now()->subDay(),
+        ]),
+        'other channel' => freeShippingDiscount(Channel::factory()->create(['default' => false]), $customerGroup),
+        'other customer group' => freeShippingDiscount($channel, CustomerGroup::factory()->create()),
+        'below minimum' => freeShippingDiscount($channel, $customerGroup, ['min_prices' => ['GBP' => 5000]]),
+        'per-user limit on a guest cart' => freeShippingDiscount($channel, $customerGroup, attributes: ['max_uses_per_user' => 1]),
+    };
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount)->toBeNull()
+        ->and($cart->discountBreakdown)->toBeEmpty();
+})->with([
+    'inactive',
+    'other channel',
+    'other customer group',
+    'below minimum',
+    'per-user limit on a guest cart',
+]);
+
+test('a qualifying free shipping coupon wins over an automatic free shipping discount', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    addFreeShippingCartLine($cart);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+
+    $automatic = freeShippingDiscount($channel, $customerGroup, attributes: ['priority' => 10]);
+    $coupon = freeShippingDiscount($channel, $customerGroup, attributes: ['coupon' => 'SHIPFREE']);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($coupon->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->discount->id)->toBe($coupon->id)
+        ->and($cart->discountBreakdown->pluck('discount.id'))->not->toContain($automatic->id);
+});
+
+test('the highest priority automatic free shipping discount is recorded, then the lowest id', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    addFreeShippingCartLine($cart);
+
+    freeShippingDiscount($channel, $customerGroup, attributes: ['priority' => 2]);
+    $highest = freeShippingDiscount($channel, $customerGroup, attributes: ['priority' => 5]);
+    freeShippingDiscount($channel, $customerGroup, attributes: ['priority' => 5]);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($highest->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->discount->id)->toBe($highest->id);
+});
+
+test('an automatic free shipping discount that priced a line keeps one breakdown entry', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    addFreeShippingCartLine($cart);
+
+    $discount = freeShippingDiscount($channel, $customerGroup, ['percentage' => 10]);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->price->value)->toBe(100)
+        ->and($cart->discounts)->toHaveCount(1);
+});
+
+test('a shipping-only discount does not hide a lower tier discount from the line', function () {
+    ['channel' => $channel, 'customerGroup' => $customerGroup, 'cart' => $cart] = freeShippingCart();
+
+    $variant = addFreeShippingCartLine($cart);
+
+    $collection = LunarCollection::factory()->create();
+    $variant->product->collections()->attach($collection->id);
+
+    $shippingOnly = freeShippingDiscount($channel, $customerGroup);
+    $shippingOnly->discountables()->create([
+        'discountable_type' => ProductVariant::morphName(),
+        'discountable_id' => $variant->id,
+        'type' => 'limitation',
+    ]);
+
+    $collectionDiscount = freeShippingDiscount($channel, $customerGroup, ['percentage' => 10, 'free_shipping' => false]);
+    $collectionDiscount->collections()->attach($collection->id, ['type' => 'limitation']);
+
+    $cart = $cart->calculate();
+
+    expect($cart->lines->first()->discountTotal->value)->toBe(100)
+        ->and($cart->freeShippingDiscount?->id)->toBe($shippingOnly->id);
 });

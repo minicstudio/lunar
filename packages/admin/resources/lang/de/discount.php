@@ -76,6 +76,10 @@ return [
             'label' => 'Belohnungen automatisch hinzufügen',
             'helper_text' => 'Einschalten, um Belohnungsprodukte hinzuzufügen, wenn sie nicht im Warenkorb vorhanden sind.',
         ],
+        'free_shipping' => [
+            'label' => 'Kostenloser Versand',
+            'helper_text' => 'Mit Gutscheincode: Alle Versandoptionen sind kostenlos, wenn der Gutschein verwendet wird. Ohne Gutscheincode: Der Versand ist kostenlos, wenn mindestens ein Produkt im Warenkorb für den Rabatt berechtigt ist. Der Prozentsatz oder der feste Wert kann leer bleiben, wenn der Rabatt nur kostenlosen Versand gewährt. Jede so versandte Bestellung zählt als eine Verwendung.',
+        ],
     ],
     'table' => [
         'name' => [

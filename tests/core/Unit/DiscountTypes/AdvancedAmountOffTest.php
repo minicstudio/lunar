@@ -7,6 +7,7 @@ use Lunar\DataTypes\Price as PriceDataType;
 use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
+use Lunar\Models\Collection;
 use Lunar\Models\Currency;
 use Lunar\Models\CustomerGroup;
 use Lunar\Models\Discount;
@@ -408,6 +409,147 @@ test('calculateDiscountedPrice does not truncate odd-cent fixed values', functio
     ], 'SAVE10');
 
     expect($discounted)->toEqual(3001);
+});
+
+test('a shipping-only coupon grants free shipping with one 0 breakdown entry', function () {
+    [$cart] = makeCartWithLine($this->currency, $this->channel, 1000);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+
+    $discount = activateDiscount(Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'SHIPFREE',
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ],
+    ]), $this->channel, $this->customerGroup);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->discount->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown->first()->price->value)->toBe(0)
+        ->and($cart->discountBreakdown->first()->lines)->toBeEmpty()
+        ->and($cart->discounts)->toHaveCount(1)
+        ->and($cart->couponTotal->value)->toBe(0)
+        ->and($cart->lines->first()->subTotalDiscounted?->value ?? 1000)->toBe(1000);
+});
+
+test('a percentage coupon with free shipping keeps its own breakdown entry only', function () {
+    [$cart] = makeCartWithLine($this->currency, $this->channel, 1000);
+    $cart->update(['coupon_code' => 'SHIP10']);
+
+    $discount = activateDiscount(Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'SHIP10',
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => 10,
+            'free_shipping' => true,
+        ],
+    ]), $this->channel, $this->customerGroup);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->price->value)->toBe(100)
+        ->and($cart->couponTotal->value)->toBe(100)
+        ->and($cart->lines->first()->subTotalDiscounted->value)->toBe(900);
+});
+
+test('a fixed value coupon with free shipping spreads its amount as before', function () {
+    [$cart] = makeCartWithLine($this->currency, $this->channel, 1000);
+    $cart->update(['coupon_code' => 'SHIPFIX']);
+
+    $discount = activateDiscount(Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'SHIPFIX',
+        'data' => [
+            'fixed_value' => true,
+            'fixed_values' => ['GBP' => 200],
+            'min_prices' => ['GBP' => 500],
+            'free_shipping' => true,
+        ],
+    ]), $this->channel, $this->customerGroup);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($cart->discountBreakdown)->toHaveCount(1)
+        ->and($cart->discountBreakdown->first()->price->value)->toBe(200)
+        ->and($cart->lines->first()->discountTotal->value)->toBe(200)
+        ->and($cart->lines->first()->subTotalDiscounted->value)->toBe(800);
+});
+
+test('a free shipping coupon below its minimum cart amount grants nothing and is cleared', function () {
+    [$cart] = makeCartWithLine($this->currency, $this->channel, 1000);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+
+    activateDiscount(Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'SHIPFREE',
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => null,
+            'min_prices' => ['GBP' => 5000],
+            'free_shipping' => true,
+        ],
+    ]), $this->channel, $this->customerGroup);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount)->toBeNull()
+        ->and($cart->discountBreakdown)->toBeEmpty()
+        ->and($cart->fresh()->coupon_code)->toBeNull();
+});
+
+test('a free shipping coupon is measured against its minimum before its own percentage', function () {
+    [$cart] = makeCartWithLine($this->currency, $this->channel, 1000);
+    $cart->update(['coupon_code' => 'SHIP10']);
+
+    // 1000 is above the 950 minimum. After the coupon's own 10% the lines are
+    // 900, which must not take the free shipping away again.
+    $discount = activateDiscount(Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'SHIP10',
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => 10,
+            'min_prices' => ['GBP' => 950],
+            'free_shipping' => true,
+        ],
+    ]), $this->channel, $this->customerGroup);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount?->id)->toBe($discount->id)
+        ->and($cart->lines->first()->subTotalDiscounted->value)->toBe(900)
+        ->and($cart->fresh()->coupon_code)->toBe('SHIP10');
+});
+
+test('a collection-limited free shipping coupon with no eligible line grants nothing', function () {
+    [$cart] = makeCartWithLine($this->currency, $this->channel, 1000);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+
+    $discount = activateDiscount(Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'SHIPFREE',
+        'data' => [
+            'fixed_value' => false,
+            'percentage' => null,
+            'free_shipping' => true,
+        ],
+    ]), $this->channel, $this->customerGroup);
+
+    $discount->collections()->attach(Collection::factory()->create()->id, ['type' => 'limitation']);
+
+    $cart = $cart->calculate();
+
+    expect($cart->freeShippingDiscount)->toBeNull()
+        ->and($cart->discountBreakdown)->toBeEmpty();
 });
 
 test('calculateDiscountedPrice is unaffected for percentage discounts', function () {

@@ -76,6 +76,10 @@ return [
             'label' => 'Automatski dodaj nagrade',
             'helper_text' => 'Uključite kako biste dodali nagradne proizvode ako se ne nalaze u košarici.',
         ],
+        'free_shipping' => [
+            'label' => 'Besplatna dostava',
+            'helper_text' => 'S kodom kupona: sve opcije dostave su besplatne kada se kupon iskoristi. Bez koda kupona: dostava je besplatna kada je barem jedan proizvod u košarici prihvatljiv za popust. Postotak ili fiksna vrijednost mogu ostati prazni ako popust daje samo besplatnu dostavu. Svaka narudžba isporučena na ovaj način računa se kao jedno korištenje.',
+        ],
     ],
     'table' => [
         'name' => [
