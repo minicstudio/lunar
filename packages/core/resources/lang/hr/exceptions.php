@@ -23,4 +23,6 @@ return [
     'order.unauthorized_split' => 'Ne možete podijeliti ovu narudžbu.',
     'order.invalid_split' => 'Narudžba nije mogla biti podijeljena.',
     'order.locked_split' => 'Narudžba se ne može podijeliti.',
+    'order.unknown_preorder_payment' => 'Nepoznat način plaćanja za konzultaciju prednarudžbe.',
+    'order.negative_consultation_shipping' => 'Cijena dostave konzultacije ne može biti negativna.',
 ];

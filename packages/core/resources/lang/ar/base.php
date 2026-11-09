@@ -11,4 +11,7 @@ return [
         'up-sell' => 'الارتقاء بالصفقة (Up Sell)',
         'alternate' => 'بديل',
     ],
+    'orders' => [
+        'shipping' => 'الشحن',
+    ],
 ];

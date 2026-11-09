@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Up Sell',
         'alternate' => 'Alternate',
     ],
+    'orders' => [
+        'shipping' => 'Shipping',
+    ],
 ];

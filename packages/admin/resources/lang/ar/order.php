@@ -216,6 +216,9 @@ return [
         'date_placed' => [
             'label' => 'تاريخ الطلب',
         ],
+        'consultation_done_at' => [
+            'label' => 'تمت الاستشارة في',
+        ],
         'new_returning' => [
             'label' => 'جديد / عائد',
         ],
@@ -272,6 +275,7 @@ return [
             'cash-on-delivery' => 'الدفع عند الاستلام',
             'bank-transfer' => 'تحويل بنكي',
             'stripe-card' => 'بطاقة ائتمان',
+            'bt-ipay' => 'الدفع بالبطاقة (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'الدفع الإلكتروني بالبطاقة',
         ],
@@ -289,6 +293,8 @@ return [
             'requires_capture' => 'هذا الطلب لا يزال يتطلب استلام الدفع.',
             'partially_refunded' => 'تم استرجاع هذا الطلب جزئيًا.',
             'refunded' => 'تم استرجاع هذا الطلب بالكامل.',
+            'preorder_consultation' => 'يتضمن هذا الطلب منتجًا للطلب المسبق. اتصل بالعميل قبل تحصيل الدفع أو ترتيب الشحن.',
+            'preorder_consultation_no_phone' => 'لا يوجد رقم هاتف محفوظ.',
             'product_line_gates' => [
                 'paid' => 'مدفوع: لا يمكن تعديل هذا الطلب لأنه تم دفعه.',
                 'erp' => 'ERP: لا يمكن تعديل هذا الطلب لأنه تم إرساله إلى ERP.',
@@ -322,6 +328,11 @@ return [
                 'label' => 'مستلم ايميل إضافي',
                 'placeholder' => 'اختياري',
             ],
+            'preorder_warning' => [
+                'description' => 'هل أنت متأكد أنك تريد تحديث الحالة قبل تأكيد الاستشارة الهاتفية وخيار الدفع وسعر الشحن؟',
+                'proceed' => 'متابعة',
+                'cancel' => 'إلغاء',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'تحميل PDF',
@@ -350,6 +361,12 @@ return [
                     'helper_text' => 'افصل الوسوم بالضغط على Enter أو Tab أو الفاصلة (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'تمت الاستشارة',
+            'mixed_description' => 'يحتوي هذا الطلب على منتجات متوفرة ومنتجات للطلب المسبق. أبقها في طلب واحد أو قسّمها إلى طلبات منفصلة.',
+            'keep' => 'الإبقاء على طلب واحد',
+            'split' => 'التقسيم إلى طلبات منفصلة',
         ],
         'capture_payment' => [
             'label' => 'استلام الدفع',

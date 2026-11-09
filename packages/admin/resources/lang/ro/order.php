@@ -237,6 +237,9 @@ return [
         'date_placed' => [
             'label' => 'Data plasării',
         ],
+        'consultation_done_at' => [
+            'label' => 'Consultație făcută la',
+        ],
         'new_returning' => [
             'label' => 'Nou / Revenit',
         ],
@@ -300,6 +303,7 @@ return [
             'cash-on-delivery' => 'Ramburs',
             'bank-transfer' => 'Transfer bancar',
             'stripe-card' => 'Card bancar',
+            'bt-ipay' => 'Plată cu cardul (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Plată online cu cardul',
         ],
@@ -318,6 +322,8 @@ return [
             'requires_capture' => 'Această comandă necesită în continuare capturarea plății.',
             'partially_refunded' => 'Această comandă a fost rambursată parțial.',
             'refunded' => 'Această comandă a fost rambursată.',
+            'preorder_consultation' => 'Această comandă include un produs în precomandă. Sunați clientul înainte de a încasa plata sau de a organiza livrarea.',
+            'preorder_consultation_no_phone' => 'Nu este salvat niciun număr de telefon.',
             'product_line_gates' => [
                 'paid' => 'Plătit: această comandă nu poate fi modificată, deoarece a fost plătită.',
                 'erp' => 'ERP: această comandă nu poate fi modificată, deoarece a fost trimisă către ERP.',
@@ -351,6 +357,11 @@ return [
                 'label' => 'Destinatar e-mail suplimentar',
                 'placeholder' => 'opțional',
             ],
+            'preorder_warning' => [
+                'description' => 'Sigur doriți să actualizați starea înainte de a confirma consultația telefonică, metoda de plată și prețul livrării?',
+                'proceed' => 'Continuă',
+                'cancel' => 'Anulează',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Descarcă PDF',
@@ -379,6 +390,12 @@ return [
                     'helper_text' => 'Separați etichetele apăsând Enter, Tab sau virgulă (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Consultație făcută',
+            'mixed_description' => 'Această comandă conține produse în stoc și produse în precomandă. Păstrați-le într-o singură comandă sau împărțiți-le în comenzi separate.',
+            'keep' => 'Păstrează comanda împreună',
+            'split' => 'Împarte în comenzi separate',
         ],
         'capture_payment' => [
             'label' => 'Capturează plata',

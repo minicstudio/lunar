@@ -206,6 +206,8 @@ When `lunar.shipping-tables.enabled` is true, `ShippingModifier` adds zone/metho
 
 Considers: country/state/postcode, method enabled, customer groups, cut-off time, stock, exclusions, customer type (`AddressCustomerType`), discounted subtotal (excluding coupons) or cart weight, and optional min/max weight on the shipping method.
 
+Preorder lines are left out of that automatic shipping price. A product line counts as preorder when `meta.preorder` is true or the variant `isPreorder()`. Exclusion lists use only the lines that remain. When every product line is preorder, `ShipBy`, flat rate, and free shipping still offer the option at price 0 and set `meta.preorder_shipping_pending`. A cart with no preorder line keeps the price those methods produce today. Store collection stays price 0 and does not set that marker. `CreateShippingLine` copies the option meta onto the order shipping line, so a preorder-only order stores the marker and a shipping total of 0.
+
 **Config:** `packages/table-rate-shipping/config/shipping-tables.php` → `lunar.shipping-tables`
 
 ### Carrier add-on (`packages/shipping`)

@@ -216,6 +216,9 @@ return [
         'date_placed' => [
             'label' => 'Data złożenia',
         ],
+        'consultation_done_at' => [
+            'label' => 'Konsultacja zakończona',
+        ],
         'new_returning' => [
             'label' => 'Nowy/Klient powracający',
         ],
@@ -272,6 +275,7 @@ return [
             'cash-on-delivery' => 'Płatność za pobraniem',
             'bank-transfer' => 'Przelew bankowy',
             'stripe-card' => 'Karta kredytowa',
+            'bt-ipay' => 'Płatność kartą (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Płatność kartą online',
         ],
@@ -290,6 +294,8 @@ return [
             'requires_capture' => 'To zamówienie nadal wymaga przechwycenia płatności.',
             'partially_refunded' => 'To zamówienie zostało częściowo zwrócone.',
             'refunded' => 'To zamówienie zostało zwrócone.',
+            'preorder_consultation' => 'To zamówienie zawiera produkt w przedsprzedaży. Zadzwoń do klienta przed przyjęciem płatności lub organizacją wysyłki.',
+            'preorder_consultation_no_phone' => 'Nie zapisano numeru telefonu.',
             'product_line_gates' => [
                 'paid' => 'Opłacone: tego zamówienia nie można zmienić, ponieważ zostało opłacone.',
                 'erp' => 'ERP: tego zamówienia nie można zmienić, ponieważ zostało wysłane do ERP.',
@@ -325,6 +331,11 @@ return [
                 'label' => 'Dodatkowy odbiorca email',
                 'placeholder' => 'opcjonalnie',
             ],
+            'preorder_warning' => [
+                'description' => 'Czy na pewno chcesz zaktualizować status przed potwierdzeniem konsultacji telefonicznej, metody płatności i ceny wysyłki?',
+                'proceed' => 'Kontynuuj',
+                'cancel' => 'Anuluj',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Pobierz fakturę',
@@ -347,6 +358,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Edytuj tagi',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Konsultacja zakończona',
+            'mixed_description' => 'To zamówienie zawiera produkty dostępne od ręki i produkty w przedsprzedaży. Zostaw je w jednym zamówieniu albo rozdziel na osobne zamówienia.',
+            'keep' => 'Zostaw w jednym zamówieniu',
+            'split' => 'Rozdziel na osobne zamówienia',
         ],
         'capture_payment' => [
             'label' => 'Przechwyć płatność',

@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'Vous ne pouvez pas fractionner cette commande.',
     'order.invalid_split' => 'La commande n\'a pas pu être fractionnée.',
     'order.locked_split' => 'La commande ne peut pas être fractionnée.',
+    'order.unknown_preorder_payment' => 'Mode de paiement inconnu pour la consultation de précommande.',
+    'order.negative_consultation_shipping' => 'Le prix de livraison de la consultation ne peut pas être négatif.',
 ];

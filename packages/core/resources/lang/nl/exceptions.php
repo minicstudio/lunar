@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'U kunt deze bestelling niet splitsen.',
     'order.invalid_split' => 'De bestelling kon niet worden gesplitst.',
     'order.locked_split' => 'De bestelling kan niet worden gesplitst.',
+    'order.unknown_preorder_payment' => 'Onbekende betaalmethode voor het preorderconsult.',
+    'order.negative_consultation_shipping' => 'De verzendprijs van het consult mag niet negatief zijn.',
 ];

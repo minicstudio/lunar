@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Venta adicional',
         'alternate' => 'Alternativa',
     ],
+    'orders' => [
+        'shipping' => 'Envío',
+    ],
 ];

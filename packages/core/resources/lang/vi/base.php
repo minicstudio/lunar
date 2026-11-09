@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Bán nâng cấp',
         'alternate' => 'Thay thế',
     ],
+    'orders' => [
+        'shipping' => 'Vận chuyển',
+    ],
 ];

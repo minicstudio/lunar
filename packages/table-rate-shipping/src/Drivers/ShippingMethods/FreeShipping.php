@@ -8,6 +8,7 @@ use Lunar\Models\Product;
 use Lunar\Shipping\DataTransferObjects\ShippingOptionRequest;
 use Lunar\Shipping\Interfaces\ShippingRateInterface;
 use Lunar\Shipping\Models\ShippingRate;
+use Lunar\Shipping\ShippingBasis;
 
 class FreeShipping implements ShippingRateInterface
 {
@@ -40,9 +41,14 @@ class FreeShipping implements ShippingRateInterface
         $data = $shippingMethod->data;
         $cart = $shippingOptionRequest->cart;
 
+        $cart->lines->load('purchasable');
+
+        $basisLines = ShippingBasis::lines($cart);
+
         // Do we have any products in our exclusions list?
         // If so, we do not want to return this option regardless.
-        $productIds = $cart->lines->load('purchasable')->pluck('purchasable.product_id');
+        // Preorder lines are not part of the basis, so they cannot exclude the option.
+        $productIds = $basisLines->pluck('purchasable.product_id');
 
         $hasExclusions = $shippingZone->shippingExclusions()
             ->whereHas('exclusions', function ($query) use ($productIds) {
@@ -54,10 +60,25 @@ class FreeShipping implements ShippingRateInterface
             return null;
         }
 
-        $subTotal = $cart->lines->sum('subTotal.value');
+        if (ShippingBasis::isPreorderOnly($cart)) {
+            return new ShippingOption(
+                name: $shippingMethod->name,
+                description: $shippingMethod->description,
+                identifier: $shippingRate->getIdentifier(),
+                price: new Price(0, $cart->currency, 1),
+                taxClass: $shippingRate->getTaxClass(),
+                option: $shippingZone->name,
+                meta: [
+                    'shipping_zone' => $shippingZone->name,
+                    'preorder_shipping_pending' => true,
+                ],
+            );
+        }
+
+        $subTotal = $basisLines->sum(fn ($line) => $line->subTotal?->value ?? 0);
 
         if ($data['use_discount_amount'] ?? false) {
-            $subTotal -= $cart->discountTotal->value;
+            $subTotal -= $basisLines->sum(fn ($line) => $line->discountTotal?->value ?? 0);
         }
 
         $minSpend = $data['minimum_spend'] ?? null;

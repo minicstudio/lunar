@@ -56,7 +56,7 @@ class OrderObserver
 
         $statuses = config("lunar.erp.{$provider->value}.generate_invoice", []);
 
-        if (! in_array($order->status, $statuses, true)) {
+        if (! in_array($order->status, $statuses, true) || $order->awaitsPreorderConsultation()) {
             return;
         }
 

@@ -212,6 +212,9 @@ return [
         'date_placed' => [
             'label' => 'Bestelldatum',
         ],
+        'consultation_done_at' => [
+            'label' => 'Rücksprache erledigt am',
+        ],
         'new_returning' => [
             'label' => 'Neu / Wiederkehrend',
         ],
@@ -268,6 +271,7 @@ return [
             'cash-on-delivery' => 'Nachnahme',
             'bank-transfer' => 'Banküberweisung',
             'stripe-card' => 'Kreditkarte',
+            'bt-ipay' => 'Kartenzahlung (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online-Kartenzahlung',
         ],
@@ -286,6 +290,8 @@ return [
             'requires_capture' => 'Diese Bestellung erfordert noch die Erfassung der Zahlung.',
             'partially_refunded' => 'Diese Bestellung wurde teilweise erstattet.',
             'refunded' => 'Diese Bestellung wurde erstattet.',
+            'preorder_consultation' => 'Diese Bestellung enthält ein Vorbestellprodukt. Rufen Sie den Kunden an, bevor Sie die Zahlung annehmen oder den Versand veranlassen.',
+            'preorder_consultation_no_phone' => 'Es ist keine Telefonnummer hinterlegt.',
             'product_line_gates' => [
                 'paid' => 'Bezahlt: diese Bestellung kann nicht geändert werden, weil sie bezahlt wurde.',
                 'erp' => 'ERP: diese Bestellung kann nicht geändert werden, weil sie an das ERP gesendet wurde.',
@@ -321,6 +327,11 @@ return [
                 'label' => 'Zusätzlicher E-Mail-Empfänger',
                 'placeholder' => 'optional',
             ],
+            'preorder_warning' => [
+                'description' => 'Möchten Sie den Status wirklich aktualisieren, bevor die telefonische Rücksprache, die Zahlungsart und der Versandpreis bestätigt sind?',
+                'proceed' => 'Fortfahren',
+                'cancel' => 'Abbrechen',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'PDF herunterladen',
@@ -343,6 +354,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Bearbeiten',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Rücksprache erledigt',
+            'mixed_description' => 'Diese Bestellung enthält sowohl vorrätige als auch vorbestellbare Produkte. Behalten Sie sie in einer Bestellung oder teilen Sie sie in separate Bestellungen auf.',
+            'keep' => 'In einer Bestellung behalten',
+            'split' => 'In separate Bestellungen aufteilen',
         ],
         'capture_payment' => [
             'label' => 'Zahlung erfassen',

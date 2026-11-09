@@ -3,6 +3,7 @@
 namespace Lunar\Tests\shippingAddon;
 
 use Filament\FilamentServiceProvider;
+use Livewire\LivewireServiceProvider;
 use Lunar\Addons\Shipping\ShippingServiceProvider;
 use Lunar\Admin\LunarPanelProvider;
 use Lunar\DataTypes\Price;
@@ -47,6 +48,7 @@ class TestCase extends BaseTestCase
             LunarPanelProvider::class,
 
             FilamentServiceProvider::class,
+            LivewireServiceProvider::class,
 
             ShippingAddonPanelTestServiceProvider::class,
             ShippingServiceProvider::class,

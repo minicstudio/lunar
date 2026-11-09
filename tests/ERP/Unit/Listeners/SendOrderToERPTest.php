@@ -5,10 +5,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Lunar\ERP\Enums\ErpProviderEnum;
 use Lunar\ERP\Events\OrderPlacedEvent;
+use Lunar\ERP\Events\SplitOfflineOrderReadyForErp;
 use Lunar\ERP\Listeners\SendOrderToERP;
 use Lunar\ERP\Services\ErpService;
 use Lunar\ERP\Support\OrderStatusUpdater;
 use Lunar\Models\Order;
+use Lunar\Models\OrderLine;
+use Lunar\Models\ProductVariant;
 use Lunar\Tests\ERP\Stubs\FakeErpClient;
 use Lunar\Tests\ERP\Stubs\FakeOrderExporter;
 use Lunar\Tests\ERP\TestCase;
@@ -65,6 +68,30 @@ it('sends the order to each enabled provider', function () {
     app()->instance(ErpService::class, $service);
 
     (new SendOrderToERP)->handle(new OrderPlacedEvent($order));
+});
+
+it('does not send a waiting order on placement or as an offline split child', function () {
+    Config::set('lunar.erp.enabled', true);
+    $this->createLanguages();
+
+    $order = Order::factory()->create();
+    $variant = ProductVariant::factory()->create();
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => ['preorder' => true],
+    ]);
+
+    $service = Mockery::mock(ErpService::class);
+    $service->shouldNotReceive('getEnabledProviders');
+    $service->shouldNotReceive('sendOrder');
+    app()->instance(ErpService::class, $service);
+
+    (new SendOrderToERP)->handle(new OrderPlacedEvent($order));
+    (new SendOrderToERP)->handle(new SplitOfflineOrderReadyForErp($order->fresh()));
 });
 
 test('the listener retries a limited number of times with backoff', function () {

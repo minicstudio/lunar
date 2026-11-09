@@ -658,3 +658,301 @@ test('weight tiers are evaluated in the shipping method configured weight_unit',
     expect($option)->toBeInstanceOf(ShippingOption::class)
         ->and($option->price->value)->toEqual(200);
 });
+
+test('a mixed cart priced by cart total uses only the non-preorder line', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'ship-by',
+        'data' => [
+            'charge_by' => 'cart_total',
+        ],
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->createMany([
+        [
+            'price' => 1000,
+            'min_quantity' => 1,
+            'currency_id' => $currency->id,
+        ],
+        [
+            'price' => 500,
+            'min_quantity' => 700,
+            'currency_id' => $currency->id,
+        ],
+    ]);
+
+    ['cart' => $cart] = $this->cartWithVariantLines($currency, [
+        ['price' => 100],
+        ['price' => 10000, 'variant' => ['purchasable' => 'preorder']],
+    ]);
+
+    $shippingOption = (new ShipBy)->resolve(new ShippingOptionRequest(
+        shippingRate: $shippingRate,
+        cart: $cart,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(1000)
+        ->and($shippingOption->meta)->not->toHaveKey('preorder_shipping_pending');
+});
+
+test('a mixed cart priced by weight uses only the non-preorder line', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'ship-by',
+        'data' => [
+            'charge_by' => 'weight',
+        ],
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->createMany([
+        ['price' => 1000, 'min_quantity' => 1, 'currency_id' => $currency->id],
+        ['price' => 200, 'min_quantity' => 10, 'currency_id' => $currency->id],
+    ]);
+
+    ['cart' => $cart] = $this->cartWithVariantLines($currency, [
+        ['price' => 500, 'variant' => ['weight_value' => 3.0, 'weight_unit' => 'kg']],
+        [
+            'price' => 500,
+            'variant' => ['weight_value' => 10.0, 'weight_unit' => 'kg'],
+            'meta' => ['preorder' => true],
+        ],
+    ]);
+
+    $shippingOption = (new ShipBy)->resolve(new ShippingOptionRequest(
+        shippingRate: $shippingRate,
+        cart: $cart,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(1000)
+        ->and($shippingOption->meta)->not->toHaveKey('preorder_shipping_pending');
+});
+
+test('a cart with no preorder line keeps its current price', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'ship-by',
+        'data' => [
+            'charge_by' => 'cart_total',
+        ],
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->createMany([
+        [
+            'price' => 1000,
+            'min_quantity' => 1,
+            'currency_id' => $currency->id,
+        ],
+        [
+            'price' => 500,
+            'min_quantity' => 700,
+            'currency_id' => $currency->id,
+        ],
+    ]);
+
+    $cart = $this->createCart($currency, 100);
+
+    $shippingOption = (new ShipBy)->resolve(new ShippingOptionRequest(
+        shippingRate: $shippingRate,
+        cart: $cart,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(1000)
+        ->and($shippingOption->meta)->not->toHaveKey('preorder_shipping_pending');
+});
+
+test('a preorder-only cart is offered at price 0 with the pending marker', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'ship-by',
+        'data' => [
+            'charge_by' => 'cart_total',
+        ],
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->createMany([
+        [
+            'price' => 1000,
+            'min_quantity' => 1,
+            'currency_id' => $currency->id,
+        ],
+        [
+            'price' => 500,
+            'min_quantity' => 700,
+            'currency_id' => $currency->id,
+        ],
+    ]);
+
+    ['cart' => $cart] = $this->cartWithVariantLines($currency, [
+        ['price' => 10000, 'variant' => ['purchasable' => 'preorder']],
+    ]);
+
+    $shippingOption = (new ShipBy)->resolve(new ShippingOptionRequest(
+        shippingRate: $shippingRate,
+        cart: $cart,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(0)
+        ->and($shippingOption->meta['preorder_shipping_pending'])->toBeTrue()
+        ->and($shippingOption->identifier)->toEqual($shippingRate->getIdentifier());
+});
+
+test('a preorder product on the exclusion list does not hide ship by when another line remains', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'ship-by',
+        'data' => [
+            'charge_by' => 'cart_total',
+        ],
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->create([
+        'price' => 1000,
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+    ]);
+
+    ['cart' => $cart, 'variants' => $variants] = $this->cartWithVariantLines($currency, [
+        ['price' => 100],
+        ['price' => 10000, 'variant' => ['purchasable' => 'preorder']],
+    ]);
+
+    $this->excludeProductsFromZone($shippingZone, [$variants[1]->product_id]);
+
+    $shippingOption = (new ShipBy)->resolve(new ShippingOptionRequest(
+        shippingRate: $shippingRate,
+        cart: $cart,
+    ));
+
+    expect($shippingOption)->toBeInstanceOf(ShippingOption::class)
+        ->and($shippingOption->price->value)->toEqual(1000);
+});
+
+test('an excluded non-preorder product still hides ship by', function () {
+    $currency = Currency::factory()->create([
+        'default' => true,
+    ]);
+
+    TaxClass::factory()->create([
+        'default' => true,
+    ]);
+
+    $shippingZone = ShippingZone::factory()->create([
+        'type' => 'countries',
+    ]);
+
+    $shippingMethod = ShippingMethod::factory()->create([
+        'driver' => 'ship-by',
+        'data' => [
+            'charge_by' => 'cart_total',
+        ],
+    ]);
+
+    $shippingRate = ShippingRate::factory()->create([
+        'shipping_method_id' => $shippingMethod->id,
+        'shipping_zone_id' => $shippingZone->id,
+    ]);
+
+    $shippingRate->prices()->create([
+        'price' => 1000,
+        'min_quantity' => 1,
+        'currency_id' => $currency->id,
+    ]);
+
+    ['cart' => $cart, 'variants' => $variants] = $this->cartWithVariantLines($currency, [
+        ['price' => 100],
+        ['price' => 10000, 'variant' => ['purchasable' => 'preorder']],
+    ]);
+
+    $this->excludeProductsFromZone($shippingZone, [$variants[0]->product_id]);
+
+    $shippingOption = (new ShipBy)->resolve(new ShippingOptionRequest(
+        shippingRate: $shippingRate,
+        cart: $cart,
+    ));
+
+    expect($shippingOption)->toBeNull();
+});

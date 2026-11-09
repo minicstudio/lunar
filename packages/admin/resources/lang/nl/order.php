@@ -219,6 +219,9 @@ return [
         'date_placed' => [
             'label' => 'Plaatsingsdatum',
         ],
+        'consultation_done_at' => [
+            'label' => 'Overleg gedaan op',
+        ],
         'new_returning' => [
             'label' => 'Nieuw / Terugkerend',
         ],
@@ -275,6 +278,7 @@ return [
             'cash-on-delivery' => 'Rembours',
             'bank-transfer' => 'Bankoverschrijving',
             'stripe-card' => 'Creditcard',
+            'bt-ipay' => 'Kaartbetaling (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online kaartbetaling',
         ],
@@ -293,6 +297,8 @@ return [
             'requires_capture' => 'Deze bestelling moet nog worden geïncasseerd.',
             'partially_refunded' => 'Deze bestelling is gedeeltelijk terugbetaald.',
             'refunded' => 'Deze bestelling is terugbetaald.',
+            'preorder_consultation' => 'Deze bestelling bevat een preorderproduct. Bel de klant voordat u de betaling ontvangt of de verzending regelt.',
+            'preorder_consultation_no_phone' => 'Er is geen telefoonnummer opgeslagen.',
             'product_line_gates' => [
                 'paid' => 'Betaald: deze bestelling kan niet worden gewijzigd omdat deze is betaald.',
                 'erp' => 'ERP: deze bestelling kan niet worden gewijzigd omdat deze naar het ERP is gestuurd.',
@@ -328,6 +334,11 @@ return [
                 'label' => 'Aanvullende e-mailontvanger',
                 'placeholder' => 'optioneel',
             ],
+            'preorder_warning' => [
+                'description' => 'Weet u zeker dat u de status wilt bijwerken voordat het telefonisch overleg, de betaalmethode en de verzendprijs zijn bevestigd?',
+                'proceed' => 'Doorgaan',
+                'cancel' => 'Annuleren',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'PDF Downloaden',
@@ -350,6 +361,12 @@ return [
         ],
         'edit_tags' => [
             'label' => 'Bewerken',
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Overleg gedaan',
+            'mixed_description' => 'Deze bestelling bevat zowel producten op voorraad als preorderproducten. Houd ze in één bestelling of splits ze in aparte bestellingen.',
+            'keep' => 'In één bestelling houden',
+            'split' => 'Splitsen in aparte bestellingen',
         ],
         'capture_payment' => [
             'label' => 'Betaling Incasseren',

@@ -31,7 +31,7 @@ class ShippingRate extends BaseModel implements Contracts\ShippingRate, Purchasa
      */
     protected $guarded = [];
 
-    private ?TaxClass $resolvedTaxClass;
+    private ?TaxClass $resolvedTaxClass = null;
 
     protected static function booted()
     {

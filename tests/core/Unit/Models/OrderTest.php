@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdownItem;
@@ -426,6 +427,84 @@ test('reportable scope excludes orders in statuses flagged as excluded from repo
 
     expect(Order::reportable()->pluck('id')->all())
         ->toEqualCanonicalizing([$paid->id, $canceled->id]);
+});
+
+test('a recorded preorder line waits until the consultation timestamp is stored', function () {
+    $order = Order::factory()->create();
+    $variant = ProductVariant::factory()->create();
+
+    $line = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => ['preorder' => true],
+    ]);
+
+    expect($order->refresh()->awaitsPreorderConsultation())->toBeTrue();
+
+    $normal = Order::factory()->create();
+
+    OrderLine::factory()->create([
+        'order_id' => $normal->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+    ]);
+
+    expect($normal->refresh()->awaitsPreorderConsultation())->toBeFalse();
+
+    $line->update([
+        'meta' => [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => now()->toIso8601String(),
+        ],
+    ]);
+
+    expect($order->refresh()->awaitsPreorderConsultation())->toBeFalse()
+        ->and($line->fresh()->meta['preorder'])->toBeTrue();
+});
+
+test('the consultation time is the latest stamp on a product line', function () {
+    $order = Order::factory()->create();
+    $variant = ProductVariant::factory()->create();
+
+    expect($order->preorderConsultationCompletedAt())->toBeNull();
+
+    $earlier = '2026-11-03T08:00:00+00:00';
+    $later = '2026-11-03T09:34:00+00:00';
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $earlier,
+        ],
+    ]);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => [
+            'preorder' => true,
+            'preorder_consultation_completed_at' => $later,
+        ],
+    ]);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'type' => 'shipping',
+        'meta' => [
+            'preorder_consultation_completed_at' => '2026-11-04T09:34:00+00:00',
+        ],
+    ]);
+
+    expect($order->refresh()->preorderConsultationCompletedAt()?->equalTo(Carbon::parse($later)))->toBeTrue();
 });
 
 test('reportable scope keeps every order when no status is excluded from reports', function () {

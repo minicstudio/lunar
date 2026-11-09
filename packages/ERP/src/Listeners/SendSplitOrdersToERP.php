@@ -45,6 +45,10 @@ class SendSplitOrdersToERP
                 continue;
             }
 
+            if ($order->awaitsPreorderConsultation()) {
+                continue;
+            }
+
             try {
                 event(new SplitOfflineOrderReadyForErp($order));
             } catch (Throwable $exception) {

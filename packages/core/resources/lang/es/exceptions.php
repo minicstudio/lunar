@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'No puedes dividir este pedido.',
     'order.invalid_split' => 'No se pudo dividir el pedido.',
     'order.locked_split' => 'El pedido no se puede dividir.',
+    'order.unknown_preorder_payment' => 'Método de pago desconocido para la consulta de pedido anticipado.',
+    'order.negative_consultation_shipping' => 'El precio de envío de la consulta no puede ser negativo.',
 ];

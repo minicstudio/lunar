@@ -216,6 +216,9 @@ return [
         'date_placed' => [
             'label' => 'Date Placed',
         ],
+        'consultation_done_at' => [
+            'label' => 'مشاوره انجام شد در',
+        ],
         'new_returning' => [
             'label' => 'New / Returning',
         ],
@@ -272,6 +275,7 @@ return [
             'cash-on-delivery' => 'پرداخت در محل',
             'bank-transfer' => 'انتقال بانکی',
             'stripe-card' => 'کارت اعتباری',
+            'bt-ipay' => 'پرداخت با کارت (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'پرداخت آنلاین با کارت',
         ],
@@ -289,6 +293,8 @@ return [
             'requires_capture' => 'This order still requires payment to be captured.',
             'partially_refunded' => 'This order has been partially refunded.',
             'refunded' => 'This order has been refunded.',
+            'preorder_consultation' => 'این سفارش شامل یک محصول پیش‌سفارش است. پیش از دریافت پرداخت یا ترتیب ارسال با مشتری تماس بگیرید.',
+            'preorder_consultation_no_phone' => 'شماره تلفنی ذخیره نشده است.',
             'product_line_gates' => [
                 'paid' => 'پرداخت‌شده: این سفارش قابل تغییر نیست چون پرداخت شده است.',
                 'erp' => 'ERP: این سفارش قابل تغییر نیست چون به ERP ارسال شده است.',
@@ -322,6 +328,11 @@ return [
                 'label' => 'Additional email recipient',
                 'placeholder' => 'optional',
             ],
+            'preorder_warning' => [
+                'description' => 'آیا مطمئن هستید که می‌خواهید وضعیت را پیش از تأیید مشاوره تلفنی، روش پرداخت و هزینه ارسال به‌روزرسانی کنید؟',
+                'proceed' => 'ادامه',
+                'cancel' => 'لغو',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Download PDF',
@@ -350,6 +361,12 @@ return [
                     'helper_text' => 'Separate tags by pressing Enter, Tab or comma (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'مشاوره انجام شد',
+            'mixed_description' => 'این سفارش شامل کالاهای موجود و کالاهای پیش‌سفارش است. آن‌ها را در یک سفارش نگه دارید یا به سفارش‌های جدا تقسیم کنید.',
+            'keep' => 'نگه داشتن در یک سفارش',
+            'split' => 'تقسیم به سفارش‌های جدا',
         ],
         'capture_payment' => [
             'label' => 'Capture Payment',

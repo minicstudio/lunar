@@ -1,6 +1,6 @@
 # Order Processing — Software Design Document (Engine)
 
-Last verified: 2026-10-28 against `lunarphp/lunar-minic` at repository HEAD.
+Last verified: 2026-11-02 against `lunarphp/lunar-minic` at repository HEAD.
 
 ## Purpose and scope
 
@@ -192,6 +192,10 @@ flowchart TD
 
 When `status` changes, writes Spatie activity `status-update` with `previous` and `new` values. `causedBy(auth()->user())` when admin-driven.
 
+### Preorder consultation
+
+An order waits for a phone consultation when a product line has `meta.preorder` true and `meta.preorder_consultation_completed_at` is empty. While it is waiting, a status change does not generate an AWB or an ERP invoice, and placement or an offline split does not send that order to the ERP. Checkout leaves that order at Awaiting Phone Consultation. Update Status asks staff to confirm before the status form opens. Cancel leaves the order unchanged. Proceed opens the existing status form. Consultation done opens a modal. On a waiting order that has a preorder line and another product line, it first asks whether to keep the order together or split it. The header Split action stays hidden until that choice opens the split screen. Keep, and any preorder-only order, asks for the payment method and, unless delivery is store collection, the full shipping price. The shipping field starts from the price that method would charge for every product line as a simple product, using every line's weight when the method charges by weight. Store collection stays at 0 and has no shipping field. Submitting stores the agreed shipping total, then `preorder_consultation_completed_at`, then `meta.payment_option` and the status together. Card (`bt-ipay` or `stripe-card`) becomes Awaiting Payment. Bank transfer becomes Awaiting Bank Transfer. Cash on delivery becomes Payment Offline. The timestamp is stored before that status change, so a later AWB, ERP invoice, or ERP send is not held. The modal does not create an AWB or send the order to the ERP. Splitting from that choice uses the same payment list and status map on each new order, stamps the consultation timestamp on the preorder lines, and leaves neither new order waiting. The in-stock order's shipping starts from its calculated price. A new order whose lines are all preorder starts from the simple-product quote for those lines. The original order becomes `split`, and that closed order does not show the notice or Consultation done. A cash-on-delivery child can then be sent to the ERP by the existing split listener. A split that was not opened from this choice still strips the timestamp, so the child that receives a preorder line waits, and still maps bank transfer to Awaiting Payment. An order with no recorded preorder line keeps the current AWB, invoice, and ERP behavior. A normal order is unchanged. Once `preorder_consultation_completed_at` is stored, the order summary shows Consultation done at under Date Placed, in the same date-time format. That row stays hidden while the timestamp is empty. Adding a preorder product after that timestamp is stored keeps it on the existing lines and on the new line, leaves the order status unchanged, and does not ask for another phone consultation.
+
 ### ERP — invoice generation
 
 **Path:** `packages/ERP/src/Observers/OrderObserver.php`  
@@ -202,6 +206,7 @@ For each provider in `lunar.erp.actions.billing`:
 1. Provider enabled in `lunar.erp.{provider}.enabled`
 2. Skip if `meta.billing_series` and `meta.billing_number` already set
 3. `status` is dirty and in `lunar.erp.{provider}.generate_invoice` array
+4. The order is not waiting on `preorder_consultation_completed_at` (see [Preorder consultation](#preorder-consultation))
 
 Calls `ErpService::generateInvoice()` → exporter (e.g. Smartbill) → saves `billing_series`, `billing_number` on order meta via `Order::withoutEvents()`.
 
@@ -219,6 +224,7 @@ When `lunar.shipping.enabled` and:
 - `status` is dirty
 - New status equals `lunar.shipping.generate_awb_on_status` (default env: `prepare-shipment`)
 - `meta.awb` not already set
+- The order is not waiting on `preorder_consultation_completed_at` (see [Preorder consultation](#preorder-consultation))
 
 Calls `ShippingService::generateAWB()`:
 

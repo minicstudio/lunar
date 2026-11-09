@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'Nincs jogosultsága a rendelés bontásához.',
     'order.invalid_split' => 'A rendelést nem sikerült szétbontani.',
     'order.locked_split' => 'A rendelés nem bontható szét.',
+    'order.unknown_preorder_payment' => 'Ismeretlen előrendelés-egyeztetési fizetési mód.',
+    'order.negative_consultation_shipping' => 'Az egyeztetés szállítási díja nem lehet negatív.',
 ];

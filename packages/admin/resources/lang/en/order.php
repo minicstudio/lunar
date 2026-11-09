@@ -237,6 +237,9 @@ return [
         'date_placed' => [
             'label' => 'Date Placed',
         ],
+        'consultation_done_at' => [
+            'label' => 'Consultation done at',
+        ],
         'new_returning' => [
             'label' => 'New / Returning',
         ],
@@ -300,6 +303,7 @@ return [
             'cash-on-delivery' => 'Cash on delivery',
             'bank-transfer' => 'Bank transfer',
             'stripe-card' => 'Credit card',
+            'bt-ipay' => 'Card payment (BT iPay)',
             'stripe-wallet-pay' => 'Apple Pay / Google Pay',
             'hosted-payment' => 'Online card payment',
         ],
@@ -318,6 +322,8 @@ return [
             'requires_capture' => 'This order still requires payment to be captured.',
             'partially_refunded' => 'This order has been partially refunded.',
             'refunded' => 'This order has been refunded.',
+            'preorder_consultation' => 'This order includes a preorder product. Call the customer before taking payment or arranging shipping.',
+            'preorder_consultation_no_phone' => 'No phone number is stored.',
             'product_line_gates' => [
                 'paid' => 'Paid: this order cannot be modified because it has been paid.',
                 'erp' => 'ERP: this order cannot be modified because it has been sent to the ERP.',
@@ -359,6 +365,11 @@ return [
             'email_addresses' => [
                 'label' => 'Email addresses',
             ],
+            'preorder_warning' => [
+                'description' => 'Are you sure you want to update the status before confirming the phone consultation, payment option, and shipping price?',
+                'proceed' => 'Proceed',
+                'cancel' => 'Cancel',
+            ],
         ],
         'download_order_pdf' => [
             'label' => 'Download PDF',
@@ -387,6 +398,12 @@ return [
                     'helper_text' => 'Separate tags by pressing Enter, Tab or comma (,)',
                 ],
             ],
+        ],
+        'preorder_consultation_done' => [
+            'label' => 'Consultation done',
+            'mixed_description' => 'This order contains both in-stock products and preorder products. Keep them on one order, or split them into separate orders.',
+            'keep' => 'Keep this order together',
+            'split' => 'Split into separate orders',
         ],
         'capture_payment' => [
             'label' => 'Capture Payment',

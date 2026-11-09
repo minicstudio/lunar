@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Venda adicional',
         'alternate' => 'Alternativa',
     ],
+    'orders' => [
+        'shipping' => 'Frete',
+    ],
 ];

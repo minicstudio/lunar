@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'Nie możesz podzielić tego zamówienia.',
     'order.invalid_split' => 'Nie udało się podzielić zamówienia.',
     'order.locked_split' => 'Zamówienia nie można podzielić.',
+    'order.unknown_preorder_payment' => 'Nieznana metoda płatności konsultacji przedsprzedaży.',
+    'order.negative_consultation_shipping' => 'Cena wysyłki konsultacji nie może być ujemna.',
 ];

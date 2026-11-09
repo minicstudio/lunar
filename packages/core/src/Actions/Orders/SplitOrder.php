@@ -179,6 +179,11 @@ final class SplitOrder extends AbstractAction
 
             if (blank($target->paymentOption)) {
                 $errors[] = 'lines_mismatch';
+            } elseif (
+                $request->completePreorderConsultation
+                && ! in_array($target->paymentOption, CompletePreorderConsultation::paymentOptions(), true)
+            ) {
+                $errors[] = 'payment_required';
             }
 
             foreach ($target->quantities as $lineId => $quantity) {
@@ -260,6 +265,7 @@ final class SplitOrder extends AbstractAction
     private function calculate(Order $order, SplitOrderRequest $request): array
     {
         $coupon = $this->couponFromOrder($order);
+        $completedAt = $request->completePreorderConsultation ? now()->toIso8601String() : null;
         $calculated = [];
 
         foreach ($request->targets as $target) {
@@ -272,7 +278,7 @@ final class SplitOrder extends AbstractAction
                 continue;
             }
 
-            $calculated[] = $this->calculateTarget($order, $request, $target, $quantities, $coupon);
+            $calculated[] = $this->calculateTarget($order, $request, $target, $quantities, $coupon, $completedAt);
         }
 
         return $calculated;
@@ -292,7 +298,7 @@ final class SplitOrder extends AbstractAction
      *     option: ?ShippingOption
      * }
      */
-    private function calculateTarget(Order $order, SplitOrderRequest $request, SplitOrderTarget $target, array $quantities, ?string $coupon): array
+    private function calculateTarget(Order $order, SplitOrderRequest $request, SplitOrderTarget $target, array $quantities, ?string $coupon, ?string $completedAt): array
     {
         $currency = $order->currency;
         $shippingLine = $order->shippingLines()->first();
@@ -334,7 +340,7 @@ final class SplitOrder extends AbstractAction
                 'purchasable_id' => $source->purchasable_id,
                 'purchasable_type' => $source->purchasable_type,
                 'quantity' => $quantity,
-                'meta' => $this->metaArray($source->meta),
+                'meta' => $this->lineMetaForSplit($this->metaArray($source->meta), $completedAt),
             ]);
 
             $lineMap[$cartLine->id] = (int) $lineId;
@@ -369,6 +375,12 @@ final class SplitOrder extends AbstractAction
             $taxClass = $priced && $priced->getIdentifier() === $identifier
                 ? $priced->getTaxClass()
                 : $this->shippingTaxClass($shippingLine);
+            $optionMeta = $priced?->meta;
+
+            if ($request->completePreorderConsultation && is_array($optionMeta)) {
+                unset($optionMeta['preorder_shipping_pending']);
+            }
+
             $option = new ShippingOption(
                 name: $shippingLine->description ?: ($priced?->getName() ?? $identifier),
                 description: $priced?->getDescription(),
@@ -376,7 +388,7 @@ final class SplitOrder extends AbstractAction
                 price: new Price($shippingMinor, $currency, 1),
                 taxClass: $taxClass,
                 option: $priced?->getOption(),
-                meta: $priced?->meta,
+                meta: $optionMeta,
             );
             $cart->shippingOptionOverride = $option;
         }
@@ -602,7 +614,7 @@ final class SplitOrder extends AbstractAction
                 'user_id' => $original->user_id,
                 'channel_id' => $original->channel_id,
                 'new_customer' => false,
-                'status' => $this->initialStatus($target['paymentOption']),
+                'status' => $this->initialStatus($target['paymentOption'], $request->completePreorderConsultation),
                 'sub_total' => 0,
                 'discount_total' => 0,
                 'shipping_total' => 0,
@@ -798,8 +810,12 @@ final class SplitOrder extends AbstractAction
         $original->save();
     }
 
-    private function initialStatus(string $paymentOption): string
+    private function initialStatus(string $paymentOption, bool $completePreorderConsultation): string
     {
+        if ($completePreorderConsultation) {
+            return CompletePreorderConsultation::statusFor($paymentOption);
+        }
+
         if (in_array($paymentOption, self::OFFLINE_PAYMENT_OPTIONS, true)) {
             return 'payment-offline';
         }
@@ -848,8 +864,24 @@ final class SplitOrder extends AbstractAction
     }
 
     /**
+     * A normal split drops a consultation timestamp. A split opened from the call stamps one.
+     *
+     * @param  array<string, mixed>  $meta
      * @return array<string, mixed>
      */
+    private function lineMetaForSplit(array $meta, ?string $completedAt): array
+    {
+        if ($completedAt !== null && ($meta['preorder'] ?? null) === true) {
+            $meta['preorder_consultation_completed_at'] = $completedAt;
+
+            return $meta;
+        }
+
+        unset($meta['preorder_consultation_completed_at']);
+
+        return $meta;
+    }
+
     private function metaArray(mixed $meta): array
     {
         if ($meta instanceof \ArrayObject) {

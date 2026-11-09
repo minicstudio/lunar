@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Üst satış',
         'alternate' => 'Alternatif',
     ],
+    'orders' => [
+        'shipping' => 'Kargo',
+    ],
 ];

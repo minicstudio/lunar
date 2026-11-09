@@ -9,6 +9,8 @@ use Lunar\ERP\Events\OrderInvoiceGenerated;
 use Lunar\ERP\Exceptions\FailedErpInvoiceGenerationException;
 use Lunar\ERP\Services\ErpService;
 use Lunar\Models\Order;
+use Lunar\Models\OrderLine;
+use Lunar\Models\ProductVariant;
 use Lunar\Tests\ERP\TestCase;
 
 uses(TestCase::class);
@@ -77,6 +79,31 @@ it('does not dispatch invoice email event when invoice was already emailed', fun
     $service = Mockery::mock(ErpService::class);
     $service->shouldReceive('getAllowedProviders')->with('actions', 'billing')->andReturn([ErpProviderEnum::smartbill]);
     $service->shouldReceive('generateInvoice')->once();
+    app()->instance(ErpService::class, $service);
+
+    $order->update(['status' => 'awaiting-payment']);
+
+    Event::assertNotDispatched(OrderInvoiceGenerated::class);
+});
+
+it('does not generate an invoice while the order is waiting for preorder consultation', function () {
+    Event::fake([OrderInvoiceGenerated::class]);
+    $this->createLanguages();
+
+    $order = Order::factory()->create(['status' => 'payment-received']);
+    $variant = ProductVariant::factory()->create();
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'meta' => ['preorder' => true],
+    ]);
+
+    $service = Mockery::mock(ErpService::class);
+    $service->shouldReceive('getAllowedProviders')->with('actions', 'billing')->andReturn([ErpProviderEnum::smartbill]);
+    $service->shouldNotReceive('generateInvoice');
     app()->instance(ErpService::class, $service);
 
     $order->update(['status' => 'awaiting-payment']);

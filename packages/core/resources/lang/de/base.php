@@ -6,4 +6,7 @@ return [
         'up-sell' => 'Up-Selling',
         'alternate' => 'Alternative',
     ],
+    'orders' => [
+        'shipping' => 'Versand',
+    ],
 ];

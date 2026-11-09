@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Felülértékesítés',
         'alternate' => 'Alternatíva',
     ],
+    'orders' => [
+        'shipping' => 'Szállítás',
+    ],
 ];

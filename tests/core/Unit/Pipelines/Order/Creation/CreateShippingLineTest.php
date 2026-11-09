@@ -121,6 +121,53 @@ test('can update shipping line if exists', function () {
     expect($shippingLine->purchasable_id)->toBeNull();
 });
 
+test('stores the pending shipping marker and a zero shipping total', function () {
+    $currency = Currency::factory()->create();
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+    ]);
+
+    CartAddress::factory()->create([
+        'type' => 'billing',
+        'cart_id' => $cart->id,
+    ]);
+
+    ShippingManifest::addOption(
+        new ShippingOption(
+            name: 'Basic Delivery',
+            description: 'Basic Delivery',
+            identifier: 'BASDEL',
+            price: new Price(0, $cart->currency, 1),
+            taxClass: TaxClass::factory()->create(),
+            meta: [
+                'shipping_zone' => 'UK',
+                'preorder_shipping_pending' => true,
+            ],
+        )
+    );
+
+    CartAddress::factory()->create([
+        'type' => 'shipping',
+        'shipping_option' => 'BASDEL',
+        'cart_id' => $cart->id,
+    ]);
+
+    $order = Order::factory()->create([
+        'cart_id' => $cart->id,
+    ]);
+
+    $order = app(CreateShippingLine::class)->handle($order, function ($order) {
+        return $order;
+    });
+
+    $shippingLine = $order->shippingLines->first();
+
+    expect($shippingLine)->not->toBeNull()
+        ->and($shippingLine->meta['preorder_shipping_pending'])->toBeTrue()
+        ->and($shippingLine->total->value)->toEqual(0);
+});
+
 /**
  * An order whose cart has one 10.00 line and a 19.90 courier option.
  */
