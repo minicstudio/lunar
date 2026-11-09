@@ -320,10 +320,13 @@ class SplitOrderAction extends Action
      */
     private function initialState(Order $order): array
     {
+        $options = CompletePreorderConsultation::paymentOptions();
         $payment = (string) (data_get($order->meta, 'payment_option') ?: 'cash-on-delivery');
 
-        if ($this->completesConsultation() && ! in_array($payment, CompletePreorderConsultation::PAYMENT_OPTIONS, true)) {
-            $payment = 'cash-on-delivery';
+        if ($this->completesConsultation() && ! in_array($payment, $options, true)) {
+            $payment = in_array('cash-on-delivery', $options, true)
+                ? 'cash-on-delivery'
+                : (string) ($options[0] ?? '');
         }
 
         $lines = $order->productLines()->with('purchasable')->orderBy('id')->get()->values();
@@ -517,7 +520,7 @@ class SplitOrderAction extends Action
 
             $payment = (string) ($orderState['payment_option'] ?? '');
 
-            if ($payment === '' || ($completeConsultation && ! in_array($payment, CompletePreorderConsultation::PAYMENT_OPTIONS, true))) {
+            if ($payment === '' || ($completeConsultation && ! in_array($payment, CompletePreorderConsultation::paymentOptions(), true))) {
                 $blockers[] = 'payment_required';
             }
         }
@@ -1122,7 +1125,7 @@ class SplitOrderAction extends Action
     private function paymentOptions(): array
     {
         $keys = $this->completesConsultation()
-            ? CompletePreorderConsultation::PAYMENT_OPTIONS
+            ? CompletePreorderConsultation::paymentOptions()
             : [
                 'offline',
                 'cash-in-hand',

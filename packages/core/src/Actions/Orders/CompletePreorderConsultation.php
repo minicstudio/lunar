@@ -31,24 +31,14 @@ use Throwable;
 final class CompletePreorderConsultation extends AbstractAction
 {
     /**
-     * Payment methods the consultation form and a split opened from it can set.
+     * Payment methods staff can set, from lunar.orders.payment_options.
      *
-     * @var list<string>
+     * @return list<string>
      */
-    public const PAYMENT_OPTIONS = [
-        'bt-ipay',
-        'stripe-card',
-        'bank-transfer',
-        'cash-on-delivery',
-    ];
-
-    /**
-     * @var list<string>
-     */
-    private const CARD_OPTIONS = [
-        'bt-ipay',
-        'stripe-card',
-    ];
+    public static function paymentOptions(): array
+    {
+        return array_keys(self::paymentStatuses());
+    }
 
     public static function isStoreCollection(Order $order): bool
     {
@@ -100,12 +90,12 @@ final class CompletePreorderConsultation extends AbstractAction
     public function execute(OrderContract $order, string $paymentOption, ?int $shippingMinor): Order
     {
         /** @var Order $order */
-        if (! in_array($paymentOption, self::PAYMENT_OPTIONS, true)) {
-            throw new \InvalidArgumentException('Unknown preorder consultation payment method.');
+        if (! in_array($paymentOption, self::paymentOptions(), true)) {
+            throw new \InvalidArgumentException(__('lunar::exceptions.order.unknown_preorder_payment'));
         }
 
         if ($shippingMinor !== null && $shippingMinor < 0) {
-            throw new \InvalidArgumentException('The consultation shipping price cannot be negative.');
+            throw new \InvalidArgumentException(__('lunar::exceptions.order.negative_consultation_shipping'));
         }
 
         if (self::isStoreCollection($order)) {
@@ -134,20 +124,36 @@ final class CompletePreorderConsultation extends AbstractAction
     /**
      * Status stored for a consultation payment method.
      *
-     * Card becomes awaiting payment. Bank transfer becomes awaiting bank transfer.
-     * Cash on delivery becomes payment offline.
+     * The status is the one configured for that method. An unlisted method
+     * becomes payment offline.
      */
     public static function statusFor(string $paymentOption): string
     {
-        if (in_array($paymentOption, self::CARD_OPTIONS, true)) {
-            return 'awaiting-payment';
+        return self::paymentStatuses()[$paymentOption] ?? 'payment-offline';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function paymentStatuses(): array
+    {
+        $configured = config('lunar.orders.payment_options', []);
+
+        if (! is_array($configured)) {
+            return [];
         }
 
-        if ($paymentOption === 'bank-transfer') {
-            return 'awaiting-bank-transfer';
+        $statuses = [];
+
+        foreach ($configured as $option => $status) {
+            if (! is_string($option) || $option === '' || ! is_string($status) || $status === '') {
+                continue;
+            }
+
+            $statuses[$option] = $status;
         }
 
-        return 'payment-offline';
+        return $statuses;
     }
 
     private function storeShipping(Order $order, int $minor): void
@@ -155,12 +161,13 @@ final class CompletePreorderConsultation extends AbstractAction
         $line = $order->shippingLines()->first() ?? new OrderLine([
             'order_id' => $order->id,
             'type' => 'shipping',
-            'description' => 'Shipping',
             'identifier' => 'shipping',
             'unit_quantity' => 1,
             'quantity' => 1,
             'discount_total' => 0,
         ]);
+
+        $line->description = $this->shippingDescription($line);
 
         $oldShipping = (int) ($order->shipping_total->value ?? 0);
         $oldTax = (int) ($line->exists ? $line->tax_total->value : 0);
@@ -176,7 +183,7 @@ final class CompletePreorderConsultation extends AbstractAction
             'type' => 'shipping',
             'purchasable_type' => null,
             'purchasable_id' => null,
-            'description' => $line->description ?: 'Shipping',
+            'description' => $line->description,
             'identifier' => $line->identifier ?: 'shipping',
             'unit_price' => $minor,
             'unit_quantity' => 1,
@@ -197,6 +204,18 @@ final class CompletePreorderConsultation extends AbstractAction
         ]);
     }
 
+    /**
+     * Description stored on the shipping line. An existing description is kept.
+     */
+    private function shippingDescription(OrderLine $line): string
+    {
+        if (filled($line->description)) {
+            return $line->description;
+        }
+
+        return __('lunar::base.orders.shipping');
+    }
+
     private function shippingTax(Order $order, OrderLine $line, int $minor): TaxBreakdown
     {
         $taxClass = $this->shippingTaxClass($line);
@@ -208,7 +227,7 @@ final class CompletePreorderConsultation extends AbstractAction
 
         try {
             $option = new ShippingOption(
-                name: $line->description ?: 'Shipping',
+                name: $line->description,
                 description: null,
                 identifier: $line->identifier ?: 'shipping',
                 price: new Price($minor, $currency, 1),
@@ -261,7 +280,7 @@ final class CompletePreorderConsultation extends AbstractAction
             $existing = $items->get($identifier);
 
             $items->put($identifier, new ShippingBreakdownItem(
-                name: $existing?->name ?? ($line->description ?: 'Shipping'),
+                name: $existing?->name ?? $line->description,
                 identifier: $identifier,
                 price: new Price($minor, $currency, 1),
             ));

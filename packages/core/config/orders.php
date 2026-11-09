@@ -158,4 +158,24 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Payment options
+    |--------------------------------------------------------------------------
+    |
+    | Payment methods staff can set on an order, and the order status stored
+    | for each one. Publish this file and change the list per store. The
+    | consultation flow reads this list, and a split can use the same list.
+    |
+    | The key is the payment option stored on the order. The value is the
+    | order status saved with it.
+    |
+    */
+    'payment_options' => [
+        'bt-ipay' => 'awaiting-payment',
+        'stripe-card' => 'awaiting-payment',
+        'bank-transfer' => 'awaiting-bank-transfer',
+        'cash-on-delivery' => 'payment-offline',
+    ],
+
 ];

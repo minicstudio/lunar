@@ -783,12 +783,7 @@ class ManageOrder extends BaseViewRecord
     {
         $options = [];
 
-        foreach ([
-            'bt-ipay',
-            'stripe-card',
-            'bank-transfer',
-            'cash-on-delivery',
-        ] as $key) {
+        foreach (CompletePreorderConsultation::paymentOptions() as $key) {
             $options[$key] = __('lunarpanel::order.infolist.payment_methods.'.$key);
         }
 

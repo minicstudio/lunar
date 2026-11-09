@@ -181,7 +181,7 @@ final class SplitOrder extends AbstractAction
                 $errors[] = 'lines_mismatch';
             } elseif (
                 $request->completePreorderConsultation
-                && ! in_array($target->paymentOption, CompletePreorderConsultation::PAYMENT_OPTIONS, true)
+                && ! in_array($target->paymentOption, CompletePreorderConsultation::paymentOptions(), true)
             ) {
                 $errors[] = 'payment_required';
             }

@@ -11,4 +11,7 @@ return [
         'up-sell' => 'Montée en gamme',
         'alternate' => 'Alternative',
     ],
+    'orders' => [
+        'shipping' => 'Livraison',
+    ],
 ];

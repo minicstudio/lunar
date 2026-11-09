@@ -49,7 +49,9 @@ class PreorderConsultationShipping
         $cart = null;
 
         try {
-            $cart = Cart::withoutEvents(fn (): Cart => Cart::factory()->create([
+            $cartModel = Cart::modelClass();
+
+            $cart = $cartModel::withoutEvents(fn (): Cart => $cartModel::query()->create([
                 'currency_id' => $currency->id,
                 'channel_id' => $order->channel_id,
                 'customer_id' => $order->customer_id,

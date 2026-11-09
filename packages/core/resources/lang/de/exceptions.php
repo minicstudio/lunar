@@ -25,4 +25,6 @@ return [
     'order.unauthorized_split' => 'Sie können diese Bestellung nicht aufteilen.',
     'order.invalid_split' => 'Die Bestellung konnte nicht aufgeteilt werden.',
     'order.locked_split' => 'Die Bestellung kann nicht aufgeteilt werden.',
+    'order.unknown_preorder_payment' => 'Unbekannte Zahlungsmethode für die Vorbestellungsberatung.',
+    'order.negative_consultation_shipping' => 'Der Versandpreis der Beratung darf nicht negativ sein.',
 ];

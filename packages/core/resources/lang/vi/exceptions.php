@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'Bạn không thể tách đơn hàng này.',
     'order.invalid_split' => 'Không thể tách đơn hàng.',
     'order.locked_split' => 'Đơn hàng không thể được tách.',
+    'order.unknown_preorder_payment' => 'Phương thức thanh toán không xác định cho tư vấn đặt trước.',
+    'order.negative_consultation_shipping' => 'Phí vận chuyển của buổi tư vấn không được âm.',
 ];

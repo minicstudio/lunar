@@ -11,4 +11,7 @@ return [
         'up-sell' => '(Up Sell) Preporuka bolje verzije proizvoda',
         'alternate' => 'Alternativa',
     ],
+    'orders' => [
+        'shipping' => 'Dostava',
+    ],
 ];

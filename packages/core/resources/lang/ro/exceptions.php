@@ -28,4 +28,6 @@ return [
     'order.unauthorized_split' => 'Nu puteți împărți această comandă.',
     'order.invalid_split' => 'Comanda nu a putut fi împărțită.',
     'order.locked_split' => 'Comanda nu poate fi împărțită.',
+    'order.unknown_preorder_payment' => 'Metodă de plată necunoscută pentru consultația de precomandă.',
+    'order.negative_consultation_shipping' => 'Prețul de livrare din consultație nu poate fi negativ.',
 ];
