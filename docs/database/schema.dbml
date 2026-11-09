@@ -1604,6 +1604,21 @@ Table "lunar_transactions" {
   }
 }
 
+Table "lunar_traffic_visits" {
+  "id" bigint [pk, not null, increment]
+  "source" varchar(255) [not null]
+  "medium" varchar(255)
+  "campaign" varchar(255)
+  "referrer_host" varchar(255)
+  "landing_path" varchar(255) [not null]
+  "created_at" timestamp
+
+  Indexes {
+    created_at [name: "lunar_traffic_visits_created_at_index"]
+    (source, medium) [name: "lunar_traffic_visits_source_medium_index"]
+  }
+}
+
 Table "lunar_urls" {
   "id" bigint [pk, not null, increment]
   "language_id" bigint [not null]

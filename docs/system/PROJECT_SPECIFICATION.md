@@ -266,6 +266,7 @@ The storefront (`lunar-frontend`) owns checkout meta. `FillOrderFromCart` copies
 | `is_guest` | Checkout identity | Host convention; not read in `packages/*`. |
 | `language_locale` | Order placement | Host convention; not read in `packages/*`. |
 | `gtm_purchase_event_id` | Post-authorization | Host convention (`lunar-frontend`); not read in `packages/*`. |
+| `traffic_source` | Cart creation (analytics package) | `{visit_id, source, medium, campaign}` of the session's current visit. Written once by `Lunar\Analytics\Traffic\Observers\StampCartWithTrafficSource` on `creating` (first touch; never in the admin panel or staff sessions). `FillOrderFromCart` copies it with the whole cart meta; `SplitOrder` copies it to every new order (`COPIED_META_KEYS`). Read by the analytics traffic report. |
 
 Address meta (not order-level): shipping addresses for lockers store `locker_id` (and related locker fields) on the address `meta` JSON.
 
@@ -330,6 +331,7 @@ The fork is materially different from local `upstream/1.x`. A local diff summary
 - `packages/blog`: blog categories/posts, URLs, admin extensions.
 - `packages/review`: reviews, review media, reminder emails, admin/order/product/channel extensions.
 - `packages/feedback`: storefront feedback scores per order and type, read-only admin list, order extensions.
+- `packages/analytics` (`lunarphp/analytics`): measuring and reporting features, one folder per feature. Traffic sources (`src/Traffic/`): the `RecordTrafficVisit` route middleware records one `lunar_traffic_visits` row per visit (first storefront page view of a session, or a page view whose campaign parameters change the source); the configurable classifier picks source / medium / campaign (`utm_source`, click ids, known referrer hosts, other hosts, direct); new carts get `meta.traffic_source`, which orders and split orders keep; the admin **Traffic sources** report (Analytics group, permission `analytics:traffic-sources`) shows visits, carts, orders, order value and order rate per source and medium, visits per day and landing pages. Nothing is recorded in the admin panel or while a staff member is logged in; visitors whose active cart already has a source start no visit.
 - `packages/locations`: Romanian-style county/locality models and seed data.
 - `packages/mailchimp`: Mailchimp ecommerce/subscriber/cart/order/product sync.
 - `packages/shipping`: carrier add-on for AWB, lockers, tracking, Sameday/DPD/Pickup/InHouse.

@@ -307,6 +307,7 @@ Admin order line tables may show current variant stock vs `meta.stock_level` cap
 | Host-only keys | Host after placement | e.g. analytics IDs — not set by core |
 | `split_into_order_ids` | Admin order split | New order ids created from this order. The original order status is `split`. |
 | `split_from_order_id` | Admin order split | The original order this new order was split from. |
+| `traffic_source` | Analytics package on cart creation; copied by `FillOrderFromCart` (whole cart meta) and by the admin order split (`SplitOrder::COPIED_META_KEYS`) | `{visit_id, source, medium, campaign}` of the visit that created the cart (first touch). The order stores nothing about the visit in which it was placed. Read by the analytics traffic report. |
 
 ---
 

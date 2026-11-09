@@ -1,13 +1,18 @@
 <?php
 
+use Filament\FilamentManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Gate;
-use Lunar\Actions\Orders\SplitOrder;
 use Lunar\Actions\Orders\DTOs\SplitOrderRequest;
 use Lunar\Actions\Orders\DTOs\SplitOrderTarget;
+use Lunar\Actions\Orders\SplitOrder;
+use Lunar\Analytics\AnalyticsServiceProvider;
+use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
 use Lunar\DataTypes\Price as PriceDataType;
@@ -915,4 +920,97 @@ it('keeps a bulk unit price unless the current catalog price is chosen', functio
         ->and($chosen->discount_total->value)->toBe(160)
         ->and($chosen->shippingLines()->first()->sub_total->value)->toBe(250)
         ->and($chosen->shipping_total->value)->toBe($chosen->shippingLines()->first()->total->value);
+});
+
+it('copies the original traffic source to every new order, and none when the original has none', function () {
+    $trafficSource = [
+        'visit_id' => 12,
+        'source' => 'facebook',
+        'medium' => 'social',
+        'campaign' => null,
+    ];
+
+    $variant = pricedSplitVariant(1000);
+    $other = pricedSplitVariant(1000);
+    $order = splittableOrder([
+        ['variant' => $variant, 'quantity' => 1, 'price' => 1000],
+        ['variant' => $other, 'quantity' => 1, 'price' => 1000],
+    ], [
+        'meta' => [
+            'payment_option' => 'cash-on-delivery',
+            'payment_type' => 'cod',
+            'language_locale' => 'en',
+            'traffic_source' => $trafficSource,
+        ],
+    ]);
+    $lines = $order->productLines()->orderBy('id')->get();
+
+    SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$lines[0]->id => 1]],
+        ['key' => '2', 'quantities' => [$lines[1]->id => 1]],
+    ]));
+
+    $children = Order::query()->where('meta->split_from_order_id', $order->id)->get();
+
+    expect($children)->toHaveCount(2)
+        ->and($children->every(fn (Order $child): bool => ($child->meta['traffic_source'] ?? null) === $trafficSource))->toBeTrue();
+
+    $unsourced = splittableOrder([
+        ['variant' => $variant, 'quantity' => 1, 'price' => 1000],
+        ['variant' => $other, 'quantity' => 1, 'price' => 1000],
+    ]);
+    $unsourcedLines = $unsourced->productLines()->orderBy('id')->get();
+
+    SplitOrder::run($unsourced, splitRequest([
+        ['key' => '1', 'quantities' => [$unsourcedLines[0]->id => 1]],
+        ['key' => '2', 'quantities' => [$unsourcedLines[1]->id => 1]],
+    ]));
+
+    $unsourcedChildren = Order::query()->where('meta->split_from_order_id', $unsourced->id)->get();
+
+    expect($unsourcedChildren)->toHaveCount(2)
+        ->and($unsourcedChildren->every(fn (Order $child): bool => ! array_key_exists('traffic_source', $child->meta->getArrayCopy())))->toBeTrue();
+});
+
+it('gives the split carts no traffic source while the panel serves the request', function () {
+    $this->app->register(AnalyticsServiceProvider::class);
+
+    $filament = new FilamentManager;
+    $this->app->instance('filament', $filament);
+    Facade::clearResolvedInstance('filament');
+
+    $request = Request::create('https://shop.test/lunar/orders');
+    $request->setLaravelSession($this->app['session.store']);
+    $this->app->instance('request', $request);
+
+    session()->put(TrafficVisitRecorder::SESSION_KEY, [
+        'visit_id' => 7,
+        'source' => 'google',
+        'medium' => 'organic',
+        'campaign' => null,
+    ]);
+
+    expect(Cart::factory()->create()->meta['traffic_source']['source'])->toBe('google');
+
+    $filament->setServingStatus(true);
+
+    $variant = pricedSplitVariant(1000);
+    $other = pricedSplitVariant(1000);
+    $order = splittableOrder([
+        ['variant' => $variant, 'quantity' => 1, 'price' => 1000],
+        ['variant' => $other, 'quantity' => 1, 'price' => 1000],
+    ]);
+    $lines = $order->productLines()->orderBy('id')->get();
+
+    SplitOrder::run($order, splitRequest([
+        ['key' => '1', 'quantities' => [$lines[0]->id => 1]],
+        ['key' => '2', 'quantities' => [$lines[1]->id => 1]],
+    ]));
+
+    $splitCarts = Cart::query()
+        ->whereIn('id', Order::query()->where('meta->split_from_order_id', $order->id)->pluck('cart_id'))
+        ->get();
+
+    expect($splitCarts)->toHaveCount(2)
+        ->and($splitCarts->every(fn (Cart $cart): bool => ! array_key_exists('traffic_source', $cart->meta?->getArrayCopy() ?? [])))->toBeTrue();
 });

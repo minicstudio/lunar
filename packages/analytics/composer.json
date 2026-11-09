@@ -1,0 +1,41 @@
+{
+    "name": "lunarphp/analytics",
+    "description": "Analytics Addon",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "analytics"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lunar",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\Analytics\\": "src",
+            "Lunar\\Analytics\\Database\\Factories\\": "database/factories",
+            "Lunar\\Analytics\\Database\\State\\": "database/state"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Analytics"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\Analytics\\AnalyticsServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version"
+    }
+}

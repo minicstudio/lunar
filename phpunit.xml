@@ -41,6 +41,10 @@
         <testsuite name="loyalty">
             <directory suffix="Test.php">tests/loyalty/Unit</directory>
         </testsuite>
+        <testsuite name="analytics">
+            <directory suffix="Test.php">tests/analytics/Feature</directory>
+            <directory suffix="Test.php">tests/analytics/Unit</directory>
+        </testsuite>
         <testsuite name="shippingAddon">
             <directory suffix="Test.php">tests/shippingAddon/Unit</directory>
         </testsuite>
