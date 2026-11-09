@@ -43,6 +43,16 @@ class TrafficReportQuery
     public const UNKNOWN_KEY = 'unknown';
 
     /**
+     * Longest period, in days, whose visits over time are shown per day.
+     */
+    public const DAILY_MAX_DAYS = 31;
+
+    /**
+     * Longest period, in days, whose visits over time are shown per week.
+     */
+    public const WEEKLY_MAX_DAYS = 182;
+
+    /**
      * Status of an order that was split into new orders.
      */
     protected const SPLIT_STATUS = 'split';
@@ -132,6 +142,53 @@ class TrafficReportQuery
         }
 
         return $days;
+    }
+
+    /**
+     * Visits over time, grouped by period length: per day for periods of up
+     * to 31 days, per week (Monday to Sunday) up to 182 days, otherwise per
+     * calendar month. Each bucket is keyed by its first day inside the period
+     * (`Y-m-d`), so the first and last week or month can be partial; buckets
+     * without visits give 0. Sums `visitsPerDay()`, without another query.
+     *
+     * @return array{interval: 'day'|'week'|'month', visits: array<string, int>}
+     */
+    public function visitsOverTime(): array
+    {
+        $interval = $this->visitsOverTimeInterval();
+        $days = $this->visitsPerDay();
+
+        if ($interval === 'day') {
+            return ['interval' => $interval, 'visits' => $days];
+        }
+
+        $visits = [];
+
+        foreach ($days as $day => $count) {
+            $date = CarbonImmutable::parse($day);
+            $bucketStart = $interval === 'week' ? $date->startOfWeek(CarbonInterface::MONDAY) : $date->startOfMonth();
+            $key = ($bucketStart->lessThan($this->from) ? $this->from : $bucketStart)->format('Y-m-d');
+
+            $visits[$key] = ($visits[$key] ?? 0) + $count;
+        }
+
+        return ['interval' => $interval, 'visits' => $visits];
+    }
+
+    /**
+     * The interval `visitsOverTime()` groups by for this period's length.
+     *
+     * @return 'day'|'week'|'month'
+     */
+    public function visitsOverTimeInterval(): string
+    {
+        $days = (int) round($this->from->diffInDays($this->to->startOfDay())) + 1;
+
+        return match (true) {
+            $days <= self::DAILY_MAX_DAYS => 'day',
+            $days <= self::WEEKLY_MAX_DAYS => 'week',
+            default => 'month',
+        };
     }
 
     /**

@@ -344,13 +344,15 @@ Storefront payment finalization and extra drivers: `lunar-frontend` (`AuthorizeO
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Purpose**     | Measuring and reporting features, one folder per feature; first feature: traffic sources (`src/Traffic/`)                                                       |
 | **Provider**    | `AnalyticsServiceProvider` — config `lunar.analytics`, migrations, `lunarpanel.analytics` translations, classifier binding, cart observer, permission state       |
-| **Plugin**      | `AnalyticsPlugin` (`lunar-analytics`) — "Analytics" navigation group, feature pages and widgets; registered by the host                                          |
+| **Plugin**      | `AnalyticsPlugin` (`lunar-analytics`) — "Analytics" navigation group, feature pages, widgets and admin extensions; registered by the host                        |
 | **Models**      | `Traffic\Models\TrafficVisit` (`lunar_traffic_visits`: source, medium, campaign, referrer host, landing path, created_at; no personal data)                      |
-| **Classifier**  | `Traffic\Contracts\ClassifiesTrafficSource` → `Traffic\Support\TrafficSourceClassifier`; config `lunar.analytics.traffic` (referrer hosts, click ids, bot pattern, classifier, `ANALYTICS_TRAFFIC_ENABLED`) |
+| **Classifier**  | `Traffic\Contracts\ClassifiesTrafficSource` → `Traffic\Support\TrafficSourceClassifier`; config `lunar.analytics.traffic` (referrer hosts, click ids, bot pattern, classifier, `ANALYTICS_TRAFFIC_ENABLED`, off by default) |
 | **Recording**   | `Traffic\Services\TrafficVisitRecorder` (session key `analytics_traffic_visit`, `record()`, `current()`, `shouldTrack()`); `Traffic\Http\Middleware\RecordTrafficVisit` (host attaches it to storefront routes) |
 | **Attribution** | `Traffic\Observers\StampCartWithTrafficSource` (`Cart` `creating` → `meta.traffic_source`); `FillOrderFromCart` and `SplitOrder::COPIED_META_KEYS` carry it to orders |
-| **Report**      | `Traffic\Reports\TrafficReportQuery`; `Traffic\Filament\Pages\TrafficSourcesPage` (`analytics/traffic-sources`); widgets `TrafficStatsOverview`, `VisitsBySourceChart`, `VisitsPerDayChart`, `TrafficSourceFunnelTable`, `LandingPagesTable` |
-| **Permission**  | `analytics:traffic-sources` (`Database\State\EnsureAnalyticsPermissions`, created on migrate; no role)                                                         |
+| **Report**      | `Traffic\Reports\TrafficReportQuery`; `Traffic\Filament\Pages\TrafficSourcesPage` (`analytics/traffic-sources`); widgets `TrafficStatsOverview`, `VisitsBySourceChart`, `VisitsOverTimeChart`, `TrafficSourceFunnelTable`, `LandingPagesTable` |
+| **Names**       | `Traffic\Support\TrafficSourceLabel` — source and medium in words ("Google · Paid ad", "Direct", "Unknown"), badge color and campaign; used by the order badges and the report |
+| **Order pages** | `Traffic\Filament\Extensions\OrderResourceExtension` ("Traffic source" badge column after `new_customer`); `Traffic\Filament\Extensions\ManageOrderExtension` (summary badge and campaign; hides the raw `traffic_source` meta key). Badges only for `TrafficSourcesPage::canAccess()`; registered by `AnalyticsPlugin` |
+| **Permission**  | `analytics:traffic-sources` (`Database\State\EnsureAnalyticsPermissions`, created on migrate; no role): opens the report and shows the order badges              |
 
 
 ### Locations (`packages/locations`)

@@ -17,7 +17,7 @@ use Lunar\Analytics\Traffic\Filament\Widgets\LandingPagesTable;
 use Lunar\Analytics\Traffic\Filament\Widgets\TrafficSourceFunnelTable;
 use Lunar\Analytics\Traffic\Filament\Widgets\TrafficStatsOverview;
 use Lunar\Analytics\Traffic\Filament\Widgets\VisitsBySourceChart;
-use Lunar\Analytics\Traffic\Filament\Widgets\VisitsPerDayChart;
+use Lunar\Analytics\Traffic\Filament\Widgets\VisitsOverTimeChart;
 use Throwable;
 
 /**
@@ -118,7 +118,7 @@ class TrafficSourcesPage extends Dashboard
         return [
             TrafficStatsOverview::class,
             VisitsBySourceChart::class,
-            VisitsPerDayChart::class,
+            VisitsOverTimeChart::class,
             TrafficSourceFunnelTable::class,
             LandingPagesTable::class,
         ];

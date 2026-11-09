@@ -4,9 +4,11 @@ namespace Lunar\Analytics\Traffic\Filament\Widgets;
 
 use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Lunar\Analytics\Traffic\Filament\Widgets\Concerns\InteractsWithTrafficReport;
+use Lunar\Analytics\Traffic\Support\TrafficSourceLabel;
 
 /**
- * Donut of the period's visits: the top sources plus "other".
+ * Donut of the period's visits: the top sources plus "other", labeled as
+ * the order badge names them ("Google · Paid ad").
  */
 class VisitsBySourceChart extends ApexChartWidget
 {
@@ -37,7 +39,7 @@ class VisitsBySourceChart extends ApexChartWidget
         $top = $rows->take(self::TOP_SOURCES);
         $other = (int) $rows->slice(self::TOP_SOURCES)->sum('visits');
 
-        $labels = $top->map(fn (array $row): string => $this->sourceLabel($row['source'], $row['medium']))->values()->all();
+        $labels = $top->map(fn (array $row): string => TrafficSourceLabel::for($row)->label())->values()->all();
         $series = $top->pluck('visits')->map(fn ($visits): int => (int) $visits)->values()->all();
 
         if ($other > 0) {

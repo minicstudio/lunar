@@ -6,10 +6,12 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Lunar\Analytics\Traffic\Filament\Widgets\Concerns\InteractsWithTrafficReport;
+use Lunar\Analytics\Traffic\Support\TrafficSourceLabel;
 
 /**
  * Per source and medium: visits, carts, orders, order value and order rate.
- * Orders without a source are the unknown row, last.
+ * Sources and mediums are named as on the order badge. Orders without a
+ * source are the unknown row, last.
  */
 class TrafficSourceFunnelTable extends TableWidget
 {
@@ -27,10 +29,12 @@ class TrafficSourceFunnelTable extends TableWidget
             ->columns([
                 TextColumn::make('source')
                     ->label(__('lunarpanel.analytics::traffic.columns.source'))
+                    ->state(fn (array $record): ?string => $record['source'] === null ? null : TrafficSourceLabel::nameOfSource($record['source']))
                     ->placeholder(__('lunarpanel.analytics::traffic.unknown'))
                     ->weight('medium'),
                 TextColumn::make('medium')
                     ->label(__('lunarpanel.analytics::traffic.columns.medium'))
+                    ->state(fn (array $record): ?string => TrafficSourceLabel::nameOfMedium($record['medium']))
                     ->placeholder('—'),
                 TextColumn::make('visits')
                     ->label(__('lunarpanel.analytics::traffic.columns.visits'))

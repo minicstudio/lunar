@@ -25,7 +25,7 @@ return [
         | source. The report keeps showing the data already stored.
         |
         */
-        'enabled' => env('ANALYTICS_TRAFFIC_ENABLED', true),
+        'enabled' => env('ANALYTICS_TRAFFIC_ENABLED', false),
 
         /*
         |----------------------------------------------------------------------

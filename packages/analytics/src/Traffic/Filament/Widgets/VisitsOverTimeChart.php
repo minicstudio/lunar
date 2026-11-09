@@ -7,24 +7,29 @@ use Leandrocfe\FilamentApexCharts\Widgets\ApexChartWidget;
 use Lunar\Analytics\Traffic\Filament\Widgets\Concerns\InteractsWithTrafficReport;
 
 /**
- * Line of visits on each day of the period; days without visits show 0.
+ * Line of the period's visits per day, week or month, by period length;
+ * days, weeks and months without visits show 0.
  */
-class VisitsPerDayChart extends ApexChartWidget
+class VisitsOverTimeChart extends ApexChartWidget
 {
     use InteractsWithTrafficReport;
 
-    protected static ?string $chartId = 'trafficVisitsPerDayChart';
+    protected static ?string $chartId = 'trafficVisitsOverTimeChart';
 
     protected ?string $pollingInterval = null;
 
+    /**
+     * "Visits per day", "Visits per week" or "Visits per month".
+     */
     protected function getHeading(): ?string
     {
-        return __('lunarpanel.analytics::traffic.widgets.visits_per_day.heading');
+        return __('lunarpanel.analytics::traffic.widgets.visits_over_time.heading.'.$this->trafficReport()->visitsOverTimeInterval());
     }
 
     protected function getOptions(): array
     {
-        $days = $this->trafficReport()->visitsPerDay();
+        $visitsOverTime = $this->trafficReport()->visitsOverTime();
+        $labelFormat = $visitsOverTime['interval'] === 'month' ? 'MMM YYYY' : 'D MMM';
 
         return [
             'chart' => [
@@ -36,14 +41,14 @@ class VisitsPerDayChart extends ApexChartWidget
             ],
             'series' => [
                 [
-                    'name' => __('lunarpanel.analytics::traffic.widgets.visits_per_day.series'),
-                    'data' => array_values($days),
+                    'name' => __('lunarpanel.analytics::traffic.widgets.visits_over_time.series'),
+                    'data' => array_values($visitsOverTime['visits']),
                 ],
             ],
             'xaxis' => [
                 'categories' => array_map(
-                    fn (string $day): string => CarbonImmutable::parse($day)->locale(app()->getLocale())->isoFormat('D MMM'),
-                    array_keys($days),
+                    fn (string $day): string => CarbonImmutable::parse($day)->locale(app()->getLocale())->isoFormat($labelFormat),
+                    array_keys($visitsOverTime['visits']),
                 ),
             ],
             'yaxis' => [

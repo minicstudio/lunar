@@ -44,15 +44,26 @@ Every figure in the report SHALL cover one period, given by a start date and an 
 - **THEN** visits, carts and orders from before 1 October or after 7 October are not counted
 
 ### Requirement: Visits by source
-The report SHALL show the number of visits in the period, its split by source and medium, and the number of visits on each day of the period. Visits left out because of their orders, as "Carts and visits of orders that do not count are left out" defines, SHALL NOT be counted.
+The report SHALL show the number of visits in the period and its split by source and medium. Visits left out because of their orders, as "Carts and visits of orders that do not count are left out" defines, SHALL NOT be counted.
 
 #### Scenario: Split of visits
 - **WHEN** the period holds 60 `google` / `organic`, 30 `facebook` / `social` and 10 `direct` / `none` visits
 - **THEN** the report shows 100 visits with that split
 
+### Requirement: Visits over time
+The report SHALL show the period's visits over time: per day for periods of up to 31 days, per week for periods of up to 182 days, and per month for longer periods. A week SHALL run from Monday to Sunday. The first and last week or month SHALL count only their days inside the period. A day, week or month without visits SHALL show 0. Visits left out because of their orders SHALL NOT be counted.
+
 #### Scenario: Day without visits
-- **WHEN** a day in the period has no visits
-- **THEN** that day shows 0 visits
+- **WHEN** a day in the period 1 to 7 October has no visits
+- **THEN** visits are shown per day, and that day shows 0 visits
+
+#### Scenario: Three-month period
+- **WHEN** the staff member chooses 4 August to 8 November
+- **THEN** visits are shown for 14 weeks: 4 to 9 August, then each week from the one starting Monday 10 August to the one starting Monday 2 November
+
+#### Scenario: One-year period
+- **WHEN** the staff member chooses 1 January to 31 December
+- **THEN** visits are shown for 12 months
 
 ### Requirement: Carts and orders by source
 For each source and medium, the report SHALL show:
@@ -131,6 +142,13 @@ The report SHALL count orders without a traffic source under an unknown source, 
 #### Scenario: Orders and carts without a source
 - **WHEN** two orders placed in the period and three carts created in the period have no traffic source
 - **THEN** the unknown row shows 2 orders, no carts and no order rate, and the cart total does not include the three carts
+
+### Requirement: Sources and mediums are named in words
+The report SHALL name sources and mediums in visits by source and in the carts and orders by source table as the order badge names them ("The order badge names the source in words" in `analytics/traffic-attribution`). Orders without a source SHALL be named "Unknown".
+
+#### Scenario: Named sources
+- **WHEN** the period holds `google` / `cpc`, `facebook` / `social` and `direct` / `none` visits
+- **THEN** visits by source shows "Google · Paid ad", "Facebook · Social" and "Direct", and the table shows source "Google" with medium "Paid ad", source "Facebook" with medium "Social", and source "Direct" without a medium
 
 ### Requirement: Landing pages
 The report SHALL list the landing paths of the period's visits with their visit counts, most visited first. It SHALL NOT link landing pages to carts or orders.

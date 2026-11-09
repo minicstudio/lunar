@@ -31,11 +31,11 @@ class TrafficVisitRecorder
     public function __construct(protected ClassifiesTrafficSource $classifier) {}
 
     /**
-     * Whether traffic recording is switched on (`lunar.analytics.traffic.enabled`).
+     * Whether traffic recording is switched on (`lunar.analytics.traffic.enabled`, off by default).
      */
     public function enabled(): bool
     {
-        return (bool) config('lunar.analytics.traffic.enabled', true);
+        return (bool) config('lunar.analytics.traffic.enabled', false);
     }
 
     /**

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Records where storefront visitors come from (search engines, social networks, ad campaigns, other sites or direct) in the shop database. Defines which requests count as visits, how a visit's source is classified, what is stored, and how shops tune or switch off recording.
+Records where storefront visitors come from (search engines, social networks, ad campaigns, other sites or direct) in the shop database. Defines which requests count as visits, how a visit's source is classified, what is stored, and how shops tune recording and switch it on or off.
 
 ## ADDED Requirements
 
@@ -176,9 +176,17 @@ Visits SHALL be recorded whether or not the visitor accepted analytics or market
 - **WHEN** a new visitor whose consent cookie denies analytics opens the home page from Google
 - **THEN** a `google` / `organic` visit is recorded and the response sets no new cookie for tracking
 
-### Requirement: Shops can turn recording off
-Visit recording SHALL be on by default and SHALL be switchable off per shop. While off, no visits are recorded and new carts get no traffic source.
+### Requirement: Shops switch recording on
+Visit recording SHALL be off by default and SHALL be switchable on and off per shop. While off, no visits are recorded and new carts get no traffic source. The other requirements of this capability apply while recording is on.
 
-#### Scenario: Recording disabled
-- **WHEN** a shop sets `ANALYTICS_TRAFFIC_ENABLED=false` and a new visitor arrives from Google and adds a product to a new cart
+#### Scenario: Recording not switched on
+- **WHEN** a shop has not set `ANALYTICS_TRAFFIC_ENABLED` and a new visitor arrives from Google and adds a product to a new cart
 - **THEN** no visit is recorded and the cart has no traffic source
+
+#### Scenario: Recording switched on
+- **WHEN** a shop sets `ANALYTICS_TRAFFIC_ENABLED=true` and a new visitor arrives from Google
+- **THEN** a `google` / `organic` visit is recorded
+
+#### Scenario: Recording switched off again
+- **WHEN** a shop that recorded visits sets `ANALYTICS_TRAFFIC_ENABLED=false`
+- **THEN** no further visits are recorded, new carts get no traffic source, and the report keeps showing the stored data

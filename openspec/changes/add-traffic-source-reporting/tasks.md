@@ -15,7 +15,7 @@
     - in `composer.json`, add the `autoload`, `autoload-dev` (`Lunar\Tests\Analytics\` → `tests/analytics`), `extra.lunar.name`, `extra.laravel.providers` and `replace` (`lunarphp/analytics: self.version`) entries;
     - in `phpunit.xml`, add an `analytics` test suite;
     - add `tests/analytics/TestCase.php`, like `tests/feedback/TestCase.php`.
-  - **Test.** `tests/analytics/Feature/AnalyticsServiceProviderTest.php`: the config is merged, `lunar.analytics.traffic.enabled` is `true`, and the plugin id is `lunar-analytics`.
+  - **Test.** `tests/analytics/Feature/AnalyticsServiceProviderTest.php`: the config is merged, `lunar.analytics.traffic.enabled` is `false` (recording is off by default; the recording, stamping and split tests switch it on in their setup), and the plugin id is `lunar-analytics`.
   - **Docs:**
     - start `docs/changelog/<implementation date>.md` with an LFP-925 entry for the new Analytics package;
     - in `UPGRADE.md` `## ⬆️ Upcoming`, open `### Analytics Package` with the package, `config/lunar/analytics.php` and `ANALYTICS_TRAFFIC_ENABLED`;
@@ -213,6 +213,77 @@
 ## 8. Integration check
 
 - [x] 8.1 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
+
+## 9. Visits over time
+
+- [x] 9.1 Group the visits chart by period length:
+  - In `TrafficReportQuery`, add `visitsOverTime()` as in design.md ("Visits over time are grouped by period length"). It is built from `visitsPerDay()` without another query and has array-shape PHPDoc.
+  - Rename `VisitsPerDayChart` to `VisitsOverTimeChart` (chart id `trafficVisitsOverTimeChart`). It plots `visitsOverTime()` with the labels and heading from design.md. Update `TrafficSourcesPage::trafficWidgets()`.
+  - In `resources/lang/{en,hu,ro}/traffic.php`, replace `widgets.visits_per_day` with `widgets.visits_over_time`: `heading.day`, `heading.week`, `heading.month` and `series` ("Visits per day / week / month", "Napi / Heti / Havi látogatások", "Vizite pe zi / săptămână / lună").
+  - Extend `tests/analytics/Feature/Traffic/TrafficReportQueryTest.php` for the scenarios of "Visits over time" in `specs/analytics/traffic-report/spec.md`:
+    - 1–7 October gives 7 days, with 0 for a day without visits;
+    - 4 August – 8 November gives 14 weeks. The first is keyed `2026-08-04` and holds the visits of 4–9 August, and the second is keyed `2026-08-10`;
+    - 1 January – 31 December gives 12 months;
+    - 31 days give days and 32 days give weeks. 182 days give weeks and 183 days give months;
+    - a visit left out because of its `test-order` order is not counted.
+  - In `tests/analytics/Feature/Traffic/TrafficSourcesPageTest.php`, render `VisitsOverTimeChart` for 1–7 October and for 4 August – 8 November, and check the heading.
+  - Docs:
+    - in `docs/system/CODE_MAP.md`, rename the widget;
+    - replace "visits per day" with "visits over time (per day, week or month)" in `UPGRADE.md`, `docs/changelog/2026-11-05.md` and `docs/system/PROJECT_SPECIFICATION.md`.
+
+  Verify with `vendor/bin/pest tests/analytics/Feature/Traffic/TrafficReportQueryTest.php tests/analytics/Feature/Traffic/TrafficSourcesPageTest.php`.
+
+## 10. Source names and order badges
+
+- [x] 10.1 Add `src/Traffic/Support/TrafficSourceLabel.php` as in design.md ("Order list and order page show the source as a badge"). It gives the source name, medium name, label, color and campaign for a `traffic_source` array, and the names for a source and medium. Add the names to `resources/lang/{en,hu,ro}/traffic.php`:
+  - `direct`: "Direct" / "Közvetlen" / "Direct";
+  - `organic`: "Organic search" / "Organikus keresés" / "Căutare organică";
+  - `cpc`: "Paid ad" / "Fizetett hirdetés" / "Reclamă plătită";
+  - `social`: "Social" / "Közösségi média" / "Rețele sociale";
+  - `referral`: "Referral" / "Hivatkozó oldal" / "Recomandare";
+  - `email`: "Email" / "E-mail" / "Email".
+
+  Add `tests/analytics/Unit/Traffic/TrafficSourceLabelTest.php`, covering "The order badge names the source in words" in `specs/analytics/traffic-attribution/spec.md`, with a dataset:
+  - `google` / `organic` → "Google · Organic search", success;
+  - `google` / `cpc` → "Google · Paid ad", warning;
+  - `facebook` / `social` → "Facebook · Social", info, and `tiktok` / `social` → "TikTok · Social";
+  - `mailchimp` / `email` with campaign `Black-Friday` → "Mailchimp · Email", primary, campaign `Black-Friday`;
+  - `arukereso.hu` / `referral` → "arukereso.hu · Referral", gray;
+  - `direct` / `none` → "Direct", gray;
+  - `fb_ads` / `paid_social` → "Fb Ads · Paid Social", gray;
+  - `null`, and an array without a source → "Unknown", gray;
+  - the hu and ro names.
+
+  Verify with `vendor/bin/pest tests/analytics/Unit/Traffic/TrafficSourceLabelTest.php`.
+
+- [x] 10.2 Add the order extensions:
+  - Add `src/Traffic/Filament/Extensions/OrderResourceExtension.php` and `ManageOrderExtension.php` as in design.md. The column and the entries are visible only when `TrafficSourcesPage::canAccess()` is true, and the raw key is hidden for everyone. Register both in `AnalyticsPlugin::register()` with `LunarPanel::extensions()`.
+  - Add `order.traffic_source` ("Traffic source" / "Forgalmi forrás" / "Sursă de trafic") and `order.campaign` ("Campaign" / "Kampány" / "Campanie") to `resources/lang/{en,hu,ro}/traffic.php`.
+  - In `resources/lang/vendor/lunarpanel/{en,hu,ro}/auth.php`, extend the permission description to cover the traffic source on orders.
+  - Add `tests/analytics/Feature/Traffic/OrderTrafficSourceTest.php` for the scenarios of "Authorized staff see an order's traffic source" and "The order badge names the source in words" in `specs/analytics/traffic-attribution/spec.md`. Use the plugin on the `lunar` panel and the staff setup of `TrafficSourcesPageTest`:
+    - for an admin, and for a staff member with `sales:manage-orders` and `analytics:traffic-sources`, `ListOrders` shows the toggleable column with "Google · Paid ad" and "Unknown";
+    - `ManageOrder` shows "Mailchimp · Email" and `Black-Friday` in the summary, and "Additional info" does not list `traffic_source`;
+    - a staff member with only `sales:manage-orders` sees neither the column, nor the entries, nor the raw key;
+    - without the plugin, the `OrderResource` table has no `traffic_source` column.
+  - Docs:
+    - in `UPGRADE.md` `### Analytics Package`, add an "Order pages" bullet to the new main features, and in host responsibilities, note that the permission also shows the order badges;
+    - add the badges to the report entry in `docs/changelog/2026-11-05.md`;
+    - in `docs/system/CODE_MAP.md`, add `TrafficSourceLabel` and the two extensions to the Analytics section;
+    - in `docs/system/PROJECT_SPECIFICATION.md`, mention the badges in the package entry.
+
+  Verify with `vendor/bin/pest tests/analytics/Feature/Traffic/OrderTrafficSourceTest.php`.
+
+- [x] 10.3 Name sources and mediums in the report with `TrafficSourceLabel`:
+  - `VisitsBySourceChart` labels its slices with the badge label, in place of `InteractsWithTrafficReport::sourceLabel()`;
+  - `TrafficSourceFunnelTable` formats the source and medium columns with their names. The unknown row stays "Unknown".
+
+  Extend `tests/analytics/Feature/Traffic/TrafficSourcesPageTest.php` for the scenario of "Sources and mediums are named in words" in `specs/analytics/traffic-report/spec.md`: "Google · Paid ad", "Facebook · Social" and "Direct" in the donut, and source "Google" with medium "Paid ad" in the table.
+
+  Verify with `vendor/bin/pest tests/analytics/Feature/Traffic/TrafficSourcesPageTest.php`.
+
+## 11. Integration check
+
+- [x] 11.1 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
 
 ## Workflow follow-up
 

@@ -26,8 +26,12 @@ return [
         'visits_by_source' => [
             'heading' => 'Vizite pe surse',
         ],
-        'visits_per_day' => [
-            'heading' => 'Vizite pe zi',
+        'visits_over_time' => [
+            'heading' => [
+                'day' => 'Vizite pe zi',
+                'week' => 'Vizite pe săptămână',
+                'month' => 'Vizite pe lună',
+            ],
             'series' => 'Vizite',
         ],
         'funnel' => [
@@ -47,6 +51,23 @@ return [
         'order_value' => 'Valoare comenzi',
         'order_rate' => 'Rată de comandă',
         'landing_path' => 'Pagină de destinație',
+    ],
+
+    'order' => [
+        'traffic_source' => 'Sursă de trafic',
+        'campaign' => 'Campanie',
+    ],
+
+    'sources' => [
+        'direct' => 'Direct',
+    ],
+
+    'mediums' => [
+        'organic' => 'Căutare organică',
+        'cpc' => 'Reclamă plătită',
+        'social' => 'Rețele sociale',
+        'referral' => 'Recomandare',
+        'email' => 'Email',
     ],
 
     'unknown' => 'Necunoscut',

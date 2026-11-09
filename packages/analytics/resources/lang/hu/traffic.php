@@ -26,8 +26,12 @@ return [
         'visits_by_source' => [
             'heading' => 'Látogatások forrás szerint',
         ],
-        'visits_per_day' => [
-            'heading' => 'Napi látogatások',
+        'visits_over_time' => [
+            'heading' => [
+                'day' => 'Napi látogatások',
+                'week' => 'Heti látogatások',
+                'month' => 'Havi látogatások',
+            ],
             'series' => 'Látogatások',
         ],
         'funnel' => [
@@ -47,6 +51,23 @@ return [
         'order_value' => 'Rendelési érték',
         'order_rate' => 'Rendelési arány',
         'landing_path' => 'Érkezési oldal',
+    ],
+
+    'order' => [
+        'traffic_source' => 'Forgalmi forrás',
+        'campaign' => 'Kampány',
+    ],
+
+    'sources' => [
+        'direct' => 'Közvetlen',
+    ],
+
+    'mediums' => [
+        'organic' => 'Organikus keresés',
+        'cpc' => 'Fizetett hirdetés',
+        'social' => 'Közösségi média',
+        'referral' => 'Hivatkozó oldal',
+        'email' => 'E-mail',
     ],
 
     'unknown' => 'Ismeretlen',

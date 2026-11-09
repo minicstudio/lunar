@@ -26,8 +26,12 @@ return [
         'visits_by_source' => [
             'heading' => 'Visits by source',
         ],
-        'visits_per_day' => [
-            'heading' => 'Visits per day',
+        'visits_over_time' => [
+            'heading' => [
+                'day' => 'Visits per day',
+                'week' => 'Visits per week',
+                'month' => 'Visits per month',
+            ],
             'series' => 'Visits',
         ],
         'funnel' => [
@@ -47,6 +51,23 @@ return [
         'order_value' => 'Order value',
         'order_rate' => 'Order rate',
         'landing_path' => 'Landing page',
+    ],
+
+    'order' => [
+        'traffic_source' => 'Traffic source',
+        'campaign' => 'Campaign',
+    ],
+
+    'sources' => [
+        'direct' => 'Direct',
+    ],
+
+    'mediums' => [
+        'organic' => 'Organic search',
+        'cpc' => 'Paid ad',
+        'social' => 'Social',
+        'referral' => 'Referral',
+        'email' => 'Email',
     ],
 
     'unknown' => 'Unknown',

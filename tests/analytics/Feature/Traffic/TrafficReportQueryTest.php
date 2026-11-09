@@ -175,6 +175,83 @@ test('every day of the period is listed and a day without visits gives 0', funct
     ]);
 });
 
+test('visits over time are shown per day for 1 to 7 October, with 0 for a day without visits', function () {
+    reportVisits(2, 'google', 'organic', '2026-10-01 08:00');
+    reportVisits(3, 'google', 'organic', '2026-10-03 23:30');
+
+    expect(octoberReport()->visitsOverTime())->toBe([
+        'interval' => 'day',
+        'visits' => [
+            '2026-10-01' => 2,
+            '2026-10-02' => 0,
+            '2026-10-03' => 3,
+            '2026-10-04' => 0,
+            '2026-10-05' => 0,
+            '2026-10-06' => 0,
+            '2026-10-07' => 0,
+        ],
+    ]);
+});
+
+test('visits over time are shown for 14 weeks from 4 August to 8 November', function () {
+    reportVisits(1, 'google', 'organic', '2026-08-03 23:59');
+    reportVisits(2, 'google', 'organic', '2026-08-04 00:00');
+    reportVisits(1, 'google', 'organic', '2026-08-09 23:59');
+    reportVisits(4, 'google', 'organic', '2026-08-10 00:00');
+    reportVisits(5, 'google', 'organic', '2026-11-08 12:00');
+    reportVisits(1, 'google', 'organic', '2026-11-09 00:00');
+
+    $overTime = (new TrafficReportQuery(CarbonImmutable::parse('2026-08-04'), CarbonImmutable::parse('2026-11-08')))->visitsOverTime();
+
+    expect($overTime['interval'])->toBe('week')
+        ->and($overTime['visits'])->toHaveCount(14)
+        ->and(array_key_first($overTime['visits']))->toBe('2026-08-04')
+        ->and(array_keys($overTime['visits'])[1])->toBe('2026-08-10')
+        ->and(array_key_last($overTime['visits']))->toBe('2026-11-02')
+        ->and($overTime['visits']['2026-08-04'])->toBe(3)
+        ->and($overTime['visits']['2026-08-10'])->toBe(4)
+        ->and($overTime['visits']['2026-08-17'])->toBe(0)
+        ->and($overTime['visits']['2026-11-02'])->toBe(5);
+});
+
+test('visits over time are shown for 12 months from 1 January to 31 December', function () {
+    reportVisits(1, 'google', 'organic', '2026-02-01 00:00');
+    reportVisits(2, 'google', 'organic', '2026-02-28 23:59');
+
+    $overTime = (new TrafficReportQuery(CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-12-31')))->visitsOverTime();
+
+    expect($overTime['interval'])->toBe('month')
+        ->and(array_keys($overTime['visits']))->toBe([
+            '2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01', '2026-06-01',
+            '2026-07-01', '2026-08-01', '2026-09-01', '2026-10-01', '2026-11-01', '2026-12-01',
+        ])
+        ->and($overTime['visits']['2026-01-01'])->toBe(0)
+        ->and($overTime['visits']['2026-02-01'])->toBe(3);
+});
+
+test('the visits over time interval follows the period length', function (int $days, string $interval) {
+    $from = CarbonImmutable::parse('2026-01-01');
+    $report = new TrafficReportQuery($from, $from->addDays($days - 1));
+
+    expect($report->visitsOverTimeInterval())->toBe($interval)
+        ->and($report->visitsOverTime()['interval'])->toBe($interval);
+})->with([
+    '31 days' => [31, 'day'],
+    '32 days' => [32, 'week'],
+    '182 days' => [182, 'week'],
+    '183 days' => [183, 'month'],
+]);
+
+test('visits over time leave out a visit whose order was moved to test-order', function () {
+    reportOrderOf(reportCartOf(reportVisit(googleOrganic(), '2026-10-02 10:00')), '2026-10-02 11:00', ['status' => 'test-order']);
+    reportVisits(2, 'google', 'organic', '2026-10-02 12:00');
+
+    $overTime = (new TrafficReportQuery(CarbonImmutable::parse('2026-08-04'), CarbonImmutable::parse('2026-11-08')))->visitsOverTime();
+
+    expect($overTime['visits']['2026-09-28'])->toBe(2)
+        ->and(array_sum($overTime['visits']))->toBe(2);
+});
+
 test('visits, carts and orders outside the period are not counted', function () {
     foreach (['2026-09-30 23:59:59', '2026-10-08 00:00:00'] as $outside) {
         reportVisits(1, 'facebook', 'social', $outside);

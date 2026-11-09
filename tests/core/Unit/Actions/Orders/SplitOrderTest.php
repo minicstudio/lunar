@@ -1106,6 +1106,7 @@ it('copies the original traffic source to every new order, and none when the ori
 
 it('gives the split carts no traffic source while the panel serves the request', function () {
     $this->app->register(AnalyticsServiceProvider::class);
+    config(['lunar.analytics.traffic.enabled' => true]);
 
     $filament = new FilamentManager;
     $this->app->instance('filament', $filament);

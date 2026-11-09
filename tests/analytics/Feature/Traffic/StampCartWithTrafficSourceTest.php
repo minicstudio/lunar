@@ -13,6 +13,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->createLanguageAndCurrency();
+    config(['lunar.analytics.traffic.enabled' => true]);
 
     $request = Request::create('https://shop.test/');
     $request->setLaravelSession(app('session.store'));

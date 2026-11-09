@@ -5,6 +5,11 @@ namespace Lunar\Analytics;
 use Filament\Contracts\Plugin;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
+use Lunar\Admin\Filament\Resources\OrderResource;
+use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
+use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Analytics\Traffic\Filament\Extensions\ManageOrderExtension;
+use Lunar\Analytics\Traffic\Filament\Extensions\OrderResourceExtension;
 use Lunar\Analytics\Traffic\Filament\Pages\TrafficSourcesPage;
 
 class AnalyticsPlugin implements Plugin
@@ -26,7 +31,8 @@ class AnalyticsPlugin implements Plugin
     }
 
     /**
-     * Register the "Analytics" navigation group and each feature's pages and widgets.
+     * Register the "Analytics" navigation group and each feature's pages,
+     * widgets and admin extensions.
      */
     public function register(Panel $panel): void
     {
@@ -36,6 +42,11 @@ class AnalyticsPlugin implements Plugin
         ])->pages([
             TrafficSourcesPage::class,
         ])->widgets(TrafficSourcesPage::trafficWidgets());
+
+        LunarPanel::extensions([
+            OrderResource::class => OrderResourceExtension::class,
+            ManageOrder::class => ManageOrderExtension::class,
+        ]);
     }
 
     /**

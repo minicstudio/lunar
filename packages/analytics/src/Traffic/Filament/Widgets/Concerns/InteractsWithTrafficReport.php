@@ -67,16 +67,4 @@ trait InteractsWithTrafficReport
     {
         return $rate === null ? null : number_format($rate * 100, 1).'%';
     }
-
-    /**
-     * Display label for a source and medium.
-     */
-    protected function sourceLabel(?string $source, ?string $medium): string
-    {
-        if ($source === null) {
-            return __('lunarpanel.analytics::traffic.unknown');
-        }
-
-        return $medium === null ? $source : $source.' / '.$medium;
-    }
 }

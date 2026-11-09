@@ -15,6 +15,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->createLanguageAndCurrency();
+    config(['lunar.analytics.traffic.enabled' => true]);
 });
 
 /**

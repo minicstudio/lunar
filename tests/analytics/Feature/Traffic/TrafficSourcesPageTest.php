@@ -13,8 +13,9 @@ use Lunar\Analytics\Traffic\Filament\Widgets\LandingPagesTable;
 use Lunar\Analytics\Traffic\Filament\Widgets\TrafficSourceFunnelTable;
 use Lunar\Analytics\Traffic\Filament\Widgets\TrafficStatsOverview;
 use Lunar\Analytics\Traffic\Filament\Widgets\VisitsBySourceChart;
-use Lunar\Analytics\Traffic\Filament\Widgets\VisitsPerDayChart;
+use Lunar\Analytics\Traffic\Filament\Widgets\VisitsOverTimeChart;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
+use Lunar\Analytics\Traffic\Reports\TrafficReportQuery;
 use Lunar\DataTypes\Price;
 use Lunar\Models\Cart;
 use Lunar\Models\Currency;
@@ -136,7 +137,29 @@ test('the visits by source chart shows the split', function () {
 
     Livewire::test(VisitsBySourceChart::class, octoberFilters())
         ->assertSet('options.series', [60, 30, 10])
-        ->assertSet('options.labels', ['google / organic', 'facebook / social', 'direct / none']);
+        ->assertSet('options.labels', ['Google · Organic search', 'Facebook · Social', 'Direct']);
+});
+
+test('the report names sources and mediums in words', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    TrafficVisit::factory()->count(3)->create(['source' => 'google', 'medium' => 'cpc', 'created_at' => '2026-10-02 10:00:00']);
+    TrafficVisit::factory()->count(2)->create(['source' => 'facebook', 'medium' => 'social', 'created_at' => '2026-10-02 10:00:00']);
+    TrafficVisit::factory()->create(['source' => 'direct', 'medium' => 'none', 'created_at' => '2026-10-02 10:00:00']);
+    Order::factory()->create(['meta' => ['payment_option' => 'cash-on-delivery'], 'status' => 'payment-received', 'placed_at' => '2026-10-05 11:00:00']);
+
+    Livewire::test(VisitsBySourceChart::class, octoberFilters())
+        ->assertSet('options.labels', ['Google · Paid ad', 'Facebook · Social', 'Direct']);
+
+    Livewire::test(TrafficSourceFunnelTable::class, octoberFilters())
+        ->assertTableColumnStateSet('source', 'Google', "google\0cpc")
+        ->assertTableColumnStateSet('medium', 'Paid ad', "google\0cpc")
+        ->assertTableColumnStateSet('source', 'Facebook', "facebook\0social")
+        ->assertTableColumnStateSet('medium', 'Social', "facebook\0social")
+        ->assertTableColumnStateSet('source', 'Direct', "direct\0none")
+        ->assertTableColumnStateSet('medium', null, "direct\0none")
+        ->assertTableColumnStateSet('source', null, TrafficReportQuery::UNKNOWN_KEY)
+        ->assertSeeInOrder(['Google', 'Paid ad', 'Facebook', 'Social', 'Direct', 'Unknown']);
 });
 
 test('the visits by source chart groups sources beyond the top eight as other', function () {
@@ -153,12 +176,38 @@ test('the visits by source chart groups sources beyond the top eight as other', 
         ->and(end($data['series']))->toBe(2 + 1);
 });
 
-test('the visits per day chart shows every day of the period', function () {
+test('the visits over time chart shows every day of a week-long period', function () {
     $this->actingAs($this->makeStaff(admin: true), 'staff');
     seedTrafficReport();
 
-    Livewire::test(VisitsPerDayChart::class, octoberFilters())
-        ->assertSet('options.series.0.data', [0, 60, 40, 0, 0, 0, 0]);
+    Livewire::test(VisitsOverTimeChart::class, octoberFilters())
+        ->assertSee('Visits per day')
+        ->assertSet('options.series.0.data', [0, 60, 40, 0, 0, 0, 0])
+        ->assertSet('options.xaxis.categories.0', '1 Oct')
+        ->assertSet('options.xaxis.categories.6', '7 Oct');
+});
+
+test('the visits over time chart shows weeks for 4 August to 8 November', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+    seedTrafficReport();
+
+    $chart = Livewire::test(VisitsOverTimeChart::class, ['pageFilters' => ['from' => '2026-08-04', 'to' => '2026-11-08']])
+        ->assertSee('Visits per week')
+        ->assertDontSee('Visits per day')
+        ->assertSet('options.xaxis.categories.0', '4 Aug')
+        ->assertSet('options.xaxis.categories.1', '10 Aug');
+
+    expect($chart->get('options.series.0.data'))->toHaveCount(14)
+        ->and(array_sum($chart->get('options.series.0.data')))->toBe(100);
+});
+
+test('the visits over time chart shows months for a year', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    Livewire::test(VisitsOverTimeChart::class, ['pageFilters' => ['from' => '2026-01-01', 'to' => '2026-12-31']])
+        ->assertSee('Visits per month')
+        ->assertSet('options.xaxis.categories.0', 'Jan 2026')
+        ->assertCount('options.xaxis.categories', 12);
 });
 
 test('the funnel table shows each source with its order rate and the unknown row', function () {
@@ -171,7 +220,7 @@ test('the funnel table shows each source with its order rate and the unknown row
     ]);
 
     Livewire::test(TrafficSourceFunnelTable::class, octoberFilters())
-        ->assertSeeInOrder(['google', 'organic', 'facebook', 'social', '30', '6', '3', '10.0%', 'direct', 'Unknown']);
+        ->assertSeeInOrder(['Google', 'Organic search', 'Facebook', 'Social', '30', '6', '3', '10.0%', 'Direct', 'Unknown']);
 });
 
 test('the landing pages table lists the most visited first', function () {

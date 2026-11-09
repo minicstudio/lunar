@@ -6,10 +6,10 @@ use Lunar\Tests\Analytics\TestCase;
 
 uses(TestCase::class);
 
-test('the analytics config is merged with traffic recording enabled by default', function () {
+test('the analytics config is merged with traffic recording off by default', function () {
     expect(config('lunar.analytics'))->toBeArray()
         ->toHaveKey('traffic')
-        ->and(config('lunar.analytics.traffic.enabled'))->toBeTrue()
+        ->and(config('lunar.analytics.traffic.enabled'))->toBeFalse()
         ->and(config('lunar.analytics.traffic.referrer_hosts'))->toHaveKey('google.*')
         ->and(config('lunar.analytics.traffic.click_ids'))->toHaveKeys(['gclid', 'gbraid', 'wbraid', 'fbclid']);
 });

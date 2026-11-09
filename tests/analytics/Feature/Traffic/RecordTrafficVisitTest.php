@@ -13,6 +13,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->createLanguageAndCurrency();
+    config(['lunar.analytics.traffic.enabled' => true]);
 
     Route::middleware(['web', RecordTrafficVisit::class])->group(function () {
         Route::get('/storefront', fn () => response('<html><body>Shop</body></html>'));

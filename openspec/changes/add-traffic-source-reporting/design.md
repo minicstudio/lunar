@@ -34,7 +34,10 @@ See proposal.md (Why). Facts from this repository and lunar-frontend that shape 
 - **Filament v4.**
   - A page with a `filters` property passes them to its widgets as `pageFilters`.
   - A table can take array records through `records()`.
-  - The dashboard charts are `ApexChartWidget`s.
+  - The dashboard charts are `ApexChartWidget`s. A line chart with `xaxis.categories` draws every category label, so the labels of a 97-day period overlap.
+- **Admin order pages.**
+  - `OrderResource`'s table and `ManageOrder`'s order summary take Lunar extensions: `ResourceExtension::extendTable()`, and `ViewPageExtension::extendOrderSummarySchema()` and `extendHiddenOrderMetaKeys()`. They are registered with `LunarPanel::extensions()` and read when the page renders. The feedback package adds its order column and summary entries this way.
+  - `ManageOrder` lists every order meta key that is not hidden under "Additional info", so `traffic_source` shows there raw.
 - **Indexes.** `lunar_carts` has no `created_at` index. `lunar_orders.placed_at` is indexed.
 
 ## Goals / Non-Goals
@@ -74,12 +77,15 @@ packages/analytics/
     DataTransferObjects/TrafficSource.php
     Models/TrafficVisit.php
     Support/TrafficSourceClassifier.php
+    Support/TrafficSourceLabel.php
     Services/TrafficVisitRecorder.php
     Http/Middleware/RecordTrafficVisit.php
     Observers/StampCartWithTrafficSource.php
     Reports/TrafficReportQuery.php
     Filament/Pages/TrafficSourcesPage.php
     Filament/Widgets/…
+    Filament/Extensions/OrderResourceExtension.php
+    Filament/Extensions/ManageOrderExtension.php
 ```
 
 - **Provider.** `AnalyticsServiceProvider`:
@@ -89,7 +95,7 @@ packages/analytics/
   - binds `ClassifiesTrafficSource` to `config('lunar.analytics.traffic.classifier')`;
   - registers the cart observer with `Cart::observe()`;
   - registers the permission state on `MigrationsEnded` and `NoPendingMigrations`, as `LoyaltyServiceProvider` does.
-- **Plugin.** `AnalyticsPlugin` registers each feature's pages and widgets and the "Analytics" navigation group.
+- **Plugin.** `AnalyticsPlugin` registers each feature's pages, widgets and admin extensions, and the "Analytics" navigation group.
 - **Permission state.** `EnsureAnalyticsPermissions` holds the list of `analytics:<feature>` permissions.
 
 *Alternative:* `marketing` as the name. Rejected (user decision): it overlaps core's `Lunar\Marketing` namespace and the mailchimp and klaviyo packages.
@@ -178,7 +184,7 @@ The response checks drop redirects, 404s, images, XML and text without a route l
 
 ```php
 'traffic' => [
-    'enabled' => env('ANALYTICS_TRAFFIC_ENABLED', true),
+    'enabled' => env('ANALYTICS_TRAFFIC_ENABLED', false),
     'classifier' => TrafficSourceClassifier::class,
     'referrer_hosts' => [
         'google.*' => ['source' => 'google', 'medium' => 'organic'],
@@ -195,6 +201,7 @@ The response checks drop redirects, 404s, images, XML and text without a route l
 ],
 ```
 
+- **Off by default.** `enabled` defaults to `false` (user decision). A shop switches recording on with `ANALYTICS_TRAFFIC_ENABLED=true`. While off, `TrafficVisitRecorder::current()` is `null`, so the middleware records nothing and the cart observer stamps nothing.
 - **Precedence.** `utm_source`, then click ids with `before_referrer`, then `referrer_hosts`, then the other click ids, then another external host (host / referral), then direct / none. `utm_source` and every configured click id count as campaign parameters for the new-visit rule.
 - **Host matching.** A host entry matches that host and its subdomains. A trailing `.*` matches any one- or two-label suffix (`google.com`, `google.co.uk`). The first matching entry wins.
 - **Same-host referrer.** It gives `null` (no visit) unless a campaign parameter is present, ignoring `www.`.
@@ -270,10 +277,12 @@ There is also a composite index on `source` and `medium`. The table has no forei
 The widgets live in `Traffic/Filament/Widgets/`. Each uses `InteractsWithPageFilters` and sets no polling interval:
 
 - `TrafficStatsOverview`: visits, carts with a source, orders, order value and order rate;
-- `VisitsBySourceChart` (`ApexChartWidget`, donut): the top 8 sources plus "other";
-- `VisitsPerDayChart` (`ApexChartWidget`, line): 0 for days without visits;
+- `VisitsBySourceChart` (`ApexChartWidget`, donut): the top 8 sources and mediums plus "other";
+- `VisitsOverTimeChart` (`ApexChartWidget`, line): visits per day, week or month, with 0 where there are none (section "Visits over time are grouped by period length");
 - `TrafficSourceFunnelTable` (`TableWidget` with `records()`): source, medium, visits, carts, orders, order value and rate, with the unknown row last;
 - `LandingPagesTable` (`TableWidget` with `records()`): most visited first, paginated.
+
+The donut and the funnel table name sources and mediums with `TrafficSourceLabel` (section "Order list and order page show the source as a badge").
 
 *Alternatives rejected:*
 - a Filament resource: the report shows aggregates, with no records to edit;
@@ -285,6 +294,7 @@ The widgets live in `Traffic/Filament/Widgets/`. Each uses `InteractsWithPageFil
 `Traffic/Reports/TrafficReportQuery` takes `CarbonInterface $from, $to` and widens them to whole days. It computes:
 
 - `visitsBySource()`, `visitsPerDay()` and `landingPages()`: `TrafficVisit` by `created_at`, without the visits left out because of their orders (next section);
+- `visitsOverTime()`: `visitsPerDay()` grouped by period length (section "Visits over time are grouped by period length");
 - `cartsBySource()`: carts by `created_at` whose `meta->traffic_source->source` is not null, grouped by source and medium. Carts without a source are left out, because they include admin-created carts, for example from splits. So are the carts left out because of their orders (next section);
 - `ordersBySource()`: placed orders by `placed_at`, grouped the same way, with count and `sum(total - shipping_total)`. It takes the `Order::reportable()` orders without `meta.split_from_order_id`, plus the split originals that count (next section), so a split is one order with the original's date and value;
 - `funnel()`: merges these by source and medium. Orders without a source form the unknown row, with no visits, carts or rate.
@@ -324,9 +334,62 @@ The current status decides, so marking an order as a test later also changes pas
 
 *Alternative:* one order per split, valued at the sum of the new orders that count. Rejected: it groups new orders by their original, and the value differs from the original's only when a new order is edited or marked as a test later.
 
+### Visits over time are grouped by period length
+
+`TrafficReportQuery::visitsOverTime()` returns `{interval, visits}`. `interval` is `day`, `week` or `month`, and `visits` maps each bucket's first day inside the period (`Y-m-d`) to its count:
+
+- periods of up to 31 days: days, as `visitsPerDay()` gives them;
+- up to 182 days: weeks from Monday to Sunday;
+- longer: calendar months.
+
+It sums `visitsPerDay()` in PHP, so it adds no query. The first and last week or month can be partial. `VisitsOverTimeChart`, renamed from `VisitsPerDayChart`, plots it:
+
+- days and weeks are labeled `D MMM`, months `MMM YYYY`, in the app locale;
+- the heading names the interval: "Visits per day", "Visits per week" or "Visits per month".
+
+A period of up to about two and a half years then has at most 31 points.
+
+*Alternative:* fewer labels (`tickAmount`) or a datetime axis. Rejected (user decision: group the visits): hundreds of daily points stay noisy, and a datetime axis needs ApexCharts locales for Hungarian and Romanian month names.
+
+*Alternative:* group in SQL. Rejected: week functions differ between MySQL and SQLite, and a year has only 365 daily rows.
+
+### Order list and order page show the source as a badge
+
+`Traffic/Support/TrafficSourceLabel` names an order's `meta.traffic_source`, or a source and medium of the report, in words:
+
+- **Source.** `direct` is "Direct". The default sources keep their brand spelling: Google, Bing, Yahoo, DuckDuckGo, Facebook, Instagram, TikTok, YouTube. A host is shown as stored (`arukereso.hu`). Any other source goes through `Str::headline()`.
+- **Medium.** `organic` is "Organic search", `cpc` "Paid ad", `social` "Social", `referral` "Referral" and `email` "Email". `none` and an empty medium are left out. Any other medium goes through `Str::headline()`.
+- **Label.** The source and the medium, joined with " · ".
+- **Color**, by medium: `organic` success, `cpc` warning, `social` info, `email` primary, any other gray.
+- **Unknown.** Without `traffic_source` or without a source, the label is "Unknown" and the color gray.
+
+"Direct", "Unknown" and the medium names are translated in `resources/lang/{en,hu,ro}/traffic.php`. Brand names and hosts are not.
+
+The plugin adds two extensions:
+
+- `Traffic/Filament/Extensions/OrderResourceExtension::extendTable()` inserts a "Traffic source" badge column after the customer type column (`new_customer`). It is toggleable and shown by default, with the campaign as tooltip. It reads `meta`, so it adds no query. It is not sortable or searchable.
+- `Traffic/Filament/Extensions/ManageOrderExtension`:
+  - `extendOrderSummarySchema()` appends the badge entry, and a "Campaign" entry when there is one;
+  - `extendHiddenOrderMetaKeys()` adds `traffic_source` for every staff member.
+
+The column and the entries are visible only when `TrafficSourcesPage::canAccess()` is true, that is, to admins and to staff with `analytics:traffic-sources` (user decision). Because the raw key is hidden for everyone, other staff cannot see the source under "Additional info" either. `AnalyticsPlugin::register()` registers both extensions with `LunarPanel::extensions()`.
+
+The report uses the same names:
+
+- `VisitsBySourceChart` labels its slices with the badge label, in place of `InteractsWithTrafficReport::sourceLabel()`;
+- `TrafficSourceFunnelTable` shows the source name and the medium name in their own columns. The unknown row stays "Unknown".
+
+*Alternative:* show the badge to every staff member who can see orders. Rejected (user decision).
+
+*Alternative:* register the extensions in the provider, as feedback does. Rejected: every host of this release would get the column, with only "Unknown" in it, even without recording.
+
+*Alternative:* show the visit's referrer host and landing page on the order. Rejected: it costs one query per order, and the order holds only the cart's snapshot.
+
+*Alternative:* sort and filter orders by source. Rejected for now: not requested, and the JSON path on `lunar_orders` has no index.
+
 ### Permission `analytics:traffic-sources`
 
-`EnsureAnalyticsPermissions::run()` creates the permission for the panel guard when the permissions table exists, as `EnsureLoyaltyPermissions` does. The label and description go in `resources/lang/vendor/lunarpanel/{en,hu,ro}/auth.php`, as in the review package. Without them, Lunar shows the handle. No role is created. Admins grant the permission to the development and marketing staff.
+`EnsureAnalyticsPermissions::run()` creates the permission for the panel guard when the permissions table exists, as `EnsureLoyaltyPermissions` does. The permission opens the report and shows the traffic source on orders (previous section). The label and the description, which names both, go in `resources/lang/vendor/lunarpanel/{en,hu,ro}/auth.php`, as in the review package. Without them, Lunar shows the handle. No role is created. Admins grant the permission to the development and marketing staff.
 
 *Alternative:* reuse `sales:manage-orders`. Rejected: marketing staff would need order management rights.
 
@@ -348,11 +411,15 @@ The current status decides, so marking an order as a test later also changes pas
 - [Campaign visits are fewer than ad clicks] → Clicks from visitors who already hold a sourced cart are not visits. This is intended: the report counts arrivals that can start a cart.
 - [Referrer stripped by in-app browsers] → Such visits count as direct unless tagged. Click ids recover the common ad cases.
 - [Hosts with `lunar.database.disable_migrations`] → They copy the migration, as for other packages.
+- [The first and last week or month of a period are partial and look lower] → They are keyed by their first day inside the period, and the heading names the interval.
+- [Panels without the analytics plugin] → They still list `traffic_source` raw under "Additional info", as before this change. lunar-frontend registers the plugin.
+- [Recording is off by default] → A host that registers the plugin and attaches the middleware but does not set `ANALYTICS_TRAFFIC_ENABLED=true` records nothing: the report stays empty and the order badges show "Unknown". `UPGRADE.md` lists the variable among the host responsibilities.
 
 ## Migration Plan
 
 1. Release lunar-minic with the new package, the `SplitOrder` key and the tests.
 2. Hosts run `php artisan migrate`, which creates `lunar_traffic_visits` and `analytics:traffic-sources`. An admin grants the permission to the development and marketing staff.
-3. Release the lunar-frontend change. It requires this version, registers `AnalyticsPlugin` and attaches the middleware, and recording starts.
+3. Release the lunar-frontend change. It requires this version, registers `AnalyticsPlugin` and attaches the middleware.
+4. Set `ANALYTICS_TRAFFIC_ENABLED=true` in the shop's environment. Recording starts.
 
-Rollback: set `ANALYTICS_TRAFFIC_ENABLED=false` to stop recording and stamping at once. Reverting the release leaves the table, the permission and the meta keys, which nothing else reads. The migration's `down()` drops the table.
+Rollback: set `ANALYTICS_TRAFFIC_ENABLED=false` (or remove it) to stop recording and stamping at once. Reverting the release leaves the table, the permission and the meta keys, which nothing else reads. The migration's `down()` drops the table.

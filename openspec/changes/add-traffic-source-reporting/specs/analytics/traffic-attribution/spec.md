@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines how a cart carries the traffic source of the visit that created it, and how orders, including split orders, keep that source, so carts and orders can be reported per source.
+Defines how a cart carries the traffic source of the visit that created it, how orders, including split orders, keep that source, and how authorized staff see it on orders, so carts and orders can be reported per source.
 
 ## ADDED Requirements
 
@@ -53,3 +53,33 @@ When an order is split, each new order SHALL get the original order's traffic so
 #### Scenario: Splitting an order without a source
 - **WHEN** an order without a traffic source is split
 - **THEN** none of the new orders has a traffic source
+
+### Requirement: Authorized staff see an order's traffic source
+When the shop's admin panel uses the analytics plugin, admins and staff holding the traffic report permission SHALL see each order's traffic source as a badge in the order list, and in the order summary of the order page with its campaign, when there is one. Other staff SHALL NOT see it. The order page SHALL NOT list the raw traffic source under additional information for any staff member.
+
+#### Scenario: Newsletter order
+- **WHEN** a staff member holding the traffic report permission opens an order whose traffic source is `mailchimp` / `email` with campaign `Black-Friday`
+- **THEN** the order summary shows the badge "Mailchimp · Email" and the campaign `Black-Friday`, and additional information does not list the traffic source
+
+#### Scenario: Staff member without the permission
+- **WHEN** a staff member who manages orders, is not an admin and lacks the traffic report permission opens the order list and an order with a traffic source
+- **THEN** neither page shows the traffic source, as a badge or under additional information
+
+#### Scenario: Panel without the analytics plugin
+- **WHEN** the shop's admin panel does not use the analytics plugin
+- **THEN** the order list and the order page are unchanged
+
+### Requirement: The order badge names the source in words
+The order badge SHALL name the source and the medium in words, such as "Google · Organic search", "Google · Paid ad", "Facebook · Social", "arukereso.hu · Referral" or "Direct". An order without a traffic source SHALL show "Unknown".
+
+#### Scenario: Order from a Google ad
+- **WHEN** an order's traffic source is `google` / `cpc`
+- **THEN** its badge in the order list and on the order page reads "Google · Paid ad"
+
+#### Scenario: Direct visit
+- **WHEN** an order's traffic source is `direct` / `none`
+- **THEN** its badge reads "Direct"
+
+#### Scenario: Order without a source
+- **WHEN** an order was placed before the release, or from a cart without a traffic source
+- **THEN** its badge reads "Unknown"
