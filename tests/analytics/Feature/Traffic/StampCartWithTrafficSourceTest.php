@@ -78,6 +78,28 @@ test('a later visit does not change the cart source', function () {
     expect($cart->fresh()->meta['traffic_source'])->toBe($facebook);
 });
 
+test('a cart created on a prefetched landing page records the pending visit and carries it', function () {
+    session()->put(TrafficVisitRecorder::PENDING_SESSION_KEY, [
+        'source' => 'google',
+        'medium' => 'organic',
+        'campaign' => null,
+        'referrer_host' => 'google.com',
+        'landing_path' => '/products/phone',
+    ]);
+
+    $cart = Cart::factory()->create();
+    $visit = TrafficVisit::sole();
+
+    expect([$visit->source, $visit->medium, $visit->referrer_host, $visit->landing_path])
+        ->toBe(['google', 'organic', 'google.com', '/products/phone'])
+        ->and($cart->fresh()->meta['traffic_source'])->toBe([
+            'visit_id' => $visit->id,
+            'source' => 'google',
+            'medium' => 'organic',
+            'campaign' => null,
+        ]);
+});
+
 test('a cart gets no traffic source without a trackable visit', function (Closure $setUp) {
     putCurrentVisit('facebook', 'social');
     $setUp->call($this);

@@ -36,7 +36,7 @@ A page view with an external referrer and no campaign parameters SHALL NOT recor
 - **THEN** no visit is recorded and the current visit is unchanged
 
 ### Requirement: Navigation from the shop itself is not a visit
-A page view whose referrer host is the shop's own host, ignoring a leading `www.`, and that has no campaign parameters SHALL NOT record a visit, even when the session has no visit yet.
+A page view whose referrer host is the shop's own host, ignoring a leading `www.`, and that has no campaign parameters SHALL NOT record a visit, even when the session has no visit yet, unless the session holds a pending visit, as "A prefetched landing page starts its visit when it is opened" defines.
 
 #### Scenario: New session after logout
 - **WHEN** a visitor logs out and the next page view in the new session has the shop's own URL as referrer
@@ -62,7 +62,7 @@ A page view that would record a visit SHALL NOT record one when the visitor's cu
 - **THEN** a `google` / `organic` visit is recorded
 
 ### Requirement: Only real page views are recorded
-A visit SHALL be recorded only for GET requests to storefront page routes that get a 200 HTML response. Requests from user agents that are empty or match the bot pattern SHALL NOT be recorded, and neither SHALL browser prefetch requests.
+A visit SHALL be recorded only for GET requests to storefront page routes that get a 200 HTML response. Requests from user agents that are empty or match the bot pattern SHALL NOT be recorded. A browser prefetch request SHALL NOT record a visit; a visit it would start SHALL stay pending, as "A prefetched landing page starts its visit when it is opened" defines.
 
 #### Scenario: Search engine crawler
 - **WHEN** a request with user agent `Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)` opens the home page
@@ -83,6 +83,28 @@ A visit SHALL be recorded only for GET requests to storefront page routes that g
 #### Scenario: Prefetch and HEAD requests
 - **WHEN** a browser sends a page request with `Sec-Purpose: prefetch`, or a client sends a HEAD request
 - **THEN** no visit is recorded
+
+### Requirement: A prefetched landing page starts its visit when it is opened
+A prefetch that would start a visit in a session without one SHALL keep that visit pending in the session, with the prefetched page as landing path. While the session has no visit, its next request that is not a prefetch SHALL record the pending visit when it is a page view without a source of its own (the shop's own referrer and no campaign parameters), or when it creates a cart. A prefetch that is never opened SHALL NOT record a visit.
+
+#### Scenario: Google result opened from a prefetch
+- **WHEN** Chrome prefetches a product page from `https://www.google.com/` for a new visitor, the visitor opens it from the prefetch and then opens a category page from it
+- **THEN** one visit is recorded with source `google`, medium `organic` and the product page path as landing path
+
+#### Scenario: Prefetch never opened
+- **WHEN** Chrome prefetches a page from Google search and the visitor never opens it
+- **THEN** no visit is recorded
+
+### Requirement: A pending visit yields to the visitor's own arrival and cart
+A page view with a source of its own SHALL record that source and drop the session's pending visit. "Visitors who already have a cart with a source do not start a visit" SHALL also apply to a pending visit.
+
+#### Scenario: Prerendered page for a customer with a sourced cart
+- **WHEN** a logged-in customer whose active cart came from a Facebook visit opens a page that the address bar prerendered in a new session, and then opens another page
+- **THEN** no visit is recorded and the Facebook visit becomes the session's current visit
+
+#### Scenario: Prerendered page not opened, later arrival from Facebook
+- **WHEN** a page prerendered from the address bar is not opened, and the visitor then arrives from `https://l.facebook.com/` in the same session
+- **THEN** one visit is recorded with source `facebook` and medium `social`, and the pending visit is dropped
 
 ### Requirement: The admin panel and staff sessions are not recorded
 Requests served by the admin panel SHALL NOT record visits. While a staff member is logged in to the admin panel in the session, storefront page views SHALL NOT record visits either.

@@ -17,6 +17,12 @@ class TrafficSourceFunnelTable extends TableWidget
 {
     use InteractsWithTrafficReport;
 
+    /**
+     * Style of the source and medium cells: free-text names (`utm_source`, up to
+     * 255 characters) wrap inside this width, breaking a word longer than a line.
+     */
+    protected const WRAPPED_NAME_STYLE = 'max-width: 20rem; overflow-wrap: break-word;';
+
     protected int|string|array $columnSpan = 'full';
 
     public function table(Table $table): Table
@@ -31,11 +37,15 @@ class TrafficSourceFunnelTable extends TableWidget
                     ->label(__('lunarpanel.analytics::traffic.columns.source'))
                     ->state(fn (array $record): ?string => $record['source'] === null ? null : TrafficSourceLabel::nameOfSource($record['source']))
                     ->placeholder(__('lunarpanel.analytics::traffic.unknown'))
-                    ->weight('medium'),
+                    ->weight('medium')
+                    ->wrap()
+                    ->extraAttributes(['style' => self::WRAPPED_NAME_STYLE]),
                 TextColumn::make('medium')
                     ->label(__('lunarpanel.analytics::traffic.columns.medium'))
                     ->state(fn (array $record): ?string => TrafficSourceLabel::nameOfMedium($record['medium']))
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->wrap()
+                    ->extraAttributes(['style' => self::WRAPPED_NAME_STYLE]),
                 TextColumn::make('visits')
                     ->label(__('lunarpanel.analytics::traffic.columns.visits'))
                     ->numeric()

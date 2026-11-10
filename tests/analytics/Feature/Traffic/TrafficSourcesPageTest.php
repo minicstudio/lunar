@@ -137,7 +137,31 @@ test('the visits by source chart shows the split', function () {
 
     Livewire::test(VisitsBySourceChart::class, octoberFilters())
         ->assertSet('options.series', [60, 30, 10])
-        ->assertSet('options.labels', ['Google · Organic search', 'Facebook · Social', 'Direct']);
+        ->assertSet('options.labels', ['Google · Organic search', 'Facebook · Social', 'Direct'])
+        ->assertSet('options.colors', array_slice(VisitsBySourceChart::COLORS, 0, 3));
+});
+
+test('the report cuts a long source in the chart and wraps it in the table', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    $source = str_repeat('a', 120);
+    TrafficVisit::factory()->create(['source' => $source, 'medium' => 'referral', 'created_at' => '2026-10-02 10:00:00']);
+
+    Livewire::test(VisitsBySourceChart::class, octoberFilters())
+        ->assertSet('options.labels', ['A'.str_repeat('a', VisitsBySourceChart::LABEL_LENGTH - 1).'…']);
+
+    Livewire::test(TrafficSourceFunnelTable::class, octoberFilters())
+        ->assertTableColumnStateSet('source', 'A'.str_repeat('a', 119), "{$source}\0referral")
+        ->assertSeeHtml('style="max-width: 20rem; overflow-wrap: break-word;"');
+});
+
+test('the visits by source chart escapes source names, which the chart renders as HTML', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    TrafficVisit::factory()->create(['source' => '<img src=x.png onerror=alert(1)>', 'medium' => 'none', 'created_at' => '2026-10-02 10:00:00']);
+
+    Livewire::test(VisitsBySourceChart::class, octoberFilters())
+        ->assertSet('options.labels', ['&lt;img src=x.png onerror=alert(1)&gt;']);
 });
 
 test('the report names sources and mediums in words', function () {
@@ -173,7 +197,8 @@ test('the visits by source chart groups sources beyond the top eight as other', 
 
     expect($data['labels'])->toHaveCount(9)
         ->and(end($data['labels']))->toBe('Other')
-        ->and(end($data['series']))->toBe(2 + 1);
+        ->and(end($data['series']))->toBe(2 + 1)
+        ->and($data['colors'])->toBe([...VisitsBySourceChart::COLORS, VisitsBySourceChart::OTHER_COLOR]);
 });
 
 test('the visits over time chart shows every day of a week-long period', function () {

@@ -55,7 +55,11 @@ return [
 
     'order' => [
         'traffic_source' => 'Traffic source',
+        'source' => 'Source',
         'campaign' => 'Campaign',
+        'referrer' => 'Referrer',
+        'landing_page' => 'Landing page',
+        'visited_at' => 'Visit started',
     ],
 
     'sources' => [

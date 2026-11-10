@@ -4,6 +4,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Lunar\Analytics\Traffic\Http\Middleware\RecordTrafficVisit;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
+use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
 use Lunar\Models\Cart;
 use Lunar\Tests\Analytics\TestCase;
 use Lunar\Tests\Core\Stubs\User;
@@ -17,6 +18,7 @@ beforeEach(function () {
 
     Route::middleware(['web', RecordTrafficVisit::class])->group(function () {
         Route::get('/storefront', fn () => response('<html><body>Shop</body></html>'));
+        Route::get('/storefront/products/{slug}', fn () => response('<html><body>Product</body></html>'));
         Route::post('/storefront', fn () => response('<html><body>Posted</body></html>'));
         Route::get('/storefront/missing', fn () => response('<html><body>Not found</body></html>', 404));
         Route::get('/storefront/redirect', fn () => redirect('/storefront'));
@@ -73,9 +75,54 @@ test('responses other than a 200 html page record nothing', function (string $pa
     'image' => ['/storefront/image', 200],
 ]);
 
-test('prefetch and head requests record nothing', function () {
-    $this->get('/storefront', ['Referer' => 'https://www.google.com/', 'Sec-Purpose' => 'prefetch'])->assertOk();
-    $this->get('/storefront', ['Referer' => 'https://www.google.com/', 'Purpose' => 'prefetch'])->assertOk();
+test('a prefetched page from google starts its visit at the next same-host request', function (array $prefetchHeaders) {
+    $this->get('/storefront/products/phone', ['Referer' => 'https://www.google.com/', ...$prefetchHeaders])->assertOk();
+
+    expect(TrafficVisit::count())->toBe(0);
+
+    $this->get('/storefront', ['Referer' => 'http://localhost/storefront/products/phone'])->assertOk();
+
+    $visit = TrafficVisit::sole();
+
+    expect([$visit->source, $visit->medium, $visit->landing_path, $visit->referrer_host])
+        ->toBe(['google', 'organic', '/storefront/products/phone', 'google.com']);
+})->with([
+    'sec-purpose prefetch' => [['Sec-Purpose' => 'prefetch']],
+    'purpose prefetch' => [['Purpose' => 'prefetch']],
+    'sec-purpose prerender' => [['Sec-Purpose' => 'prefetch;prerender']],
+]);
+
+test('a prefetch with no later request records nothing', function () {
+    $this->get('/storefront/products/phone', ['Referer' => 'https://www.google.com/', 'Sec-Purpose' => 'prefetch'])
+        ->assertOk()
+        ->assertSessionHas(TrafficVisitRecorder::PENDING_SESSION_KEY);
+
+    expect(TrafficVisit::count())->toBe(0);
+});
+
+test('an arrival from facebook after a prefetch records only facebook', function () {
+    $this->get('/storefront/products/phone', ['Referer' => 'https://www.google.com/', 'Sec-Purpose' => 'prefetch;prerender'])->assertOk();
+    $this->get('/storefront', ['Referer' => 'https://l.facebook.com/'])->assertOk();
+    $this->get('/storefront/products/phone', ['Referer' => 'http://localhost/storefront'])->assertOk();
+
+    $visit = TrafficVisit::sole();
+
+    expect([$visit->source, $visit->medium, $visit->landing_path])->toBe(['facebook', 'social', '/storefront']);
+});
+
+test('a prefetch with a bot user agent stores no pending visit', function () {
+    $this->get('/storefront/products/phone', [
+        'Referer' => 'https://www.google.com/',
+        'Sec-Purpose' => 'prefetch',
+        'User-Agent' => 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    ])->assertOk()->assertSessionMissing(TrafficVisitRecorder::PENDING_SESSION_KEY);
+
+    $this->get('/storefront', ['Referer' => 'http://localhost/storefront/products/phone'])->assertOk();
+
+    expect(TrafficVisit::count())->toBe(0);
+});
+
+test('head requests record nothing', function () {
     $this->call('HEAD', '/storefront', server: [
         'HTTP_REFERER' => 'https://www.google.com/',
         'HTTP_USER_AGENT' => $this->browserUserAgent,

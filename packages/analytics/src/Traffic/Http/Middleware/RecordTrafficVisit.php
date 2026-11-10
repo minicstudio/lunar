@@ -12,7 +12,9 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Attach it to storefront page routes inside `StartSession`, so the session
  * is read and written before it is saved. Only GET requests answered with a
- * 200 HTML response count; bots, empty user agents and prefetches do not.
+ * 200 HTML response count; bots and empty user agents do not. Prefetches
+ * pass on to `TrafficVisitRecorder::record()`, which keeps the visit they
+ * would start pending until the page is opened.
  */
 class RecordTrafficVisit
 {
@@ -43,7 +45,6 @@ class RecordTrafficVisit
             && $response->getStatusCode() === Response::HTTP_OK
             && $this->isHtml($response)
             && ! $this->isBot($request)
-            && ! $this->isPrefetch($request)
             && $this->recorder->enabled()
             && $this->recorder->shouldTrack();
     }
@@ -70,15 +71,5 @@ class RecordTrafficVisit
         $pattern = config('lunar.analytics.traffic.bot_user_agent_pattern');
 
         return is_string($pattern) && $pattern !== '' && preg_match($pattern, $userAgent) === 1;
-    }
-
-    /**
-     * Whether the browser sent the request as a prefetch (`Sec-Purpose` or `Purpose`).
-     */
-    protected function isPrefetch(Request $request): bool
-    {
-        $purpose = $request->headers->get('Sec-Purpose', '').' '.$request->headers->get('Purpose', '');
-
-        return str_contains(strtolower($purpose), 'prefetch');
     }
 }

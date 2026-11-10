@@ -1,8 +1,13 @@
 <?php
 
 use Filament\Facades\Filament;
+use Filament\Infolists\Components\Entry;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Component;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\OrderResource;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ListOrders;
@@ -11,6 +16,7 @@ use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Analytics\Database\State\EnsureAnalyticsPermissions;
 use Lunar\Analytics\Traffic\Filament\Extensions\ManageOrderExtension;
 use Lunar\Analytics\Traffic\Filament\Extensions\OrderResourceExtension;
+use Lunar\Analytics\Traffic\Models\TrafficVisit;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
@@ -30,8 +36,9 @@ beforeEach(function () {
 
 /**
  * A placed order with the given `meta.traffic_source`, and addresses so the order page renders.
+ * The visit id defaults to 7, which no test creates.
  *
- * @param  ?array{source: string, medium: ?string, campaign?: ?string}  $source
+ * @param  ?array{visit_id?: int, source: string, medium: ?string, campaign?: ?string}  $source
  */
 function trafficSourceOrder(?array $source): Order
 {
@@ -90,30 +97,110 @@ test('the order list shows the traffic source badge after the customer type', fu
     expect(array_search('traffic_source', $columnNames, true))->toBe(array_search('new_customer', $columnNames, true) + 1);
 })->with('staff who see the traffic source');
 
-test('the order page shows the traffic source badge and campaign in the summary', function (bool $admin, array $permissions) {
+test('the order page shows the traffic source and its visit in their own section', function (bool $admin, array $permissions) {
     $this->actingAs($this->makeStaff(admin: $admin, permissions: $permissions), 'staff');
 
-    $order = trafficSourceOrder(['source' => 'mailchimp', 'medium' => 'email', 'campaign' => 'Black-Friday']);
+    $visit = TrafficVisit::factory()->create([
+        'source' => 'mailchimp',
+        'medium' => 'email',
+        'campaign' => 'Black-Friday',
+        'landing_path' => '/sale',
+        'created_at' => Carbon::parse('2026-11-02 08:15:00'),
+    ]);
+    $order = trafficSourceOrder(['visit_id' => $visit->id, 'source' => 'mailchimp', 'medium' => 'email', 'campaign' => 'Black-Friday']);
+    $visitStarted = $visit->created_at->timezone(config('lunar.panel.timezone'))->format('Y-m-d h:i a');
+
+    DB::enableQueryLog();
 
     Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
         ->assertSuccessful()
-        ->assertSchemaComponentStateSet('traffic_source', 'Mailchimp · Email')
-        ->assertSchemaComponentStateSet('traffic_source_campaign', 'Black-Friday')
-        ->assertSee('Traffic source')
+        ->assertSchemaComponentVisible('traffic_source')
+        ->assertSchemaComponentExists('traffic_source.traffic_source_badge', checkComponentUsing: fn (TextEntry $entry): bool => $entry->getColor('Mailchimp · Email') === 'primary')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_badge', 'Mailchimp · Email')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_campaign', 'Black-Friday')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_landing_page', '/sale')
+        ->assertSchemaComponentExists('traffic_source.traffic_source_landing_page', checkComponentUsing: fn (TextEntry $entry): bool => $entry->getUrl() === url('/sale')
+            && $entry->shouldOpenUrlInNewTab())
+        ->assertSchemaComponentHidden('traffic_source.traffic_source_referrer')
         ->assertSee('Mailchimp · Email')
         ->assertSee('Black-Friday')
+        ->assertSee(url('/sale'))
+        ->assertSee($visitStarted)
         ->assertSchemaComponentDoesNotExist('meta.meta_traffic_source');
+
+    $visitQueries = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], 'traffic_visits'));
+
+    expect($visitQueries)->toHaveCount(1)
+        ->and(collect(ManageOrder::getOrderSummarySchema())
+            ->filter(fn (Component $component): bool => $component instanceof Entry)
+            ->map(fn (Entry $entry): string => $entry->getName())
+            ->filter(fn (string $name): bool => str_starts_with($name, 'traffic_source')))
+        ->toBeEmpty();
 })->with('staff who see the traffic source');
 
-test('the order page shows no campaign entry without a campaign', function () {
+test('the order page shows the referrer and no campaign entry without a campaign', function () {
     $this->actingAs($this->makeStaff(admin: true), 'staff');
 
-    $order = trafficSourceOrder(['source' => 'direct', 'medium' => 'none']);
+    $visit = TrafficVisit::factory()->create([
+        'source' => 'arukereso.hu',
+        'medium' => 'referral',
+        'referrer_host' => 'arukereso.hu',
+        'landing_path' => '/telefonok',
+    ]);
+    $order = trafficSourceOrder(['visit_id' => $visit->id, 'source' => 'arukereso.hu', 'medium' => 'referral']);
 
     Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
         ->assertSuccessful()
-        ->assertSee('Direct')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_badge', 'arukereso.hu · Referral')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_referrer', 'arukereso.hu')
+        ->assertSchemaComponentHidden('traffic_source.traffic_source_campaign')
+        ->assertSee('arukereso.hu · Referral')
         ->assertDontSee('Campaign');
+});
+
+test('the order page shows only the unknown badge for an order without a traffic source', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    $order = trafficSourceOrder(null);
+
+    $page = Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
+        ->assertSuccessful()
+        ->assertSchemaComponentVisible('traffic_source')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_badge', 'Unknown')
+        ->assertSee('Unknown');
+
+    foreach (['traffic_source.traffic_source_campaign', 'traffic_source.traffic_source_referrer', 'traffic_source.traffic_source_landing_page', 'traffic_source.traffic_source_visited_at'] as $entry) {
+        $page->assertSchemaComponentHidden($entry);
+    }
+});
+
+test('the order page shows the badge and campaign without visit entries when the visit row is missing', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    $order = trafficSourceOrder(['visit_id' => 404, 'source' => 'mailchimp', 'medium' => 'email', 'campaign' => 'Black-Friday']);
+
+    $page = Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
+        ->assertSuccessful()
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_badge', 'Mailchimp · Email')
+        ->assertSchemaComponentStateSet('traffic_source.traffic_source_campaign', 'Black-Friday');
+
+    foreach (['traffic_source.traffic_source_referrer', 'traffic_source.traffic_source_landing_page', 'traffic_source.traffic_source_visited_at'] as $entry) {
+        $page->assertSchemaComponentHidden($entry);
+    }
+});
+
+test('the traffic source section sits between tags and additional info', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+
+    $order = trafficSourceOrder(['source' => 'google', 'medium' => 'organic']);
+
+    Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
+        ->assertSuccessful()
+        ->assertSeeInOrder([
+            __('lunarpanel::order.infolist.tags.label'),
+            'Traffic source',
+            __('lunarpanel::order.infolist.additional_info.label'),
+        ]);
 });
 
 test('staff who only manage orders see no traffic source on the order list or page', function () {
@@ -128,6 +215,7 @@ test('staff who only manage orders see no traffic source on the order list or pa
 
     Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
         ->assertSuccessful()
+        ->assertSchemaComponentHidden('traffic_source')
         ->assertDontSee('Traffic source')
         ->assertDontSee('Mailchimp · Email')
         ->assertDontSee('Black-Friday')

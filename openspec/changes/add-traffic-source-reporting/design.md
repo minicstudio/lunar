@@ -38,6 +38,8 @@ See proposal.md (Why). Facts from this repository and lunar-frontend that shape 
 - **Admin order pages.**
   - `OrderResource`'s table and `ManageOrder`'s order summary take Lunar extensions: `ResourceExtension::extendTable()`, and `ViewPageExtension::extendOrderSummarySchema()` and `extendHiddenOrderMetaKeys()`. They are registered with `LunarPanel::extensions()` and read when the page renders. The feedback package adds its order column and summary entries this way.
   - `ManageOrder` lists every order meta key that is not hidden under "Additional info", so `traffic_source` shows there raw.
+  - `ManageOrder`'s sidebar lists, in order: the customer, the order summary, the shipping address and details, the billing address and details, Tags, Personalization (only when the order has some) and "Additional info". Each section has its own hook, such as `extendTagsSection()` and `extendAdditionalInfoSection()`, and the whole list has `extendInfolistAsideSchema()`. The sections have no keys, so an extension of the list cannot find one by name.
+  - Admin and storefront run in the same Laravel app in lunar-frontend, so `url()` in an admin request gives a storefront URL.
 - **Indexes.** `lunar_carts` has no `created_at` index. `lunar_orders.placed_at` is indexed.
 
 ## Goals / Non-Goals
@@ -155,13 +157,37 @@ A cart without `traffic_source` (created before the release or with recording of
 - the status is 200;
 - `Content-Type` starts with `text/html`;
 - the user agent is non-empty and does not match `lunar.analytics.traffic.bot_user_agent_pattern`;
-- neither `Sec-Purpose` nor `Purpose` contains `prefetch`;
 - recording is enabled;
 - `TrafficVisitRecorder::shouldTrack()` is true.
 
-The response checks drop redirects, 404s, images, XML and text without a route list. `wire:navigate` fetches are 200 HTML GETs with a same-host referrer, so they never start a visit without campaign parameters.
+The response checks drop redirects, 404s, images, XML and text without a route list. `wire:navigate` fetches are 200 HTML GETs with a same-host referrer, so they never start a visit without campaign parameters. Prefetches pass these checks and reach `record()`, which keeps their visit pending (next section).
 
 *Alternative:* a JS beacon. Rejected: it adds a public POST endpoint, and ad blockers drop it.
+
+### A prefetch keeps its visit pending until it is opened
+
+When a browser serves a page from a prefetch, opening it sends no request:
+- Google Search prefetches its first two results in Chrome on Android and desktop, and on desktop the other results on hover. It does so only for visitors without cookies for the site, so it hits new visitors.
+- Chrome's address bar prerenders typed URLs (`Sec-Purpose: prefetch;prerender`).
+
+The next pages have the shop's own referrer and no campaign parameters, so the classifier gives `null`. If the prefetch were simply skipped, the session would never get a visit, and its cart and order would be unknown. Instead (user decision):
+
+- `TrafficVisitRecorder::isPrefetch(Request)` holds the `Sec-Purpose` / `Purpose` check that was in the middleware.
+- On a prefetch, `record()` applies the same rules. Where it would insert a visit into a session without one, it writes `{source, medium, campaign, referrer_host, landing_path}` under `analytics_traffic_pending_visit` instead. The cart-rule branch still writes the cart's source as the session payload, which inserts nothing.
+- Chrome saves a cross-site prefetch's cookies only when the visitor opens the page. An unopened prefetch leaves no session cookie, so its pending visit is never read. A prerender sets cookies at once. An unopened one leaves a pending visit, which the visitor's real arrival replaces with its own source.
+- On a request that is not a prefetch, while the session has no visit:
+  - `record()` uses the pending visit when the request has no source of its own (`classify()` returns `null`). A request with its own source records that source, as before.
+  - `current()` records the pending visit before returning it. A visitor who adds to cart on the landing page creates the cart in a Livewire request, which does not pass the middleware, so the observer's `current()` call is the first request that shows the page was opened.
+  - Both apply the cart rule first, then insert the visit with the pending landing path and referrer host, and write the session payload.
+- Writing a session payload, whether a new visit or a cart's source, removes the pending key.
+
+*Alternative:* starting the pending visit only at the next page view. Rejected: the add-to-cart cart above would be created before it, so the cart and order would still be unknown.
+
+*Alternative:* recording prefetches as visits. Rejected: Google prefetches results that are never opened, which would add visits without carts to `google` / `organic`.
+
+*Alternative:* answering prefetches with 503, so that opening the page reaches the server. Rejected: Google visitors would lose the faster load.
+
+*Alternative:* a JS beacon on `prerenderingchange` or the navigation `deliveryType`. Rejected for the reasons in the previous section.
 
 ### The admin panel and staff sessions are excluded in one place
 
@@ -215,11 +241,12 @@ The response checks drop redirects, 404s, images, XML and text without a route l
 
 - `record(Request)`:
   - returns when `shouldTrack()` is false;
-  - classifies the request and returns on `null`;
+  - classifies the request. On `null`, it uses the session's pending visit when the request is not a prefetch and the session has no visit, and otherwise returns;
   - returns when the session has a visit and either the request has no campaign parameter, or its source/medium/campaign equal the current visit's;
-  - when the visitor's cart has a `traffic_source` (previous section), writes it as the session payload if the session has no visit, and returns;
-  - otherwise creates a `TrafficVisit` with `landing_path` from `'/'.ltrim($request->path(), '/')` and writes the session payload.
-- `current(): ?array` returns the payload, or `null` when recording is disabled, `shouldTrack()` is false or no session is available.
+  - when the visitor's cart has a `traffic_source` (see "A visitor with a sourced cart starts no visit"), writes it as the session payload if the session has no visit, and returns;
+  - on a prefetch, writes the pending visit when the session has no visit, and returns;
+  - otherwise creates a `TrafficVisit` with `landing_path` from `'/'.ltrim($request->path(), '/')` (or the pending visit's landing path and referrer host) and writes the session payload.
+- `current(): ?array` returns the payload, or `null` when recording is disabled, `shouldTrack()` is false or no session is available. On a request that is not a prefetch, it first records the session's pending visit when the session has no visit (see "A prefetch keeps its visit pending until it is opened").
 
 The insert is synchronous so that the id is in the session before the next request creates a cart.
 
@@ -369,10 +396,17 @@ The plugin adds two extensions:
 
 - `Traffic/Filament/Extensions/OrderResourceExtension::extendTable()` inserts a "Traffic source" badge column after the customer type column (`new_customer`). It is toggleable and shown by default, with the campaign as tooltip. It reads `meta`, so it adds no query. It is not sortable or searchable.
 - `Traffic/Filament/Extensions/ManageOrderExtension`:
-  - `extendOrderSummarySchema()` appends the badge entry, and a "Campaign" entry when there is one;
+  - `extendAdditionalInfoSection()` returns a `Group` with a compact "Traffic source" section followed by the section it was given. The traffic source then sits directly above "Additional info", below Tags and Personalization, whatever a host adds to the sidebar (user decision: its own block, not the order summary). The section shows each of these only when it has a value:
+    - "Source": the badge;
+    - "Campaign";
+    - "Referrer": the visit's `referrer_host`;
+    - "Landing page": the visit's `landing_path`, as a link to `url($landingPath)` that opens in a new tab (user decision);
+    - "Visit started": the visit's `created_at`, formatted like the order's placement date (`Y-m-d h:i a` in `lunar.panel.timezone`).
+  - It reads the visit with `TrafficVisit::find()` on `traffic_source.visit_id`, once per render. Without `traffic_source`, the section shows only the "Unknown" badge. When the visit row is missing, it shows only what the order holds: the badge and the campaign. The visit id is not shown (user decision).
   - `extendHiddenOrderMetaKeys()` adds `traffic_source` for every staff member.
+  - It does not extend the order summary.
 
-The column and the entries are visible only when `TrafficSourcesPage::canAccess()` is true, that is, to admins and to staff with `analytics:traffic-sources` (user decision). Because the raw key is hidden for everyone, other staff cannot see the source under "Additional info" either. `AnalyticsPlugin::register()` registers both extensions with `LunarPanel::extensions()`.
+The column and the section are visible only when `TrafficSourcesPage::canAccess()` is true, that is, to admins and to staff with `analytics:traffic-sources` (user decision). Because the raw key is hidden for everyone, other staff cannot see the source under "Additional info" either. `AnalyticsPlugin::register()` registers both extensions with `LunarPanel::extensions()`.
 
 The report uses the same names:
 
@@ -383,7 +417,15 @@ The report uses the same names:
 
 *Alternative:* register the extensions in the provider, as feedback does. Rejected: every host of this release would get the column, with only "Unknown" in it, even without recording.
 
-*Alternative:* show the visit's referrer host and landing page on the order. Rejected: it costs one query per order, and the order holds only the cart's snapshot.
+*Alternative:* the badge and the campaign in the order summary (the previous plan). Rejected (user decision): marketing data at the top of the sidebar, with no room for the visit details.
+
+*Alternative:* the section directly below Tags, above Personalization. Rejected (user decision): personalization is needed to fulfil the order, while the traffic source is marketing context and sits with the other order metadata.
+
+*Alternative:* insert the section through `extendInfolistAsideSchema()`. Rejected: without section keys, the position is an index that moves when a host extends the sidebar. Adding keys means changing `lunarphp/admin`.
+
+*Alternative:* copy the referrer host and the landing path into the cart's `traffic_source`. Rejected: they stay on the visit only (section "Cart stamping with `Cart::observe()`"), and existing orders would still lack them.
+
+*Alternative:* the visit details in the order list too. Rejected: one query per row.
 
 *Alternative:* sort and filter orders by source. Rejected for now: not requested, and the JSON path on `lunar_orders` has no index.
 
@@ -406,6 +448,7 @@ The report uses the same names:
 - [Orders with an excluded status accumulate (test orders, split originals)] → The lookup reads only those created from the period start. If they grow large, it can move to a subquery without a spec change.
 - [Hosts with `lunar.cart_session.auto_create = true` create the cart on the landing request, before the visit is recorded] → That cart and its order have no source. The order counts as unknown. lunar-frontend's default is `false`.
 - [Two simultaneous first requests in a new session] → They can record two visits. Low impact, and not worth a lock.
+- [A visitor opens a prefetched landing page and leaves without another request] → Nothing reaches the server after the prefetch, so no visit is recorded. These single-page sessions are missing from the report, which raises Google's order rate a little. A JS beacon could recover them but was rejected.
 - [A customer who logs in only after landing] → The visit is recorded before their cart is known, and it counts. Remember-me logins are known on the landing request.
 - [A returning customer orders and then starts a new cart in the same session] → The new cart gets the earlier visit's source, because the session continued that visit.
 - [Campaign visits are fewer than ad clicks] → Clicks from visitors who already hold a sourced cart are not visits. This is intended: the report counts arrivals that can start a cart.
@@ -414,6 +457,9 @@ The report uses the same names:
 - [The first and last week or month of a period are partial and look lower] → They are keyed by their first day inside the period, and the heading names the interval.
 - [Panels without the analytics plugin] → They still list `traffic_source` raw under "Additional info", as before this change. lunar-frontend registers the plugin.
 - [Recording is off by default] → A host that registers the plugin and attaches the middleware but does not set `ANALYTICS_TRAFFIC_ENABLED=true` records nothing: the report stays empty and the order badges show "Unknown". `UPGRADE.md` lists the variable among the host responsibilities.
+- [The order page reads the visit] → One primary-key query per order page, only for staff who see the section. A missing visit row leaves only the order's badge and campaign.
+- [An `extendAdditionalInfoSection()` extension registered after the analytics plugin gets the `Group`, not the section] → Such an extension must handle a `Group`. lunar-frontend does not extend the section.
+- [A host whose storefront runs on another domain than the admin panel] → The landing page link points to the admin domain. lunar-frontend serves both from one app.
 
 ## Migration Plan
 

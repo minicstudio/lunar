@@ -285,6 +285,65 @@
 
 - [x] 11.1 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
 
+## 12. Order page section
+
+- [x] 12.1 Move the order page's traffic source into its own section:
+  - In `src/Traffic/Filament/Extensions/ManageOrderExtension.php`, replace `extendOrderSummarySchema()` with `extendAdditionalInfoSection()` as in design.md ("Order list and order page show the source as a badge"): a `Group` with the "Traffic source" section, then the given section. Read the visit once per render with `TrafficVisit::find()`. Keep `extendHiddenOrderMetaKeys()` and the `TrafficSourcesPage::canAccess()` visibility. Update the class PHPDoc.
+  - Add to `resources/lang/{en,hu,ro}/traffic.php`; the section heading stays `order.traffic_source`:
+    - `order.source`: "Source" / "Forrás" / "Sursă";
+    - `order.referrer`: "Referrer" / "Hivatkozó webhely" / "Site de proveniență";
+    - `order.landing_page`: "Landing page" / "Érkezési oldal" / "Pagină de destinație";
+    - `order.visited_at`: "Visit started" / "Látogatás kezdete" / "Începutul vizitei".
+  - Update `tests/analytics/Feature/Traffic/OrderTrafficSourceTest.php` for the scenarios of "Authorized staff see an order's traffic source" and "The order page shows the traffic source in its own section" in `specs/analytics/traffic-attribution/spec.md`:
+    - replace "the order page shows the traffic source badge and campaign in the summary": for an admin and for a staff member with the permission, a `mailchimp` / `email` order with campaign `Black-Friday` from a visit on `/sale` shows "Mailchimp · Email", `Black-Friday`, a link to `url('/sale')` and the visit's start time in the section, and the order summary has no traffic source entry;
+    - replace "the order page shows no campaign entry without a campaign": an `arukereso.hu` / `referral` order shows the referrer `arukereso.hu` and no campaign entry;
+    - an order without `traffic_source` shows only "Unknown";
+    - an order whose visit row is missing shows the badge and the campaign, without visit entries;
+    - the page shows the Tags, "Traffic source" and "Additional info" headings in that order (`assertSeeInOrder`);
+    - in the staff-without-permission test, the page shows no "Traffic source" section.
+  - Docs:
+    - in `UPGRADE.md` `### Analytics Package`, change the "Order pages" bullet: the order page shows a "Traffic source" section above "Additional info" with the badge, campaign, referrer, landing page link and visit start, in place of the summary entry;
+    - say the same in the report entry of `docs/changelog/2026-11-05.md`;
+    - in `docs/system/CODE_MAP.md`, update the `ManageOrderExtension` row;
+    - in `docs/system/PROJECT_SPECIFICATION.md`, replace "order summary" with the order page section in the package entry.
+
+  Verify with `vendor/bin/pest tests/analytics/Feature/Traffic/OrderTrafficSourceTest.php`.
+
+- [x] 12.2 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
+
+## 13. Prefetched landing pages
+
+- [x] 13.1 Keep a prefetch's visit pending until the page is opened, as in design.md ("A prefetch keeps its visit pending until it is opened" and "`TrafficVisitRecorder` owns the session and the synchronous insert"):
+  - In `src/Traffic/Services/TrafficVisitRecorder.php`:
+    - add `PENDING_SESSION_KEY = 'analytics_traffic_pending_visit'`;
+    - add a public `isPrefetch(Request)` with the check moved from the middleware;
+    - in `record()`, write the pending visit on a prefetch, and use it on a request that is not a prefetch and has no source of its own;
+    - in `current()`, record the pending visit on a request that is not a prefetch;
+    - remove the pending key whenever a session payload is written;
+    - update the class and method PHPDoc, with the pending payload's array shape.
+  - In `src/Traffic/Http/Middleware/RecordTrafficVisit.php`, drop the prefetch check from `isRecordable()` and `isPrefetch()`, and update the class PHPDoc.
+  - Update `tests/analytics/Feature/Traffic/RecordTrafficVisitTest.php` for "A prefetched landing page starts its visit when it is opened" and "A pending visit yields to the visitor's own arrival and cart" in `specs/analytics/traffic-recording/spec.md`. Replace "prefetch and head requests record nothing" with:
+    - a `Sec-Purpose: prefetch` request from Google records no row, and a following same-host request in that session records one `google` / `organic` visit with the prefetched path as landing path and referrer host `google.com`; the same with `Purpose: prefetch` and with `Sec-Purpose: prefetch;prerender`;
+    - a prefetch with no later request records nothing;
+    - a prefetch followed by a request from `https://l.facebook.com/` records only `facebook` / `social`, and a further same-host request records nothing more;
+    - a prefetch with a Googlebot user agent stores no pending visit;
+    - a HEAD request records nothing.
+  - Extend `tests/analytics/Feature/Traffic/TrafficVisitRecorderTest.php`:
+    - a pending visit with a Facebook-sourced cart in the session records nothing, and the session then holds the cart's `traffic_source` and no pending visit;
+    - `current()` with a pending visit records it once and returns it, and a second call records nothing more;
+    - `current()` on a prefetch request returns `null` and records nothing;
+    - a prefetch in a session that already has a visit stores no pending visit;
+    - with recording disabled or a `staff` user logged in, a pending visit is not recorded.
+  - Extend `tests/analytics/Feature/Traffic/StampCartWithTrafficSourceTest.php` for "A cart created on a prefetched landing page carries its visit" in `specs/analytics/traffic-attribution/spec.md`: with a pending `google` / `organic` visit in the session, `Cart::factory()->create()` records the visit and stores its `traffic_source`.
+  - Docs:
+    - in `UPGRADE.md` `### Analytics Package`, "Traffic recording" bullet, say that a prefetch records nothing, but its visit is recorded once the visitor opens the page;
+    - say the same in the recording entry of `docs/changelog/2026-11-05.md`;
+    - in `docs/system/CODE_MAP.md`, add the pending session key and `isPrefetch()` to the "Recording" row.
+
+  Verify with `vendor/bin/pest tests/analytics/Feature/Traffic/RecordTrafficVisitTest.php tests/analytics/Feature/Traffic/TrafficVisitRecorderTest.php tests/analytics/Feature/Traffic/StampCartWithTrafficSourceTest.php`.
+
+- [x] 13.2 Run `composer test` (Pest and PHPStan) and `vendor/bin/pint --test`. All must pass, with no new failures or baseline entries. Then check that `openspec validate add-traffic-source-reporting --strict` passes.
+
 ## Workflow follow-up
 
 - Release lunar-minic before the lunar-frontend change `track-visitor-traffic-sources` is implemented. That change bumps the dependency and holds the end-to-end browser check.

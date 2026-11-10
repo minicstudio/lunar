@@ -55,7 +55,11 @@ return [
 
     'order' => [
         'traffic_source' => 'Sursă de trafic',
+        'source' => 'Sursă',
         'campaign' => 'Campanie',
+        'referrer' => 'Site de proveniență',
+        'landing_page' => 'Pagină de destinație',
+        'visited_at' => 'Începutul vizitei',
     ],
 
     'sources' => [

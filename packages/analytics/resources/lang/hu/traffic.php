@@ -55,7 +55,11 @@ return [
 
     'order' => [
         'traffic_source' => 'Forgalmi forrás',
+        'source' => 'Forrás',
         'campaign' => 'Kampány',
+        'referrer' => 'Hivatkozó webhely',
+        'landing_page' => 'Érkezési oldal',
+        'visited_at' => 'Látogatás kezdete',
     ],
 
     'sources' => [

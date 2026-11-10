@@ -20,10 +20,17 @@ beforeEach(function () {
 
 /**
  * Build a storefront GET request on shop.test that carries the test session.
+ *
+ * @param  bool  $prefetch  Send it as a browser prefetch (`Sec-Purpose: prefetch`).
  */
-function recorderRequest(string $path = '/', ?string $referrer = null): Request
+function recorderRequest(string $path = '/', ?string $referrer = null, bool $prefetch = false): Request
 {
-    $request = Request::create('https://shop.test'.$path, 'GET', server: $referrer === null ? [] : ['HTTP_REFERER' => $referrer]);
+    $server = array_filter([
+        'HTTP_REFERER' => $referrer,
+        'HTTP_SEC_PURPOSE' => $prefetch ? 'prefetch' : null,
+    ]);
+
+    $request = Request::create('https://shop.test'.$path, 'GET', server: $server);
     $request->setLaravelSession(app('session.store'));
 
     app()->instance('request', $request);
@@ -31,9 +38,17 @@ function recorderRequest(string $path = '/', ?string $referrer = null): Request
     return $request;
 }
 
-function recordPageView(string $path = '/', ?string $referrer = null): void
+function recordPageView(string $path = '/', ?string $referrer = null, bool $prefetch = false): void
 {
-    app(TrafficVisitRecorder::class)->record(recorderRequest($path, $referrer));
+    app(TrafficVisitRecorder::class)->record(recorderRequest($path, $referrer, $prefetch));
+}
+
+/**
+ * Prefetch a product page from Google search, leaving a pending visit in the session.
+ */
+function prefetchFromGoogle(): void
+{
+    recordPageView('/products/phone', 'https://www.google.com/', prefetch: true);
 }
 
 function currentVisit(): ?array
@@ -234,6 +249,92 @@ test('current is null when recording is disabled', function () {
 
     expect(currentVisit())->toBeNull();
 });
+
+test('a prefetch stores a pending visit and records nothing', function () {
+    prefetchFromGoogle();
+
+    expect(TrafficVisit::count())->toBe(0)
+        ->and(session(TrafficVisitRecorder::SESSION_KEY))->toBeNull()
+        ->and(session(TrafficVisitRecorder::PENDING_SESSION_KEY))->toBe([
+            'source' => 'google',
+            'medium' => 'organic',
+            'campaign' => null,
+            'referrer_host' => 'google.com',
+            'landing_path' => '/products/phone',
+        ]);
+});
+
+test('a pending visit yields to a facebook-sourced cart in the session', function (Closure $openPage) {
+    prefetchFromGoogle();
+    $trafficSource = facebookTrafficSource();
+    $cart = Cart::factory()->create(['meta' => ['traffic_source' => $trafficSource]]);
+    session()->put(config('lunar.cart_session.session_key'), $cart->id);
+
+    $openPage();
+
+    expect(TrafficVisit::count())->toBe(1)
+        ->and(session(TrafficVisitRecorder::SESSION_KEY))->toBe($trafficSource)
+        ->and(session()->has(TrafficVisitRecorder::PENDING_SESSION_KEY))->toBeFalse();
+})->with([
+    'next page view' => [fn () => recordPageView('/category', 'https://shop.test/products/phone')],
+    'current visit lookup' => [function () {
+        recorderRequest('/livewire/update', 'https://shop.test/products/phone');
+        currentVisit();
+    }],
+]);
+
+test('current records a pending visit once and returns it', function () {
+    prefetchFromGoogle();
+    recorderRequest('/livewire/update', 'https://shop.test/products/phone');
+
+    $first = currentVisit();
+    $visit = TrafficVisit::sole();
+
+    expect($first)->toBe([
+        'visit_id' => $visit->id,
+        'source' => 'google',
+        'medium' => 'organic',
+        'campaign' => null,
+    ])
+        ->and([$visit->landing_path, $visit->referrer_host])->toBe(['/products/phone', 'google.com'])
+        ->and(session()->has(TrafficVisitRecorder::PENDING_SESSION_KEY))->toBeFalse()
+        ->and(currentVisit())->toBe($first)
+        ->and(TrafficVisit::count())->toBe(1);
+});
+
+test('current on a prefetch request returns null and records nothing', function () {
+    prefetchFromGoogle();
+
+    expect(currentVisit())->toBeNull()
+        ->and(TrafficVisit::count())->toBe(0)
+        ->and(session()->has(TrafficVisitRecorder::PENDING_SESSION_KEY))->toBeTrue();
+});
+
+test('a prefetch in a session that already has a visit stores no pending visit', function () {
+    recordPageView('/', 'https://www.google.com/');
+    $current = currentVisit();
+
+    recordPageView('/sale?gclid=abc', 'https://www.google.com/', prefetch: true);
+
+    expect(TrafficVisit::count())->toBe(1)
+        ->and(session()->has(TrafficVisitRecorder::PENDING_SESSION_KEY))->toBeFalse()
+        ->and(currentVisit())->toBe($current);
+});
+
+test('a pending visit is not recorded while recording may not happen', function (Closure $setUp) {
+    prefetchFromGoogle();
+    $setUp->call($this);
+
+    recordPageView('/category', 'https://shop.test/products/phone');
+
+    expect(currentVisit())->toBeNull()
+        ->and(TrafficVisit::count())->toBe(0);
+})->with([
+    'recording disabled' => [fn () => config(['lunar.analytics.traffic.enabled' => false])],
+    'staff logged in' => [function () {
+        $this->actingAs($this->makeStaff(), 'staff');
+    }],
+]);
 
 test('current is null without a session', function () {
     app()->instance('request', Request::create('https://shop.test/'));

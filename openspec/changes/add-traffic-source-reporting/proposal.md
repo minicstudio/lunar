@@ -24,7 +24,8 @@ lunar-frontend (change `track-visitor-traffic-sources`) only attaches the record
 
   The table holds no IP address, user agent, user, customer, session id, full referrer URL or query string.
 - **Recording.** A route middleware records a visit on the first storefront page view of a Laravel session. It also records one when a later page view carries campaign parameters that give a different source, medium or campaign.
-  - Only GET requests answered with 200 and HTML count. Bots and prefetches do not.
+  - Only GET requests answered with 200 and HTML count. Bots do not.
+  - A prefetch records nothing. A visit it would start stays pending in the session and is recorded once the visitor opens the page, at the session's next page view or cart creation (user decision). Without this, a visitor who opens a Google result that Chrome prefetched would never get a visit, and their cart and order would be unknown.
   - Recording does not depend on consent and sets no new cookie.
   - Requests served by the admin panel are never recorded, and neither are sessions where a staff member is logged in.
   - A visitor whose active cart already has a traffic source records no visit, so returning customers with a saved cart do not lower the order rate of the source they return through (user decision). A new session then continues that cart's visit.
@@ -54,7 +55,9 @@ lunar-frontend (change `track-visitor-traffic-sources`) only attaches the record
   - sources and mediums in words, as on the order badge, for example "Google · Paid ad" (user decision);
   - visits and carts whose orders all have a status excluded from reports, for example `test-order`, are left out of every figure (user decision). A split order counts as one order, the original, with its own placement date and value, unlike the dashboard, which counts the new orders (user decision). Its visit and cart count once. Visits and carts without orders still count;
   - the most visited landing pages, not linked to carts or orders.
-- **Order pages.** Admins and staff with `analytics:traffic-sources` see each order's traffic source as a badge: a "Traffic source" column in the admin order list, and an entry in the order page's summary, with the campaign when there is one. Other staff do not see it (user decision).
+- **Order pages.** Admins and staff with `analytics:traffic-sources` see each order's traffic source. Other staff do not see it (user decision).
+  - The admin order list has a "Traffic source" badge column, with the campaign as tooltip.
+  - The order page has its own "Traffic source" section in the sidebar, directly above "Additional info", below Tags and Personalization. It is not in the order summary (user decision). It shows the badge and every stored detail that has a value: the campaign, and from the order's visit the referrer host, the landing page as a link to the storefront page, and when the visit started (user decision). The page reads the visit with one query. The list reads only the order.
   - The badge reads like "Google · Organic search", "Google · Paid ad", "Facebook · Social" or "Direct", and "Unknown" for orders without a source.
   - The raw `traffic_source` no longer appears under "Additional info" for anyone.
   - The analytics plugin adds both, so panels without it are unchanged.
@@ -83,7 +86,7 @@ lunar-frontend (change `track-visitor-traffic-sources`) only attaches the record
   - `resources/lang/{en,hu,ro}`.
 - Monorepo wiring in the root `composer.json` (autoload, autoload-dev, `extra.lunar.name`, `extra.laravel.providers`, `replace`) and in `phpunit.xml` (an `analytics` test suite). Tests go in `tests/analytics/`.
 - Core: `SplitOrder::COPIED_META_KEYS` gains `traffic_source`. `FillOrderFromCart` is not changed.
-- Admin: `lunarphp/admin` is not changed. The order list column and the order page entries use its `OrderResource` and `ManageOrder` extension hooks.
+- Admin: `lunarphp/admin` is not changed. The order list column and the order page section use its `OrderResource` and `ManageOrder` extension hooks.
 - No new Composer dependency. The charts use `leandrocfe/filament-apex-charts`, which `lunarphp/admin` already requires.
 - lunar-frontend needs this release. It attaches the middleware, registers `AnalyticsPlugin` and seeds the AI assistant table.
 - Out of scope:
@@ -92,7 +95,7 @@ lunar-frontend (change `track-visitor-traffic-sources`) only attaches the record
   - unique-visitor counting across sessions;
   - storing `utm_term` / `utm_content`;
   - export, real-time figures, per-visitor drill-down;
-  - sorting or filtering orders by traffic source, and showing the visit's landing page or referrer host on the order page;
+  - sorting or filtering orders by traffic source, and showing the visit's referrer host or landing page in the order list;
   - pruning old visits;
   - backfilling existing carts and orders;
   - creating staff roles;
