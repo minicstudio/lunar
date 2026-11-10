@@ -433,6 +433,13 @@ return [
             ],
             'notification' => 'Cantitate actualizată',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Modifică prețul livrării',
+            'amount' => [
+                'label' => 'Preț livrare',
+            ],
+            'notification' => 'Prețul livrării a fost actualizat',
+        ],
         'remove_product' => [
             'label' => 'Elimină produsul',
             'confirmation' => 'Elimini acest produs din comandă?',

@@ -404,6 +404,13 @@ return [
             ],
             'notification' => 'Cantidad actualizada',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Modificar el precio de envío',
+            'amount' => [
+                'label' => 'Precio de envío',
+            ],
+            'notification' => 'Precio de envío actualizado',
+        ],
         'remove_product' => [
             'label' => 'Quitar producto',
             'confirmation' => '¿Quitar este producto del pedido?',

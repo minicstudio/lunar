@@ -404,6 +404,13 @@ return [
             ],
             'notification' => 'Quantité mise à jour',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Modifier les frais de livraison',
+            'amount' => [
+                'label' => 'Frais de livraison',
+            ],
+            'notification' => 'Frais de livraison mis à jour',
+        ],
         'remove_product' => [
             'label' => 'Retirer le produit',
             'confirmation' => 'Retirer ce produit de la commande ?',

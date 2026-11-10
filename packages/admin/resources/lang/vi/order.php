@@ -391,6 +391,13 @@ return [
             ],
             'notification' => 'Đã cập nhật số lượng',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Sửa phí vận chuyển',
+            'amount' => [
+                'label' => 'Phí vận chuyển',
+            ],
+            'notification' => 'Đã cập nhật phí vận chuyển',
+        ],
         'remove_product' => [
             'label' => 'Xóa sản phẩm',
             'confirmation' => 'Xóa sản phẩm này khỏi đơn hàng?',

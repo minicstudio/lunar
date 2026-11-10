@@ -408,6 +408,13 @@ return [
             ],
             'notification' => 'Adet güncellendi',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Kargo ücretini değiştir',
+            'amount' => [
+                'label' => 'Kargo ücreti',
+            ],
+            'notification' => 'Kargo ücreti güncellendi',
+        ],
         'remove_product' => [
             'label' => 'Ürünü kaldır',
             'confirmation' => 'Bu ürün siparişten kaldırılsın mı?',

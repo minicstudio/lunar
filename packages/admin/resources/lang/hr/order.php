@@ -393,6 +393,13 @@ return [
             ],
             'notification' => 'Količina ažurirana',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Izmijeni cijenu dostave',
+            'amount' => [
+                'label' => 'Cijena dostave',
+            ],
+            'notification' => 'Cijena dostave je ažurirana',
+        ],
         'remove_product' => [
             'label' => 'Ukloni proizvod',
             'confirmation' => 'Ukloniti ovaj proizvod iz narudžbe?',

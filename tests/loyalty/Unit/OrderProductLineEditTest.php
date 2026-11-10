@@ -4,6 +4,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Lunar\Actions\Orders\OrderProductLineChange;
 use Lunar\Actions\Orders\UpdateOrderProductLines;
+use Lunar\Actions\Orders\UpdateOrderShippingPrice;
+use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
+use Lunar\Exceptions\Orders\InvalidOrderShippingPriceException;
 use Lunar\Exceptions\Orders\OrderProductLineEditException;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Services\LoyaltyLedger;
@@ -136,4 +139,58 @@ it('leaves the loyalty balance unchanged when the save is rolled back', function
 
     expect($account->fresh()->balance)->toBe(5000)
         ->and($order->fresh()->meta['loyalty_points_to_redeem'])->toBe(5000);
+});
+
+it('keeps redeemed points when a shipping price save leaves the product total unchanged', function () {
+    ['order' => $order, 'account' => $account] = loyaltyEditableOrder(quantity: 1, points: 10000);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Courier',
+        'identifier' => 'COURIER',
+        'unit_price' => 2000,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+
+    $saved = UpdateOrderShippingPrice::run($order->fresh(), 1500);
+
+    expect($saved->meta['loyalty_points_to_redeem'])->toBe(10000)
+        ->and($saved->meta['loyalty_discount_minor'])->toBe(10000)
+        ->and($account->fresh()->balance)->toBe(0);
+});
+
+it('leaves the loyalty balance unchanged when a shipping price save is rejected', function () {
+    ['order' => $order, 'account' => $account] = loyaltyEditableOrder(quantity: 1, points: 10000);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Courier',
+        'identifier' => 'COURIER',
+        'unit_price' => 2000,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+
+    expect(fn () => UpdateOrderShippingPrice::run($order->fresh(), -1))
+        ->toThrow(InvalidOrderShippingPriceException::class);
+
+    expect($account->fresh()->balance)->toBe(0)
+        ->and($order->fresh()->meta['loyalty_points_to_redeem'])->toBe(10000);
 });
