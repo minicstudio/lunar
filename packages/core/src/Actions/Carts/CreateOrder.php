@@ -70,7 +70,11 @@ final class CreateOrder extends AbstractAction
 
             $cart->save();
 
-            MarkAsNewCustomer::dispatch($order->id);
+            // After the creation transaction commits, so the worker can see the
+            // order and its billing address. Dispatched inside the transaction,
+            // the job can run first, find nothing, and leave the default flag,
+            // which the admin shows as a returning customer.
+            MarkAsNewCustomer::dispatch($order->id)->afterCommit();
 
             $order->refresh();
 
