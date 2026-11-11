@@ -32,6 +32,17 @@
             border: 1px solid #ededed;
         }
 
+        .lines-heading small,
+        .lines-body small {
+            font-size: 10px;
+            font-weight: normal;
+            color: #777;
+        }
+
+        .lines .amount {
+            text-align: right;
+        }
+
         .lines-footer {
             border-top:5px solid #f5f5f5;
             text-align:right;
@@ -77,6 +88,9 @@
                                 <td align="right" width="50%">
                                     Factură: {{ @$record->reference }} <br>
                                     Creată: {{ $record->placed_at }}<br>
+                                    @if($invoice->showsVat())
+                                      Cota TVA: {{ $invoice->vatPercentage() }}%<br>
+                                    @endif
                                 </td>
                             </tr>
                         </table>
@@ -149,89 +163,77 @@
             <table cellpadding="0" cellspacing="0" width="100%" class="lines">
                 <thead class="lines-heading">
                     <tr width="100%">
-                        <th width="35%">
-                            Produs
+                        <th width="5%">
+                            #
                         </th>
-                        <th width="28%">
-                            SKU
+                        <th width="{{ $invoice->showsVat() ? 40 : 55 }}%">
+                            Denumire
                         </th>
-                        <th width="10%">
+                        <th width="8%">
+                            U.M.
+                        </th>
+                        <th width="7%">
                             Cant.
                         </th>
-                        <th width="15%">
-                            Preț unitar
+                        <th width="13%" class="amount">
+                            {{ $invoice->showsVat() ? 'Preț fără TVA' : 'Preț unitar' }}
+                            <br><small>{{ $record->currency_code }}</small>
                         </th>
-                        <th width="15%">
-                            Reducere
+                        <th width="12%" class="amount">
+                            Valoare
+                            <br><small>{{ $record->currency_code }}</small>
                         </th>
-                        <th width="15%">
-                            Cotă TVA
-                        </th>
-                        <th width="15%">
-                            Valoare TVA
-                        </th>
-                        <th width="12%">
-                            Total linie
-                        </th>
+                        @if($invoice->showsVat())
+                          <th width="15%" class="amount">
+                              Valoare TVA
+                              <br><small>{{ $record->currency_code }}</small>
+                          </th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="lines-body">
-                  @foreach($record->productLines as $line)
+                  @foreach($invoice->rows() as $row)
                     <tr>
                       <td>
-                        {{ $line->description }} <br>
-                        {{ $line->option }}
+                        {{ $loop->iteration }}
                       </td>
                       <td>
-                        {{ $line->identifier }}
+                        {{ $row['name'] }}
+                        @if($row['details'])
+                          <br><small>{{ $row['details'] }}</small>
+                        @endif
                       </td>
                       <td>
-                        {{ $line->quantity }}
+                        {{ $row['unit'] }}
                       </td>
                       <td>
-                        {{ $line->unit_price->formatted }}
+                        {{ $row['quantity'] }}
                       </td>
-                      <td>
-                        {{ $line->discount_total->formatted }}
+                      <td class="amount">
+                        {{ $invoice->amount($row['unitPrice']) }}
                       </td>
-                      <td>
-                        {{ $line->tax_breakdown->amounts->sum('percentage') }}%
+                      <td class="amount">
+                        {{ $invoice->amount($row['value']) }}
                       </td>
-                      <td>
-                        {{ $line->tax_total->formatted }}
-                      </td>
-
-                      <td>
-                        {{ $line->sub_total->formatted }}
-                      </td>
+                      @if($invoice->showsVat())
+                        <td class="amount">
+                          {{ $invoice->amount($row['vat']) }}
+                        </td>
+                      @endif
                     </tr>
                   @endforeach
                 </tbody>
                 <tfoot class="lines-footer">
-                    <tr>
-                        <td colspan="5"></td>
-                        <td colspan="2"><strong>Subtotal</strong></td>
-                        <td>{{ $record->sub_total->formatted }}</td>
-                    </tr>
-                    @foreach($record->shippingLines as $line)
+                    @if($invoice->showsVat())
                       <tr>
-                        <td colspan="4"></td>
-                        <td colspan="3">
-                          <strong>Livrare</strong><br>
-                          <small>{{ strip_tags($line->description) }}</small>
-                        </td>
-                        <td>{{ $line->sub_total->formatted }}</td>
+                          <td colspan="5"><strong>Total</strong></td>
+                          <td>{{ $invoice->amount($invoice->netTotal()) }}</td>
+                          <td>{{ $invoice->amount($invoice->vatTotal()) }}</td>
                       </tr>
-                    @endforeach
+                    @endif
                     <tr>
-                        <td colspan="5"></td>
-                        <td colspan="2"><strong>Valoare TVA</strong></td>
-                        <td>{{ $record->tax_total->formatted }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="5"></td>
-                        <td colspan="2"><strong>Total</strong></td>
-                        <td>{{ $record->total->formatted }}</td>
+                        <td colspan="5"><strong>Total factură</strong></td>
+                        <td colspan="{{ $invoice->showsVat() ? 2 : 1 }}"><strong>{{ $invoice->amount($invoice->total()) }}</strong></td>
                     </tr>
                 </tfoot>
             </table>

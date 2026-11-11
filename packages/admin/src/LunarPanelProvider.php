@@ -3,12 +3,14 @@
 namespace Lunar\Admin;
 
 use Filament\Support\Events\FilamentUpgraded;
+use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Lunar\Admin\Auth\Manifest;
@@ -33,6 +35,7 @@ use Lunar\Admin\Listeners\FilamentUpgradedListener;
 use Lunar\Admin\Models\Staff;
 use Lunar\Admin\Support\ActivityLog\Manifest as ActivityLogManifest;
 use Lunar\Admin\Support\Forms\AttributeData;
+use Lunar\Admin\Support\Orders\OrderInvoicePdf;
 use Lunar\Admin\Support\Synthesizers\PriceSynth;
 
 class LunarPanelProvider extends ServiceProvider
@@ -126,6 +129,7 @@ class LunarPanelProvider extends ServiceProvider
         $this->registerPermissionManifest();
         $this->registerStateListeners();
         $this->registerLunarSynthesizer();
+        $this->registerViewComposers();
         // $this->registerUpgradedListener();
     }
 
@@ -190,5 +194,15 @@ class LunarPanelProvider extends ServiceProvider
     {
         Support\Facades\AttributeData::synthesizeLivewireProperties();
         Livewire::propertySynthesizer(PriceSynth::class);
+    }
+
+    /**
+     * Give the order invoice PDF its figures as `$invoice`, wherever it is rendered.
+     */
+    protected function registerViewComposers(): void
+    {
+        View::composer('lunarpanel::pdf.order', function (ViewContract $view): void {
+            $view->with('invoice', new OrderInvoicePdf($view->getData()['record']));
+        });
     }
 }

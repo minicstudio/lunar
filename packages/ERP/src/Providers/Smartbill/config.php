@@ -104,6 +104,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Pack Measuring Unit Name
+    |--------------------------------------------------------------------------
+    |
+    | The unit used for lines of pack-priced variants (unit_quantity > 1).
+    | These lines get a "1 pachet = 4 buc" description. The unit must exist
+    | in the SmartBill account.
+    |
+    */
+    'pack_measuring_unit_name' => env('SMARTBILL_PACK_MEASURING_UNIT_NAME', 'pachet'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Invoice Packs
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, pack-priced lines are invoiced in packs (pack unit,
+    | quantity = packs, price = pack price). When disabled they stay in
+    | pieces (measuring_unit_name) and keep only the pack description.
+    |
+    */
+    'invoice_packs' => env('SMARTBILL_INVOICE_PACKS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Save To DB
     |--------------------------------------------------------------------------
     |

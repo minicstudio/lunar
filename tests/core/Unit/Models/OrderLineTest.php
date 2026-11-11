@@ -332,3 +332,58 @@ test('invoiceUnitPrice is zero for complimentary lines', function () {
     expect($giftLine->fresh()->invoiceUnitPrice()->value)->toBe(0)
         ->and($paidLine->fresh()->invoiceUnitPrice()->value)->toBe(1000);
 });
+
+test('pack helpers invoice whole packs only for pack-priced lines', function (int $unitQuantity, int $quantity, int $packSize, bool $inPacks, int $packs) {
+    Currency::factory()->create(['default' => true]);
+
+    $line = OrderLine::factory()->create([
+        'unit_quantity' => $unitQuantity,
+        'quantity' => $quantity,
+    ]);
+
+    expect($line->packSize())->toBe($packSize)
+        ->and($line->isInvoicedInPacks())->toBe($inPacks)
+        ->and($line->invoicePackQuantity())->toBe($packs);
+})->with([
+    'sold per piece' => [1, 3, 1, false, 3],
+    'whole packs' => [4, 8, 4, true, 2],
+    'partial pack' => [4, 6, 4, false, 1],
+    'invalid pack size' => [0, 2, 1, false, 2],
+]);
+
+test('invoicePackPrice divides the unrounded line amount by the pack count', function () {
+    $currency = Currency::factory()->create(['default' => true]);
+    $order = Order::factory()->create([
+        'currency_code' => $currency->code,
+    ]);
+
+    $line = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'unit_quantity' => 4,
+        'quantity' => 8,
+        'total' => 19998,
+        'tax_total' => 0,
+        'meta' => null,
+    ]);
+
+    expect($line->fresh()->invoiceUnitPrice()->value)->toBe(2499)
+        ->and($line->fresh()->invoicePackPrice()->value)->toBe(9999);
+});
+
+test('invoicePackPrice is zero for complimentary lines', function () {
+    $currency = Currency::factory()->create(['default' => true]);
+    $order = Order::factory()->create([
+        'currency_code' => $currency->code,
+    ]);
+
+    $giftLine = OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'unit_quantity' => 4,
+        'quantity' => 4,
+        'total' => 0,
+        'tax_total' => 0,
+        'meta' => ['added_by_discount' => [1]],
+    ]);
+
+    expect($giftLine->fresh()->invoicePackPrice()->value)->toBe(0);
+});

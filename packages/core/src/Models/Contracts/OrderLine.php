@@ -33,4 +33,24 @@ interface OrderLine
      * Unit price for invoicing (zero when complimentary).
      */
     public function invoiceUnitPrice(): Price;
+
+    /**
+     * Number of pieces in one priced pack.
+     */
+    public function packSize(): int;
+
+    /**
+     * Whether the line can be invoiced as whole packs instead of pieces.
+     */
+    public function isInvoicedInPacks(): bool;
+
+    /**
+     * Number of whole packs on the line.
+     */
+    public function invoicePackQuantity(): int;
+
+    /**
+     * Pack price for invoicing (zero when complimentary).
+     */
+    public function invoicePackPrice(): Price;
 }
