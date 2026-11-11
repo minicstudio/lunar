@@ -404,6 +404,13 @@ return [
             ],
             'notification' => 'Aantal bijgewerkt',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Verzendkosten wijzigen',
+            'amount' => [
+                'label' => 'Verzendkosten',
+            ],
+            'notification' => 'Verzendkosten bijgewerkt',
+        ],
         'remove_product' => [
             'label' => 'Product verwijderen',
             'confirmation' => 'Dit product uit de bestelling verwijderen?',

@@ -433,6 +433,13 @@ return [
             ],
             'notification' => 'Mennyiség frissítve',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Szállítási díj módosítása',
+            'amount' => [
+                'label' => 'Szállítási díj',
+            ],
+            'notification' => 'Szállítási díj frissítve',
+        ],
         'remove_product' => [
             'label' => 'Termék eltávolítása',
             'confirmation' => 'Eltávolítja ezt a terméket a rendelésből?',

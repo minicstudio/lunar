@@ -401,6 +401,13 @@ return [
             ],
             'notification' => 'Ilość zaktualizowana',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Zmień koszt wysyłki',
+            'amount' => [
+                'label' => 'Koszt wysyłki',
+            ],
+            'notification' => 'Koszt wysyłki zaktualizowany',
+        ],
         'remove_product' => [
             'label' => 'Usuń produkt',
             'confirmation' => 'Usunąć ten produkt z zamówienia?',

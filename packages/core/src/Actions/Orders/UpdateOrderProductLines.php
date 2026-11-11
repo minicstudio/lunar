@@ -4,11 +4,7 @@ namespace Lunar\Actions\Orders;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Lunar\Actions\AbstractAction;
-use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
-use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
-use Lunar\Events\OrderProductLinesRecalculated;
 use Lunar\Exceptions\InsufficientStockException;
 use Lunar\Exceptions\NonPurchasableItemException;
 use Lunar\Exceptions\Orders\LastOrderProductLineException;
@@ -17,13 +13,11 @@ use Lunar\Exceptions\Orders\MissingOrderCartException;
 use Lunar\Exceptions\Orders\OrderProductLineNotFoundException;
 use Lunar\Exceptions\Orders\OrderProductLinePurchasableMissingException;
 use Lunar\Exceptions\Orders\UnauthorizedOrderProductLineEditException;
-use Lunar\Exceptions\Orders\UnpricedOrderShippingException;
 use Lunar\Exceptions\OutOfStockException;
 use Lunar\Facades\DB;
 use Lunar\Models\Cart;
 use Lunar\Models\CartLine;
 use Lunar\Models\Contracts\Order as OrderContract;
-use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use Lunar\Models\ProductVariant;
@@ -38,14 +32,6 @@ use Lunar\Validation\CartLine\CartLineQuantity;
  */
 final class UpdateOrderProductLines extends AbstractAction
 {
-    /**
-     * @var list<string>
-     */
-    private const LOYALTY_META_KEYS = [
-        'loyalty_points_to_redeem',
-        'loyalty_discount_minor',
-    ];
-
     public function execute(OrderContract $order, OrderProductLineChange $change): Order
     {
         /** @var Order $saved */
@@ -77,20 +63,14 @@ final class UpdateOrderProductLines extends AbstractAction
             $previousPoints = (int) ($this->metaValue($locked, 'loyalty_points_to_redeem') ?? 0);
             $before = $this->quantitiesByPurchasable($locked->productLines()->with('purchasable')->get());
 
-            $this->alignCart($locked, $cart);
-            $this->rebuildCartLines($locked, $cart);
+            $recalculation = new RecalculateEditedOrder;
+            $recalculation->syncCart($locked, $cart);
             $this->applyChange($locked, $cart, $change);
 
             $after = $this->quantitiesByPurchasable($cart->lines()->with('purchasable')->get());
             $this->syncStock($locked, $before, $after);
 
-            $cart->unsetRelation('lines');
-            $cart->recalculate();
-
-            $this->assertShippingPriced($locked, $cart);
-            $this->copyCalculatedOrder($locked, $cart);
-
-            event(new OrderProductLinesRecalculated($locked, $previousPoints));
+            $recalculation->recalculate($locked, $cart, $previousPoints);
 
             return $locked->refresh();
         });
@@ -139,60 +119,6 @@ final class UpdateOrderProductLines extends AbstractAction
         }
 
         return auth('staff')->user();
-    }
-
-    private function alignCart(Order $order, Cart $cart): void
-    {
-        $cart->customer_id = $order->customer_id;
-        $cart->channel_id = $order->channel_id;
-        $cart->currency_id = $order->currency?->id ?? $cart->currency_id;
-
-        if (blank($cart->coupon_code)) {
-            $coupon = $this->couponFromOrder($order);
-
-            if (filled($coupon)) {
-                $cart->coupon_code = $coupon;
-            }
-        }
-
-        $cartMeta = $this->metaArray($cart->meta);
-
-        foreach ($this->loyaltyMeta($order->meta) as $key => $value) {
-            $cartMeta[$key] = $value;
-        }
-
-        $cart->meta = $cartMeta;
-        $cart->save();
-
-        $identifier = $order->shippingLines()->value('identifier');
-
-        if (! filled($identifier)) {
-            return;
-        }
-
-        $address = $cart->shippingAddress()->first();
-
-        if ($address && blank($address->shipping_option)) {
-            $address->update([
-                'shipping_option' => $identifier,
-            ]);
-        }
-    }
-
-    private function rebuildCartLines(Order $order, Cart $cart): void
-    {
-        $cart->lines()->delete();
-
-        foreach ($order->productLines()->get() as $line) {
-            $cart->lines()->create([
-                'purchasable_id' => $line->purchasable_id,
-                'purchasable_type' => $line->purchasable_type,
-                'quantity' => $line->quantity,
-                'meta' => $this->metaArray($line->meta),
-            ]);
-        }
-
-        $cart->unsetRelation('lines');
     }
 
     private function applyChange(Order $order, Cart $cart, OrderProductLineChange $change): void
@@ -433,209 +359,6 @@ final class UpdateOrderProductLines extends AbstractAction
         return $totals;
     }
 
-    private function assertShippingPriced(Order $order, Cart $cart): void
-    {
-        $identifier = $order->shippingLines()->value('identifier');
-
-        if (! filled($identifier)) {
-            return;
-        }
-
-        $option = $cart->getShippingOption();
-
-        if (! $option || $option->getIdentifier() !== $identifier) {
-            throw new UnpricedOrderShippingException;
-        }
-    }
-
-    private function copyCalculatedOrder(Order $order, Cart $cart): void
-    {
-        $this->writeProductLines($order, $cart);
-        $this->writeShippingLine($order, $cart);
-
-        $order->unsetRelation('lines');
-        $order->load('lines');
-
-        $meta = $this->metaArray($order->meta);
-        $cartLoyalty = $this->loyaltyMeta($cart->meta);
-
-        foreach (self::LOYALTY_META_KEYS as $key) {
-            if (array_key_exists($key, $cartLoyalty)) {
-                $meta[$key] = $cartLoyalty[$key];
-
-                continue;
-            }
-
-            unset($meta[$key]);
-        }
-
-        $order->update([
-            'sub_total' => $cart->subTotal?->value ?? 0,
-            'discount_total' => $cart->discountTotal?->value ?? 0,
-            'discount_breakdown' => $this->discountBreakdownFromCart($order, $cart),
-            'shipping_total' => $cart->shippingTotal?->value ?? 0,
-            'shipping_breakdown' => $cart->shippingBreakdown ?? new ShippingBreakdown,
-            'tax_breakdown' => $cart->taxBreakdown ?? new TaxBreakdown,
-            'tax_total' => $cart->taxTotal?->value ?? 0,
-            'total' => $cart->total?->value ?? 0,
-            'fingerprint' => $cart->fingerprint(),
-            'meta' => $meta,
-        ]);
-    }
-
-    private function writeProductLines(Order $order, Cart $cart): void
-    {
-        $order->load('lines');
-        $keptIds = [];
-
-        foreach ($cart->lines as $cartLine) {
-            $orderLine = $order->lines->first(function (OrderLine $line) use ($cartLine): bool {
-                if ($line->type === 'shipping') {
-                    return false;
-                }
-
-                return $line->purchasable_type === $cartLine->purchasable_type
-                    && (int) $line->purchasable_id === (int) $cartLine->purchasable_id
-                    && $this->metaMatches($line->meta, $cartLine->meta);
-            }) ?? new OrderLine;
-
-            $purchasable = $cartLine->purchasable;
-
-            $orderLine->fill([
-                'order_id' => $order->id,
-                'purchasable_type' => $cartLine->purchasable_type,
-                'purchasable_id' => $cartLine->purchasable_id,
-                'type' => $purchasable?->getType() ?? $orderLine->type ?? 'physical',
-                'description' => $purchasable?->getDescription() ?? $orderLine->description,
-                'option' => $purchasable?->getOption(),
-                'identifier' => $purchasable?->getIdentifier() ?? $orderLine->identifier,
-                'unit_price' => $cartLine->unitPrice?->value ?? 0,
-                'unit_quantity' => $purchasable?->getUnitQuantity() ?? $orderLine->unit_quantity ?? 1,
-                'quantity' => $cartLine->quantity,
-                'sub_total' => $cartLine->subTotal?->value ?? 0,
-                'discount_total' => $cartLine->discountTotal?->value ?? 0,
-                'tax_breakdown' => $cartLine->taxBreakdown ?? new TaxBreakdown,
-                'tax_total' => $cartLine->taxAmount?->value ?? 0,
-                'total' => $cartLine->total?->value ?? 0,
-                'notes' => $orderLine->exists ? $orderLine->notes : null,
-                'meta' => $this->metaArray($cartLine->meta),
-            ])->save();
-
-            $keptIds[] = $orderLine->id;
-        }
-
-        if ($keptIds !== []) {
-            $order->productLines()->whereNotIn('id', $keptIds)->delete();
-        }
-    }
-
-    private function writeShippingLine(Order $order, Cart $cart): void
-    {
-        $identifier = $order->shippingLines()->value('identifier');
-
-        if (! filled($identifier)) {
-            return;
-        }
-
-        $option = $cart->getShippingOption();
-
-        if (! $option) {
-            return;
-        }
-
-        $order->load('lines');
-
-        $shippingLine = $order->lines->first(function (OrderLine $line) use ($option): bool {
-            return $line->type === 'shipping' && $line->identifier === $option->getIdentifier();
-        }) ?? new OrderLine;
-
-        $address = $cart->shippingAddress;
-
-        $shippingLine->fill([
-            'order_id' => $order->id,
-            'purchasable_type' => null,
-            'purchasable_id' => null,
-            'type' => 'shipping',
-            'description' => $option->getName(),
-            'option' => $option->getOption(),
-            'identifier' => $option->getIdentifier(),
-            'unit_price' => $option->price->value,
-            'unit_quantity' => $option->getUnitQuantity(),
-            'quantity' => 1,
-            'sub_total' => $address?->shippingSubTotal?->value ?? $option->price->value,
-            'discount_total' => $cart->shippingDiscountTotal?->value ?? 0,
-            'tax_breakdown' => $address?->taxBreakdown ?? new TaxBreakdown,
-            'tax_total' => $address?->shippingTaxTotal?->value ?? 0,
-            'total' => $address?->shippingTotal?->value ?? $option->price->value,
-            'notes' => null,
-            'meta' => $option->meta,
-        ])->save();
-    }
-
-    /**
-     * @return Collection<int, object>
-     */
-    private function discountBreakdownFromCart(Order $order, Cart $cart): Collection
-    {
-        $mappedLines = [];
-
-        foreach ($order->lines as $orderLine) {
-            if ($orderLine->type === 'shipping') {
-                continue;
-            }
-
-            $cartLine = $cart->lines->first(function (CartLine $line) use ($orderLine): bool {
-                return $line->purchasable_type === $orderLine->purchasable_type
-                    && (int) $line->purchasable_id === (int) $orderLine->purchasable_id
-                    && $this->metaMatches($line->meta, $orderLine->meta);
-            });
-
-            if ($cartLine) {
-                $mappedLines[$cartLine->id] = $orderLine;
-            }
-        }
-
-        return collect($cart->discountBreakdown ?? [])->map(function ($discount) use ($mappedLines) {
-            return (object) [
-                'discount_id' => $discount->discount->id,
-                'lines' => collect($discount->lines)->map(function ($discountLine) use ($mappedLines) {
-                    $orderLine = $mappedLines[$discountLine->line->id] ?? null;
-
-                    if (! $orderLine) {
-                        return null;
-                    }
-
-                    return (object) [
-                        'quantity' => $discountLine->quantity,
-                        'line' => $orderLine,
-                        'amount' => $discountLine->amount,
-                    ];
-                })->filter()->values(),
-                'total' => $discount->price,
-            ];
-        })->values();
-    }
-
-    private function couponFromOrder(Order $order): ?string
-    {
-        $discountIds = collect($order->discount_breakdown ?? [])
-            ->pluck('discount_id')
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($discountIds->isEmpty()) {
-            return null;
-        }
-
-        $coupon = Discount::query()
-            ->whereIn('id', $discountIds)
-            ->whereNotNull('coupon')
-            ->value('coupon');
-
-        return filled($coupon) ? (string) $coupon : null;
-    }
-
     private function findCartLine(Cart $cart, ?string $type, ?int $id, array $meta): ?CartLine
     {
         if ($type === null || $id === null) {
@@ -712,23 +435,6 @@ final class UpdateOrderProductLines extends AbstractAction
         }
 
         return [];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function loyaltyMeta(mixed $meta): array
-    {
-        $values = $this->metaArray($meta);
-        $loyalty = [];
-
-        foreach (self::LOYALTY_META_KEYS as $key) {
-            if (array_key_exists($key, $values)) {
-                $loyalty[$key] = $values[$key];
-            }
-        }
-
-        return $loyalty;
     }
 
     private function metaValue(Order $order, string $key): mixed

@@ -398,6 +398,13 @@ return [
             ],
             'notification' => 'Тоо шинэчлэгдлээ',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Хүргэлтийн үнэ өөрчлөх',
+            'amount' => [
+                'label' => 'Хүргэлтийн үнэ',
+            ],
+            'notification' => 'Хүргэлтийн үнэ шинэчлэгдлээ',
+        ],
         'remove_product' => [
             'label' => 'Бүтээгдэхүүн хасах',
             'confirmation' => 'Энэ бүтээгдэхүүнийг захиалгаас хасах уу?',

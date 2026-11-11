@@ -1,3 +1,30 @@
 @import '../../vendor/filament/filament/resources/css/theme.css';
 
 @source '../../resources/views/**/*.blade.php';
+
+/* The shipping strip is one row: the carrier name can shrink, the price and action stay on that line. */
+.lunar-shipping-strip > .fi-in-repeatable-item > .fi-sc {
+    --cols-default: minmax(0, 1fr) auto !important;
+    --cols-sm: minmax(0, 1fr) auto !important;
+    --cols-md: minmax(0, 1fr) auto !important;
+    --cols-lg: minmax(0, 1fr) auto !important;
+    --cols-xl: minmax(0, 1fr) auto !important;
+    --cols-2xl: minmax(0, 1fr) auto !important;
+}
+
+.lunar-shipping-nowrap .fi-in-entry-content-ctn {
+    flex-wrap: nowrap;
+}
+
+.lunar-shipping-nowrap .fi-in-entry-content,
+.lunar-shipping-nowrap .fi-in-text {
+    width: auto;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lunar-shipping-strip > .fi-in-repeatable-item > .fi-sc > :first-child {
+    min-width: 0;
+}

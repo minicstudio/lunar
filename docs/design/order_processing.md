@@ -268,7 +268,9 @@ Scheduled when `lunar.erp.enabled` and cron configured in `lunar.erp.schedule.or
 
 **Resource:** `packages/admin/src/Filament/Resources/OrderResource.php`
 
-Staff can view/edit orders, lines, addresses, transactions. Status updates use **`UpdatesOrderStatus`** trait (`packages/admin/src/Support/Actions/Traits/UpdatesOrderStatus.php`):
+Staff can view/edit orders, lines, addresses, transactions. While a product edit would be accepted and the order has one shipping line, staff can set the shipping price from the shipping strip. The typed amount is the shipping subtotal. Tax and the order total follow that amount. That save marks the shipping line, and a later product edit keeps that price. If staff have not saved a shipping price, a later product edit still recalculates it. Raising a quantity or adding a product so the order qualifies for free shipping sets the shipping price to 0.
+
+Status updates use **`UpdatesOrderStatus`** trait (`packages/admin/src/Support/Actions/Traits/UpdatesOrderStatus.php`):
 
 - Sets `status`
 - Optionally queues configured **mailers** for that status to customer emails

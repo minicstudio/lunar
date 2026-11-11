@@ -17,6 +17,9 @@ final class ApplyLoyaltyRedemption
     /**
      * Apply loyalty discount to cart lines before tax calculation.
      *
+     * A shipping-price edit sets keepStoredLoyaltyRedemption so an existing
+     * redemption is kept. The discount still cannot exceed the product subtotal.
+     *
      * @param  Closure(CartContract): mixed  $next
      */
     public function handle(CartContract $cart, Closure $next): mixed
@@ -35,7 +38,9 @@ final class ApplyLoyaltyRedemption
         $discountMinor = $this->redeemer->calculateDiscountMinor($points);
         $eligibleSubtotal = $this->redeemer->getEligibleSubtotal($cart);
         $maxPercent = (int) config('lunar.loyalty.currency.max_redeem_percent', 50);
-        $maxDiscount = (int) floor($eligibleSubtotal * $maxPercent / 100);
+        $maxDiscount = $cart->keepStoredLoyaltyRedemption
+            ? $eligibleSubtotal
+            : (int) floor($eligibleSubtotal * $maxPercent / 100);
         $cappedDiscount = min($discountMinor, $maxDiscount);
         $minRedeem = $this->redeemer->getMinRedeemPoints();
 

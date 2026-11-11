@@ -192,6 +192,14 @@ class Cart extends BaseModel implements Contracts\Cart
     public array $unitPriceOverrides = [];
 
     /**
+     * Keep the loyalty redemption already stored on an order.
+     *
+     * A shipping-price edit uses this so the percent cap is not applied again.
+     * The discount still cannot be larger than the product subtotal.
+     */
+    public bool $keepStoredLoyaltyRedemption = false;
+
+    /**
      * Keep a coupon that the original order already qualified for when a split
      * target is below that coupon's minimum spend.
      */

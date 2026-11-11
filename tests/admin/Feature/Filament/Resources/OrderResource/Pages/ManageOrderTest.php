@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
@@ -17,6 +18,7 @@ use Lunar\DataTypes\ShippingOption;
 use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Facades\Pricing;
 use Lunar\Facades\ShippingManifest;
+use Lunar\Models\Cart;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
@@ -28,6 +30,7 @@ use Lunar\Models\OrderAddress;
 use Lunar\Models\OrderLine;
 use Lunar\Models\Price as ModelsPrice;
 use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxZone;
 use Lunar\Models\Transaction;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
 
@@ -690,6 +693,172 @@ it('can extend the shipping and billing order meta keys', function () {
         ->assertSchemaComponentDoesNotExist('meta.meta_vat_number');
 });
 
+it('shows modify shipping price beside the price and stores the new amount', function () {
+    $shipping = editableShippingLine();
+
+    $action = TestAction::make('modify_shipping_price')
+        ->schemaComponent('shippingLines.0.sub_total', schema: 'infolist');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSee(__('lunarpanel::order.action.modify_shipping_price.label'))
+        ->assertSee($shipping->sub_total->formatted)
+        ->assertSee('shippingLines.0.sub_total', false)
+        ->mountAction($action)
+        ->assertActionDataSet([
+            'amount' => '20.00',
+        ])
+        ->callAction($action, [
+            'amount' => '15.00',
+        ])
+        ->assertNotified(__('lunarpanel::order.action.modify_shipping_price.notification'));
+
+    $saved = $this->order->fresh();
+    $line = $saved->shippingLines()->first();
+
+    expect($line->unit_price->value)->toBe(1500)
+        ->and($line->sub_total->value)->toBe(1500)
+        ->and($saved->shipping_total->value)->toBe($line->total->value)
+        ->and($saved->shipping_total->value)->not->toBe(2000);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $saved->getRouteKey(),
+    ])
+        ->assertSee($line->sub_total->formatted)
+        ->assertSee(__('lunarpanel::order.infolist.shipping_total.label'))
+        ->assertSee($saved->shipping_total->formatted);
+});
+
+it('stores awkward decimal shipping amounts as exact minor units', function (string $amount, int $minor) {
+    editableShippingLine();
+
+    $action = TestAction::make('modify_shipping_price')
+        ->schemaComponent('shippingLines.0.sub_total', schema: 'infolist');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->callAction($action, [
+        'amount' => $amount,
+    ])->assertNotified(__('lunarpanel::order.action.modify_shipping_price.notification'));
+
+    expect($this->order->fresh()->shippingLines()->first()->unit_price->value)->toBe($minor);
+})->with([
+    'ten ten' => ['10.10', 1010],
+    'nineteen ninety nine' => ['19.99', 1999],
+    'eight seventy' => ['8.70', 870],
+]);
+
+it('hides modify shipping price when the order is locked and keeps the gate notice', function () {
+    editableShippingLine();
+    $this->order->transactions()->save(Transaction::factory()->make([
+        'order_id' => $this->order->id,
+        'driver' => 'offline',
+        'type' => 'capture',
+        'success' => true,
+    ]));
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])
+        ->assertDontSee(__('lunarpanel::order.action.modify_shipping_price.label'))
+        ->assertSee(__('lunarpanel::order.infolist.alert.product_line_gates.paid'));
+});
+
+it('hides modify shipping price when the order does not have one shipping line', function (int $lines) {
+    editableShippingLine();
+
+    if ($lines === 0) {
+        $this->order->shippingLines()->delete();
+    }
+
+    if ($lines === 2) {
+        $this->order->lines()->create([
+            'purchasable_type' => null,
+            'purchasable_id' => null,
+            'type' => 'shipping',
+            'description' => 'Second courier',
+            'identifier' => 'SECOND',
+            'unit_price' => 500,
+            'unit_quantity' => 1,
+            'quantity' => 1,
+            'sub_total' => 500,
+            'discount_total' => 0,
+            'tax_breakdown' => new TaxBreakdown,
+            'tax_total' => 0,
+            'total' => 500,
+        ]);
+    }
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->assertDontSee(__('lunarpanel::order.action.modify_shipping_price.label'));
+})->with([
+    'no shipping line' => 0,
+    'two shipping lines' => 2,
+]);
+
+function editableShippingLine(): OrderLine
+{
+    $currency = Currency::getDefault();
+
+    TaxZone::factory()->create([
+        'default' => true,
+    ]);
+
+    $variant = ProductVariant::factory()->create();
+
+    ModelsPrice::factory()->create([
+        'price' => 2500,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => $currency->id,
+        'channel_id' => test()->order->channel_id,
+    ]);
+
+    test()->order->update([
+        'cart_id' => $cart->id,
+        'status' => 'awaiting-payment',
+        'shipping_total' => 2000,
+    ]);
+
+    test()->order->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'identifier' => 'SKU-1',
+        'description' => 'Kept product',
+        'quantity' => 1,
+        'unit_price' => 2500,
+        'unit_quantity' => 1,
+        'sub_total' => 2500,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2500,
+    ]);
+
+    return test()->order->lines()->create([
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Courier',
+        'identifier' => 'COURIER',
+        'unit_price' => 2000,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+}
+
 it('hides the product line gate shout when the order can be edited', function () {
     Livewire::test(ManageOrder::class, [
         'record' => $this->order->getRouteKey(),
@@ -715,6 +884,9 @@ it('has product line editing copy in every admin locale', function () {
         'lunarpanel::order.action.update_quantity.label',
         'lunarpanel::order.action.update_quantity.quantity.label',
         'lunarpanel::order.action.update_quantity.notification',
+        'lunarpanel::order.action.modify_shipping_price.label',
+        'lunarpanel::order.action.modify_shipping_price.amount.label',
+        'lunarpanel::order.action.modify_shipping_price.notification',
         'lunarpanel::order.action.remove_product.label',
         'lunarpanel::order.action.remove_product.confirmation',
         'lunarpanel::order.action.remove_product.notification',
@@ -734,9 +906,12 @@ it('has product line editing copy in every admin locale', function () {
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))->toContain('Invoice')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.awb'))->toContain('AWB');
 
+    expect(__('lunarpanel::order.action.modify_shipping_price.label'))->toBe('Modify shipping price');
+
     app()->setLocale('hu');
 
-    expect(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('Fizetve')
+    expect(__('lunarpanel::order.action.modify_shipping_price.label'))->toBe('Szállítási díj módosítása')
+        ->and(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('Fizetve')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('nem módosítható')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.erp'))->toContain('ERP')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))->toContain('Számla')
