@@ -65,6 +65,9 @@
             "Lunar\\Admin\\": "packages/admin/src/",
             "Lunar\\Admin\\Database\\Factories\\": "packages/admin/database/factories",
             "Lunar\\Admin\\Database\\State\\": "packages/admin/database/state",
+            "Lunar\\Analytics\\": "packages/analytics/src",
+            "Lunar\\Analytics\\Database\\Factories\\": "packages/analytics/database/factories",
+            "Lunar\\Analytics\\Database\\State\\": "packages/analytics/database/state",
             "Lunar\\Blog\\": "packages/blog/src",
             "Lunar\\Blog\\Database\\Factories\\": "packages/blog/database/factories",
             "Lunar\\Blog\\Database\\Seeders\\": "packages/blog/database/seeders",
@@ -102,6 +105,7 @@
             "Workbench\\App\\": "workbench/app/",
             "Lunar\\Tests\\": "tests",
             "Lunar\\Tests\\Admin\\": "tests/admin",
+            "Lunar\\Tests\\Analytics\\": "tests/analytics",
             "Lunar\\Tests\\Core\\": "tests/core",
             "Lunar\\Tests\\Opayo\\": "tests/opayo",
             "Lunar\\Tests\\Paypal\\": "tests/paypal",
@@ -123,6 +127,7 @@
     "extra": {
         "lunar": {
             "name": [
+                "Analytics",
                 "Blog",
                 "ERP",
                 "Feedback",
@@ -157,6 +162,7 @@
                 "Lunar\\Review\\ReviewServiceProvider",
                 "Lunar\\Feedback\\FeedbackServiceProvider",
                 "Lunar\\Loyalty\\LoyaltyServiceProvider",
+                "Lunar\\Analytics\\AnalyticsServiceProvider",
                 "Lunar\\Blog\\BlogServiceProvider",
                 "Lunar\\Content\\ContentServiceProvider",
                 "Lunar\\Mailchimp\\MailchimpServiceProvider",
@@ -166,6 +172,7 @@
         }
     },
     "replace": {
+        "lunarphp/analytics": "self.version",
         "lunarphp/blog": "self.version",
         "lunarphp/core": "self.version",
         "lunarphp/feedback": "self.version",

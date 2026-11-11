@@ -97,6 +97,7 @@ flowchart LR
 | `packages/paypal`   | PayPal payment driver (`Payments::extend('paypal')`)                                                               |
 | `packages/opayo`    | Opayo payment driver (`Payments::extend('opayo')`)                                                                 |
 | `packages/mailchimp`                   | Saloon client, ecommerce sync jobs, cart line observer                                                             |
+| `packages/analytics`                   | Measuring and reporting features, one folder per feature (`src/Traffic/`: visits, cart sources, admin report)      |
 | `packages/blog`, `review`, `locations` | Content, reviews, Romanian county/locality data                                                                    |
 | `tests/*`                              | Pest suites per package/domain                                                                                     |
 | `workbench/`                           | Orchestra Testbench app for local/package dev                                                                      |
@@ -336,6 +337,24 @@ Storefront payment finalization and extra drivers: `lunar-frontend` (`AuthorizeO
 | **Filament** | `FeedbackPlugin`, read-only `FeedbackResource`; `OrderResource` / `ManageOrder` extensions |
 
 
+### Analytics (`packages/analytics`)
+
+
+|                 |                                                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Purpose**     | Measuring and reporting features, one folder per feature; first feature: traffic sources (`src/Traffic/`)                                                       |
+| **Provider**    | `AnalyticsServiceProvider` — config `lunar.analytics`, migrations, `lunarpanel.analytics` translations, classifier binding, cart observer, permission state       |
+| **Plugin**      | `AnalyticsPlugin` (`lunar-analytics`) — "Analytics" navigation group, feature pages, widgets and admin extensions; registered by the host                        |
+| **Models**      | `Traffic\Models\TrafficVisit` (`lunar_traffic_visits`: source, medium, campaign, referrer host, landing path, created_at; no personal data)                      |
+| **Classifier**  | `Traffic\Contracts\ClassifiesTrafficSource` → `Traffic\Support\TrafficSourceClassifier`; config `lunar.analytics.traffic` (referrer hosts, click ids, bot pattern, classifier, `ANALYTICS_TRAFFIC_ENABLED`, off by default) |
+| **Recording**   | `Traffic\Services\TrafficVisitRecorder` (session key `analytics_traffic_visit`, pending prefetch visit key `analytics_traffic_pending_visit`, `record()`, `current()`, `shouldTrack()`, `isPrefetch()`); `Traffic\Http\Middleware\RecordTrafficVisit` (host attaches it to storefront routes) |
+| **Attribution** | `Traffic\Observers\StampCartWithTrafficSource` (`Cart` `creating` → `meta.traffic_source`); `FillOrderFromCart` and `SplitOrder::COPIED_META_KEYS` carry it to orders |
+| **Report**      | `Traffic\Reports\TrafficReportQuery`; `Traffic\Filament\Pages\TrafficSourcesPage` (`analytics/traffic-sources`); widgets `TrafficStatsOverview`, `VisitsBySourceChart`, `VisitsOverTimeChart`, `TrafficSourceFunnelTable`, `LandingPagesTable` |
+| **Names**       | `Traffic\Support\TrafficSourceLabel` — source and medium in words ("Google · Paid ad", "Direct", "Unknown"), badge color and campaign; used by the order badges and the report |
+| **Order pages** | `Traffic\Filament\Extensions\OrderResourceExtension` ("Traffic source" badge column after `new_customer`); `Traffic\Filament\Extensions\ManageOrderExtension` (`extendAdditionalInfoSection()`: "Traffic source" section above "Additional info" with badge, campaign and the visit's referrer, landing page link and start, one `TrafficVisit::find()` per request; hides the raw `traffic_source` meta key). Badge and section only for `TrafficSourcesPage::canAccess()`; registered by `AnalyticsPlugin` |
+| **Permission**  | `analytics:traffic-sources` (`Database\State\EnsureAnalyticsPermissions`, created on migrate; no role): opens the report and shows the order badges              |
+
+
 ### Locations (`packages/locations`)
 
 
@@ -366,6 +385,7 @@ Registered in `composer.json` → `extra.laravel.providers`:
 | `Lunar\Review\ReviewServiceProvider`            | review              |
 | `Lunar\Locations\LocationsServiceProvider`      | locations           |
 | `Lunar\Mailchimp\MailchimpServiceProvider`      | mailchimp           |
+| `Lunar\Analytics\AnalyticsServiceProvider`      | analytics           |
 | `Lunar\Addons\Shipping\ShippingServiceProvider` | carrier shipping    |
 | `Lunar\Shipping\ShippingServiceProvider`        | table-rate shipping |
 | `Lunar\Search\SearchServiceProvider`            | search              |
@@ -497,6 +517,7 @@ Review reminder scheduling: **not found** in package providers (command exists).
 | **Smartbill invoices**                    | `packages/ERP/src/Observers/OrderObserver.php`, `Providers/Smartbill/`                                                                                                  |
 | **Mailchimp cart sync**                   | `packages/mailchimp/src/Observers/CartLineObserver.php`, `Jobs/SyncCartToMailchimp.php`                                                                                 |
 | **Mailchimp order on placement**          | `packages/mailchimp/src/Listeners/SyncOrderOnPlacement.php` + host listener registration                                                                                |
+| **Traffic sources**                       | `packages/analytics/src/Traffic/`: `Services/TrafficVisitRecorder.php`, `Support/TrafficSourceClassifier.php`, `Reports/TrafficReportQuery.php`, `Filament/Pages/TrafficSourcesPage.php`; config `packages/analytics/config/analytics.php` |
 | **Customer / group pricing & visibility** | `CustomerGroup` relations, `Product::scopeAvailable()`, `StorefrontSessionManager`                                                                                      |
 | **Admin product CRUD**                    | `packages/admin/src/Filament/Resources/ProductResource.php`                                                                                                             |
 | **Admin order management**                | `packages/admin/src/Filament/Resources/OrderResource.php`                                                                                                               |

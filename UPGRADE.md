@@ -4,6 +4,43 @@ This document outlines the key changes and new features in the Admin, Core, Blog
 
 ## ⬆️ Upcoming
 
+### Analytics Package
+
+#### ✨ New main features
+
+- New `lunarphp/analytics` package (`Lunar\Analytics\`) for measuring and reporting features. It has one provider (`AnalyticsServiceProvider`), one Filament plugin (`AnalyticsPlugin`, "Analytics" navigation group), one config file with a section per feature, and one permission state. Each feature lives in its own folder, starting with `src/Traffic/`.
+- **Traffic recording.** One `lunar_traffic_visits` row per visit (source, medium, campaign, referrer host, landing path, time; no IP, user agent, user, session id, full referrer or query string). A visit starts on the first storefront page view of a session, or when a later page view's campaign parameters (`utm_source` or a configured click id) give a different source, medium or campaign. Bots, non-HTML and non-200 responses, the admin panel and sessions with a logged-in staff member are not recorded. A browser prefetch or prerender (`Sec-Purpose` / `Purpose`) records nothing, but the visit it would start stays pending in the session and is recorded once the visitor opens the page, at the session's next page view or cart creation. A visitor whose active cart already has a traffic source starts no visit; the session continues that cart's visit. Recording does not depend on consent and sets no new cookie.
+- **Classification**, in precedence order: `utm_source` (with `utm_medium`, `utm_campaign`); click ids that win over the referrer (default `gclid`, `gbraid`, `wbraid` → google / cpc); known referrer hosts (Google, Bing, Yahoo, DuckDuckGo → organic; Facebook, Instagram, TikTok, YouTube → social); the other click ids (default `fbclid` → facebook / social); any other external host (host / referral); direct / none.
+- **Attribution.** A new cart gets `meta.traffic_source` (`visit_id`, `source`, `medium`, `campaign`) from the current visit, once (first touch). Orders keep it through `FillOrderFromCart` (whole cart meta copy) and split orders through `SplitOrder`.
+- **Traffic sources report** (`Lunar\Analytics\Traffic\Filament\Pages\TrafficSourcesPage`, Analytics group) for admins and staff with `analytics:traffic-sources`: for a period (default: the last 30 days) visit, cart and order totals, order value and order rate; visits by source; visits over time (per day, week or month); per source and medium visits, carts, placed reportable orders, order value and order rate, with orders without a source as "Unknown"; the most visited landing pages. Visits and carts whose orders all have a status excluded from reports (for example `test-order`) are left out of every figure, by the orders' current status; visits and carts without orders still count. Unlike the dashboard, a split order counts once, as its original on its placement date and with its value, while one of its new orders counts.
+- **Order pages.** Admins and staff with `analytics:traffic-sources` see each order's traffic source as a badge, named in words ("Google · Organic search", "Google · Paid ad", "Facebook · Social", "Direct", "Unknown" without a source): a toggleable "Traffic source" column in the order list, after the customer type, with the campaign as tooltip, and a "Traffic source" section on the order page, directly above "Additional info" (below Tags and Personalization), in place of an order summary entry. The section shows the badge and each stored detail that has a value: the campaign, and from the order's visit the referrer host, the landing page as a link to the storefront page (new tab) and when the visit started. It reads the visit with one query; without a visit row it shows only the badge and the campaign. The raw `traffic_source` no longer appears under "Additional info" for anyone. The report's visits by source and funnel table name sources and mediums the same way. `AnalyticsPlugin` adds both extensions, so panels without it are unchanged.
+
+#### 🌍 Environment variables
+
+- `ANALYTICS_TRAFFIC_ENABLED` (default `false`): switches visit recording and cart stamping on. Set it to `true` to start recording.
+
+#### ⚙️ New/modified configs
+
+- `config/lunar/analytics.php`, section `traffic`:
+  - `enabled` (`ANALYTICS_TRAFFIC_ENABLED`);
+  - `classifier`: class implementing `ClassifiesTrafficSource`, to replace the rules;
+  - `referrer_hosts`: host → source / medium (an entry matches the host and its subdomains; a trailing `.*` matches any one- or two-label suffix);
+  - `click_ids`: query parameter → source / medium, with `before_referrer`;
+  - `bot_user_agent_pattern`: user agents never recorded.
+
+#### 💻 Host responsibilities
+
+- Run `php artisan migrate` to create `lunar_traffic_visits` and the `analytics:traffic-sources` permission. No role is created; grant the permission to the development and marketing staff. The permission opens the report and also shows the traffic source badges on the order list and order page.
+- Register `Lunar\Analytics\AnalyticsPlugin` on the Lunar panel (`minic/lunar-frontend` does this).
+- Set `ANALYTICS_TRAFFIC_ENABLED=true` to start recording. Recording is off by default: until the variable is set, no visits are recorded, new carts get no source, the report stays empty and the order badges show "Unknown".
+- Attach `Lunar\Analytics\Traffic\Http\Middleware\RecordTrafficVisit` to the storefront page routes as route middleware, so it runs inside `StartSession` (the session must be readable and writable before it is saved). `minic/lunar-frontend` does this. It records after the response, only for 200 HTML GET page views. HTML served from an edge or full-page cache never reaches Laravel and is not recorded.
+- Hosts with `lunar.cart_session.auto_create = true` create the cart before the landing visit is recorded, so those carts and their orders have no source (shown as "Unknown").
+
+#### 📦 Published assets
+
+- `php artisan vendor:publish --tag="lunar.analytics.config"`
+- `php artisan vendor:publish --tag="lunar.analytics.migrations"`
+
 ### Feedback Package
 
 #### ✨ New main features
@@ -42,6 +79,7 @@ This document outlines the key changes and new features in the Admin, Core, Blog
 
 #### ⚠️ Behavior changes
 
+- Order split: new orders keep the original order's `traffic_source` meta (`SplitOrder::COPIED_META_KEYS`), written on carts by the analytics package. An original without it gives new orders without it.
 - A 0-value automatic discount (empty or 0 percentage, or a fixed value with no positive amount) no longer hides lower-tier discounts. Products it is limited to now get the next tier's discount in the cart and the catalog.
 - Order split targets and other carts with a `shippingOptionOverride` keep the entered shipping price. Staff can enter 0 on a split target to keep free shipping.
 

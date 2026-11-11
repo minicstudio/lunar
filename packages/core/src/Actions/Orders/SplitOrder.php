@@ -58,6 +58,7 @@ final class SplitOrder extends AbstractAction
         'shippingType',
         'is_guest',
         'isBillingSameAsShipping',
+        'traffic_source',
     ];
 
     /**
