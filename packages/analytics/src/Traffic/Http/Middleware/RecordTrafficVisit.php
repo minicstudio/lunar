@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 /**
  * Records a storefront visit after the response is built.
@@ -29,8 +30,12 @@ class RecordTrafficVisit
     {
         $response = $next($request);
 
-        if ($this->isRecordable($request, $response)) {
-            $this->recorder->record($request);
+        try {
+            if ($this->isRecordable($request, $response)) {
+                $this->recorder->record($request);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
         }
 
         return $response;

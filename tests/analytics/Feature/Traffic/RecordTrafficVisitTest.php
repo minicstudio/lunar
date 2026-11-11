@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Route;
 use Lunar\Analytics\Traffic\Http\Middleware\RecordTrafficVisit;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
@@ -37,6 +38,24 @@ test('an html page view from google records an organic google visit', function (
 
     expect([$visit->source, $visit->medium, $visit->landing_path])->toBe(['google', 'organic', '/storefront']);
 });
+
+test('traffic failures are reported without interrupting the page response', function (string $method, string $exceptionClass) {
+    Exceptions::fake();
+
+    $exception = new $exceptionClass('Traffic recording failed.');
+
+    $this->partialMock(TrafficVisitRecorder::class)
+        ->shouldReceive($method)
+        ->once()
+        ->andThrow($exception);
+
+    $this->get('/storefront', ['Referer' => 'https://www.google.com/'])
+        ->assertOk()
+        ->assertContent('<html><body>Shop</body></html>');
+
+    expect(Exceptions::reported())->toBe([$exception])
+        ->and(TrafficVisit::count())->toBe(0);
+})->with(['record', 'shouldTrack'])->with([RuntimeException::class, TypeError::class]);
 
 test('bots and empty user agents record nothing', function (string $userAgent) {
     $this->get('/storefront', ['Referer' => 'https://www.google.com/', 'User-Agent' => $userAgent])->assertOk();
