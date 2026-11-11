@@ -404,6 +404,13 @@ return [
             ],
             'notification' => 'تم تحديث الكمية',
         ],
+        'modify_shipping_price' => [
+            'label' => 'تعديل سعر الشحن',
+            'amount' => [
+                'label' => 'سعر الشحن',
+            ],
+            'notification' => 'تم تحديث سعر الشحن',
+        ],
         'remove_product' => [
             'label' => 'إزالة المنتج',
             'confirmation' => 'إزالة هذا المنتج من الطلب؟',

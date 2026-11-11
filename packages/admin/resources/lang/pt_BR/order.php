@@ -408,6 +408,13 @@ return [
             ],
             'notification' => 'Quantidade atualizada',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Alterar o preço do frete',
+            'amount' => [
+                'label' => 'Preço do frete',
+            ],
+            'notification' => 'Preço do frete atualizado',
+        ],
         'remove_product' => [
             'label' => 'Remover produto',
             'confirmation' => 'Remover este produto do pedido?',

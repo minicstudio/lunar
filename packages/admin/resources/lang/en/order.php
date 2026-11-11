@@ -441,6 +441,13 @@ return [
             ],
             'notification' => 'Quantity updated',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Modify shipping price',
+            'amount' => [
+                'label' => 'Shipping price',
+            ],
+            'notification' => 'Shipping price updated',
+        ],
         'remove_product' => [
             'label' => 'Remove product',
             'confirmation' => 'Remove this product from the order?',

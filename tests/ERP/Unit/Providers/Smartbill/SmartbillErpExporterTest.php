@@ -1,12 +1,14 @@
 <?php
 
-uses(\Lunar\Tests\ERP\TestCase::class);
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdownItem;
+use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
+use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
 use Lunar\DataTypes\Price;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\ERP\Contracts\ErpApiClientInterface;
 use Lunar\ERP\Exceptions\FailedErpInvoiceGenerationException;
 use Lunar\ERP\Providers\Smartbill\Requests\DownloadInvoicePDFRequest;
@@ -17,14 +19,20 @@ use Lunar\Models\Country;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
 use Lunar\Models\CustomerGroup;
+use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Lunar\Models\OrderAddress;
+use Lunar\Models\OrderLine;
 use Lunar\Models\TaxClass;
 use Lunar\Models\TaxRate;
 use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
+use Lunar\Tests\ERP\TestCase;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
+
+uses(TestCase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Config::set('lunar.erp.smartbill.base_url', 'https://smartbill.test');
@@ -103,6 +111,7 @@ function makeOrderForSmartbillExporter(array $orderAttributes = []): Order
         ]), 'shippingAddress')
         ->create(array_merge([
             'reference' => '1525',
+            'currency_code' => 'EUR',
             'meta' => [
                 'payment_option' => 'cash-on-delivery',
             ],
@@ -114,7 +123,7 @@ function makeOrderForSmartbillExporter(array $orderAttributes = []): Order
 
 it('generateInvoice returns series & number and exporter maps order to payload', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -131,7 +140,7 @@ it('generateInvoice returns series & number and exporter maps order to payload',
 
 it('maps observations with empty payment slug when payment_type is missing from payment_map', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -149,7 +158,7 @@ it('maps observations with empty payment slug when payment_type is missing from 
 
 it('uses first shipping_breakdown item identifier for observations', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -175,7 +184,7 @@ it('uses first shipping_breakdown item identifier for observations', function ()
 
 it('maps observations with empty shipping segment when shipping_breakdown has no items', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -193,7 +202,7 @@ it('maps observations with empty shipping segment when shipping_breakdown has no
 
 it('maps observations with empty reference segment when reference is blank', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -222,7 +231,7 @@ it('generateInvoice throws FailedErpInvoiceGenerationException when Smartbill re
 });
 
 it('generateInvoice rethrows when client throws with a helpful message', function () {
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andThrow(new RuntimeException('failed'));
 
     $exporter = new SmartbillErpExporter($client);
@@ -251,9 +260,9 @@ it('downloadInvoicePDF proxies to client', function () {
     expect($resp->successful())->toBeTrue();
 });
 
-it('adds a shipping product when shipping_total > 0 and maps client fields', function () {
+it('adds a shipping product when the order has shipping and maps client fields', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -263,7 +272,13 @@ it('adds a shipping product when shipping_total > 0 and maps client fields', fun
     $exporter = new SmartbillErpExporter($client);
     $order = makeOrderForSmartbillExporter();
 
-    $order->update(['shipping_total' => 1500]);
+    $currency = Currency::where('default', true)->firstOrFail();
+    $order->update([
+        'shipping_breakdown' => new ShippingBreakdown(collect([
+            new ShippingBreakdownItem(name: 'Shipping', identifier: 'dpd', price: new Price(1500, $currency, 1)),
+        ])),
+        'shipping_total' => 1815,
+    ]);
     $order->refresh();
 
     $resp = $exporter->generateInvoice($order);
@@ -280,9 +295,26 @@ it('adds a shipping product when shipping_total > 0 and maps client fields', fun
     expect($shipping['measuringUnitName'])->toBe('buc');
 });
 
-it('does not add a shipping product when shipping_total is zero', function () {
+it('sends shipping including tax when prices are stored including tax', function () {
+    Config::set('lunar.pricing.stored_inclusive_of_tax', true);
+
+    $currency = Currency::where('code', 'EUR')->firstOrFail();
+    $order = makeOrderForSmartbillExporter([
+        'shipping_breakdown' => new ShippingBreakdown(collect([
+            new ShippingBreakdownItem(name: 'Shipping', identifier: 'dpd', price: new Price(1815, $currency, 1)),
+        ])),
+        'shipping_total' => 1815,
+        'tax_breakdown' => smartbillVat21(315),
+    ]);
+
+    expect(captureSmartbillProducts($order)['SHIPPING'])
+        ->price->toBe(18.15)
+        ->isTaxIncluded->toBeTrue();
+});
+
+it('does not add a shipping product when shipping is free', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -312,7 +344,7 @@ it('sendOrder returns false by default for Smartbill exporter', function () {
 
 it('maps bank-transfer and stripe-wallet-pay payment options in observations', function (string $paymentOption, string $slug) {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -333,7 +365,7 @@ it('maps bank-transfer and stripe-wallet-pay payment options in observations', f
 
 it('sends complimentary product lines at price zero', function () {
     $captured = null;
-    $client = \Mockery::mock(ErpApiClientInterface::class);
+    $client = Mockery::mock(ErpApiClientInterface::class);
     $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
         $captured = $payload->toArray();
 
@@ -343,7 +375,7 @@ it('sends complimentary product lines at price zero', function () {
     $exporter = new SmartbillErpExporter($client);
     $order = makeOrderForSmartbillExporter();
 
-    \Lunar\Models\OrderLine::factory()->create([
+    OrderLine::factory()->create([
         'order_id' => $order->id,
         'type' => 'physical',
         'identifier' => 'GIFT-SKU',
@@ -361,4 +393,301 @@ it('sends complimentary product lines at price zero', function () {
     $gift = collect($captured['products'])->firstWhere('code', 'GIFT-SKU');
     expect($gift)->not->toBeNull();
     expect($gift['price'])->toBe(0.0);
+});
+
+/**
+ * Create a product line on the order with tax-free net totals.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function createSmartbillPackTestLine(Order $order, array $attributes): OrderLine
+{
+    return OrderLine::factory()->create(array_merge([
+        'order_id' => $order->id,
+        'type' => 'physical',
+        'unit_quantity' => 1,
+        'discount_total' => 0,
+        'tax_total' => 0,
+        'meta' => null,
+    ], $attributes));
+}
+
+/**
+ * A 21% tax breakdown in the default currency.
+ */
+function smartbillVat21(int $tax): TaxBreakdown
+{
+    $taxBreakdown = new TaxBreakdown;
+    $taxBreakdown->addAmount(new TaxBreakdownAmount(
+        price: new Price($tax, Currency::where('default', true)->firstOrFail(), 1),
+        identifier: 'vat',
+        description: 'VAT',
+        percentage: 21,
+    ));
+
+    return $taxBreakdown;
+}
+
+/**
+ * Generate the invoice and return the captured SmartBill products keyed by code.
+ *
+ * @return Collection<string, array<string, mixed>>
+ */
+function captureSmartbillProducts(Order $order): Collection
+{
+    $captured = null;
+    $client = Mockery::mock(ErpApiClientInterface::class);
+    $client->shouldReceive('generateInvoice')->once()->andReturnUsing(function ($payload) use (&$captured) {
+        $captured = $payload->toArray();
+
+        return ['series' => 'S', 'number' => 30];
+    });
+
+    (new SmartbillErpExporter($client))->generateInvoice($order->fresh());
+
+    return collect($captured['products'])->keyBy('code');
+}
+
+it('invoices pack-priced lines in packs next to lines sold per piece', function () {
+    $order = makeOrderForSmartbillExporter(['currency_code' => 'EUR']);
+
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'PIECE-SKU',
+        'quantity' => 3,
+        'total' => 3000,
+    ]);
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'PACK-SKU',
+        'unit_quantity' => 4,
+        'quantity' => 8,
+        'total' => 19998,
+    ]);
+
+    $products = captureSmartbillProducts($order);
+
+    expect($products['PIECE-SKU'])
+        ->measuringUnitName->toBe('buc')
+        ->quantity->toBe(3.0)
+        ->price->toBe(10.0)
+        ->not->toHaveKey('productDescription');
+
+    expect($products['PACK-SKU'])
+        ->measuringUnitName->toBe('pachet')
+        ->quantity->toBe(2.0)
+        ->price->toBe(99.99)
+        ->productDescription->toBe('1 pachet = 4 buc');
+});
+
+it('uses the configured pack measuring unit name', function () {
+    Config::set('lunar.erp.smartbill.pack_measuring_unit_name', 'bax');
+
+    $order = makeOrderForSmartbillExporter(['currency_code' => 'EUR']);
+
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'PACK-SKU',
+        'unit_quantity' => 6,
+        'quantity' => 6,
+        'total' => 1200,
+    ]);
+
+    expect(captureSmartbillProducts($order)['PACK-SKU'])
+        ->measuringUnitName->toBe('bax')
+        ->quantity->toBe(1.0)
+        ->price->toBe(12.0)
+        ->productDescription->toBe('1 bax = 6 buc');
+});
+
+it('keeps pack-priced lines in pieces when pack invoicing is disabled', function () {
+    Config::set('lunar.erp.smartbill.invoice_packs', false);
+
+    $order = makeOrderForSmartbillExporter(['currency_code' => 'EUR']);
+
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'PACK-SKU',
+        'unit_quantity' => 4,
+        'quantity' => 8,
+        'total' => 20000,
+    ]);
+
+    expect(captureSmartbillProducts($order)['PACK-SKU'])
+        ->measuringUnitName->toBe('buc')
+        ->quantity->toBe(8.0)
+        ->price->toBe(25.0)
+        ->productDescription->toBe('1 pachet = 4 buc');
+});
+
+it('invoices a pack line in pieces when its quantity is not a whole number of packs', function () {
+    $order = makeOrderForSmartbillExporter(['currency_code' => 'EUR']);
+
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'PACK-SKU',
+        'unit_quantity' => 4,
+        'quantity' => 6,
+        'total' => 1500,
+    ]);
+
+    expect(captureSmartbillProducts($order)['PACK-SKU'])
+        ->measuringUnitName->toBe('buc')
+        ->quantity->toBe(6.0)
+        ->price->toBe(2.5)
+        ->productDescription->toBe('1 pachet = 4 buc');
+});
+
+it('sends complimentary pack lines as packs at price zero', function () {
+    $order = makeOrderForSmartbillExporter(['currency_code' => 'EUR']);
+
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'GIFT-PACK-SKU',
+        'unit_quantity' => 4,
+        'quantity' => 4,
+        'total' => 0,
+        'meta' => ['added_by_discount' => [1]],
+    ]);
+
+    expect(captureSmartbillProducts($order)['GIFT-PACK-SKU'])
+        ->measuringUnitName->toBe('pachet')
+        ->quantity->toBe(1.0)
+        ->price->toBe(0.0);
+});
+
+it('sends shipping and coupon excluding tax when prices are stored excluding tax', function () {
+    $currency = Currency::where('code', 'EUR')->firstOrFail();
+    $order = makeOrderForSmartbillExporter([
+        'currency_code' => 'EUR',
+        'shipping_breakdown' => new ShippingBreakdown(collect([
+            new ShippingBreakdownItem(name: 'Shipping', identifier: 'dpd', price: new Price(1500, $currency, 1)),
+        ])),
+        'shipping_total' => 1815,
+        'tax_breakdown' => smartbillVat21(2226),
+    ]);
+
+    // 30% coupon on 30.00 (1 piece) + 100.00 (1 pack of 4), 21% VAT.
+    $pieceLine = createSmartbillPackTestLine($order, [
+        'identifier' => 'PIECE-SKU',
+        'quantity' => 1,
+        'sub_total' => 3000,
+        'discount_total' => 900,
+        'tax_breakdown' => smartbillVat21(441),
+        'tax_total' => 441,
+        'total' => 2541,
+    ]);
+    $packLine = createSmartbillPackTestLine($order, [
+        'identifier' => 'PACK-SKU',
+        'unit_quantity' => 4,
+        'quantity' => 4,
+        'sub_total' => 10000,
+        'discount_total' => 3000,
+        'tax_breakdown' => smartbillVat21(1470),
+        'tax_total' => 1470,
+        'total' => 8470,
+    ]);
+
+    $coupon = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'COUPON30',
+        'data' => ['fixed_value' => false, 'percentage' => 30],
+    ]);
+    $order->update([
+        'discount_breakdown' => collect([
+            (object) [
+                'discount_id' => $coupon->id,
+                'lines' => collect([
+                    (object) ['line' => $pieceLine, 'quantity' => 1, 'amount' => new Price(900, $currency, 1)],
+                    (object) ['line' => $packLine, 'quantity' => 4, 'amount' => new Price(3000, $currency, 1)],
+                ]),
+                'total' => new Price(3900, $currency, 1),
+            ],
+        ]),
+    ]);
+
+    $products = captureSmartbillProducts($order);
+
+    expect($products['PIECE-SKU']['price'])->toBe(30.0)
+        ->and($products['PACK-SKU']['price'])->toBe(100.0)
+        ->and($products['SHIPPING']['price'])->toBe(15.0)
+        ->and($products['CUPON']['price'])->toBe(-39.0)
+        ->and($products->pluck('isTaxIncluded')->unique()->all())->toBe([false]);
+});
+
+it('sends redeemed loyalty points as a negative line with the VAT of the products', function () {
+    // 100.00 product, 10.00 loyalty redeemed before tax, 21% VAT, prices excluding tax.
+    $order = makeOrderForSmartbillExporter([
+        'tax_breakdown' => smartbillVat21(1890),
+        'meta' => ['payment_option' => 'cash-on-delivery', 'loyalty_points_to_redeem' => 1000, 'loyalty_discount_minor' => 1000],
+    ]);
+
+    createSmartbillPackTestLine($order, [
+        'identifier' => 'PIECE-SKU',
+        'quantity' => 1,
+        'sub_total' => 10000,
+        'discount_total' => 1000,
+        'tax_breakdown' => smartbillVat21(1890),
+        'tax_total' => 1890,
+        'total' => 10890,
+    ]);
+
+    $products = captureSmartbillProducts($order);
+
+    expect($products['PIECE-SKU']['price'])->toBe(100.0)
+        ->and($products['LOIALITATE'])->toMatchArray([
+            'name' => 'Reducere puncte de fidelitate',
+            'quantity' => 1.0,
+            'price' => -10.0,
+            'isTaxIncluded' => false,
+            'taxPercentage' => 21.0,
+            'isService' => true,
+        ]);
+});
+
+it('sends no VAT fields when the order has no tax rate above 0%', function () {
+    // A seller not registered for VAT: no 0% tax name and no default tax zone configured.
+    Config::set('lunar.erp.smartbill.tax_names', ['21' => 'Normala']);
+    TaxZone::query()->update(['default' => false]);
+
+    $currency = Currency::where('code', 'EUR')->firstOrFail();
+    $order = makeOrderForSmartbillExporter([
+        'shipping_breakdown' => new ShippingBreakdown(collect([
+            new ShippingBreakdownItem(name: 'Shipping', identifier: 'dpd', price: new Price(1500, $currency, 1)),
+        ])),
+        'shipping_total' => 1500,
+        'tax_total' => 0,
+    ]);
+
+    $line = createSmartbillPackTestLine($order, [
+        'identifier' => 'USED-SHIRT',
+        'quantity' => 1,
+        'sub_total' => 3000,
+        'discount_total' => 300,
+        'total' => 2700,
+    ]);
+
+    $coupon = Discount::factory()->create([
+        'type' => AdvancedAmountOff::class,
+        'coupon' => 'COUPON10',
+        'data' => ['fixed_value' => false, 'percentage' => 10],
+    ]);
+    $order->update([
+        'discount_breakdown' => collect([
+            (object) [
+                'discount_id' => $coupon->id,
+                'lines' => collect([
+                    (object) ['line' => $line, 'quantity' => 1, 'amount' => new Price(300, $currency, 1)],
+                ]),
+                'total' => new Price(300, $currency, 1),
+            ],
+        ]),
+    ]);
+
+    $products = captureSmartbillProducts($order);
+
+    expect($products->map(fn (array $product) => $product['price'])->all())->toBe([
+        'USED-SHIRT' => 30.0,
+        'SHIPPING' => 15.0,
+        'CUPON' => -3.0,
+    ]);
+
+    $products->each(fn (array $product) => expect($product)
+        ->not->toHaveKey('isTaxIncluded')
+        ->not->toHaveKey('taxName')
+        ->not->toHaveKey('taxPercentage'));
 });

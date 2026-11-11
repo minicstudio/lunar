@@ -14,25 +14,37 @@ class SmartbillProduct implements DtoInterface
         public float $quantity,
         public float $price,
         public bool $isTaxIncluded,
-        public string $taxName,
-        public float $taxPercentage,
+        public ?string $taxName,
+        public ?float $taxPercentage,
         public bool $saveToDb,
         public bool $isService,
+        public ?string $productDescription = null,
     ) {}
 
     public function toArray(): array
     {
-        return [
+        $data = [
             'name' => $this->name,
             'code' => $this->code,
             'measuringUnitName' => $this->measuringUnitName,
             'currency' => $this->currency,
             'quantity' => $this->quantity,
             'price' => $this->price,
-            'isTaxIncluded' => $this->isTaxIncluded,
-            'taxName' => $this->taxName,
-            'taxPercentage' => $this->taxPercentage,
-            'isService' => $this->isService,
         ];
+
+        // A seller not registered for VAT sends no VAT fields at all.
+        if ($this->taxPercentage !== null) {
+            $data['isTaxIncluded'] = $this->isTaxIncluded;
+            $data['taxName'] = $this->taxName;
+            $data['taxPercentage'] = $this->taxPercentage;
+        }
+
+        $data['isService'] = $this->isService;
+
+        if (filled($this->productDescription)) {
+            $data['productDescription'] = $this->productDescription;
+        }
+
+        return $data;
     }
 }

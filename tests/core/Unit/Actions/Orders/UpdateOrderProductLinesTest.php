@@ -305,6 +305,19 @@ it('leaves stock unchanged when the order has no stock activity or a later cance
     expect($restored['variant']->fresh()->stock)->toBe(4);
 });
 
+it('keeps the ordered unit price when the catalog price has changed', function () {
+    ['order' => $order, 'variant' => $variant, 'line' => $line] = editableOrder(quantity: 2, price: 1000);
+    $variant->prices()->update(['price' => 2500]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 3));
+    $productLine = $saved->productLines()->first();
+
+    expect($productLine->id)->toBe($line->id)
+        ->and($productLine->unit_price->value)->toBe(1000)
+        ->and($productLine->quantity)->toBe(3)
+        ->and($productLine->sub_total->value)->toBe(3000);
+});
+
 it('stores the recalculated quantity and total and keeps status, reference, and personalization', function () {
     ['order' => $order, 'line' => $line] = editableOrder(quantity: 1, price: 2500, lineMeta: ['personalization' => 'Ada']);
     $reference = $order->reference;
@@ -499,6 +512,129 @@ function freeShippingEditDiscount(?string $coupon, array $data = []): Discount
 
     return $discount;
 }
+
+it('keeps an administrator shipping price when a free shipping coupon still qualifies', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 2, price: 1000);
+    freeShippingCourierLine($order, $cart);
+    $order->shippingLines()->first()->update([
+        'unit_price' => 1200,
+        'sub_total' => 1200,
+        'discount_total' => 0,
+        'total' => 1200,
+        'meta' => [
+            'shipping_price_override' => true,
+            'carrier' => 'kept',
+        ],
+    ]);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+    freeShippingEditDiscount('SHIPFREE', [
+        'min_prices' => [test()->currency->code => 1500],
+        'percentage' => 10,
+    ]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 3));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($shippingLine->sub_total->value)->toBe(1200)
+        ->and($shippingLine->discount_total->value)->toBe(0)
+        ->and($shippingLine->identifier)->toBe('COURIER')
+        ->and($shippingLine->description)->toBe('Courier')
+        ->and($shippingLine->meta['shipping_price_override'])->toBeTrue()
+        ->and($shippingLine->meta['carrier'])->toBe('kept')
+        ->and($saved->discount_total->value)->toBeGreaterThan(0)
+        ->and($saved->shipping_total->value)->toBeGreaterThan(0);
+});
+
+it('keeps an administrator shipping price when the carrier cannot price the option', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 2, price: 1000);
+
+    $order->lines()->create([
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Courier',
+        'identifier' => 'missing-rate',
+        'unit_price' => 500,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 500,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 500,
+        'meta' => ['shipping_price_override' => true],
+    ]);
+
+    CartAddress::factory()->create([
+        'cart_id' => $cart->id,
+        'type' => 'shipping',
+        'shipping_option' => null,
+    ]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 3));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($saved->productLines()->first()->quantity)->toBe(3)
+        ->and($shippingLine->sub_total->value)->toBe(500)
+        ->and($shippingLine->identifier)->toBe('missing-rate')
+        ->and($shippingLine->description)->toBe('Courier')
+        ->and($shippingLine->meta['shipping_price_override'])->toBeTrue();
+});
+
+it('waives shipping when a higher quantity makes an unedited shipping price eligible for free shipping', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 1, price: 1000);
+    freeShippingCourierLine($order, $cart);
+    $order->shippingLines()->first()->update([
+        'sub_total' => 1990,
+        'discount_total' => 0,
+        'total' => 1990,
+    ]);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+    freeShippingEditDiscount('SHIPFREE', ['min_prices' => [test()->currency->code => 1500]]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 2));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($shippingLine->sub_total->value)->toBe(0)
+        ->and($shippingLine->discount_total->value)->toBe(1990)
+        ->and($saved->shipping_total->value)->toBe(0)
+        ->and(data_get($shippingLine->meta, 'shipping_price_override'))->toBeNull();
+});
+
+it('waives shipping when a higher quantity meets an automatic free shipping minimum and the price was not edited', function () {
+    ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 1, price: 1000);
+    freeShippingCourierLine($order, $cart);
+    $order->shippingLines()->first()->update([
+        'sub_total' => 1990,
+        'discount_total' => 0,
+        'total' => 1990,
+    ]);
+    freeShippingEditDiscount(null, ['min_prices' => [test()->currency->code => 1500]]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::setQuantity($line->id, 2));
+
+    expect($saved->shippingLines()->first()->sub_total->value)->toBe(0)
+        ->and($saved->shipping_total->value)->toBe(0);
+});
+
+it('waives shipping when an added product makes an unedited shipping price eligible for free shipping', function () {
+    ['order' => $order, 'cart' => $cart] = editableOrder(quantity: 1, price: 1000);
+    freeShippingCourierLine($order, $cart);
+    $order->shippingLines()->first()->update([
+        'sub_total' => 1990,
+        'discount_total' => 0,
+        'total' => 1990,
+    ]);
+    $cart->update(['coupon_code' => 'SHIPFREE']);
+    freeShippingEditDiscount('SHIPFREE', ['min_prices' => [test()->currency->code => 1500]]);
+
+    $saved = UpdateOrderProductLines::run($order->fresh(), OrderProductLineChange::add(pricedVariant(1000), 1));
+    $shippingLine = $saved->shippingLines()->first();
+
+    expect($saved->productLines()->count())->toBe(2)
+        ->and($shippingLine->sub_total->value)->toBe(0)
+        ->and($saved->shipping_total->value)->toBe(0);
+});
 
 it('keeps shipping free with the waived amount on the line while the free shipping coupon still qualifies', function () {
     ['order' => $order, 'cart' => $cart, 'line' => $line] = editableOrder(quantity: 2, price: 1000);

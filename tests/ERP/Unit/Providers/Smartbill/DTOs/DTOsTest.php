@@ -60,6 +60,41 @@ it('serializes SmartbillProduct DTO', function () {
     ]);
 });
 
+it('serializes productDescription on SmartbillProduct only when set', function () {
+    $dto = new SmartbillProduct(
+        name: 'Pack',
+        code: 'P4',
+        measuringUnitName: 'pachet',
+        currency: 'RON',
+        quantity: 2,
+        price: 99.99,
+        isTaxIncluded: false,
+        taxName: 'Normala',
+        taxPercentage: 21.0,
+        saveToDb: false,
+        isService: false,
+        productDescription: '1 pachet = 4 buc',
+    );
+
+    expect($dto->toArray())->toMatchArray(['productDescription' => '1 pachet = 4 buc'])
+        ->and((new SmartbillProduct('Prod', 'P1', 'buc', 'RON', 1, 10.0, false, 'Normala', 21.0, false, false, ''))->toArray())
+        ->not->toHaveKey('productDescription');
+});
+
+it('leaves the VAT fields out of SmartbillProduct when no tax percentage is set', function () {
+    $dto = new SmartbillProduct('Prod', 'P1', 'buc', 'RON', 1, 10.0, false, null, null, false, false);
+
+    expect($dto->toArray())->toBe([
+        'name' => 'Prod',
+        'code' => 'P1',
+        'measuringUnitName' => 'buc',
+        'currency' => 'RON',
+        'quantity' => 1.0,
+        'price' => 10.0,
+        'isService' => false,
+    ]);
+});
+
 it('serializes SmartbillPrintRequestQuery DTO', function () {
     $dto = new SmartbillPrintRequestQuery(series: 'S', number: '123', companyVatCode: 'RO123');
     expect($dto->toArray())->toBe([

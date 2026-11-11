@@ -404,6 +404,13 @@ return [
             ],
             'notification' => 'تعداد به‌روز شد',
         ],
+        'modify_shipping_price' => [
+            'label' => 'تغییر هزینه ارسال',
+            'amount' => [
+                'label' => 'هزینه ارسال',
+            ],
+            'notification' => 'هزینه ارسال به‌روز شد',
+        ],
         'remove_product' => [
             'label' => 'حذف محصول',
             'confirmation' => 'این محصول از سفارش حذف شود؟',

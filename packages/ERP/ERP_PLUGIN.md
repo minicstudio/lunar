@@ -104,8 +104,12 @@ SMARTBILL_TOKEN=...
 SMARTBILL_COMPANY_VAT_CODE=...
 SMARTBILL_SERIES_NAME=...
 SMARTBILL_MEASURING_UNIT_NAME=pcs
+SMARTBILL_PACK_MEASURING_UNIT_NAME=pachet
+SMARTBILL_INVOICE_PACKS=true
 SMARTBILL_SAVE_TO_DB=false
 ```
+
+Lines of pack-priced variants (`unit_quantity` > 1) are invoiced in packs: `SMARTBILL_PACK_MEASURING_UNIT_NAME` as unit, quantity = packs, price = pack price, plus a "1 pachet = 4 buc" description. The pack unit must exist in the SmartBill account and be mapped to an e-Factura code (e.g. XPK). With `SMARTBILL_INVOICE_PACKS=false` these lines stay in pieces and keep only the description.
 
 ## Sync and Actions
 

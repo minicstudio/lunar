@@ -397,6 +397,13 @@ return [
             ],
             'notification' => 'Menge aktualisiert',
         ],
+        'modify_shipping_price' => [
+            'label' => 'Versandpreis ändern',
+            'amount' => [
+                'label' => 'Versandpreis',
+            ],
+            'notification' => 'Versandpreis aktualisiert',
+        ],
         'remove_product' => [
             'label' => 'Produkt entfernen',
             'confirmation' => 'Dieses Produkt aus der Bestellung entfernen?',
