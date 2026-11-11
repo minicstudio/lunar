@@ -4,11 +4,9 @@ namespace Lunar\Jobs\Orders;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Collection;
 use Lunar\Facades\DB;
 use Lunar\Models\Order;
 use Lunar\Models\OrderAddress;
@@ -20,61 +18,57 @@ class MarkAsNewCustomer implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    protected $tries = 1;
-
-    /**
-     * The product instance.
-     *
-     * @var Model
-     */
-    protected $orderId;
-
     /**
      * Create a new job instance.
-     *
-     * @param  Model  $model
-     * @param  Collection  $tags
-     * @return void
      */
-    public function __construct($orderId)
-    {
-        $this->orderId = $orderId;
-    }
+    public function __construct(protected int $orderId) {}
 
     /**
-     * Execute the job.
+     * Mark the order from its billing email and earlier placed orders.
      *
-     * @return void
+     * Only placed orders count. A draft with the same email is not a previous
+     * purchase, and a blank email must not match every other blank address.
+     * The column defaults to returning, so this job is the only thing that can
+     * record a new customer.
      */
-    public function handle()
+    public function handle(): void
     {
         DB::transaction(function () {
             $order = Order::find($this->orderId);
 
-            if (! $order) {
+            if (! $order || ! $order->billingAddress) {
                 return;
             }
 
-            $billingAddress = $order->billingAddress;
+            $email = $order->billingAddress->contact_email;
 
-            if (! $billingAddress) {
+            if (blank($email)) {
+                $order->new_customer = true;
+                $order->saveQuietly();
+
                 return;
             }
 
             $ordersTable = (new Order)->getTable();
+            $addressesTable = (new OrderAddress)->getTable();
+            $cutoff = $order->placed_at ?: $order->created_at;
 
-            $previousOrder = OrderAddress::where('order_id', '!=', $order->id)
-                ->whereType('billing')
-                ->whereContactEmail($billingAddress->contact_email)
-                ->whereNotNull('contact_email')
-                ->join(
-                    $ordersTable,
-                    "{$ordersTable}.id",
-                    '=',
-                    'order_id'
-                )->where('placed_at', '<', $order->placed_at ?: $order->created_at)->first();
+            $hasPreviousOrder = OrderAddress::query()
+                ->where("{$addressesTable}.order_id", '!=', $order->id)
+                ->where("{$addressesTable}.type", 'billing')
+                ->where("{$addressesTable}.contact_email", $email)
+                ->join($ordersTable, "{$ordersTable}.id", '=', "{$addressesTable}.order_id")
+                ->whereNotNull("{$ordersTable}.placed_at")
+                ->where(function ($query) use ($ordersTable, $order, $cutoff) {
+                    $query->where("{$ordersTable}.placed_at", '<', $cutoff)
+                        ->orWhere(function ($query) use ($ordersTable, $order, $cutoff) {
+                            $query->where("{$ordersTable}.placed_at", '=', $cutoff)
+                                ->where("{$ordersTable}.id", '<', $order->id);
+                        });
+                })
+                ->exists();
 
-            $order->new_customer = ! $previousOrder;
+            $order->new_customer = ! $hasPreviousOrder;
             $order->saveQuietly();
         });
     }
