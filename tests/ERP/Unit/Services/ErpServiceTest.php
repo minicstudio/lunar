@@ -110,6 +110,7 @@ function makeOrderForErp(): Order
             'country_id' => $country->id,
         ]), 'shippingAddress')
         ->create([
+            'currency_code' => 'EUR',
             'meta' => [
                 'payment_option' => 'cash-on-delivery',
             ],

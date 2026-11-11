@@ -128,45 +128,52 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
     protected function unitPriceWithoutCoupon(): Attribute
     {
         return Attribute::make(
-            get: function () {
-                $breakdown = $this->order->discount_breakdown->whereNotNull('discount.coupon')->first();
-
-                $taxTotal = 0;
-
-                if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
-                    $taxTotal = $this->tax_total->value;
-                }
-
-                // Loyalty is folded into line totals at placement; add this line's
-                // share back so storefront prices match the checkout summary.
-                $net = ($this->total->value - $taxTotal) + $this->loyaltyDiscountAmount();
-
-                // If no coupon then return the original unit price
-                if (! $breakdown) {
-                    return new PriceDataType((int) ($net / $this->quantity), $this->order->currency, 1);
-                }
-
-                // Fixed-value coupons have no percentage to reverse, so instead add this
-                // line's recorded coupon amount back onto the net line total. Lines the
-                // coupon didn't touch (no matching breakdown line) get 0.
-                if ($breakdown->discount->data->fixed_value ?? false) {
-                    $breakdownLine = $breakdown->lines->first(fn ($lineData) => $lineData->line?->id === $this->id);
-
-                    $couponAmount = $breakdownLine ? ($breakdownLine->amount?->value ?? 0) : 0;
-
-                    $value = ($net + $couponAmount) / $this->quantity;
-
-                    return new PriceDataType((int) $value, $this->order->currency);
-                }
-
-                $percentage = $breakdown->discount->data->percentage;
-
-                // We need to calculate the original price without the percentage discount applied.
-                $value = $net / (1 - ($percentage / 100)) / $this->quantity;
-
-                return new PriceDataType((int) $value, $this->order->currency);
-            },
+            get: fn () => new PriceDataType(
+                (int) ($this->lineAmountWithoutCoupon() / $this->quantity),
+                $this->order->currency,
+            ),
         );
+    }
+
+    /**
+     * Get the line amount excluding tax before coupon and loyalty discounts (minor units, unrounded).
+     *
+     * Base of `unit_price_without_coupon`. Kept unrounded so a pack price can be
+     * derived from it without multiplying a truncated per-piece price back up.
+     */
+    protected function lineAmountWithoutCoupon(): float
+    {
+        $breakdown = $this->order->discount_breakdown->whereNotNull('discount.coupon')->first();
+
+        $taxTotal = 0;
+
+        if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
+            $taxTotal = $this->tax_total->value;
+        }
+
+        // Loyalty is folded into line totals at placement; add this line's
+        // share back so storefront prices match the checkout summary.
+        $net = ($this->total->value - $taxTotal) + $this->loyaltyDiscountAmount();
+
+        if (! $breakdown) {
+            return $net;
+        }
+
+        // Fixed-value coupons have no percentage to reverse, so instead add this
+        // line's recorded coupon amount back onto the net line total. Lines the
+        // coupon didn't touch (no matching breakdown line) get 0.
+        if ($breakdown->discount->data->fixed_value ?? false) {
+            $breakdownLine = $breakdown->lines->first(fn ($lineData) => $lineData->line?->id === $this->id);
+
+            $couponAmount = $breakdownLine ? ($breakdownLine->amount?->value ?? 0) : 0;
+
+            return $net + $couponAmount;
+        }
+
+        $percentage = $breakdown->discount->data->percentage;
+
+        // We need to calculate the original price without the percentage discount applied.
+        return $net / (1 - ($percentage / 100));
     }
 
     /**
@@ -271,5 +278,56 @@ class OrderLine extends BaseModel implements Contracts\OrderLine
         }
 
         return $this->unit_price_without_coupon;
+    }
+
+    /**
+     * Number of pieces in one priced pack (the variant's `unit_quantity` at order time).
+     */
+    public function packSize(): int
+    {
+        return max(1, (int) $this->unit_quantity);
+    }
+
+    /**
+     * Whether the line can be invoiced as whole packs instead of pieces.
+     *
+     * True for pack-priced lines (`unit_quantity` > 1) whose piece quantity is a
+     * whole number of packs. Every other line is invoiced per piece.
+     */
+    public function isInvoicedInPacks(): bool
+    {
+        $packSize = $this->packSize();
+
+        return $packSize > 1
+            && $this->quantity > 0
+            && $this->quantity % $packSize === 0;
+    }
+
+    /**
+     * Number of whole packs on the line (pieces ÷ pack size).
+     */
+    public function invoicePackQuantity(): int
+    {
+        return intdiv(max(0, (int) $this->quantity), $this->packSize());
+    }
+
+    /**
+     * Pack price for invoicing (zero when complimentary).
+     *
+     * Divides the unrounded line amount by the pack count, so packs × pack price
+     * equals the line amount even when the per-piece price does not divide evenly.
+     */
+    public function invoicePackPrice(): PriceDataType
+    {
+        if ($this->isComplimentary()) {
+            return new PriceDataType(0, $this->unit_price->currency);
+        }
+
+        $packs = max(1, $this->invoicePackQuantity());
+
+        return new PriceDataType(
+            (int) round($this->lineAmountWithoutCoupon() / $packs),
+            $this->order->currency,
+        );
     }
 }
