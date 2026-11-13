@@ -398,6 +398,14 @@ return [
             ],
             'notification' => 'Đã cập nhật phí vận chuyển',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Sửa phương thức vận chuyển',
+            'method' => [
+                'label' => 'Phương thức vận chuyển',
+            ],
+            'notification' => 'Đã cập nhật phương thức vận chuyển',
+            'billing_address_warning' => 'Địa chỉ giao hàng trùng với địa chỉ thanh toán. Hãy cập nhật địa chỉ giao hàng nếu địa chỉ nhận hàng khác.',
+        ],
         'remove_product' => [
             'label' => 'Xóa sản phẩm',
             'confirmation' => 'Xóa sản phẩm này khỏi đơn hàng?',
@@ -410,6 +418,8 @@ return [
             'line' => 'Không tìm thấy dòng sản phẩm đó.',
             'purchasable' => 'Không tìm thấy biến thể đó.',
             'shipping' => 'Không thể tính giá phương thức vận chuyển, nên đơn hàng được giữ nguyên.',
+            'shipping_method' => 'Phương thức vận chuyển này không khả dụng cho đơn hàng này, nên đơn hàng được giữ nguyên.',
+            'shipping_method_unchanged' => 'Phương thức vận chuyển này đã có trên đơn hàng này, nên đơn hàng được giữ nguyên.',
             'locked' => 'Đơn hàng này không còn có thể chỉnh sửa.',
             'not_purchasable' => 'Biến thể này không thể mua.',
             'out_of_stock' => 'Biến thể này đã hết hàng.',

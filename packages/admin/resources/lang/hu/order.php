@@ -440,6 +440,14 @@ return [
             ],
             'notification' => 'Szállítási díj frissítve',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Szállítási mód módosítása',
+            'method' => [
+                'label' => 'Szállítási mód',
+            ],
+            'notification' => 'Szállítási mód frissítve',
+            'billing_address_warning' => 'A szállítási cím megegyezik a számlázási címmel. Ha a kézbesítési cím ettől eltér, módosítsa a szállítási címet.',
+        ],
         'remove_product' => [
             'label' => 'Termék eltávolítása',
             'confirmation' => 'Eltávolítja ezt a terméket a rendelésből?',
@@ -452,6 +460,8 @@ return [
             'line' => 'A terméksor nem található.',
             'purchasable' => 'A változat nem található.',
             'shipping' => 'A szállítási mód nem árazható, ezért a rendelés változatlan maradt.',
+            'shipping_method' => 'Ez a szállítási mód ehhez a rendeléshez nem elérhető, ezért a rendelés változatlan maradt.',
+            'shipping_method_unchanged' => 'Ez a szállítási mód már ezen a rendelésen van, ezért a rendelés változatlan maradt.',
             'locked' => 'Ez a rendelés már nem szerkeszthető.',
             'not_purchasable' => 'Ez a változat nem vásárolható.',
             'out_of_stock' => 'Ez a változat nincs készleten.',

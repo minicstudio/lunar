@@ -8,6 +8,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Lunar\Admin\Filament\Resources\OrderResource;
+use Lunar\Admin\Support\Livewire\FileDownload;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
 
 class EditOrder extends BaseEditRecord
@@ -43,11 +44,13 @@ class EditOrder extends BaseEditRecord
                 ->action(function () {
                     Notification::make()->title(__('lunarpanel::order.action.download_order_pdf.notification'))->success()->send();
 
-                    return response()->streamDownload(function () {
-                        echo Pdf::loadView('lunarpanel::pdf.order', [
+                    FileDownload::queue(
+                        $this,
+                        Pdf::loadView('lunarpanel::pdf.order', [
                             'record' => $this->record,
-                        ])->stream();
-                    }, name: "Order-{$this->record->reference}.pdf");
+                        ])->output(),
+                        "Order-{$this->record->reference}.pdf",
+                    );
                 }),
         ];
     }

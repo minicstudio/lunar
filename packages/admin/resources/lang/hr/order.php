@@ -400,6 +400,14 @@ return [
             ],
             'notification' => 'Cijena dostave je ažurirana',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Izmijeni način dostave',
+            'method' => [
+                'label' => 'Način dostave',
+            ],
+            'notification' => 'Način dostave je ažuriran',
+            'billing_address_warning' => 'Adresa za dostavu odgovara adresi za naplatu. Ažurirajte adresu za dostavu ako je adresa isporuke drugačija.',
+        ],
         'remove_product' => [
             'label' => 'Ukloni proizvod',
             'confirmation' => 'Ukloniti ovaj proizvod iz narudžbe?',
@@ -412,6 +420,8 @@ return [
             'line' => 'Ta stavka proizvoda nije pronađena.',
             'purchasable' => 'Ta varijanta nije pronađena.',
             'shipping' => 'Opcija dostave ne može se cijeniti, pa je narudžba ostala nepromijenjena.',
+            'shipping_method' => 'Taj način dostave nije dostupan za ovu narudžbu, pa je narudžba ostala nepromijenjena.',
+            'shipping_method_unchanged' => 'Taj način dostave već je na ovoj narudžbi, pa je narudžba ostala nepromijenjena.',
             'locked' => 'Ova narudžba se više ne može uređivati.',
             'not_purchasable' => 'Ova varijanta se ne može kupiti.',
             'out_of_stock' => 'Ova varijanta nije na zalihi.',

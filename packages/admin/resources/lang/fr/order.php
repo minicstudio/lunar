@@ -411,6 +411,14 @@ return [
             ],
             'notification' => 'Frais de livraison mis à jour',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Modifier le mode de livraison',
+            'method' => [
+                'label' => 'Mode de livraison',
+            ],
+            'notification' => 'Mode de livraison mis à jour',
+            'billing_address_warning' => 'L\'adresse de livraison correspond à l\'adresse de facturation. Modifiez l\'adresse de livraison si l\'adresse de destination est différente.',
+        ],
         'remove_product' => [
             'label' => 'Retirer le produit',
             'confirmation' => 'Retirer ce produit de la commande ?',
@@ -423,6 +431,8 @@ return [
             'line' => 'Cette ligne de produit est introuvable.',
             'purchasable' => 'Cette variante est introuvable.',
             'shipping' => 'Le mode de livraison ne peut pas être tarifé, la commande est donc inchangée.',
+            'shipping_method' => 'Ce mode de livraison n\'est pas disponible pour cette commande, la commande est donc inchangée.',
+            'shipping_method_unchanged' => 'Ce mode de livraison est déjà sur cette commande, la commande est donc inchangée.',
             'locked' => 'Cette commande ne peut plus être modifiée.',
             'not_purchasable' => 'Cette variante ne peut pas être achetée.',
             'out_of_stock' => 'Cette variante est en rupture de stock.',

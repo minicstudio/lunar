@@ -2,6 +2,7 @@
 
 namespace Lunar\Actions\Orders;
 
+use Illuminate\Pipeline\Pipeline;
 use Illuminate\Support\Collection;
 use Lunar\Actions\Taxes\GetTaxZone;
 use Lunar\Base\ValueObjects\Cart\ShippingBreakdown;
@@ -17,6 +18,7 @@ use Lunar\Models\CartLine;
 use Lunar\Models\Discount;
 use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
+use Lunar\Pipelines\Cart\CalculateLines;
 use Lunar\Utils\Arr;
 
 /**
@@ -50,6 +52,22 @@ final class RecalculateEditedOrder
     {
         $this->alignCart($order, $cart);
         $this->rebuildCartLines($order, $cart);
+    }
+
+    /**
+     * Give the rebuilt lines the unit price stored on the order, and their subtotals.
+     *
+     * A shipping quote that depends on the cart total has to be read after this.
+     * The full cart pipeline still runs later and prices shipping again.
+     */
+    public function priceLines(Cart $cart): void
+    {
+        $this->bindStoredUnitPrices($cart);
+
+        app(Pipeline::class)
+            ->send($cart)
+            ->through([CalculateLines::class])
+            ->thenReturn();
     }
 
     /**

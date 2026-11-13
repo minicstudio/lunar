@@ -4,7 +4,8 @@ namespace Lunar\ERP\Filament\Actions;
 
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Response;
+use Livewire\Component;
+use Lunar\Admin\Support\Livewire\FileDownload;
 use Lunar\ERP\Services\ErpService;
 use Lunar\Models\Order;
 
@@ -17,13 +18,13 @@ class DownloadInvoicePdfAction extends Action
     {
         return parent::make($name)
             ->label(__('Download Invoice PDF'))
-            ->action(fn ($livewire) => static::handle($livewire->record));
+            ->action(fn ($livewire) => static::download($livewire->record, $livewire));
     }
 
     /**
-     * Handle the action.
+     * Fetch the invoice PDF and queue it for the browser.
      */
-    protected static function handle(Order $order)
+    public static function download(Order $order, Component $component): void
     {
         $series = $order->meta['billing_series'] ?? null;
         $number = $order->meta['billing_number'] ?? null;
@@ -56,11 +57,9 @@ class DownloadInvoicePdfAction extends Action
             }
 
             if ($response->successful()) {
-                return Response::streamDownload(function () use ($response) {
-                    echo $response->body();
-                }, "Invoice-{$provider->value}-{$number}.pdf", [
-                    'Content-Type' => 'application/pdf',
-                ]);
+                FileDownload::queue($component, $response->body(), "Invoice-{$provider->value}-{$number}.pdf");
+
+                return;
             }
         }
 

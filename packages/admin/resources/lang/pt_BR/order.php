@@ -415,6 +415,14 @@ return [
             ],
             'notification' => 'Preço do frete atualizado',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Alterar o método de envio',
+            'method' => [
+                'label' => 'Método de envio',
+            ],
+            'notification' => 'Método de envio atualizado',
+            'billing_address_warning' => 'O endereço de entrega corresponde ao endereço de cobrança. Atualize o endereço de entrega se o endereço de destino for diferente.',
+        ],
         'remove_product' => [
             'label' => 'Remover produto',
             'confirmation' => 'Remover este produto do pedido?',
@@ -427,6 +435,8 @@ return [
             'line' => 'Essa linha de produto não foi encontrada.',
             'purchasable' => 'Essa variante não foi encontrada.',
             'shipping' => 'A opção de frete não pode ser precificada, então o pedido permaneceu inalterado.',
+            'shipping_method' => 'Esse método de envio não está disponível para este pedido, então o pedido permaneceu inalterado.',
+            'shipping_method_unchanged' => 'Esse método de envio já está neste pedido, então o pedido permaneceu inalterado.',
             'locked' => 'Este pedido não pode mais ser editado.',
             'not_purchasable' => 'Esta variante não pode ser comprada.',
             'out_of_stock' => 'Esta variante está sem estoque.',

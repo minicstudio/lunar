@@ -4,8 +4,9 @@ namespace Lunar\Addons\Shipping\Filament\Actions;
 
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Response;
+use Livewire\Component;
 use Lunar\Addons\Shipping\Services\ShippingService;
+use Lunar\Admin\Support\Livewire\FileDownload;
 use Lunar\Models\Order;
 
 class DownloadAwbPdfAction extends Action
@@ -17,13 +18,13 @@ class DownloadAwbPdfAction extends Action
     {
         return parent::make($name)
             ->label(__('Download AWB PDF'))
-            ->action(fn ($livewire) => static::handle($livewire->record));
+            ->action(fn ($livewire) => static::download($livewire->record, $livewire));
     }
 
     /**
-     * Handle the action.
+     * Fetch the AWB PDF and queue it for the browser.
      */
-    protected static function handle(Order $order)
+    public static function download(Order $order, Component $component): void
     {
         $awbNumber = $order->meta['awb'] ?? null;
 
@@ -43,11 +44,9 @@ class DownloadAwbPdfAction extends Action
         }
 
         if ($response->successful()) {
-            return Response::streamDownload(function () use ($response) {
-                echo $response->body();
-            }, "AWB-{$awbNumber}.pdf", [
-                'Content-Type' => 'application/pdf',
-            ]);
+            FileDownload::queue($component, $response->body(), "AWB-{$awbNumber}.pdf");
+
+            return;
         }
 
         Notification::make()

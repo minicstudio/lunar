@@ -1,9 +1,11 @@
 <?php
 
-uses(\Lunar\Tests\shippingAddon\TestCase::class);
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class);
+uses(RefreshDatabase::class);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Livewire\Livewire;
 use Lunar\Addons\Shipping\Connectors\NominatimConnector;
 use Lunar\Addons\Shipping\Enums\ShippingProviderEnum;
 use Lunar\Addons\Shipping\Exceptions\OrderMissingShippingProviderException;
@@ -23,8 +25,11 @@ use Lunar\Models\CustomerGroup;
 use Lunar\Models\Order;
 use Lunar\Models\OrderAddress;
 use Lunar\Tests\Core\Stubs\User;
+use Lunar\Tests\shippingAddon\Stubs\DownloadAwbPdfComponent;
+use Lunar\Tests\shippingAddon\TestCase;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 beforeEach(function () {
     $this->createLanguages();
@@ -260,4 +265,33 @@ it('throws when order has no shipping provider selected', function () {
     $service = new ShippingService;
     expect(fn () => $service->generateAWB($order))
         ->toThrow(OrderMissingShippingProviderException::class);
+});
+
+it('queues the awb pdf for download without returning a response object', function () {
+    $pdf = '%PDF-1.7 awb';
+
+    $mock = new MockClient([
+        DownloadAWBPDF::class => MockResponse::make($pdf, 200, ['Content-Type' => 'application/pdf']),
+    ]);
+
+    $client = new DpdApiClient;
+    $client->withMockClient($mock);
+    app()->singleton(DpdShippingProvider::class, fn () => new DpdShippingProvider($client));
+
+    $order = makeOrderWithShippingBreakdown();
+    $meta = $order->meta ?? [];
+    $meta['awb'] = 'AWB999';
+    $order->meta = $meta;
+    $order->save();
+
+    $component = Livewire::test(DownloadAwbPdfComponent::class, [
+        'orderId' => $order->id,
+    ])
+        ->call('download')
+        ->assertFileDownloaded('AWB-AWB999.pdf', $pdf, 'application/pdf');
+
+    expect(collect($component->effects['returns'] ?? [])->contains(
+        fn ($return) => $return instanceof HttpResponse
+    ))->toBeFalse()
+        ->and(json_encode($component->effects))->not->toBeFalse();
 });

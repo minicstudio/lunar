@@ -408,6 +408,14 @@ return [
             ],
             'notification' => 'Koszt wysyłki zaktualizowany',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Zmień metodę wysyłki',
+            'method' => [
+                'label' => 'Metoda wysyłki',
+            ],
+            'notification' => 'Metoda wysyłki zaktualizowana',
+            'billing_address_warning' => 'Adres wysyłki odpowiada adresowi rozliczeniowemu. Zaktualizuj adres wysyłki, jeśli adres dostawy jest inny.',
+        ],
         'remove_product' => [
             'label' => 'Usuń produkt',
             'confirmation' => 'Usunąć ten produkt z zamówienia?',
@@ -420,6 +428,8 @@ return [
             'line' => 'Nie znaleziono tej pozycji produktu.',
             'purchasable' => 'Nie znaleziono tego wariantu.',
             'shipping' => 'Opcji wysyłki nie można wycenić, więc zamówienie pozostało bez zmian.',
+            'shipping_method' => 'Ta metoda wysyłki nie jest dostępna dla tego zamówienia, więc zamówienie pozostało bez zmian.',
+            'shipping_method_unchanged' => 'Ta metoda wysyłki jest już na tym zamówieniu, więc zamówienie pozostało bez zmian.',
             'locked' => 'Tego zamówienia nie można już edytować.',
             'not_purchasable' => 'Tego wariantu nie można kupić.',
             'out_of_stock' => 'Ten wariant jest niedostępny.',

@@ -440,6 +440,14 @@ return [
             ],
             'notification' => 'Prețul livrării a fost actualizat',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Modifică metoda de livrare',
+            'method' => [
+                'label' => 'Metodă de livrare',
+            ],
+            'notification' => 'Metoda de livrare a fost actualizată',
+            'billing_address_warning' => 'Adresa de livrare corespunde adresei de facturare. Actualizați adresa de livrare dacă adresa de destinație este diferită.',
+        ],
         'remove_product' => [
             'label' => 'Elimină produsul',
             'confirmation' => 'Elimini acest produs din comandă?',
@@ -452,6 +460,8 @@ return [
             'line' => 'Linia de produs nu a fost găsită.',
             'purchasable' => 'Varianta nu a fost găsită.',
             'shipping' => 'Opțiunea de livrare nu poate fi tarifată, așa că comanda a rămas neschimbată.',
+            'shipping_method' => 'Această metodă de livrare nu este disponibilă pentru această comandă, așa că comanda a rămas neschimbată.',
+            'shipping_method_unchanged' => 'Această metodă de livrare este deja pe această comandă, așa că comanda a rămas neschimbată.',
             'locked' => 'Această comandă nu mai poate fi editată.',
             'not_purchasable' => 'Această variantă nu poate fi cumpărată.',
             'out_of_stock' => 'Această variantă nu este în stoc.',

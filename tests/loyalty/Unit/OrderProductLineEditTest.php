@@ -4,14 +4,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Lunar\Actions\Orders\OrderProductLineChange;
 use Lunar\Actions\Orders\UpdateOrderProductLines;
+use Lunar\Actions\Orders\UpdateOrderShippingMethod;
 use Lunar\Actions\Orders\UpdateOrderShippingPrice;
+use Lunar\Base\ShippingModifiers;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
+use Lunar\Exceptions\Orders\InvalidOrderShippingMethodException;
 use Lunar\Exceptions\Orders\InvalidOrderShippingPriceException;
 use Lunar\Exceptions\Orders\OrderProductLineEditException;
+use Lunar\Facades\ShippingManifest;
 use Lunar\Loyalty\Models\LoyaltyAccount;
 use Lunar\Loyalty\Services\LoyaltyLedger;
 use Lunar\Loyalty\Support\LoyaltyEventKey;
 use Lunar\Models\Cart;
+use Lunar\Models\CartAddress;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
@@ -20,6 +25,8 @@ use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 use Lunar\Models\Price;
 use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
+use Lunar\Tests\Core\Stubs\OrderShippingMethodModifier;
 use Lunar\Tests\Core\Stubs\User;
 use Lunar\Tests\Loyalty\TestCase;
 
@@ -39,7 +46,7 @@ beforeEach(function () {
 /**
  * @return array{order: Order, account: LoyaltyAccount, line: OrderLine}
  */
-function loyaltyEditableOrder(int $quantity, int $points): array
+function loyaltyEditableOrder(int $quantity, int $points, int $earned = 10000): array
 {
     $currency = Currency::factory()->create([
         'default' => true,
@@ -97,7 +104,7 @@ function loyaltyEditableOrder(int $quantity, int $points): array
     ]);
 
     $ledger = app(LoyaltyLedger::class);
-    $ledger->earn($account, 10000, 'earn:order:'.$order->id);
+    $ledger->earn($account, $earned, 'earn:order:'.$order->id);
     $ledger->spend($account, $points, LoyaltyEventKey::orderSpend($order->id), [
         'reference' => $order,
     ]);
@@ -190,6 +197,90 @@ it('leaves the loyalty balance unchanged when a shipping price save is rejected'
 
     expect(fn () => UpdateOrderShippingPrice::run($order->fresh(), -1))
         ->toThrow(InvalidOrderShippingPriceException::class);
+
+    expect($account->fresh()->balance)->toBe(0)
+        ->and($order->fresh()->meta['loyalty_points_to_redeem'])->toBe(10000);
+});
+
+it('returns points when a shipping method save redeems fewer points', function () {
+    ['order' => $order, 'account' => $account] = loyaltyEditableOrder(quantity: 1, points: 15000, earned: 20000);
+
+    TaxClass::factory()->create(['default' => true]);
+
+    CartAddress::factory()->create([
+        'cart_id' => $order->cart_id,
+        'type' => 'shipping',
+        'shipping_option' => 'PICKUP',
+    ]);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Pickup',
+        'identifier' => 'PICKUP',
+        'unit_price' => 0,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 0,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 0,
+    ]);
+
+    app(ShippingModifiers::class)->add(OrderShippingMethodModifier::class);
+    OrderShippingMethodModifier::reset();
+    OrderShippingMethodModifier::$options = [
+        [
+            'identifier' => 'PICKUP',
+            'name' => 'Pickup',
+            'price' => 0,
+            'collect' => false,
+            'option' => null,
+        ],
+        [
+            'identifier' => 'COURIER',
+            'name' => 'Courier',
+            'price' => 0,
+            'collect' => false,
+            'option' => null,
+        ],
+    ];
+
+    $saved = UpdateOrderShippingMethod::run($order->fresh(), 'COURIER');
+
+    expect($saved->meta['loyalty_points_to_redeem'])->toBe(10000)
+        ->and($account->fresh()->balance)->toBe(10000);
+
+    app(ShippingModifiers::class)->remove(OrderShippingMethodModifier::class);
+    OrderShippingMethodModifier::reset();
+    ShippingManifest::clearOptions();
+});
+
+it('leaves the loyalty balance unchanged when a shipping method save is rejected', function () {
+    ['order' => $order, 'account' => $account] = loyaltyEditableOrder(quantity: 1, points: 10000);
+
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'Courier',
+        'identifier' => 'COURIER',
+        'unit_price' => 2000,
+        'unit_quantity' => 1,
+        'quantity' => 1,
+        'sub_total' => 2000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 2000,
+    ]);
+
+    expect(fn () => UpdateOrderShippingMethod::run($order->fresh(), 'COURIER'))
+        ->toThrow(InvalidOrderShippingMethodException::class);
 
     expect($account->fresh()->balance)->toBe(0)
         ->and($order->fresh()->meta['loyalty_points_to_redeem'])->toBe(10000);

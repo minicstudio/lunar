@@ -1,6 +1,8 @@
 <?php
 
 use Filament\Actions\Testing\TestAction;
+use Filament\Notifications\Livewire\Notifications;
+use Filament\Notifications\NotificationMailbox;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
@@ -11,6 +13,7 @@ use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\Livewire\Components\ActivityLogFeed as ActivityLogFeedComponent;
 use Lunar\Admin\Support\Extending\ViewPageExtension;
 use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Base\ShippingModifiers;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
 use Lunar\DataTypes\Price;
@@ -19,6 +22,7 @@ use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Facades\Pricing;
 use Lunar\Facades\ShippingManifest;
 use Lunar\Models\Cart;
+use Lunar\Models\CartAddress;
 use Lunar\Models\Country;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
@@ -30,9 +34,11 @@ use Lunar\Models\OrderAddress;
 use Lunar\Models\OrderLine;
 use Lunar\Models\Price as ModelsPrice;
 use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
 use Lunar\Models\TaxZone;
 use Lunar\Models\Transaction;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
+use Lunar\Tests\Core\Stubs\OrderShippingMethodModifier;
 
 uses(TestCase::class)
     ->group('resource.order');
@@ -65,6 +71,12 @@ beforeEach(function () {
             ],
         ]);
 
+});
+
+afterEach(function () {
+    app(ShippingModifiers::class)->remove(OrderShippingMethodModifier::class);
+    OrderShippingMethodModifier::reset();
+    ShippingManifest::clearOptions();
 });
 
 it('can render order manage page', function () {
@@ -693,7 +705,7 @@ it('can extend the shipping and billing order meta keys', function () {
         ->assertSchemaComponentDoesNotExist('meta.meta_vat_number');
 });
 
-it('shows modify shipping price beside the price and stores the new amount', function () {
+it('shows modify shipping price under the price and stores the new amount', function () {
     $shipping = editableShippingLine();
 
     $action = TestAction::make('modify_shipping_price')
@@ -762,6 +774,7 @@ it('hides modify shipping price when the order is locked and keeps the gate noti
         'record' => $this->order->fresh()->getRouteKey(),
     ])
         ->assertDontSee(__('lunarpanel::order.action.modify_shipping_price.label'))
+        ->assertDontSee(__('lunarpanel::order.action.modify_shipping_method.label'))
         ->assertSee(__('lunarpanel::order.infolist.alert.product_line_gates.paid'));
 });
 
@@ -792,11 +805,255 @@ it('hides modify shipping price when the order does not have one shipping line',
 
     Livewire::test(ManageOrder::class, [
         'record' => $this->order->fresh()->getRouteKey(),
-    ])->assertDontSee(__('lunarpanel::order.action.modify_shipping_price.label'));
+    ])->assertDontSee(__('lunarpanel::order.action.modify_shipping_price.label'))
+        ->assertDontSee(__('lunarpanel::order.action.modify_shipping_method.label'));
 })->with([
     'no shipping line' => 0,
     'two shipping lines' => 2,
 ]);
+
+it('shows both shipping actions under the method name and the price', function () {
+    $shipping = editableShippingLine();
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->assertSeeInOrder([
+            $shipping->description,
+            __('lunarpanel::order.action.modify_shipping_method.label'),
+            $shipping->sub_total->formatted,
+            __('lunarpanel::order.action.modify_shipping_price.label'),
+        ])
+        ->assertActionExists(TestAction::make('modify_shipping_method')->schemaComponent('shippingLines.0.description', schema: 'infolist'))
+        ->assertActionExists(TestAction::make('modify_shipping_price')->schemaComponent('shippingLines.0.sub_total', schema: 'infolist'));
+});
+
+it('saves an offered shipping method and shows the new name and price', function () {
+    editableShippingLine();
+    offerAdminShippingMethods([
+        ['identifier' => 'COURIER', 'name' => 'Courier', 'price' => 2000, 'option' => 'Local'],
+        ['identifier' => 'EXPRESS', 'name' => 'Express', 'price' => 1500, 'option' => 'National'],
+        ['identifier' => 'NORTH', 'name' => 'Express', 'price' => 1600, 'option' => 'North'],
+        ['identifier' => 'sameday-locker', 'name' => 'Easybox', 'price' => 700],
+    ]);
+
+    $action = TestAction::make('modify_shipping_method')
+        ->schemaComponent('shippingLines.0.description', schema: 'infolist');
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->mountAction($action)
+        ->assertActionDataSet([
+            'identifier' => 'COURIER',
+        ]);
+
+    $modal = $component->getMountedActionModalHtml();
+
+    expect($modal)->toContain('Express (National)')
+        ->and($modal)->toContain('Express (North)')
+        ->and($modal)->not->toContain('Easybox');
+
+    $component
+        ->callAction($action, [
+            'identifier' => 'EXPRESS',
+        ]);
+
+    assertOrderNotifications([
+        __('lunarpanel::order.action.modify_shipping_method.notification'),
+    ], [
+        __('lunarpanel::order.action.modify_shipping_method.billing_address_warning'),
+    ]);
+
+    $saved = $this->order->fresh();
+    $line = $saved->shippingLines()->first();
+
+    expect($line->description)->toBe('Express')
+        ->and($line->identifier)->toBe('EXPRESS')
+        ->and($line->sub_total->value)->toBe(1500);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $saved->getRouteKey(),
+    ])
+        ->assertSee('Express')
+        ->assertSee($line->sub_total->formatted);
+});
+
+it('warns when pickup becomes a courier and the shipping address matches billing', function () {
+    editableShippingLine();
+    $billing = $this->order->billingAddress;
+    $this->order->update([
+        'meta' => ['shippingType' => 'pickup'],
+    ]);
+    $this->order->shippingLines()->update([
+        'identifier' => 'PICKUP',
+        'description' => 'Personal pickup',
+    ]);
+    $this->order->shippingAddress->forceFill(collect($billing->getAttributes())->except([
+        'id',
+        'created_at',
+        'updated_at',
+        'order_id',
+        'type',
+        'meta',
+        'shipping_option',
+    ])->all())->save();
+
+    offerAdminShippingMethods([
+        ['identifier' => 'PICKUP', 'name' => 'Personal pickup', 'price' => 0, 'collect' => true],
+        ['identifier' => 'COURIER', 'name' => 'Courier', 'price' => 1500],
+    ]);
+
+    $action = TestAction::make('modify_shipping_method')
+        ->schemaComponent('shippingLines.0.description', schema: 'infolist');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])
+        ->callAction($action, [
+            'identifier' => 'COURIER',
+        ])
+        ->assertSee($billing->line_one);
+
+    assertOrderNotifications([
+        __('lunarpanel::order.action.modify_shipping_method.notification'),
+        __('lunarpanel::order.action.modify_shipping_method.billing_address_warning'),
+    ]);
+
+    expect($this->order->fresh()->shippingAddress->line_one)->toBe($billing->line_one)
+        ->and($this->order->fresh()->billingAddress->line_one)->toBe($billing->line_one)
+        ->and($this->order->fresh()->meta['shippingType'])->toBe('courier');
+});
+
+it('does not warn when pickup becomes a courier and the shipping address differs', function () {
+    editableShippingLine();
+    $this->order->update([
+        'meta' => ['shippingType' => 'pickup'],
+    ]);
+    $this->order->shippingLines()->update([
+        'identifier' => 'PICKUP',
+        'description' => 'Personal pickup',
+    ]);
+    $this->order->shippingAddress->update([
+        'line_one' => 'Customer Street',
+    ]);
+    $this->order->billingAddress->update([
+        'line_one' => 'Invoice Street',
+    ]);
+
+    offerAdminShippingMethods([
+        ['identifier' => 'PICKUP', 'name' => 'Personal pickup', 'price' => 0, 'collect' => true],
+        ['identifier' => 'COURIER', 'name' => 'Courier', 'price' => 1500],
+    ]);
+
+    $action = TestAction::make('modify_shipping_method')
+        ->schemaComponent('shippingLines.0.description', schema: 'infolist');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])
+        ->callAction($action, [
+            'identifier' => 'COURIER',
+        ])
+        ->assertSee('Customer Street');
+
+    assertOrderNotifications([
+        __('lunarpanel::order.action.modify_shipping_method.notification'),
+    ], [
+        __('lunarpanel::order.action.modify_shipping_method.billing_address_warning'),
+    ]);
+
+    expect($this->order->fresh()->shippingAddress->line_one)->toBe('Customer Street')
+        ->and($this->order->fresh()->billingAddress->line_one)->toBe('Invoice Street')
+        ->and($this->order->fresh()->meta['shippingType'])->toBe('courier');
+});
+
+it('tells staff when the selected shipping method is already on the order', function () {
+    editableShippingLine();
+    offerAdminShippingMethods([
+        ['identifier' => 'COURIER', 'name' => 'Courier', 'price' => 2000],
+        ['identifier' => 'EXPRESS', 'name' => 'Express', 'price' => 1500],
+    ]);
+
+    $action = TestAction::make('modify_shipping_method')
+        ->schemaComponent('shippingLines.0.description', schema: 'infolist');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->callAction($action, [
+            'identifier' => 'COURIER',
+        ])
+        ->assertNotified(__('lunarpanel::order.action.product_line_edit.shipping_method_unchanged'));
+
+    expect($this->order->fresh()->shippingLines()->first()->identifier)->toBe('COURIER')
+        ->and($this->order->fresh()->shippingLines()->first()->sub_total->value)->toBe(2000);
+});
+
+it('notifies when the shipping methods cannot be listed', function () {
+    editableShippingLine();
+    $productLine = $this->order->productLines()->first();
+    $productLine->purchasable->forceDelete();
+
+    $action = TestAction::make('modify_shipping_method')
+        ->schemaComponent('shippingLines.0.description', schema: 'infolist');
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->mountAction($action)
+        ->assertNotified(__('lunarpanel::order.action.product_line_edit.not_purchasable'));
+
+    expect($productLine->fresh()->identifier)->toBe('SKU-1')
+        ->and($this->order->fresh()->shippingLines()->first()->identifier)->toBe('COURIER');
+});
+
+function assertOrderNotifications(array $present, array $absent = []): void
+{
+    app(NotificationMailbox::class)->flush();
+
+    $notifications = new Notifications;
+    $notifications->mount();
+    $notifications->pullNotificationsFromSession();
+
+    $titles = $notifications->notifications
+        ->map(fn ($notification): string => (string) $notification->toArray()['title'])
+        ->all();
+
+    foreach ($present as $title) {
+        expect($titles)->toContain($title);
+    }
+
+    foreach ($absent as $title) {
+        expect($titles)->not->toContain($title);
+    }
+}
+
+function offerAdminShippingMethods(array $options): void
+{
+    TaxClass::factory()->create(['default' => true]);
+
+    $cartId = test()->order->fresh()->cart_id;
+
+    if ($cartId && ! CartAddress::query()->where('cart_id', $cartId)->where('type', 'shipping')->exists()) {
+        CartAddress::factory()->create([
+            'cart_id' => $cartId,
+            'type' => 'shipping',
+            'shipping_option' => test()->order->shippingLines()->value('identifier'),
+        ]);
+    }
+
+    app(ShippingModifiers::class)->remove(OrderShippingMethodModifier::class);
+    app(ShippingModifiers::class)->add(OrderShippingMethodModifier::class);
+    OrderShippingMethodModifier::reset();
+    OrderShippingMethodModifier::$options = array_map(fn (array $option): array => [
+        'identifier' => $option['identifier'],
+        'name' => $option['name'],
+        'price' => $option['price'],
+        'collect' => $option['collect'] ?? false,
+        'option' => $option['option'] ?? null,
+    ], $options);
+}
 
 function editableShippingLine(): OrderLine
 {
@@ -887,6 +1144,12 @@ it('has product line editing copy in every admin locale', function () {
         'lunarpanel::order.action.modify_shipping_price.label',
         'lunarpanel::order.action.modify_shipping_price.amount.label',
         'lunarpanel::order.action.modify_shipping_price.notification',
+        'lunarpanel::order.action.modify_shipping_method.label',
+        'lunarpanel::order.action.modify_shipping_method.method.label',
+        'lunarpanel::order.action.modify_shipping_method.notification',
+        'lunarpanel::order.action.modify_shipping_method.billing_address_warning',
+        'lunarpanel::order.action.product_line_edit.shipping_method',
+        'lunarpanel::order.action.product_line_edit.shipping_method_unchanged',
         'lunarpanel::order.action.remove_product.label',
         'lunarpanel::order.action.remove_product.confirmation',
         'lunarpanel::order.action.remove_product.notification',
@@ -906,16 +1169,33 @@ it('has product line editing copy in every admin locale', function () {
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))->toContain('Invoice')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.awb'))->toContain('AWB');
 
-    expect(__('lunarpanel::order.action.modify_shipping_price.label'))->toBe('Modify shipping price');
+    expect(__('lunarpanel::order.action.modify_shipping_price.label'))->toBe('Modify shipping price')
+        ->and(__('lunarpanel::order.action.modify_shipping_method.label'))->toBe('Modify shipping method');
 
     app()->setLocale('hu');
 
     expect(__('lunarpanel::order.action.modify_shipping_price.label'))->toBe('Szállítási díj módosítása')
+        ->and(__('lunarpanel::order.action.modify_shipping_method.label'))->toBe('Szállítási mód módosítása')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('Fizetve')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.paid'))->toContain('nem módosítható')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.erp'))->toContain('ERP')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.invoice'))->toContain('Számla')
         ->and(__('lunarpanel::order.infolist.alert.product_line_gates.awb'))->toContain('AWB');
+
+    app()->setLocale('fr');
+
+    expect(__('lunarpanel::order.action.modify_shipping_method.billing_address_warning'))
+        ->toBe('L\'adresse de livraison correspond à l\'adresse de facturation. Modifiez l\'adresse de livraison si l\'adresse de destination est différente.');
+
+    app()->setLocale('ro');
+
+    expect(__('lunarpanel::order.action.modify_shipping_method.billing_address_warning'))
+        ->toBe('Adresa de livrare corespunde adresei de facturare. Actualizați adresa de livrare dacă adresa de destinație este diferită.');
+
+    app()->setLocale('pt_BR');
+
+    expect(__('lunarpanel::order.action.modify_shipping_method.billing_address_warning'))
+        ->toBe('O endereço de entrega corresponde ao endereço de cobrança. Atualize o endereço de entrega se o endereço de destino for diferente.');
 });
 
 it('has split order copy in every admin locale', function () {
