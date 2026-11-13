@@ -182,7 +182,7 @@ trait DisplaysOrderAddresses
             ]);
     }
 
-    private static function addressesMatch(?OrderAddressContract $original = null, ?OrderAddressContract $comparison = null): bool
+    protected static function addressesMatch(?OrderAddressContract $original = null, ?OrderAddressContract $comparison = null): bool
     {
         if (! $original || ! $comparison) {
             return false;

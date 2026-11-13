@@ -415,6 +415,14 @@ return [
             ],
             'notification' => 'Kargo ücreti güncellendi',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Gönderim yöntemini değiştir',
+            'method' => [
+                'label' => 'Gönderim yöntemi',
+            ],
+            'notification' => 'Gönderim yöntemi güncellendi',
+            'billing_address_warning' => 'Gönderim adresi fatura adresiyle aynıdır. Teslimat adresi farklıysa gönderim adresini güncelleyin.',
+        ],
         'remove_product' => [
             'label' => 'Ürünü kaldır',
             'confirmation' => 'Bu ürün siparişten kaldırılsın mı?',
@@ -427,6 +435,8 @@ return [
             'line' => 'Bu ürün satırı bulunamadı.',
             'purchasable' => 'Bu varyant bulunamadı.',
             'shipping' => 'Kargo seçeneği fiyatlandırılamadı, bu nedenle sipariş değişmedi.',
+            'shipping_method' => 'Bu gönderim yöntemi bu sipariş için kullanılamıyor, bu nedenle sipariş değişmedi.',
+            'shipping_method_unchanged' => 'Bu gönderim yöntemi bu siparişte zaten var, bu nedenle sipariş değişmedi.',
             'locked' => 'Bu sipariş artık düzenlenemez.',
             'not_purchasable' => 'Bu varyant satın alınamaz.',
             'out_of_stock' => 'Bu varyant stokta yok.',

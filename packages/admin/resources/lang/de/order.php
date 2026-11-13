@@ -404,6 +404,14 @@ return [
             ],
             'notification' => 'Versandpreis aktualisiert',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Versandart ändern',
+            'method' => [
+                'label' => 'Versandart',
+            ],
+            'notification' => 'Versandart aktualisiert',
+            'billing_address_warning' => 'Die Lieferadresse entspricht der Rechnungsadresse. Aktualisieren Sie die Lieferadresse, wenn die Zustelladresse abweicht.',
+        ],
         'remove_product' => [
             'label' => 'Produkt entfernen',
             'confirmation' => 'Dieses Produkt aus der Bestellung entfernen?',
@@ -416,6 +424,8 @@ return [
             'line' => 'Diese Produktposition wurde nicht gefunden.',
             'purchasable' => 'Diese Variante wurde nicht gefunden.',
             'shipping' => 'Die Versandart kann nicht bepreist werden, daher blieb die Bestellung unverändert.',
+            'shipping_method' => 'Diese Versandart ist für diese Bestellung nicht verfügbar, daher blieb die Bestellung unverändert.',
+            'shipping_method_unchanged' => 'Diese Versandart steht bereits auf dieser Bestellung, daher blieb die Bestellung unverändert.',
             'locked' => 'Diese Bestellung kann nicht mehr bearbeitet werden.',
             'not_purchasable' => 'Diese Variante kann nicht gekauft werden.',
             'out_of_stock' => 'Diese Variante ist nicht auf Lager.',

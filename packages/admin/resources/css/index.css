@@ -2,22 +2,19 @@
 
 @source '../../resources/views/**/*.blade.php';
 
-/* The shipping strip is one row: the carrier name can shrink, the price and action stay on that line. */
+/* The shipping strip is one row. The method fills the start, and the price sits on the panel's trailing edge. */
 .lunar-shipping-strip > .fi-in-repeatable-item > .fi-sc {
-    --cols-default: minmax(0, 1fr) auto !important;
-    --cols-sm: minmax(0, 1fr) auto !important;
-    --cols-md: minmax(0, 1fr) auto !important;
-    --cols-lg: minmax(0, 1fr) auto !important;
-    --cols-xl: minmax(0, 1fr) auto !important;
-    --cols-2xl: minmax(0, 1fr) auto !important;
+    display: grid !important;
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) max-content !important;
 }
 
-.lunar-shipping-nowrap .fi-in-entry-content-ctn {
+.lunar-shipping-nowrap:not(.lunar-shipping-price) .fi-in-entry-content-ctn {
     flex-wrap: nowrap;
 }
 
-.lunar-shipping-nowrap .fi-in-entry-content,
-.lunar-shipping-nowrap .fi-in-text {
+.lunar-shipping-nowrap:not(.lunar-shipping-price) .fi-in-entry-content,
+.lunar-shipping-nowrap:not(.lunar-shipping-price) .fi-in-text {
     width: auto;
     max-width: 100%;
     white-space: nowrap;
@@ -27,4 +24,46 @@
 
 .lunar-shipping-strip > .fi-in-repeatable-item > .fi-sc > :first-child {
     min-width: 0;
+}
+
+.lunar-shipping-strip .lunar-shipping-method .fi-in-entry-content-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.lunar-shipping-strip > .fi-in-repeatable-item > .fi-sc > .fi-grid-col:has(.lunar-shipping-price) {
+    justify-self: end;
+    width: max-content;
+}
+
+.lunar-shipping-strip .lunar-shipping-price,
+.lunar-shipping-strip .lunar-shipping-price .fi-in-entry-content-col {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    width: max-content !important;
+    max-width: 100%;
+}
+
+.lunar-shipping-strip .lunar-shipping-price .fi-in-entry-content-ctn {
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}
+
+.lunar-shipping-strip .lunar-shipping-price .fi-in-entry-content,
+.lunar-shipping-strip .lunar-shipping-price .fi-in-text {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline-start: 0 !important;
+    text-align: right !important;
+    white-space: nowrap;
+}
+
+.lunar-shipping-strip .lunar-shipping-price .fi-in-entry-content-col > :last-child {
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+    margin-inline-start: 0 !important;
 }

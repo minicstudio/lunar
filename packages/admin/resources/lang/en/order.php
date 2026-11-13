@@ -448,6 +448,14 @@ return [
             ],
             'notification' => 'Shipping price updated',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Modify shipping method',
+            'method' => [
+                'label' => 'Shipping method',
+            ],
+            'notification' => 'Shipping method updated',
+            'billing_address_warning' => 'The shipping address corresponds to the billing address. Update the shipping address if the delivery address is different.',
+        ],
         'remove_product' => [
             'label' => 'Remove product',
             'confirmation' => 'Remove this product from the order?',
@@ -460,6 +468,8 @@ return [
             'line' => 'That product line could not be found.',
             'purchasable' => 'That variant could not be found.',
             'shipping' => 'The shipping option cannot be priced, so the order was left unchanged.',
+            'shipping_method' => 'That shipping method is not available for this order, so the order was left unchanged.',
+            'shipping_method_unchanged' => 'That shipping method is already on this order, so the order was left unchanged.',
             'locked' => 'This order can no longer be edited.',
             'not_purchasable' => 'This variant cannot be purchased.',
             'out_of_stock' => 'This variant is out of stock.',

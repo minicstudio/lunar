@@ -411,6 +411,14 @@ return [
             ],
             'notification' => 'Verzendkosten bijgewerkt',
         ],
+        'modify_shipping_method' => [
+            'label' => 'Verzendmethode wijzigen',
+            'method' => [
+                'label' => 'Verzendmethode',
+            ],
+            'notification' => 'Verzendmethode bijgewerkt',
+            'billing_address_warning' => 'Het verzendadres komt overeen met het factuuradres. Werk het verzendadres bij als het afleveradres anders is.',
+        ],
         'remove_product' => [
             'label' => 'Product verwijderen',
             'confirmation' => 'Dit product uit de bestelling verwijderen?',
@@ -423,6 +431,8 @@ return [
             'line' => 'Die productregel is niet gevonden.',
             'purchasable' => 'Die variant is niet gevonden.',
             'shipping' => 'De verzendmethode kan niet worden geprijsd, dus de bestelling is ongewijzigd.',
+            'shipping_method' => 'Deze verzendmethode is niet beschikbaar voor deze bestelling, dus de bestelling is ongewijzigd.',
+            'shipping_method_unchanged' => 'Deze verzendmethode staat al op deze bestelling, dus de bestelling is ongewijzigd.',
             'locked' => 'Deze bestelling kan niet meer worden bewerkt.',
             'not_purchasable' => 'Deze variant kan niet worden gekocht.',
             'out_of_stock' => 'Deze variant is niet op voorraad.',

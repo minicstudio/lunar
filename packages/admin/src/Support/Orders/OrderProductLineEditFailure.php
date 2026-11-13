@@ -6,6 +6,7 @@ use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\InsufficientStockException;
 use Lunar\Exceptions\MissingCurrencyPriceException;
 use Lunar\Exceptions\NonPurchasableItemException;
+use Lunar\Exceptions\Orders\InvalidOrderShippingMethodException;
 use Lunar\Exceptions\Orders\LastOrderProductLineException;
 use Lunar\Exceptions\Orders\LockedOrderProductLineEditException;
 use Lunar\Exceptions\Orders\MissingOrderCartException;
@@ -42,6 +43,12 @@ class OrderProductLineEditFailure
 
         if ($exception instanceof UnpricedOrderShippingException) {
             return __('lunarpanel::order.action.product_line_edit.shipping');
+        }
+
+        if ($exception instanceof InvalidOrderShippingMethodException) {
+            $reason = $exception->reasons[0] ?? 'shipping_method';
+
+            return __('lunarpanel::order.action.product_line_edit.'.$reason);
         }
 
         if ($exception instanceof LockedOrderProductLineEditException) {

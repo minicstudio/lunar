@@ -7,6 +7,7 @@ use Closure;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\URL;
+use Lunar\Admin\Support\Livewire\FileDownload;
 
 class PdfDownload extends Action
 {
@@ -45,16 +46,20 @@ class PdfDownload extends Action
                 );
             }, shouldOpenInNewTab: true);
         } else {
-            $this->action(function ($record) {
+            $this->action(function ($record, $livewire) {
                 Notification::make()->title(
                     __('lunarpanel::order.action.download_order_pdf.notification')
                 )->success()->send();
 
-                return response()->streamDownload(function () use ($record) {
-                    echo Pdf::loadView($this->evaluate($this->pdfView), [
+                $name = $this->evaluate($this->filename);
+
+                FileDownload::queue(
+                    $livewire,
+                    Pdf::loadView($this->evaluate($this->pdfView), [
                         'record' => $record,
-                    ])->stream();
-                }, name: $this->evaluate($this->filename));
+                    ])->output(),
+                    is_string($name) && $name !== '' ? $name : 'download.pdf',
+                );
             });
         }
     }

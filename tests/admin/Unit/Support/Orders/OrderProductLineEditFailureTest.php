@@ -6,6 +6,7 @@ use Lunar\Exceptions\Carts\CartException;
 use Lunar\Exceptions\InsufficientStockException;
 use Lunar\Exceptions\MissingCurrencyPriceException;
 use Lunar\Exceptions\NonPurchasableItemException;
+use Lunar\Exceptions\Orders\InvalidOrderShippingMethodException;
 use Lunar\Exceptions\Orders\LastOrderProductLineException;
 use Lunar\Exceptions\Orders\LockedOrderProductLineEditException;
 use Lunar\Exceptions\Orders\MissingOrderCartException;
@@ -26,6 +27,8 @@ it('maps each product line edit failure to a toast title', function (string $cas
         'missing line' => [new OrderProductLineNotFoundException, 'lunarpanel::order.action.product_line_edit.line'],
         'missing variant' => [new OrderProductLinePurchasableMissingException, 'lunarpanel::order.action.product_line_edit.purchasable'],
         'shipping' => [new UnpricedOrderShippingException, 'lunarpanel::order.action.product_line_edit.shipping'],
+        'shipping method' => [new InvalidOrderShippingMethodException, 'lunarpanel::order.action.product_line_edit.shipping_method'],
+        'unchanged shipping method' => [new InvalidOrderShippingMethodException('shipping_method_unchanged'), 'lunarpanel::order.action.product_line_edit.shipping_method_unchanged'],
         'not purchasable' => [new NonPurchasableItemException('Variant'), 'lunarpanel::order.action.product_line_edit.not_purchasable'],
         'out of stock' => [new OutOfStockException, 'lunarpanel::order.action.product_line_edit.out_of_stock'],
         'insufficient stock' => [new InsufficientStockException, 'lunarpanel::order.action.product_line_edit.insufficient_stock'],
@@ -40,6 +43,8 @@ it('maps each product line edit failure to a toast title', function (string $cas
     'missing line',
     'missing variant',
     'shipping',
+    'shipping method',
+    'unchanged shipping method',
     'not purchasable',
     'out of stock',
     'insufficient stock',
