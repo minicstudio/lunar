@@ -103,6 +103,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Meta keys ignored when matching an existing cart line
+    |--------------------------------------------------------------------------
+    |
+    | When a purchasable is added, its meta is compared with the meta of the
+    | lines already in the cart to decide whether to increase an existing
+    | line or create a new one. Keys listed here (e.g. tracking data written
+    | onto a line after it was added) are left out of that comparison.
+    |
+    */
+    'line_match_ignored_meta_keys' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cart Action Validators
     |--------------------------------------------------------------------------
     |

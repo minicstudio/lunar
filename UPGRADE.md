@@ -86,6 +86,7 @@ This document outlines the key changes and new features in the Admin, Core, Blog
 #### ⚙️ New/modified configs
 
 - `pipelines.cart` in `config/lunar/cart.php` lists the new stage `Lunar\Pipelines\Cart\ApplyDiscountFreeShipping` directly before `CalculateTax`.
+- New `line_match_ignored_meta_keys` in `config/lunar/cart.php` (default `[]`): cart line meta keys that `GetExistingCartLine` leaves out when it compares an add-to-cart's meta with the lines already in the cart (LFP-949). List keys written onto a line after it was added, such as tracking data, so the next add of the same purchasable increases that line instead of creating a duplicate. With the default, matching is unchanged. A missing key in a published config behaves as `[]`.
 
 #### 💻 Host responsibilities
 
