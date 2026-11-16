@@ -136,3 +136,45 @@ function shuffle_assoc($list)
 
     return $random;
 }
+
+test('ignores configured meta keys when matching an existing cart line', function () {
+    config(['lunar.cart.line_match_ignored_meta_keys' => ['tracking_id']]);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => Currency::factory()->create()->id,
+    ]);
+
+    $purchasable = ProductVariant::factory()->create();
+
+    $cartLine = $cart->lines()->create([
+        'purchasable_id' => $purchasable->id,
+        'purchasable_type' => $purchasable->getMorphClass(),
+        'quantity' => 1,
+        'meta' => ['personalization' => 'Hi', 'tracking_id' => 'abc'],
+    ]);
+
+    $action = new GetExistingCartLine;
+
+    expect($action->execute($cart, $purchasable, ['personalization' => 'Hi'])?->id)->toEqual($cartLine->id)
+        ->and($action->execute($cart, $purchasable, ['personalization' => 'Hi', 'tracking_id' => 'xyz'])?->id)->toEqual($cartLine->id)
+        ->and($action->execute($cart, $purchasable, ['personalization' => 'Hello']))->toBeNull();
+});
+
+test('does not ignore meta keys that are not configured', function () {
+    config(['lunar.cart.line_match_ignored_meta_keys' => []]);
+
+    $cart = Cart::factory()->create([
+        'currency_id' => Currency::factory()->create()->id,
+    ]);
+
+    $purchasable = ProductVariant::factory()->create();
+
+    $cart->lines()->create([
+        'purchasable_id' => $purchasable->id,
+        'purchasable_type' => $purchasable->getMorphClass(),
+        'quantity' => 1,
+        'meta' => ['tracking_id' => 'abc'],
+    ]);
+
+    expect((new GetExistingCartLine)->execute($cart, $purchasable))->toBeNull();
+});
