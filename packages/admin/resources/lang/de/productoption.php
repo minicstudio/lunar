@@ -33,6 +33,22 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Produktoption kann nicht gelöscht werden',
+            'body' => 'Diese Produktoption wird von Produkten verwendet und kann nicht gelöscht werden.',
+        ],
+    ],
+
+    'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Produktoptionswert kann nicht gelöscht werden',
+                'body' => 'Dieser Produktoptionswert wird von Produkten verwendet und kann nicht gelöscht werden.',
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [

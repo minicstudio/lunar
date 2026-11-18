@@ -33,6 +33,22 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Productoptie kan niet worden verwijderd',
+            'body' => 'Deze productoptie wordt door producten gebruikt en kan niet worden verwijderd.',
+        ],
+    ],
+
+    'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Productoptiewaarde kan niet worden verwijderd',
+                'body' => 'Deze productoptiewaarde wordt door producten gebruikt en kan niet worden verwijderd.',
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [

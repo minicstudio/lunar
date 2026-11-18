@@ -33,6 +33,22 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Não é possível excluir a opção de produto',
+            'body' => 'Esta opção de produto é usada por produtos e não pode ser excluída.',
+        ],
+    ],
+
+    'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Não é possível excluir o valor da opção de produto',
+                'body' => 'Este valor de opção de produto é usado por produtos e não pode ser excluído.',
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [

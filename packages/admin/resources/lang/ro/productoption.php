@@ -33,7 +33,20 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Opțiunea de produs nu poate fi ștearsă',
+            'body' => 'Această opțiune de produs este folosită de produse și nu poate fi ștearsă.',
+        ],
+    ],
+
     'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Valoarea opțiunii de produs nu poate fi ștearsă',
+                'body' => 'Această valoare a opțiunii de produs este folosită de produse și nu poate fi ștearsă.',
+            ],
+        ],
         'title' => 'Valori',
         'form' => [
             'name' => [

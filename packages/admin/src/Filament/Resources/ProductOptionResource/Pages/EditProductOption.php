@@ -5,6 +5,7 @@ namespace Lunar\Admin\Filament\Resources\ProductOptionResource\Pages;
 use Filament\Actions\DeleteAction;
 use Lunar\Admin\Filament\Resources\ProductOptionResource;
 use Lunar\Admin\Filament\Resources\ProductOptionResource\RelationManagers\ValuesRelationManager;
+use Lunar\Admin\Support\Actions\ProductOptions\PreventLinkedDeletion;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
 
 class EditProductOption extends BaseEditRecord
@@ -14,7 +15,8 @@ class EditProductOption extends BaseEditRecord
     protected function getDefaultHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->before(PreventLinkedDeletion::single('lunarpanel::productoption.delete.error')),
         ];
     }
 

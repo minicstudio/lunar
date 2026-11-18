@@ -19,6 +19,7 @@ use Lunar\Admin\Filament\Resources\ProductOptionResource\Pages\CreateProductOpti
 use Lunar\Admin\Filament\Resources\ProductOptionResource\Pages\EditProductOption;
 use Lunar\Admin\Filament\Resources\ProductOptionResource\Pages\ListProductOptions;
 use Lunar\Admin\Filament\Resources\ProductOptionResource\RelationManagers\ValuesRelationManager;
+use Lunar\Admin\Support\Actions\ProductOptions\PreventLinkedDeletion;
 use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\Resources\BaseResource;
 use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
@@ -130,7 +131,8 @@ class ProductOptionResource extends BaseResource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->before(PreventLinkedDeletion::bulk('lunarpanel::productoption.delete.error')),
                 ]),
             ])
             ->searchable();

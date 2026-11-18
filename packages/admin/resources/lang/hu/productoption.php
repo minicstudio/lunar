@@ -33,7 +33,20 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'A termékopció nem törölhető',
+            'body' => 'Ez a termékopció termékekhez van rendelve, ezért nem törölhető.',
+        ],
+    ],
+
     'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'A termékopció értéke nem törölhető',
+                'body' => 'Ez a termékopció-érték termékekhez van rendelve, ezért nem törölhető.',
+            ],
+        ],
         'title' => 'Értékek',
         'form' => [
             'name' => [

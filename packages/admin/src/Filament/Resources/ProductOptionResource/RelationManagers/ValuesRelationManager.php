@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Lunar\Admin\Events\ProductOptionValueUpdated;
+use Lunar\Admin\Support\Actions\ProductOptions\PreventLinkedDeletion;
 use Lunar\Admin\Support\Forms\Components\TranslatedText;
 use Lunar\Admin\Support\RelationManagers\BaseRelationManager;
 use Lunar\Admin\Support\Tables\Columns\TranslatedTextColumn;
@@ -153,12 +154,14 @@ class ValuesRelationManager extends BaseRelationManager
                         ProductOptionValueUpdated::dispatch($record);
                     }),
                 DeleteAction::make()
-                    ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.heading')),
+                    ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.heading'))
+                    ->before(PreventLinkedDeletion::single('lunarpanel::productoption.values.delete.error')),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.bulk.heading')),
+                        ->modalHeading(__('lunarpanel::productoption.values.table.actions.delete.bulk.heading'))
+                        ->before(PreventLinkedDeletion::bulk('lunarpanel::productoption.values.delete.error')),
                 ]),
             ])
             ->defaultSort('position', 'asc')

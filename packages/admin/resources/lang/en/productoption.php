@@ -33,7 +33,20 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Cannot delete product option',
+            'body' => 'This product option is used by products and cannot be deleted.',
+        ],
+    ],
+
     'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Cannot delete product option value',
+                'body' => 'This product option value is used by products and cannot be deleted.',
+            ],
+        ],
         'title' => 'Values',
         'form' => [
             'name' => [

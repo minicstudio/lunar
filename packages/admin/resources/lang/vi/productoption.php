@@ -33,6 +33,22 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Không thể xóa tùy chọn sản phẩm',
+            'body' => 'Tùy chọn sản phẩm này đang được sản phẩm sử dụng và không thể xóa.',
+        ],
+    ],
+
+    'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Không thể xóa giá trị tùy chọn sản phẩm',
+                'body' => 'Giá trị tùy chọn sản phẩm này đang được sản phẩm sử dụng và không thể xóa.',
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [
