@@ -20,6 +20,7 @@
         "filament/spatie-laravel-media-library-plugin": "^4.0",
         "guzzlehttp/guzzle": "^7.3",
         "http-interop/http-factory-guzzle": "^1.2",
+        "jaybizzle/crawler-detect": "^1.4",
         "lunarphp/nestedset": "^1.0",
         "laravel/framework": "^12.0|^13.0",
         "laravel/scout": "^10.13.1",

@@ -79,6 +79,28 @@ The order value SHALL be the order total without shipping, as in the dashboard s
 - **WHEN** the period holds 30 `facebook` / `social` visits, and 6 carts and 3 placed orders with that source
 - **THEN** the Facebook row shows 30 visits, 6 carts, 3 orders, their order value and an order rate of 10%
 
+### Requirement: Period totals
+The report SHALL show for the period the visits, the carts with a traffic source, the orders that count with how many of them have a traffic source, and the order value of the orders that count. Orders without a traffic source SHALL count in the orders and the order value.
+
+#### Scenario: Totals with and without a source
+- **WHEN** the period holds 10 Facebook visits, 4 carts with that source, one placed order from one of those carts and one placed order without a source
+- **THEN** the report shows 10 visits, 4 carts and 2 orders, 1 of them with a traffic source
+
+### Requirement: Order rate and cart order rate
+The report SHALL show the order rate, orders with a traffic source divided by visits, and the cart order rate, orders with a traffic source divided by carts with a traffic source. Orders without a traffic source SHALL count in neither rate. A rate whose divisor is zero SHALL show no value. The order rate SHALL carry a note that crawlers which are not recognised count as visits and can lower it.
+
+#### Scenario: Rates with and without a source
+- **WHEN** the period holds 10 Facebook visits, 4 carts with that source, one placed order from one of those carts and one placed order without a source
+- **THEN** the report shows an order rate of 10% and a cart order rate of 25%
+
+#### Scenario: No carts with a source
+- **WHEN** the period holds visits and a placed order without a source, but no cart with a source
+- **THEN** the cart order rate shows no value
+
+#### Scenario: Crawler note
+- **WHEN** a staff member opens the report
+- **THEN** the order rate shows the note that crawlers which are not recognised count as visits and can lower it
+
 ### Requirement: Only reportable placed orders count
 The report SHALL count an order only when it was placed and it counts, as "An order counts by its current status" defines. A split order SHALL count once, as the original order with its own placement date and order value, and the orders it was split into SHALL NOT be counted.
 

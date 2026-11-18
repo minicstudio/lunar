@@ -35,6 +35,7 @@
     },
     "require": {
         "php": "^8.2",
+        "jaybizzle/crawler-detect": "^1.4",
         "lunarphp/core": "self.version",
         "lunarphp/admin": "self.version"
     }

@@ -65,8 +65,30 @@ test('bots and empty user agents record nothing', function (string $userAgent) {
     'googlebot' => ['Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'],
     'slackbot' => ['Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)'],
     'telegram' => ['TelegramBot (like TwitterBot)'],
+    'geedo product finder' => ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko; GeedoShopProductFinder) Chrome/142.0.0.0 Safari/537.36'],
+    'google read aloud' => ['Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36 (compatible; Google-Read-Aloud; +https://support.google.com/webmasters/answer/1061943)'],
+    'googleother' => ['GoogleOther'],
+    'curl' => ['curl/8.4.0'],
     'empty' => [''],
 ]);
+
+test('a crawler sending a browser user agent is recognised by its other headers', function (array $headers) {
+    $this->get('/storefront', ['Referer' => 'https://www.google.com/', ...$headers])->assertOk();
+
+    expect(TrafficVisit::count())->toBe(0);
+})->with([
+    'headless chrome client hint' => [['Sec-CH-UA' => '"HeadlessChrome";v="142", "Chromium";v="142"']],
+    'from header' => [['From' => 'googlebot(at)googlebot.com']],
+]);
+
+test('a browser sending its client hints is recorded', function () {
+    $this->get('/storefront', [
+        'Referer' => 'https://www.google.com/',
+        'Sec-CH-UA' => '"Chromium";v="130", "Google Chrome";v="130", "Not?A_Brand";v="99"',
+    ])->assertOk();
+
+    expect(TrafficVisit::count())->toBe(1);
+});
 
 test('a cubot phone in an in-app browser is recorded', function () {
     $userAgent = 'Mozilla/5.0 (Linux; Android 11; CUBOT X30 Build/RP1A.200720.011; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/480.0.0.0;]';
@@ -74,14 +96,6 @@ test('a cubot phone in an in-app browser is recorded', function () {
     $this->get('/storefront', ['Referer' => 'https://www.google.com/', 'User-Agent' => $userAgent])->assertOk();
 
     expect(TrafficVisit::count())->toBe(1);
-});
-
-test('a shop can extend the bot pattern', function () {
-    config(['lunar.analytics.traffic.bot_user_agent_pattern' => '/bot|acmewatch/i']);
-
-    $this->get('/storefront', ['Referer' => 'https://www.google.com/', 'User-Agent' => 'AcmeWatch/2.0'])->assertOk();
-
-    expect(TrafficVisit::count())->toBe(0);
 });
 
 test('responses other than a 200 html page record nothing', function (string $path, int $status) {

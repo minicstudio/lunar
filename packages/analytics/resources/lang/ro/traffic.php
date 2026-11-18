@@ -20,6 +20,10 @@ return [
         'order_value' => 'Valoare comenzi',
         'order_rate' => 'Rată de comandă',
         'order_rate_description' => 'Comenzi cu sursă de trafic per vizită',
+        'note' => 'Notă',
+        'order_rate_crawler_note' => 'Crawlerele nerecunoscute sunt numărate ca vizite și pot reduce această rată.',
+        'cart_order_rate' => 'Rată de comandă per coș',
+        'cart_order_rate_description' => 'Comenzi cu sursă de trafic per coș cu sursă de trafic',
     ],
 
     'widgets' => [

@@ -62,11 +62,7 @@ A page view that would record a visit SHALL NOT record one when the visitor's cu
 - **THEN** a `google` / `organic` visit is recorded
 
 ### Requirement: Only real page views are recorded
-A visit SHALL be recorded only for GET requests to storefront page routes that get a 200 HTML response. Requests from user agents that are empty or match the bot pattern SHALL NOT be recorded. A browser prefetch request SHALL NOT record a visit; a visit it would start SHALL stay pending, as "A prefetched landing page starts its visit when it is opened" defines.
-
-#### Scenario: Search engine crawler
-- **WHEN** a request with user agent `Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)` opens the home page
-- **THEN** no visit is recorded
+A visit SHALL be recorded only for GET requests to storefront page routes that get a 200 HTML response, and not for crawlers, as "Crawlers are not recorded" defines. A browser prefetch request SHALL NOT record a visit; a visit it would start SHALL stay pending, as "A prefetched landing page starts its visit when it is opened" defines.
 
 #### Scenario: Missing page
 - **WHEN** a new visitor opens an unknown URL that renders the 404 page
@@ -83,6 +79,25 @@ A visit SHALL be recorded only for GET requests to storefront page routes that g
 #### Scenario: Prefetch and HEAD requests
 - **WHEN** a browser sends a page request with `Sec-Purpose: prefetch`, or a client sends a HEAD request
 - **THEN** no visit is recorded
+
+### Requirement: Crawlers are not recorded
+Requests whose user agent is empty SHALL NOT be recorded. Nor SHALL requests that the maintained crawler list of `jaybizzle/crawler-detect` recognises as a crawler, from the user agent or the other headers crawlers fill in, such as `From` and `Sec-CH-UA`.
+
+#### Scenario: Search engine crawler
+- **WHEN** a request with user agent `Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)` opens the home page
+- **THEN** no visit is recorded
+
+#### Scenario: Crawler without "bot" in its user agent
+- **WHEN** a request with user agent `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko; GeedoShopProductFinder) Chrome/142.0.0.0 Safari/537.36` opens a product page
+- **THEN** no visit is recorded
+
+#### Scenario: Crawler behind a browser user agent
+- **WHEN** a request with a desktop Chrome user agent and `Sec-CH-UA: "HeadlessChrome";v="142"` opens the home page
+- **THEN** no visit is recorded
+
+#### Scenario: Browser client hints
+- **WHEN** a new visitor's desktop Chrome sends `Sec-CH-UA: "Chromium";v="130", "Google Chrome";v="130"` and opens the home page from `https://www.google.com/`
+- **THEN** a `google` / `organic` visit is recorded
 
 ### Requirement: A prefetched landing page starts its visit when it is opened
 A prefetch that would start a visit in a session without one SHALL keep that visit pending in the session, with the prefetched page as landing path. While the session has no visit, its next request that is not a prefetch SHALL record the pending visit when it is a page view without a source of its own (the shop's own referrer and no campaign parameters), or when it creates a cart. A prefetch that is never opened SHALL NOT record a visit.
@@ -166,7 +181,7 @@ A visit with no campaign parameters and no referrer SHALL have source `direct` a
 - **THEN** the visit has source `direct` and medium `none`
 
 ### Requirement: Shops can tune the source rules
-A shop SHALL be able to add, change or remove known referrer hosts, click ids and the bot pattern through configuration. It SHALL also be able to replace the classification with its own. Without such configuration, the default rules above SHALL apply.
+A shop SHALL be able to add, change or remove known referrer hosts and click ids through configuration. It SHALL also be able to replace the classification with its own. Without such configuration, the default rules above SHALL apply.
 
 #### Scenario: Price comparison site as a named source
 - **WHEN** a shop maps `compari.ro` to source `compari` and medium `comparison`, and a new visitor arrives from `https://www.compari.ro/`
@@ -175,10 +190,6 @@ A shop SHALL be able to add, change or remove known referrer hosts, click ids an
 #### Scenario: Microsoft Ads click id
 - **WHEN** a shop adds `msclkid` as a click id giving `bing` / `cpc` that wins over the referrer, and a new visitor opens `/?msclkid=x` from `https://www.bing.com/`
 - **THEN** the visit has source `bing` and medium `cpc`
-
-#### Scenario: Own monitoring tool
-- **WHEN** a shop adds its uptime checker's user agent to the bot pattern
-- **THEN** requests from that checker record no visit
 
 ### Requirement: Visit records hold no personal data
 Each visit SHALL store its source, medium, campaign, referrer host, landing path without query string, and creation time. It SHALL NOT store the IP address, user agent, user or customer, session id, full referrer URL, or query string. Values over 255 characters SHALL be truncated.
