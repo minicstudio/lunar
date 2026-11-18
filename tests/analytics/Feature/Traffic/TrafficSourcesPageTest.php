@@ -128,7 +128,10 @@ test('the stats overview shows the period totals', function () {
         ->assertSee('Carts')
         ->assertSee('6')
         ->assertSee($orderValue)
-        ->assertSee('3.0%');
+        ->assertSee('3.0%')
+        ->assertSeeInOrder(['Orders with a traffic source per visit', 'Note:', 'Crawlers that are not recognised count as visits and can lower this rate.'])
+        ->assertSee('Cart order rate')
+        ->assertSee('50.0%');
 });
 
 test('the visits by source chart shows the split', function () {

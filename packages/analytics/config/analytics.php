@@ -82,17 +82,5 @@ return [
             'wbraid' => ['source' => 'google', 'medium' => 'cpc', 'before_referrer' => true],
             'fbclid' => ['source' => 'facebook', 'medium' => 'social', 'before_referrer' => false],
         ],
-
-        /*
-        |----------------------------------------------------------------------
-        | Bot user agent pattern
-        |----------------------------------------------------------------------
-        |
-        | Requests whose user agent matches this regular expression, or is
-        | empty, are never recorded. Extend it with your own monitoring tools.
-        | `(?<!cu)bot` keeps Cubot phones, whose in-app browsers send the model.
-        |
-        */
-        'bot_user_agent_pattern' => '/(?<!cu)bot|crawl|spider|slurp|facebookexternalhit|facebookcatalog|preview|headless|lighthouse|pingdom|uptime|monitor|curl|wget|python-requests|go-http-client|java\//i',
     ],
 ];

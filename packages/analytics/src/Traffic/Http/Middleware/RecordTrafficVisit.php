@@ -4,6 +4,7 @@ namespace Lunar\Analytics\Traffic\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Jaybizzle\CrawlerDetect\CrawlerDetect;
 use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -63,18 +64,15 @@ class RecordTrafficVisit
     }
 
     /**
-     * Whether the user agent is empty or matches `lunar.analytics.traffic.bot_user_agent_pattern`.
+     * Whether the user agent is empty or belongs to a crawler.
+     *
+     * CrawlerDetect reads the user agent and the other headers crawlers fill
+     * in (`From`, `Sec-CH-UA`, …), so a crawler sending a browser user agent
+     * can still be recognised.
      */
     protected function isBot(Request $request): bool
     {
-        $userAgent = trim((string) $request->userAgent());
-
-        if ($userAgent === '') {
-            return true;
-        }
-
-        $pattern = config('lunar.analytics.traffic.bot_user_agent_pattern');
-
-        return is_string($pattern) && $pattern !== '' && preg_match($pattern, $userAgent) === 1;
+        return trim((string) $request->userAgent()) === ''
+            || (new CrawlerDetect($request->server->all()))->isCrawler();
     }
 }

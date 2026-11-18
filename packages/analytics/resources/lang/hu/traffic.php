@@ -20,6 +20,10 @@ return [
         'order_value' => 'Rendelési érték',
         'order_rate' => 'Rendelési arány',
         'order_rate_description' => 'Forgalmi forrással rendelkező rendelések látogatásonként',
+        'note' => 'Megjegyzés',
+        'order_rate_crawler_note' => 'A fel nem ismert crawlerek látogatásnak számítanak, és csökkenthetik ezt az arányt.',
+        'cart_order_rate' => 'Kosár rendelési arány',
+        'cart_order_rate_description' => 'Forgalmi forrással rendelkező rendelések per forgalmi forrással rendelkező kosár',
     ],
 
     'widgets' => [

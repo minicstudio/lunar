@@ -374,24 +374,27 @@ class TrafficReportQuery
 
     /**
      * Report totals. Orders and order value include orders without a source;
-     * the order rate divides orders with a source by visits.
+     * the order rate divides orders with a source by visits, and the cart
+     * order rate divides them by carts with a source.
      *
-     * @return array{visits: int, carts: int, orders: int, attributed_orders: int, order_value: int, order_rate: ?float}
+     * @return array{visits: int, carts: int, orders: int, attributed_orders: int, order_value: int, order_rate: ?float, cart_order_rate: ?float}
      */
     public function totals(): array
     {
         $funnel = collect($this->funnel());
         $attributed = $funnel->where('key', '!=', self::UNKNOWN_KEY);
         $visits = (int) $attributed->sum('visits');
+        $carts = (int) $attributed->sum('carts');
         $attributedOrders = (int) $attributed->sum('orders');
 
         return [
             'visits' => $visits,
-            'carts' => (int) $attributed->sum('carts'),
+            'carts' => $carts,
             'orders' => (int) $funnel->sum('orders'),
             'attributed_orders' => $attributedOrders,
             'order_value' => (int) $funnel->sum('order_value'),
             'order_rate' => $this->rate($attributedOrders, $visits),
+            'cart_order_rate' => $this->rate($attributedOrders, $carts),
         ];
     }
 
@@ -593,11 +596,11 @@ class TrafficReportQuery
     }
 
     /**
-     * Orders divided by visits, or null without visits.
+     * Orders divided by visits or carts, or null when there are none.
      */
-    protected function rate(int $orders, int $visits): ?float
+    protected function rate(int $orders, int $visitsOrCarts): ?float
     {
-        return $visits > 0 ? $orders / $visits : null;
+        return $visitsOrCarts > 0 ? $orders / $visitsOrCarts : null;
     }
 
     /**

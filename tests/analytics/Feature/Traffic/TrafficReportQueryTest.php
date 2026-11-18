@@ -505,7 +505,32 @@ test('orders without a source form the unknown row, and carts without a source a
         'orders' => 2,
         'attributed_orders' => 0,
         'order_rate' => 0.0,
+        'cart_order_rate' => 0.0,
     ]);
+});
+
+test('the cart order rate divides orders with a source by carts with a source', function () {
+    $visits = collect(range(1, 10))->map(fn (): TrafficVisit => reportVisit(facebookSocial(), '2026-10-02 10:00'));
+    $carts = $visits->take(4)->map(fn (TrafficVisit $visit): Cart => reportCartOf($visit));
+    $carts->take(1)->each(fn (Cart $cart): Order => reportOrderOf($cart, '2026-10-03 10:00'));
+    reportOrder(null, '2026-10-03 11:00');
+    reportCart(null, '2026-10-03 10:00');
+
+    expect(octoberReport()->totals())->toMatchArray([
+        'visits' => 10,
+        'carts' => 4,
+        'orders' => 2,
+        'attributed_orders' => 1,
+        'order_rate' => 0.1,
+        'cart_order_rate' => 0.25,
+    ]);
+});
+
+test('the cart order rate is null without carts with a source', function () {
+    reportVisits(3, 'google', 'organic', '2026-10-02 10:00');
+    reportOrder(null, '2026-10-03 10:00');
+
+    expect(octoberReport()->totals()['cart_order_rate'])->toBeNull();
 });
 
 test('landing pages are ordered by visits', function () {

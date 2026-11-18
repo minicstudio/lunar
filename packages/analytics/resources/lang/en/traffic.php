@@ -20,6 +20,10 @@ return [
         'order_value' => 'Order value',
         'order_rate' => 'Order rate',
         'order_rate_description' => 'Orders with a traffic source per visit',
+        'note' => 'Note',
+        'order_rate_crawler_note' => 'Crawlers that are not recognised count as visits and can lower this rate.',
+        'cart_order_rate' => 'Cart order rate',
+        'cart_order_rate_description' => 'Orders with a traffic source per cart with a traffic source',
     ],
 
     'widgets' => [
