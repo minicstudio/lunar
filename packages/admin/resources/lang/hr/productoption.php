@@ -33,6 +33,22 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Opcija proizvoda ne može se izbrisati',
+            'body' => 'Ova opcija proizvoda se koristi na proizvodima i ne može se izbrisati.',
+        ],
+    ],
+
+    'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Vrijednost opcije proizvoda ne može se izbrisati',
+                'body' => 'Ova vrijednost opcije proizvoda se koristi na proizvodima i ne može se izbrisati.',
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [

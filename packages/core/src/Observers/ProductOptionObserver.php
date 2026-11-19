@@ -8,18 +8,28 @@ use Lunar\Models\ProductOption;
 
 class ProductOptionObserver
 {
+    protected static bool $deletingProductOption = false;
+
+    public static function isDeletingProductOption(): bool
+    {
+        return static::$deletingProductOption;
+    }
+
     /**
      * Handle the ProductOption "deleting" event.
-     *
-     * @return void
      */
-    public function deleting(ProductOptionContract $productOption)
+    public function deleting(ProductOptionContract $productOption): void
     {
-        /** @var ProductOption $productOption */
-        $productOption->products()->detach();
-        /** @var ProductOptionValue $optionValue */
-        $productOption->values()->each(
-            fn (ProductOptionValueContract $optionValue) => $optionValue->delete()
-        );
+        static::$deletingProductOption = true;
+
+        try {
+            /** @var ProductOption $productOption */
+            $productOption->products()->detach();
+            $productOption->values()->each(
+                fn (ProductOptionValueContract $optionValue) => $optionValue->delete()
+            );
+        } finally {
+            static::$deletingProductOption = false;
+        }
     }
 }

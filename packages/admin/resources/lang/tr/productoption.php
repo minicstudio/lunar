@@ -33,6 +33,22 @@ return [
         ],
     ],
 
+    'delete' => [
+        'error' => [
+            'title' => 'Ürün seçeneği silinemez',
+            'body' => 'Bu ürün seçeneği ürünler tarafından kullanılıyor ve silinemez.',
+        ],
+    ],
+
+    'values' => [
+        'delete' => [
+            'error' => [
+                'title' => 'Ürün seçeneği değeri silinemez',
+                'body' => 'Bu ürün seçeneği değeri ürünler tarafından kullanılıyor ve silinemez.',
+            ],
+        ],
+    ],
+
     'widgets' => [
         'product-options' => [
             'notifications' => [
