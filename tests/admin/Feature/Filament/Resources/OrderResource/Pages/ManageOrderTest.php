@@ -1,6 +1,7 @@
 <?php
 
 use Filament\Actions\Testing\TestAction;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Livewire\Notifications;
 use Filament\Notifications\NotificationMailbox;
 use Illuminate\Support\Carbon;
@@ -13,6 +14,7 @@ use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\Livewire\Components\ActivityLogFeed as ActivityLogFeedComponent;
 use Lunar\Admin\Support\Extending\ViewPageExtension;
 use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Admin\Support\OrderStatus;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdownAmount;
@@ -391,6 +393,31 @@ it('can update order status', function () {
 
     expect($this->order->refresh())
         ->status->toBe($status);
+});
+
+it('shows status options as colored badges', function () {
+    $statuses = config('lunar.orders.statuses', []);
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])
+        ->mountAction('update_status')
+        ->assertFormFieldExists('status', function (Select $field) use ($statuses): bool {
+            $options = $field->getOptions();
+
+            expect(array_map(strval(...), array_keys($options)))->toEqualCanonicalizing(array_map(strval(...), array_keys($statuses)))
+                ->and($field->isHtmlAllowed())->toBeTrue()
+                ->and($field->isSearchable())->toBeTrue();
+
+            foreach ($options as $status => $label) {
+                expect($label)
+                    ->toContain('fi-badge')
+                    ->toContain('fi-color')
+                    ->toContain(__(OrderStatus::getLabel($status)));
+            }
+
+            return true;
+        });
 });
 
 it('displays boolean order meta values as localized yes/no', function () {

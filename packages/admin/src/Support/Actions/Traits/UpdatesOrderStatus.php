@@ -3,7 +3,6 @@
 namespace Lunar\Admin\Support\Actions\Traits;
 
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -12,6 +11,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Lunar\Admin\Support\Forms\Components\OrderStatusSelect;
 use Lunar\Models\Order;
 
 trait UpdatesOrderStatus
@@ -27,13 +27,11 @@ trait UpdatesOrderStatus
             });
     }
 
-    protected static function getStatusSelectInput(): Select
+    protected static function getStatusSelectInput(): OrderStatusSelect
     {
-        return Select::make('status')
+        return OrderStatusSelect::make('status')
             ->label(__('lunarpanel::order.action.update_status.new_status.label'))
             ->default(fn ($record) => $record?->status)
-            ->options(fn () => collect(config('lunar.orders.statuses', []))
-                ->mapWithKeys(fn ($data, $status) => [$status => __($data['label'])]))
             ->required()
             ->live();
     }
