@@ -3,6 +3,7 @@
 namespace Lunar\Admin\Support;
 
 use Filament\Support\Colors\Color;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Lang;
 
 class OrderStatus
@@ -35,5 +36,16 @@ class OrderStatus
     public static function getColor($status): array
     {
         return static::$cachedStatusColor[$status] ??= Color::generateV3Palette(filled($color = config('lunar.orders.statuses.'.$status.'.color')) ? $color : '#7C7C7C');
+    }
+
+    public static function getBadgeHtml(string $status): string
+    {
+        return Blade::render(
+            '<x-filament::badge :color="$color">{{ $label }}</x-filament::badge>',
+            [
+                'color' => static::getColor($status),
+                'label' => __(static::getLabel($status)),
+            ],
+        );
     }
 }

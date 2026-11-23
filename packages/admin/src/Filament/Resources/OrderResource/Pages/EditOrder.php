@@ -5,9 +5,9 @@ namespace Lunar\Admin\Filament\Resources\OrderResource\Pages;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Lunar\Admin\Filament\Resources\OrderResource;
+use Lunar\Admin\Support\Forms\Components\OrderStatusSelect;
 use Lunar\Admin\Support\Livewire\FileDownload;
 use Lunar\Admin\Support\Pages\BaseEditRecord;
 
@@ -24,11 +24,9 @@ class EditOrder extends BaseEditRecord
             Action::make('update_status')
                 ->label(__('lunarpanel::order.action.update_status.label'))
                 ->schema([
-                    Select::make('status')
+                    OrderStatusSelect::make('status')
                         ->label(__('lunarpanel::order.form.status.label'))
                         ->default($this->record->status)
-                        ->options(fn () => collect(config('lunar.orders.statuses', []))
-                            ->mapWithKeys(fn ($data, $status) => [$status => $data['label']]))
                         ->required(),
                     Placeholder::make('additional content and mailer'),
                 ])
