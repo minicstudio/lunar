@@ -333,6 +333,9 @@ return [
         'split_into' => [
             'label' => 'Bontva ezekre',
         ],
+        'duplicated_from' => [
+            'label' => 'Duplikálva erről',
+        ],
     ],
 
     'action' => [
@@ -514,6 +517,24 @@ return [
                 'shipping_required' => 'Minden rendeléshez adj meg szállítási költséget.',
                 'payment_required' => 'Minden rendeléshez válassz fizetési módot.',
                 'quantity_increment' => 'A csomagban értékesített terméket csak egész csomagokra lehet bontani.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Rendelés duplikálása',
+            'payment_method' => 'Fizetési mód',
+            'shipping_method' => 'Szállítási mód',
+            'shipping_price' => 'Szállítási díj',
+            'notification' => 'Rendelés duplikálva',
+            'reasons' => [
+                'unauthorized' => 'Nincs jogosultsága a rendelés duplikálásához.',
+                'no_products' => 'Ezen a rendelésen nincs duplikálható termék.',
+                'unavailable' => 'A rendelés egyik terméke nem vásárolható meg.',
+                'quantity' => 'A mennyiség nem megengedett.',
+                'stock' => 'Nincs elég készlet egy termékhez.',
+                'address' => 'A rendelés egyik címe hiányos.',
+                'payment' => 'A fizetési mód nem elérhető.',
+                'shipping' => 'A szállítási mód nem elérhető.',
+                'negative_shipping' => 'A szállítási díj nem lehet negatív.',
             ],
         ],
     ],

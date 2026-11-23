@@ -314,6 +314,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Duplicado de',
+        ],
     ],
 
     'action' => [
@@ -485,6 +488,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Duplicar pedido',
+            'payment_method' => 'Método de pago',
+            'shipping_method' => 'Método de envío',
+            'shipping_price' => 'Precio de envío',
+            'notification' => 'Pedido duplicado',
+            'reasons' => [
+                'unauthorized' => 'No puede duplicar este pedido.',
+                'no_products' => 'Este pedido no tiene productos para duplicar.',
+                'unavailable' => 'Un producto de este pedido no se puede comprar.',
+                'quantity' => 'Una cantidad no está permitida.',
+                'stock' => 'Un producto no tiene stock suficiente.',
+                'address' => 'Una dirección de este pedido está incompleta.',
+                'payment' => 'El método de pago no está disponible.',
+                'shipping' => 'El método de envío no está disponible.',
+                'negative_shipping' => 'El precio de envío no puede ser negativo.',
             ],
         ],
     ],

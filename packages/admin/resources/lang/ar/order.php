@@ -310,6 +310,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'مكررة من',
+        ],
     ],
 
     'action' => [
@@ -485,6 +488,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'تكرار الطلب',
+            'payment_method' => 'طريقة الدفع',
+            'shipping_method' => 'طريقة الشحن',
+            'shipping_price' => 'سعر الشحن',
+            'notification' => 'تم تكرار الطلب',
+            'reasons' => [
+                'unauthorized' => 'لا يمكنك تكرار هذا الطلب.',
+                'no_products' => 'لا يحتوي هذا الطلب على منتجات للتكرار.',
+                'unavailable' => 'لا يمكن شراء منتج في هذا الطلب.',
+                'quantity' => 'كمية منتج غير مسموح بها.',
+                'stock' => 'منتج لا يملك مخزوناً كافياً.',
+                'address' => 'عنوان في هذا الطلب غير مكتمل.',
+                'payment' => 'طريقة الدفع غير متاحة.',
+                'shipping' => 'طريقة الشحن غير متاحة.',
+                'negative_shipping' => 'لا يمكن أن يكون سعر الشحن أقل من صفر.',
             ],
         ],
     ],

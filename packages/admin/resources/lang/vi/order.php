@@ -306,6 +306,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Nhân bản từ',
+        ],
     ],
 
     'action' => [
@@ -472,6 +475,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Nhân bản đơn hàng',
+            'payment_method' => 'Phương thức thanh toán',
+            'shipping_method' => 'Phương thức vận chuyển',
+            'shipping_price' => 'Phí vận chuyển',
+            'notification' => 'Đã nhân bản đơn hàng',
+            'reasons' => [
+                'unauthorized' => 'Bạn không thể nhân bản đơn hàng này.',
+                'no_products' => 'Đơn hàng này không có sản phẩm để nhân bản.',
+                'unavailable' => 'Một sản phẩm trong đơn hàng không thể mua.',
+                'quantity' => 'Số lượng sản phẩm không được phép.',
+                'stock' => 'Một sản phẩm không đủ tồn kho.',
+                'address' => 'Một địa chỉ của đơn hàng chưa đầy đủ.',
+                'payment' => 'Phương thức thanh toán không khả dụng.',
+                'shipping' => 'Phương thức vận chuyển không khả dụng.',
+                'negative_shipping' => 'Phí vận chuyển không được nhỏ hơn không.',
             ],
         ],
     ],

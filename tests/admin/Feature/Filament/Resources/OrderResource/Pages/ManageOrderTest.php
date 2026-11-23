@@ -37,7 +37,10 @@ use Lunar\Models\OrderLine;
 use Lunar\Models\Price as ModelsPrice;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
+use Lunar\Models\TaxRate;
+use Lunar\Models\TaxRateAmount;
 use Lunar\Models\TaxZone;
+use Lunar\Models\TaxZoneCountry;
 use Lunar\Models\Transaction;
 use Lunar\Tests\Admin\Feature\Filament\TestCase;
 use Lunar\Tests\Core\Stubs\OrderShippingMethodModifier;
@@ -2776,3 +2779,255 @@ function prepareConsultationOrder(Order $order, array $meta = []): void
         'meta' => ['preorder_shipping_pending' => true],
     ]);
 }
+
+function prepareDuplicateOrder(): ProductVariant
+{
+    CustomerGroup::factory()->create([
+        'default' => true,
+    ]);
+    test()->order->channel->update([
+        'default' => true,
+    ]);
+
+    $taxClass = TaxClass::factory()->create([
+        'default' => true,
+    ]);
+    $taxZone = TaxZone::factory()->create([
+        'default' => true,
+        'active' => true,
+        'zone_type' => 'country',
+    ]);
+    $taxRate = TaxRate::factory()->create([
+        'tax_zone_id' => $taxZone->id,
+    ]);
+    TaxRateAmount::factory()->create([
+        'percentage' => 0,
+        'tax_class_id' => $taxClass->id,
+        'tax_rate_id' => $taxRate->id,
+    ]);
+    TaxZoneCountry::factory()->create([
+        'tax_zone_id' => $taxZone->id,
+        'country_id' => test()->order->shippingAddress->country_id,
+    ]);
+
+    $currency = Currency::getDefault();
+    $variant = ProductVariant::factory()->create([
+        'stock' => 8,
+        'purchasable' => 'in_stock',
+        'shippable' => true,
+    ]);
+    ModelsPrice::factory()->create([
+        'price' => 2500,
+        'currency_id' => $currency->id,
+        'priceable_type' => $variant->getMorphClass(),
+        'priceable_id' => $variant->id,
+    ]);
+
+    test()->order->lines()->create([
+        'purchasable_type' => $variant->getMorphClass(),
+        'purchasable_id' => $variant->id,
+        'type' => 'physical',
+        'description' => 'Duplicate product',
+        'identifier' => 'DUP-1',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 1000,
+        'sub_total' => 1000,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 1000,
+    ]);
+    test()->order->lines()->create([
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'shipping',
+        'description' => 'National',
+        'identifier' => 'COURIER',
+        'quantity' => 1,
+        'unit_quantity' => 1,
+        'unit_price' => 1500,
+        'sub_total' => 1500,
+        'discount_total' => 0,
+        'tax_breakdown' => new TaxBreakdown,
+        'tax_total' => 0,
+        'total' => 1500,
+    ]);
+    test()->order->update([
+        'meta' => array_merge(test()->order->meta?->toArray() ?? (array) test()->order->meta, [
+            'payment_option' => 'cash-on-delivery',
+        ]),
+    ]);
+
+    offerAdminShippingMethods([
+        ['identifier' => 'COURIER', 'name' => 'National', 'price' => 1500],
+        ['identifier' => 'PICKUP', 'name' => 'Shop', 'price' => 0, 'collect' => true],
+    ]);
+
+    return $variant;
+}
+
+it('shows duplicate order on a paid order and prices the selected method', function () {
+    prepareDuplicateOrder();
+    Transaction::factory()->create([
+        'order_id' => $this->order->id,
+        'type' => 'capture',
+        'driver' => 'offline',
+        'success' => true,
+        'amount' => 2500,
+    ]);
+    $orders = Order::query()->count();
+
+    foreach (['payment-offline', 'dispatched', 'split'] as $status) {
+        $this->order->update(['status' => $status]);
+
+        Livewire::test(ManageOrder::class, [
+            'record' => $this->order->fresh()->getRouteKey(),
+        ])->assertActionVisible('duplicate_order')
+            ->assertActionHasLabel('duplicate_order', 'Duplicate order');
+    }
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->fresh()->getRouteKey(),
+    ])->mountAction('duplicate_order');
+
+    $data = $component->get('mountedActions')[0]['data'];
+
+    expect($data['payment_method'])->toBe('cash-on-delivery')
+        ->and($data['shipping_method'])->toBe('COURIER')
+        ->and((float) $data['shipping_price'])->toBe(15.0)
+        ->and(Order::query()->count())->toBe($orders);
+
+    $component->set('mountedActions.0.data.shipping_method', 'PICKUP');
+    $updated = $component->get('mountedActions')[0]['data'];
+
+    expect((float) $updated['shipping_price'])->toBe(0.0)
+        ->and($updated['shipping_custom'])->toBeFalse()
+        ->and(Order::query()->count())->toBe($orders);
+
+    $component->set('mountedActions.0.data.shipping_price', '5')
+        ->set('mountedActions.0.data.shipping_method', 'COURIER');
+
+    expect((float) $component->get('mountedActions')[0]['data']['shipping_price'])->toBe(15.0)
+        ->and(Order::query()->count())->toBe($orders);
+
+    $component->unmountAction();
+
+    expect(Order::query()->count())->toBe($orders);
+});
+
+it('opens the duplicated order and stores the typed shipping price', function () {
+    prepareDuplicateOrder();
+    $sourceReference = $this->order->reference;
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->callAction('duplicate_order', [
+        'payment_method' => 'cash-on-delivery',
+        'shipping_method' => 'COURIER',
+        'shipping_price' => '5',
+    ])->assertNotified(__('lunarpanel::order.action.duplicate_order.notification'));
+
+    $created = Order::query()->whereKeyNot($this->order->id)->sole();
+
+    $component->assertRedirect(ManageOrder::getUrl(['record' => $created]));
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $created->getRouteKey(),
+    ])->assertSee($sourceReference)
+        ->assertSee(__('lunarpanel::order.infolist.duplicated_from.label'));
+
+    expect($created->shipping_total->value)->toBe(500)
+        ->and($created->shippingLines->first()->meta['shipping_price_override'] ?? null)->toBeTrue();
+});
+
+it('does not duplicate an order for a viewer who cannot manage orders', function () {
+    prepareDuplicateOrder();
+    $this->asStaff(false);
+    $orders = Order::query()->count();
+
+    $component = Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->assertActionHidden('duplicate_order');
+
+    $component->call('mountAction', 'duplicate_order')
+        ->set('mountedActions.0.data.payment_method', 'cash-on-delivery')
+        ->set('mountedActions.0.data.shipping_method', 'COURIER')
+        ->set('mountedActions.0.data.shipping_price', '15')
+        ->call('callMountedAction');
+
+    expect(Order::query()->count())->toBe($orders);
+});
+
+it('keeps the source order on screen when a product cannot be bought', function () {
+    $variant = prepareDuplicateOrder();
+    $variant->product->update([
+        'status' => 'draft',
+    ]);
+    $orders = Order::query()->count();
+
+    Livewire::test(ManageOrder::class, [
+        'record' => $this->order->getRouteKey(),
+    ])->callAction('duplicate_order', [
+        'payment_method' => 'cash-on-delivery',
+        'shipping_method' => 'COURIER',
+        'shipping_price' => '15.00',
+    ])->assertNotified(__('lunarpanel::order.action.duplicate_order.reasons.unavailable'))
+        ->assertNoRedirect()
+        ->assertSee($this->order->reference);
+
+    expect(Order::query()->count())->toBe($orders);
+});
+
+it('translates duplicate order in every locale', function () {
+    $keys = [
+        'lunarpanel::order.action.duplicate_order.label',
+        'lunarpanel::order.action.duplicate_order.payment_method',
+        'lunarpanel::order.action.duplicate_order.shipping_method',
+        'lunarpanel::order.action.duplicate_order.shipping_price',
+        'lunarpanel::order.action.duplicate_order.notification',
+        'lunarpanel::order.action.duplicate_order.reasons.unauthorized',
+        'lunarpanel::order.action.duplicate_order.reasons.no_products',
+        'lunarpanel::order.action.duplicate_order.reasons.unavailable',
+        'lunarpanel::order.action.duplicate_order.reasons.quantity',
+        'lunarpanel::order.action.duplicate_order.reasons.stock',
+        'lunarpanel::order.action.duplicate_order.reasons.address',
+        'lunarpanel::order.action.duplicate_order.reasons.payment',
+        'lunarpanel::order.action.duplicate_order.reasons.shipping',
+        'lunarpanel::order.action.duplicate_order.reasons.negative_shipping',
+        'lunarpanel::order.infolist.duplicated_from.label',
+    ];
+
+    foreach (['ar', 'bg', 'de', 'es', 'fa', 'fr', 'hr', 'hu', 'mn', 'nl', 'pl', 'pt_BR', 'ro', 'tr', 'vi', 'en'] as $locale) {
+        foreach ($keys as $key) {
+            expect(Lang::has($key, $locale, false))->toBeTrue();
+        }
+
+        if ($locale === 'en') {
+            continue;
+        }
+
+        expect(__('lunarpanel::order.action.duplicate_order.label', [], $locale))->not->toBe('Duplicate order')
+            ->and(__('lunarpanel::order.infolist.duplicated_from.label', [], $locale))->not->toBe('Duplicated from');
+    }
+
+    app()->setLocale('en');
+
+    expect(__('lunarpanel::order.action.duplicate_order.label'))->toBe('Duplicate order')
+        ->and(__('lunarpanel::order.infolist.duplicated_from.label'))->toBe('Duplicated from')
+        ->and(__('lunarpanel::order.action.duplicate_order.payment_method'))->toBe('Payment method')
+        ->and(__('lunarpanel::order.action.duplicate_order.shipping_method'))->toBe('Shipping method')
+        ->and(__('lunarpanel::order.action.duplicate_order.shipping_price'))->toBe('Shipping price')
+        ->and(__('lunarpanel::order.action.duplicate_order.notification'))->toBe('Order duplicated');
+
+    app()->setLocale('hu');
+
+    expect(__('lunarpanel::order.action.duplicate_order.label'))->toBe('Rendelés duplikálása')
+        ->and(__('lunarpanel::order.infolist.duplicated_from.label'))->toBe('Duplikálva erről')
+        ->and(__('lunarpanel::order.action.duplicate_order.payment_method'))->toBe('Fizetési mód')
+        ->and(__('lunarpanel::order.action.duplicate_order.shipping_method'))->toBe('Szállítási mód')
+        ->and(__('lunarpanel::order.action.duplicate_order.shipping_price'))->toBe('Szállítási díj')
+        ->and(__('lunarpanel::order.action.duplicate_order.notification'))->toBe('Rendelés duplikálva');
+
+    app()->setLocale('en');
+});

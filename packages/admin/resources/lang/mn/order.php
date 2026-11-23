@@ -307,6 +307,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Эндээс хуулбарласан',
+        ],
     ],
 
     'action' => [
@@ -479,6 +482,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Захиалга хуулбарлах',
+            'payment_method' => 'Төлбөрийн хэлбэр',
+            'shipping_method' => 'Хүргэлтийн хэлбэр',
+            'shipping_price' => 'Хүргэлтийн үнэ',
+            'notification' => 'Захиалга хуулбарлагдлаа',
+            'reasons' => [
+                'unauthorized' => 'Энэ захиалгыг хуулбарлах эрхгүй.',
+                'no_products' => 'Энэ захиалгад хуулбарлах бүтээгдэхүүн алга.',
+                'unavailable' => 'Захиалгын бүтээгдэхүүнийг худалдан авах боломжгүй.',
+                'quantity' => 'Бүтээгдэхүүний тоо хэмжээ зөвшөөрөгдөхгүй.',
+                'stock' => 'Бүтээгдэхүүний нөөц хүрэлцэхгүй.',
+                'address' => 'Захиалгын хаяг дутуу.',
+                'payment' => 'Төлбөрийн хэлбэр боломжгүй.',
+                'shipping' => 'Хүргэлтийн хэлбэр боломжгүй.',
+                'negative_shipping' => 'Хүргэлтийн үнэ сөрөг байж болохгүй.',
             ],
         ],
     ],

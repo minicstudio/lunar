@@ -275,6 +275,7 @@ trait DisplaysOrderSummary
             static::getOrderSummaryConsultationCompletedAtEntry(),
             static::getSplitFromEntry(),
             static::getSplitIntoEntry(),
+            static::getDuplicatedFromEntry(),
         ]);
     }
 
@@ -296,6 +297,16 @@ trait DisplaysOrderSummary
             ->alignEnd()
             ->visible(fn (?Order $record): bool => filled(data_get($record?->meta, 'split_into_order_ids')))
             ->state(fn (?Order $record): string => static::relatedOrderLinks(data_get($record?->meta, 'split_into_order_ids')));
+    }
+
+    public static function getDuplicatedFromEntry(): TextEntry
+    {
+        return TextEntry::make('duplicated_from_order')
+            ->label(__('lunarpanel::order.infolist.duplicated_from.label'))
+            ->html()
+            ->alignEnd()
+            ->visible(fn (?Order $record): bool => filled(data_get($record?->meta, 'duplicated_from_order_id')))
+            ->state(fn (?Order $record): string => static::relatedOrderLinks(data_get($record?->meta, 'duplicated_from_order_id')));
     }
 
     protected static function relatedOrderLinks(mixed $ids): string

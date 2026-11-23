@@ -303,6 +303,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Duplicirano iz',
+        ],
     ],
 
     'action' => [
@@ -474,6 +477,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Dupliciraj narudžbu',
+            'payment_method' => 'Način plaćanja',
+            'shipping_method' => 'Način dostave',
+            'shipping_price' => 'Cijena dostave',
+            'notification' => 'Narudžba je duplicirana',
+            'reasons' => [
+                'unauthorized' => 'Ne možete duplicirati ovu narudžbu.',
+                'no_products' => 'Ova narudžba nema proizvoda za dupliciranje.',
+                'unavailable' => 'Proizvod s ove narudžbe nije moguće kupiti.',
+                'quantity' => 'Količina proizvoda nije dopuštena.',
+                'stock' => 'Proizvod nema dovoljno zalihe.',
+                'address' => 'Adresa na ovoj narudžbi nije potpuna.',
+                'payment' => 'Način plaćanja nije dostupan.',
+                'shipping' => 'Način dostave nije dostupan.',
+                'negative_shipping' => 'Cijena dostave ne može biti negativna.',
             ],
         ],
     ],

@@ -314,6 +314,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Gedupliceerd van',
+        ],
     ],
 
     'action' => [
@@ -485,6 +488,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Bestelling dupliceren',
+            'payment_method' => 'Betaalmethode',
+            'shipping_method' => 'Verzendmethode',
+            'shipping_price' => 'Verzendprijs',
+            'notification' => 'Bestelling gedupliceerd',
+            'reasons' => [
+                'unauthorized' => 'U kunt deze bestelling niet dupliceren.',
+                'no_products' => 'Deze bestelling heeft geen producten om te dupliceren.',
+                'unavailable' => 'Een product van deze bestelling kan niet worden gekocht.',
+                'quantity' => 'Een aantal is niet toegestaan.',
+                'stock' => 'Een product heeft onvoldoende voorraad.',
+                'address' => 'Een adres van deze bestelling is onvolledig.',
+                'payment' => 'De betaalmethode is niet beschikbaar.',
+                'shipping' => 'De verzendmethode is niet beschikbaar.',
+                'negative_shipping' => 'De verzendprijs mag niet negatief zijn.',
             ],
         ],
     ],
