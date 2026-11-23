@@ -38,6 +38,10 @@ class OrderStatus
         return static::$cachedStatusColor[$status] ??= Color::generateV3Palette(filled($color = config('lunar.orders.statuses.'.$status.'.color')) ? $color : '#7C7C7C');
     }
 
+    /**
+     * Render a Filament badge for the given order status, using the same
+     * palette and label as the order list and activity log.
+     */
     public static function getBadgeHtml(string $status): string
     {
         return Blade::render(
