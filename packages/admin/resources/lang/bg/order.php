@@ -310,6 +310,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Дублирано от',
+        ],
     ],
 
     'action' => [
@@ -485,6 +488,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Дублиране на поръчка',
+            'payment_method' => 'Начин на плащане',
+            'shipping_method' => 'Начин на доставка',
+            'shipping_price' => 'Цена на доставка',
+            'notification' => 'Поръчката е дублирана',
+            'reasons' => [
+                'unauthorized' => 'Нямате право да дублирате тази поръчка.',
+                'no_products' => 'Тази поръчка няма продукти за дублиране.',
+                'unavailable' => 'Продукт от тази поръчка не може да бъде купен.',
+                'quantity' => 'Количеството не е позволено.',
+                'stock' => 'Продукт няма достатъчна наличност.',
+                'address' => 'Адрес на тази поръчка е непълен.',
+                'payment' => 'Начинът на плащане не е наличен.',
+                'shipping' => 'Начинът на доставка не е наличен.',
+                'negative_shipping' => 'Цената на доставката не може да е отрицателна.',
             ],
         ],
     ],

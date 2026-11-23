@@ -42,6 +42,7 @@ use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysOrderTotals;
 use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysShippingInfo;
 use Lunar\Admin\Filament\Resources\OrderResource\Concerns\DisplaysTransactions;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\Components\OrderItemsTable;
+use Lunar\Admin\Support\Actions\Orders\DuplicateOrderAction;
 use Lunar\Admin\Support\Actions\Orders\SplitOrderAction;
 use Lunar\Admin\Support\Actions\Orders\UpdateStatusAction;
 use Lunar\Admin\Support\Actions\PdfDownload;
@@ -604,6 +605,7 @@ class ManageOrder extends BaseViewRecord
             $this->getPreorderConsultationKeepAction(),
             $this->getCaptureAction(),
             SplitOrderAction::make('split_order'),
+            DuplicateOrderAction::make('duplicate_order'),
             $this->getPreorderStatusWarningAction(),
             UpdateStatusAction::make('update_status')
                 ->visible(function (): bool {

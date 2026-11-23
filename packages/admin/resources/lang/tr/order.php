@@ -314,6 +314,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Şuradan kopyalandı',
+        ],
     ],
 
     'action' => [
@@ -489,6 +492,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Siparişi çoğalt',
+            'payment_method' => 'Ödeme yöntemi',
+            'shipping_method' => 'Teslimat yöntemi',
+            'shipping_price' => 'Teslimat ücreti',
+            'notification' => 'Sipariş çoğaltıldı',
+            'reasons' => [
+                'unauthorized' => 'Bu siparişi çoğaltamazsınız.',
+                'no_products' => 'Bu siparişte çoğaltılacak ürün yok.',
+                'unavailable' => 'Bu siparişteki bir ürün satın alınamıyor.',
+                'quantity' => 'Bir ürün miktarına izin verilmiyor.',
+                'stock' => 'Bir ürünün stoğu yeterli değil.',
+                'address' => 'Bu siparişin bir adresi eksik.',
+                'payment' => 'Ödeme yöntemi kullanılamıyor.',
+                'shipping' => 'Teslimat yöntemi kullanılamıyor.',
+                'negative_shipping' => 'Teslimat ücreti sıfırdan küçük olamaz.',
             ],
         ],
     ],

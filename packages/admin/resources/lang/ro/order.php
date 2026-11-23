@@ -339,6 +339,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'Duplicat din',
+        ],
     ],
 
     'action' => [
@@ -514,6 +517,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'Duplică comanda',
+            'payment_method' => 'Metodă de plată',
+            'shipping_method' => 'Metodă de livrare',
+            'shipping_price' => 'Cost livrare',
+            'notification' => 'Comandă duplicată',
+            'reasons' => [
+                'unauthorized' => 'Nu puteți duplica această comandă.',
+                'no_products' => 'Această comandă nu are produse de duplicat.',
+                'unavailable' => 'Un produs din comandă nu poate fi cumpărat.',
+                'quantity' => 'Cantitatea unui produs nu este permisă.',
+                'stock' => 'Un produs nu are stoc suficient.',
+                'address' => 'O adresă a comenzii este incompletă.',
+                'payment' => 'Metoda de plată nu este disponibilă.',
+                'shipping' => 'Metoda de livrare nu este disponibilă.',
+                'negative_shipping' => 'Costul de livrare nu poate fi negativ.',
             ],
         ],
     ],

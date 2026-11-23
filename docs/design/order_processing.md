@@ -143,7 +143,7 @@ Payment drivers create `capture` / `intent` rows; admin can inspect via order re
 
 **Event:** `Lunar\ERP\Events\OrderPlacedEvent` (`packages/ERP/src/Events/OrderPlacedEvent.php`)
 
-Carries the placed `Order` model. **Not dispatched by any provider in this repository** — the host must fire it after successful payment authorization. A staff split does not dispatch it. An order that is not split is still forwarded to the ERP once when the host does dispatch it.
+Carries the placed `Order` model. **Not dispatched by any provider in this repository** — the host must fire it after successful payment authorization. A staff split does not dispatch it. A staff duplicate does not dispatch it, including when the new status is `payment-offline`. An order that is not split is still forwarded to the ERP once when the host does dispatch it.
 
 ### Listener in this repo
 
@@ -268,7 +268,7 @@ Scheduled when `lunar.erp.enabled` and cron configured in `lunar.erp.schedule.or
 
 **Resource:** `packages/admin/src/Filament/Resources/OrderResource.php`
 
-Staff can view/edit orders, lines, addresses, transactions. While a product edit would be accepted and the order has one shipping line, staff can change the shipping method from under the method name. The choices are the options checkout would offer, except a parcel locker. The save reprices that option and clears a price staff had saved. The save sets the shipping type from the chosen option, store collection to pickup and anything else to courier, on the order and the linked cart. A change from personal pickup to address delivery leaves the shipping address, and warns that the shipping address corresponds to the billing address when those addresses match so staff can edit it if the delivery address is different. **Modify shipping price** sits under the price. The typed amount is the shipping subtotal. Tax and the order total follow that amount. That save marks the shipping line, and a later product edit keeps that price. If staff have not saved a shipping price, a later product edit still recalculates it. Raising a quantity or adding a product so the order qualifies for free shipping sets the shipping price to 0.
+Staff can view/edit orders, lines, addresses, transactions. While a product edit would be accepted and the order has one shipping line, staff can change the shipping method from under the method name. The choices are the options checkout would offer, except a parcel locker. The save reprices that option and clears a price staff had saved. The save sets the shipping type from the chosen option, store collection to pickup and anything else to courier, on the order and the linked cart. A change from personal pickup to address delivery leaves the shipping address, and warns that the shipping address corresponds to the billing address when those addresses match so staff can edit it if the delivery address is different. **Modify shipping price** sits under the price. The typed amount is the shipping subtotal. Tax and the order total follow that amount. That save marks the shipping line, and a later product edit keeps that price. If staff have not saved a shipping price, a later product edit still recalculates it. Raising a quantity or adding a product so the order qualifies for free shipping sets the shipping price to 0. Staff duplicate an order from a modal. They choose a payment method and, when the lines ship, a shipping method and a price that starts as that method's calculated price. The new order is created already in the status configured for the payment method, which is what sends a card payment link or bank-transfer instructions. Duplication takes stock for the copied lines. A later shipment status does not take that stock again. It does not dispatch `OrderPlacedEvent`.
 
 Status updates use **`UpdatesOrderStatus`** trait (`packages/admin/src/Support/Actions/Traits/UpdatesOrderStatus.php`):
 
@@ -315,6 +315,8 @@ Admin order line tables may show current variant stock vs `meta.stock_level` cap
 | Host-only keys | Host after placement | e.g. analytics IDs — not set by core |
 | `split_into_order_ids` | Admin order split | New order ids created from this order. The original order status is `split`. |
 | `split_from_order_id` | Admin order split | The original order this new order was split from. |
+| `duplicated_from_order_id` | Admin order duplication | The original order this new order was duplicated from. The source order is not changed. |
+| `stock_taken` | Admin order duplication | The duplicate already decreased stock for its lines. A later shipment status does not decrease it again. A later cancel can restore it. |
 | `traffic_source` | Analytics package on cart creation; copied by `FillOrderFromCart` (whole cart meta) and by the admin order split (`SplitOrder::COPIED_META_KEYS`) | `{visit_id, source, medium, campaign}` of the visit that created the cart (first touch). The order stores nothing about the visit in which it was placed. Read by the analytics traffic report. |
 
 ---

@@ -310,6 +310,9 @@ return [
         'split_into' => [
             'label' => 'Split into',
         ],
+        'duplicated_from' => [
+            'label' => 'تکراری از',
+        ],
     ],
 
     'action' => [
@@ -485,6 +488,24 @@ return [
                 'shipping_required' => 'Enter a shipping cost for every order.',
                 'payment_required' => 'Choose a payment method for every order.',
                 'quantity_increment' => 'A product sold in packs must be split into whole packs.',
+            ],
+        ],
+        'duplicate_order' => [
+            'label' => 'تکرار سفارش',
+            'payment_method' => 'روش پرداخت',
+            'shipping_method' => 'روش ارسال',
+            'shipping_price' => 'هزینه ارسال',
+            'notification' => 'سفارش تکرار شد',
+            'reasons' => [
+                'unauthorized' => 'نمی‌توانید این سفارش را تکرار کنید.',
+                'no_products' => 'این سفارش محصولی برای تکرار ندارد.',
+                'unavailable' => 'یک محصول این سفارش قابل خرید نیست.',
+                'quantity' => 'مقدار یک محصول مجاز نیست.',
+                'stock' => 'موجودی یک محصول کافی نیست.',
+                'address' => 'یک نشانی این سفارش ناقص است.',
+                'payment' => 'روش پرداخت در دسترس نیست.',
+                'shipping' => 'روش ارسال در دسترس نیست.',
+                'negative_shipping' => 'هزینه ارسال نمی‌تواند منفی باشد.',
             ],
         ],
     ],
