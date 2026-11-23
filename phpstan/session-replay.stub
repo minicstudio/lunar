@@ -1,0 +1,32 @@
+<?php
+
+namespace Packstub\SessionReplay\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class ReplaySession extends Model
+{
+    public ?string $entry_url;
+
+    public mixed $user_id;
+
+    public ?object $user;
+
+    /** @var array<string, mixed>|null */
+    public $properties;
+
+    public function durationForHumans(): string
+    {
+    }
+}
+
+namespace Packstub\SessionReplay\Facades;
+
+use Illuminate\Support\Facades\Facade;
+
+class SessionReplay extends Facade
+{
+    public static function urlUsing(?callable $callback): void
+    {
+    }
+}

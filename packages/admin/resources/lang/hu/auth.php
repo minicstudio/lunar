@@ -21,6 +21,9 @@ return [
     'permissions.settings:manage-staff.label' => 'Munkatársak kezelése',
     'permissions.settings:manage-staff.description' => 'Engedélyezi a munkatársak szerkesztését',
 
+    'permissions.settings:view-session-replays.label' => 'Munkamenet-felvételek megtekintése',
+    'permissions.settings:view-session-replays.description' => 'Engedélyezi a munkatárs számára a webshop munkamenet-felvételeinek megtekintését',
+
     'permissions.settings:manage-attributes.label' => 'Attribútumok kezelése',
     'permissions.settings:manage-attributes.description' => 'Engedélyezi további attribútumok létrehozását és szerkesztését',
 

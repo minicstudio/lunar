@@ -17,6 +17,8 @@ return [
     'permissions.settings:core.description' => 'Access fundamental store settings, such as channels, languages, currencies, etc',
     'permissions.settings:manage-staff.label' => 'Manage Staff',
     'permissions.settings:manage-staff.description' => 'Allow the staff member to edit other staff',
+    'permissions.settings:view-session-replays.label' => 'View session replays',
+    'permissions.settings:view-session-replays.description' => 'Allow the staff member to watch storefront session replays',
     'permissions.settings:manage-attributes.label' => 'Manage Attributes',
     'permissions.settings:manage-attributes.description' => 'Allow the staff member to edit and create additional attributes',
     'permissions.catalog:manage-products.label' => 'Manage Products',

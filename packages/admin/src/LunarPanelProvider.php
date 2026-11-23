@@ -31,12 +31,17 @@ use Lunar\Admin\Events\ProductOptionValueUpdated;
 use Lunar\Admin\Events\ProductPricingUpdated;
 use Lunar\Admin\Events\ProductVariantOptionsUpdated;
 use Lunar\Admin\Events\ProductVariantPricingUpdated;
+use Lunar\Admin\Filament\Resources\SessionReplayResource;
 use Lunar\Admin\Listeners\FilamentUpgradedListener;
 use Lunar\Admin\Models\Staff;
 use Lunar\Admin\Support\ActivityLog\Manifest as ActivityLogManifest;
 use Lunar\Admin\Support\Forms\AttributeData;
 use Lunar\Admin\Support\Orders\OrderInvoicePdf;
+use Lunar\Admin\Support\SessionReplayWatching;
 use Lunar\Admin\Support\Synthesizers\PriceSynth;
+use Packstub\SessionReplay\Facades\SessionReplay;
+use Packstub\SessionReplay\Models\ReplaySession;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 class LunarPanelProvider extends ServiceProvider
 {
@@ -127,6 +132,7 @@ class LunarPanelProvider extends ServiceProvider
 
         $this->registerAuthGuard();
         $this->registerPermissionManifest();
+        $this->registerSessionReplay();
         $this->registerStateListeners();
         $this->registerLunarSynthesizer();
         $this->registerViewComposers();
@@ -147,6 +153,30 @@ class LunarPanelProvider extends ServiceProvider
             'driver' => 'session',
             'provider' => 'staff',
         ]);
+    }
+
+    /**
+     * Watch recordings on the admin player.
+     *
+     * The package viewer stays off, and its data routes allow the same staff
+     * who may open this screen. A missing admin route leaves the recording
+     * URL empty. Any other failure while building that URL is left alone.
+     */
+    protected function registerSessionReplay(): void
+    {
+        if (! class_exists(SessionReplay::class)) {
+            return;
+        }
+
+        SessionReplayWatching::register();
+
+        SessionReplay::urlUsing(function (ReplaySession $session): ?string {
+            try {
+                return SessionReplayResource::getUrl('view', ['record' => $session]);
+            } catch (RouteNotFoundException) {
+                return null;
+            }
+        });
     }
 
     /**

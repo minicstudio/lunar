@@ -2,6 +2,8 @@ includes:
     - ./vendor/larastan/larastan/extension.neon
 parameters:
     level: 0
+    scanFiles:
+        - phpstan/session-replay.stub
     paths:
         - packages
     excludePaths:

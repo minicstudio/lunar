@@ -17,6 +17,8 @@ return [
     'permissions.settings:core.description' => 'Acces la setările de bază ale magazinului, precum canale, limbi, monede etc.',
     'permissions.settings:manage-staff.label' => 'Gestionare personal',
     'permissions.settings:manage-staff.description' => 'Permite membrului de personal să editeze alți membri',
+    'permissions.settings:view-session-replays.label' => 'Vizualizare înregistrări de sesiune',
+    'permissions.settings:view-session-replays.description' => 'Permite membrului echipei să vizioneze înregistrările de sesiune din magazin',
     'permissions.settings:manage-attributes.label' => 'Gestionare atribute',
     'permissions.settings:manage-attributes.description' => 'Permite personalului să editeze și să creeze atribute suplimentare',
     'permissions.catalog:manage-products.label' => 'Gestionare produse',
