@@ -139,3 +139,58 @@ it('can save a new size and colour permutation copied from an existing variant',
         ->and($created->stock)->toBe(0)
         ->and($created->basePrices->first()?->price->value)->toBe(1800);
 });
+
+it('uses the newest base price when duplicates exist for the default currency', function () {
+    Language::factory()->create([
+        'default' => true,
+    ]);
+
+    $currency = Currency::factory()->create([
+        'default' => true,
+        'decimal_places' => 2,
+    ]);
+
+    $product = Product::factory()->create();
+    $variant = ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'sku' => 'DUP-PRICE',
+        'stock' => 4,
+    ]);
+
+    $variant->prices()->create([
+        'price' => 239222,
+        'currency_id' => $currency->id,
+        'min_quantity' => 1,
+        'customer_group_id' => null,
+    ]);
+
+    $canonical = $variant->prices()->create([
+        'price' => 15000,
+        'currency_id' => $currency->id,
+        'min_quantity' => 1,
+        'customer_group_id' => null,
+    ]);
+
+    $this->asStaff(admin: true);
+
+    Livewire::test(ProductOptionsWidget::class, [
+        'record' => $product->fresh(),
+    ])->set('variants', [
+        [
+            'key' => 'existing',
+            'variant_id' => $variant->id,
+            'copied_id' => null,
+            'sku' => 'DUP-PRICE',
+            'price' => 175,
+            'stock' => 4,
+            'values' => [],
+        ],
+    ])->callAction('saveVariants')
+        ->assertHasNoErrors();
+
+    $variant->refresh();
+
+    expect($variant->basePrices)->toHaveCount(1)
+        ->and($variant->canonicalBasePrice()?->id)->toBe($canonical->id)
+        ->and($variant->canonicalBasePrice()?->price->value)->toBe(17500);
+});

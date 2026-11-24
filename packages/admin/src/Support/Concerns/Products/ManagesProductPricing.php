@@ -85,6 +85,11 @@ trait ManagesProductPricing
         ])
         );
 
+        $prices->pluck('currency_id')
+            ->filter()
+            ->unique()
+            ->each(fn ($currencyId) => $variant->deduplicateBasePricesForCurrency((int) $currencyId));
+
         $this->basePrices = $this->getBasePrices();
 
         $this->dispatch('refresh-relation-manager');
@@ -208,6 +213,8 @@ trait ManagesProductPricing
             ->basePrices()
             ->with('currency')
             ->get()
+            ->groupBy('currency_id')
+            ->map(fn ($currencyPrices) => $currencyPrices->sortByDesc('id')->first())
             ->sortByDesc(fn ($p) => (int) $p->currency->default)
             ->values();
 
