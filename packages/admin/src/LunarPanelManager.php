@@ -55,6 +55,7 @@ use Lunar\Admin\Filament\Resources\ProductOptionResource;
 use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Filament\Resources\ProductTypeResource;
 use Lunar\Admin\Filament\Resources\ProductVariantResource;
+use Lunar\Admin\Filament\Resources\SessionReplayResource;
 use Lunar\Admin\Filament\Resources\StaffResource;
 use Lunar\Admin\Filament\Resources\TagResource;
 use Lunar\Admin\Filament\Resources\TaxClassResource;
@@ -72,6 +73,7 @@ use Lunar\Admin\Filament\Widgets\Dashboard\Orders\PopularProductsTable;
 use Lunar\Admin\Http\Controllers\DownloadPdfController;
 use Lunar\Admin\Support\Facades\LunarAccessControl;
 use Minic\LaravelAiAssistant\Filament\AiAssistantPlugin;
+use Packstub\SessionReplay\Models\ReplaySession;
 
 class LunarPanelManager
 {
@@ -280,6 +282,9 @@ class LunarPanelManager
 
         $panel = Panel::make()
             ->spa()
+            ->spaUrlExceptions([
+                '*/session-replays/*',
+            ])
             ->default()
             ->id($this->panelId)
             ->brandName('Lunar')
@@ -371,7 +376,13 @@ class LunarPanelManager
      */
     public static function getResources(): array
     {
-        return static::$resources;
+        $resources = static::$resources;
+
+        if (class_exists(ReplaySession::class)) {
+            $resources[] = SessionReplayResource::class;
+        }
+
+        return $resources;
     }
 
     /**

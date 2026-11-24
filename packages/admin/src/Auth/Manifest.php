@@ -141,6 +141,7 @@ class Manifest
             'settings',
             'settings:core',
             'settings:manage-staff',
+            'settings:view-session-replays',
             'settings:manage-attributes',
             'catalog:manage-products',
             'catalog:manage-collections',
