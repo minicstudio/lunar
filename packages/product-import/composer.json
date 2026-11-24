@@ -1,0 +1,46 @@
+{
+    "name": "lunarphp/product-import",
+    "description": "AI-assisted product import from Excel and CSV files",
+    "keywords": [
+        "lunarphp",
+        "laravel",
+        "ecommerce",
+        "e-commerce",
+        "import",
+        "excel",
+        "csv"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lunar",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Lunar\\ProductImport\\": "src",
+            "Lunar\\ProductImport\\Database\\Factories\\": "database/factories",
+            "Lunar\\ProductImport\\Database\\State\\": "database/state"
+        }
+    },
+    "extra": {
+        "lunar": {
+            "name": "Product Import"
+        },
+        "laravel": {
+            "providers": [
+                "Lunar\\ProductImport\\ProductImportServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "laravel/ai": "^1.4",
+        "lunarphp/core": "self.version",
+        "lunarphp/admin": "self.version",
+        "maatwebsite/excel": "^4.0",
+        "spatie/laravel-data": "^4.13.1"
+    }
+}
