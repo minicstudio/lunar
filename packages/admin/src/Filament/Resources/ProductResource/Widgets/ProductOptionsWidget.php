@@ -266,7 +266,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
             return [
                 'id' => $variant->id,
                 'sku' => $variant->sku,
-                'price' => $variant->basePrices->first()?->price->decimal ?: 0,
+                'price' => $variant->canonicalBasePrice()?->price->decimal ?: 0,
                 'stock' => $variant->stock,
                 'values' => $variant->values->mapWithKeys(
                     fn ($value) => [$value->option->translate('name') => $value->translate('name')]
@@ -412,7 +412,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                         // Livewire keeps copied_id after the first create, which would
                         // replicate a new variant (same SKU) on every "Save variants".
                         $variant = ProductVariant::find($variantData['variant_id']);
-                        $basePrice = $variant->basePrices->first();
+                        $basePrice = $variant->canonicalBasePrice();
                     } elseif (! empty($variantData['copied_id'])) {
                         $copiedVariant = ProductVariant::find(
                             $variantData['copied_id']
@@ -421,7 +421,7 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
                         $variant = $copiedVariant->replicate();
                         $variant->save();
 
-                        $basePrice = $copiedVariant->basePrices->first()->replicate();
+                        $basePrice = $copiedVariant->canonicalBasePrice()->replicate();
                         $basePrice->priceable_id = $variant->id;
                     }
 
@@ -431,6 +431,11 @@ class ProductOptionsWidget extends BaseWidget implements HasActions, HasForms
 
                     $basePrice->price = (int) bcmul($variantData['price'], $basePrice->currency->factor);
                     $basePrice->save();
+
+                    $variant->deduplicateBasePricesForCurrency(
+                        (int) $basePrice->currency_id,
+                        $basePrice->id
+                    );
 
                     $optionsValues = $this->mapOptionValuesToIds($variantData['values']);
 
