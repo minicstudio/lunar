@@ -19,7 +19,7 @@
 
   @if ($activeSheet)
   <x-filament::section :heading="$activeSheet->name">
-    <x-slot name="headerEnd">
+    <x-slot name="afterHeader">
       <div class="flex gap-2">
         @if ($activeSheet->skipped)
         @if ($activeSheet->row_count > 0)
@@ -175,12 +175,12 @@
         <table class="w-full text-left text-sm">
           <thead>
             <tr class="border-b border-gray-200 dark:border-white/10">
-              <th class="py-2 pe-4">{{ __('lunarpanel.product-import::ui.mapping.column') }}</th>
-              <th class="py-2 pe-4">
+              <th class="py-2 pe-2">{{ __('lunarpanel.product-import::ui.mapping.column') }}</th>
+              <th class="py-2 pe-2">
                 {{ __('lunarpanel.product-import::ui.mapping.samples') }}
               </th>
-              <th class="py-2 pe-4">{{ __('lunarpanel.product-import::ui.mapping.target') }}</th>
-              <th class="py-2 pe-4">
+              <th class="py-2 pe-2">{{ __('lunarpanel.product-import::ui.mapping.target') }}</th>
+              <th class="py-2 px-2 text-center">
                 {{ __('lunarpanel.product-import::ui.mapping.confidence') }}
               </th>
               <th class="py-2"></th>
@@ -188,19 +188,19 @@
           </thead>
           <tbody>
             @foreach ($columns as $column)
-            <tr class="border-b border-gray-100 align-top dark:border-white/5"
+            <tr class="border-t border-gray-200 align-top dark:border-white/10"
               wire:key="column-{{ $activeSheet->id }}-{{ $column['index'] }}">
-              <td class="py-2 pe-4">
+              <td class="py-4 pe-2">
                 <div class="font-medium">{{ $column['header'] }}</div>
                 <div class="text-xs text-gray-500">
                   {{ __('lunarpanel.product-import::ui.mapping.fill', ['share' => $column['fill']]) }}
                 </div>
               </td>
-              <td class="py-2 pe-4 text-xs text-gray-600 dark:text-gray-300">
+              <td class="py-4 pe-2 text-xs text-gray-600 dark:text-gray-300">
                 {{ $column['samples'] }}
               </td>
-              <td class="py-2 pe-4">
-                <div class="flex flex-col gap-1">
+              <td class="py-4 pe-2">
+                <div class="flex flex-col gap-2">
                   <x-filament::input.wrapper>
                     <x-filament::input.select
                       wire:model.live="sheets.{{ $activeSheet->id }}.columns.{{ $column['index'] }}.target"
@@ -402,7 +402,7 @@
                   @endif
                 </div>
               </td>
-              <td class="py-2 pe-4">
+              <td class="py-4 px-2 text-center">
                 @if ($column['confidence'] !== null)
                 <x-filament::badge :color="$column['confidenceColor']">
                   {{ $column['confidence'] }}%
@@ -413,7 +413,7 @@
                 @endif
                 @endif
               </td>
-              <td class="py-2 text-end">
+              <td class="py-4 text-end">
                 @if ($column['isIgnored'])
                 <x-filament::link tag="button" size="sm"
                   wire:click="restoreColumn({{ $activeSheet->id }}, {{ $column['index'] }})">{{

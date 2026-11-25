@@ -3,13 +3,21 @@
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Lunar\Models\Product;
 use Lunar\Models\ProductType;
+use Lunar\Models\ProductVariant;
+use Lunar\ProductImport\Actions\SkipRows;
+use Lunar\ProductImport\Data\ImportOptions;
+use Lunar\ProductImport\Enums\ExistingVariants;
 use Lunar\ProductImport\Enums\ImportStatus;
+use Lunar\ProductImport\Enums\RowRole;
 use Lunar\ProductImport\Enums\RowSkipReason;
 use Lunar\ProductImport\Enums\RowStatus;
 use Lunar\ProductImport\Filament\Livewire\PreviewStep;
 use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Models\ProductImportSheet;
+use Lunar\Tests\ProductImport\Support\Discounts;
+use Lunar\Tests\ProductImport\Support\GroupedRows;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
 use Lunar\Tests\ProductImport\TestCase;
 
@@ -75,6 +83,38 @@ test('correcting row 37 shows the empty original cell and clears the error', fun
         ->and($row->fresh()->overrides)->toBe(['variant.price' => 4990]);
 });
 
+test('include shows on a row that its type skipped and on a staff-skipped row, not on a row skipped as an existing variant', function () {
+    ProductVariant::factory()->for(Product::factory(), 'product')->create(['sku' => 'CARD-10']);
+
+    $import = GroupedRows::import(ProductType::factory()->create()->id, [
+        3 => ['10', 'simple', '', 'CARD-10', 'Card cadou', '100,00', '3', ''],
+        4 => ['60', 'simple', '', 'GP-60', 'Geacă puf', '1256,59', '2', ''],
+    ], new ImportOptions(existingVariants: ExistingVariants::Skip), 'en');
+
+    app(SkipRows::class)->handle($import, [GroupedRows::row($import, 4)->id]);
+
+    [$grouped, $existing, $staff] = [GroupedRows::row($import, 2), GroupedRows::row($import, 3), GroupedRows::row($import, 4)];
+
+    expect([$grouped->skip_reason, $existing->skip_reason, $staff->skip_reason])
+        ->toBe([RowSkipReason::RowType, RowSkipReason::Existing, RowSkipReason::Staff]);
+
+    Livewire::test(PreviewStep::class, ['import' => $import])
+        ->assertTableActionVisible('includeRowAs', $grouped)
+        ->assertTableActionHidden('includeRow', $grouped)
+        ->assertTableActionVisible('includeRow', $staff)
+        ->assertTableActionHidden('includeRowAs', $staff)
+        ->assertTableActionHidden('includeRow', $existing)
+        ->assertTableActionHidden('includeRowAs', $existing)
+        ->mountTableAction('includeRowAs', $grouped)
+        ->assertMountedActionModalSee('Include export, row 2')
+        ->assertTableActionDataSet(['role' => RowRole::ProductAndVariant->value])
+        ->callMountedTableAction()
+        ->assertHasNoTableActionErrors();
+
+    expect($grouped->fresh()->only(['role', 'role_override', 'skip_reason']))
+        ->toBe(['role' => RowRole::ProductAndVariant, 'role_override' => RowRole::ProductAndVariant, 'skip_reason' => null]);
+});
+
 test('the start button names the variants and skips the rows with errors', function () {
     $import = ImportBuilder::import(ImportStatus::Staging);
     $sheet = ImportBuilder::sheet($import, 'Produse', ImportBuilder::rows(
@@ -125,4 +165,25 @@ test('saving the correction form twice leaves the corrected values unchanged', f
         ->assertHasNoTableActionErrors();
 
     expect($row->fresh()->overrides)->toBe($corrected);
+});
+
+test('each variant shows its discount next to its price, and a discount that ended shows none', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $import = ImportBuilder::import(ImportStatus::Staging);
+    $sheet = Discounts::sheet($import, ProductType::factory()->create()->id, [
+        2 => ['OUT-RUHA-S', 'Rochie S', '229,00', '', '30', '', '2026-12-31'],
+        3 => ['OUT-VECHI', 'Bluză', '99,00', '', '30', '', '2026-11-01'],
+    ]);
+    ImportBuilder::stage($import);
+    $import->update(['status' => ImportStatus::PreviewReady]);
+
+    $current = ProductImportRow::query()->where('product_import_sheet_id', $sheet->id)->where('row_number', 2)->sole();
+    $ended = ProductImportRow::query()->where('product_import_sheet_id', $sheet->id)->where('row_number', 3)->sole();
+
+    Livewire::test(PreviewStep::class, ['import' => $import])
+        ->assertSee('Discount')
+        ->assertTableColumnStateSet('discount', '30% · until 31 Dec 2026', $current)
+        ->assertTableColumnStateSet('discount', null, $ended)
+        ->assertSee('30% · until 31 Dec 2026');
 });

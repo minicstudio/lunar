@@ -106,6 +106,7 @@ test('the failed images show with their product, url, and reason, with the url c
         ->assertSee('https://img.example.com/missing.png')
         ->assertSee('the server answered with status 404')
         ->assertActionVisible('retryImages')
+        ->assertSee('Retry failed images')
         ->callAction('correctImageUrl', data: ['url' => 'https://img.example.com/rochie.png'], arguments: ['image' => $image->id])
         ->assertHasNoActionErrors();
 
@@ -126,4 +127,18 @@ test('without failed images, or once the rows are removed, neither the failed im
         ->assertDontSee('Failed images')
         ->assertDontSee('https://img.example.com/missing.png')
         ->assertActionHidden('retryImages');
+});
+
+test('the created discounts and the variants added to discounts are listed', function () {
+    $import = finishedWithFailures([
+        'stats' => [
+            'new_products' => 3, 'failed_rows' => 1, 'created_discounts' => 2, 'discount_variants' => 3,
+            'created' => ['discounts' => [['id' => 1, 'name' => 'Outlet iarnă'], ['id' => 2, 'name' => '50% · until 31 Dec 2026']]],
+        ],
+    ]);
+
+    Livewire::test(ImportResult::class, ['import' => $import])
+        ->assertSee('Created discounts')
+        ->assertSee('Variants added to discounts')
+        ->assertSee('Outlet iarnă, 50% · until 31 Dec 2026');
 });

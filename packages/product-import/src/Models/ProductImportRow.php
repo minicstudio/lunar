@@ -25,6 +25,7 @@ use Lunar\ProductImport\Enums\RowStatus;
  * @property ?array<string, mixed> $normalized
  * @property ?array<string, mixed> $overrides
  * @property ?RowRole $role
+ * @property ?RowRole $role_override The role staff chose when they included a row that its type skips.
  * @property ?string $source_id
  * @property ?string $parent_ref
  * @property ?string $group_key
@@ -68,6 +69,7 @@ class ProductImportRow extends BaseModel
             'overrides' => 'array',
             'messages' => 'array',
             'role' => RowRole::class,
+            'role_override' => RowRole::class,
             'status' => RowStatus::class,
             'skip_reason' => RowSkipReason::class,
             'action' => RowAction::class,

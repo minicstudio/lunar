@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Defines what happens when staff start an approved import: the order in which categories, brands, options, products, variants, prices, URLs, associations, and images are written to the catalog, how existing records are updated without duplicates, how failures are isolated and reported, and how failed rows and failed images are retried.
+Defines what happens when staff start an approved import: the order in which categories, brands, options, discounts, products, variants, prices, URLs, associations, and images are written to the catalog, how existing records are updated without duplicates, how failures are isolated and reported, and how failed rows and failed images are retried.
 
 ## ADDED Requirements
 
@@ -24,9 +24,9 @@ The system MUST refuse to start an import while another import is importing, wit
 - **WHEN** staff start import B while import A is importing
 - **THEN** import B is refused with that message and stays in preview ready
 
-### Requirement: Categories, brands, and options are written first
+### Requirement: Categories, brands, options, and discounts are written first
 
-Before writing any product, the import MUST create the brands, categories (in the chosen collection group, under their decided parents), product options (from the mapping and from cells), and option values that staff decided to create. Every product MUST then use the records chosen or created in the review. If this step fails, no product MUST be written and the import MUST become failed.
+Before writing any product, the import MUST create the brands, categories (in the chosen collection group, under their decided parents), product options (from the mapping and from cells), option values, and discounts that staff decided to create. Every product MUST then use the records chosen or created in the review. If this step fails, no product MUST be written and the import MUST become failed.
 
 #### Scenario: New category and brand
 
@@ -37,6 +37,15 @@ Before writing any product, the import MUST create the brands, categories (in th
 
 - **WHEN** the review decided to create "Vară" under the existing "Femei > Rochii"
 - **THEN** the import creates "Vară" as a child of "Femei > Rochii"
+
+### Requirement: Created discounts apply to every customer
+
+A created discount MUST take an amount or percent off, have no coupon, and take its name, kind, value, start, and end from the decision. An empty start MUST mean the moment the discount is created. An amount MUST be set for the default currency. The discount MUST be enabled in every channel and for every customer group.
+
+#### Scenario: New discount
+
+- **WHEN** the review decided to create the discount 30% with the end 31 December 2026 and no start
+- **THEN** the import creates one discount of 30% without a coupon that starts when it is created, ends at the end of 31 December 2026, and is enabled in every channel and for every customer group
 
 ### Requirement: Each product group is written in its own transaction
 
@@ -61,9 +70,18 @@ A new product MUST get the sheet's product type, the status that the status opti
 - **WHEN** the product row "Rochie vară" has the tags "vara, bumbac" and the brand "Furnizor Textil", and its two variant rows have the sizes S and M, prices, GTINs, and the weight 0.4 with the sheet's unit kg
 - **THEN** one product with those tags and that brand exists with two variants, each with its size, price, GTIN, and a weight of 0.4 kg
 
+### Requirement: Records are created as the store's model classes
+
+When the store replaces a Lunar model with its own class, every record of that model that the import creates MUST be an instance of the store's class, so model events and their listeners receive the class they expect.
+
+#### Scenario: The store replaces the product model
+
+- **WHEN** the store replaces the product and collection models with its own classes, and an import creates the product "Classic Cotton T-Shirt" in the new category "T-Shirts"
+- **THEN** the created events carry instances of the store's classes, and the product and the category are imported
+
 ### Requirement: Existing records change only in mapped fields
 
-An update MUST overwrite only fields that the sheet maps and whose cell is not empty. Unmapped fields MUST stay unchanged. Categories, tags, associations, and images MUST be added without removing existing ones. URLs MUST NOT be overwritten (see URL slugs). A product in the trash MUST be restored. New variants of an updated group MUST be added to the existing product.
+An update MUST overwrite only fields that the sheet maps and whose cell is not empty. Unmapped fields MUST stay unchanged. Categories, tags, discounts, associations, and images MUST be added without removing existing ones. URLs MUST NOT be overwritten (see URL slugs). A product in the trash MUST be restored. New variants of an updated group MUST be added to the existing product.
 
 #### Scenario: Stock-only file
 
@@ -99,24 +117,43 @@ When a sheet maps a URL slug, a new product MUST get the slug as its default URL
 - **WHEN** another product already has the Romanian URL "rochie-vara" and the import creates a product with that slug
 - **THEN** the new product's Romanian URL is "rochie-vara-2"
 
-### Requirement: A sale sets the price and the compare price
+### Requirement: The price is written without a compare price
 
-A sale price, given directly or as a discount amount or percent of the price, MUST apply when today is within its start and end dates (an empty date is open) and it is lower than the regular price. Then the base price MUST be the sale price and the compare price the regular price. Otherwise the base price MUST be the regular price and the compare price MUST be cleared. A row that writes a price MUST write the compare price with it.
+A row that writes a price MUST write the row's price as the variant's base price. It MUST NOT write a sale price, or a price minus a discount, as the base price. The import MUST NOT write or clear a compare price.
 
-#### Scenario: Running sale
+#### Scenario: Sale price in the file
 
-- **WHEN** a row has the regular price 199,00 and the sale price 149,00 without dates
-- **THEN** the variant's price is 149.00 and its compare price is 199.00
+- **WHEN** a row has the price 199,00 and the sale price 149,00 without dates, and its variant is new
+- **THEN** the variant's price is 199.00 and it has no compare price
 
 #### Scenario: Discount percent
 
 - **WHEN** a product row has the price 200.00 and the discount percent 25, without dates
-- **THEN** the variant's price is 150.00 and its compare price is 200.00
+- **THEN** the variant's price is 200.00, it has no compare price, and it is linked to a 25% discount
 
-#### Scenario: Sale over
+#### Scenario: Existing compare price
 
-- **WHEN** a row has the regular price 199,00, the sale price 149,00, and a sale end in the past, and its variant had the compare price 249.00
-- **THEN** the variant's price is 199.00 and it has no compare price
+- **WHEN** a row with the price 199,00 updates a variant whose compare price is 249.00
+- **THEN** the variant's price is 199.00 and its compare price stays 249.00
+
+### Requirement: Variants are linked to their discounts
+
+After a variant is written, it MUST be added to the discount that the review decided for its row's discount, as a variant the discount is limited to, unless it is already added. Other discounts of the variant MUST stay. A variant whose discount was skipped MUST NOT be added to any discount. Using an existing discount MUST NOT change its name, values, dates, channels, or customer groups.
+
+#### Scenario: Discounts from a supplier sheet
+
+- **WHEN** today is 24 November 2026, the rows "OUT-RUHA-S" and "OUT-RUHA-M" have the price 229.00 and the discount percent 30, the row "OUT-TASKA" has the price 59,00 and the discount percent 50, all with the sale end 31 December 2026, and the review decided to create both discounts
+- **THEN** the variants' prices are 229.00, 229.00, and 59.00, none has a compare price, the 30% discount is limited to "OUT-RUHA-S" and "OUT-RUHA-M", the 50% discount to "OUT-TASKA", and both end at the end of 31 December 2026
+
+#### Scenario: Existing discount used
+
+- **WHEN** the review set a discount to use the existing discount "Iarna", which is limited to 4 variants, and 2 imported variants carry that discount
+- **THEN** "Iarna" is limited to 6 variants and keeps its name, value, dates, channels, and customer groups
+
+#### Scenario: Same file twice
+
+- **WHEN** staff import a file with discounts and then import the same file again
+- **THEN** the second import uses the discounts that the first one created, creates none, and adds no variant to a discount twice
 
 ### Requirement: Stock status and backorders set purchasability
 
@@ -148,12 +185,32 @@ After every product group is written, the import MUST add each product's up-sell
 
 ### Requirement: Images are downloaded after the products
 
-After the associations, the import MUST download each product's image URLs in file order, the first as the primary image of a new product, and link a variant's own image to that variant. An image whose URL the product already has MUST NOT be downloaded again. A failed image MUST be a warning on its row and MUST NOT fail the row or the import.
+After the associations, the import MUST download each product's image URLs in file order, the first as the primary image of a new product, and link a variant's own image to that variant. Every image MUST keep its own file, named after the product like an image uploaded in the admin, with a number suffix when another image of the product has that name. When the import links images to variants, the product images of a variant row MUST be linked to its variant, and added to the product when the product does not have them yet. The images of the product row, and of a product with one variant, MUST stay on the product only. An image whose URL the product already has MUST NOT be downloaded again. A failed image MUST be a warning on its row and MUST NOT fail the row or the import.
 
 #### Scenario: Images in file order
 
 - **WHEN** a product row's images hold three URLs
 - **THEN** the product has the three images in that order, with the first as its primary image
+
+#### Scenario: URLs that end in the same file name
+
+- **WHEN** the images of "Classic Cotton T-Shirt" are "https://picsum.photos/id/1/800/1000.jpg" and "https://picsum.photos/id/2/800/1000.jpg"
+- **THEN** the product has two image files, "classic-cotton-t-shirt.jpg" and "classic-cotton-t-shirt-2.jpg", each with its own picture
+
+#### Scenario: Images linked to variants
+
+- **WHEN** the import links images to variants, the product row "TEE-CLASSIC" has a white and a black image, and its variant rows "TEE-CLASSIC-WHT-S" and "TEE-CLASSIC-BLK-M" repeat the white and the black image
+- **THEN** the product has each image once, the white image is linked to "TEE-CLASSIC-WHT-S", and the black image to "TEE-CLASSIC-BLK-M"
+
+#### Scenario: A variant image the product row lacks
+
+- **WHEN** the import links images to variants and the variant row "CHINO-SLIM-30" has an image that its product row does not have
+- **THEN** the image is added to the product and linked to "CHINO-SLIM-30"
+
+#### Scenario: Images not linked to variants
+
+- **WHEN** the import does not link images to variants
+- **THEN** the product images of the variant rows are added to the product and linked to no variant
 
 #### Scenario: Same file twice
 
@@ -218,7 +275,7 @@ When the import is set to skip existing variants, matched rows MUST NOT change a
 
 ### Requirement: An import never removes catalog records
 
-The import MUST NOT delete, unpublish, or move to the trash any product, variant, price, brand, collection, option, or option value, including records that the file does not contain.
+The import MUST NOT delete, unpublish, or move to the trash any product, variant, price, brand, collection, option, option value, or discount, including records that the file does not contain, and MUST NOT remove a variant from a discount.
 
 #### Scenario: Product missing from the file
 
@@ -236,7 +293,7 @@ The import MUST NOT update the search index once per row. After the products are
 
 ### Requirement: The result is recorded on the import
 
-When all groups and images are processed, the import MUST become completed when every included row was imported or skipped by staff, completed with errors when some rows failed, and failed when no row was imported. Failed images MUST NOT change the status. The import MUST store counts of new and updated products and variants, skipped and failed rows, the brands, categories, options, and option values it created, the associations added, and the images downloaded and failed.
+When all groups and images are processed, the import MUST become completed when every included row was imported or skipped by staff, completed with errors when some rows failed, and failed when no row was imported. Failed images MUST NOT change the status. The import MUST store counts of new and updated products and variants, skipped and failed rows, the records it created of each type, the variants added to discounts, the associations added, and the images downloaded and failed.
 
 #### Scenario: Some rows failed
 

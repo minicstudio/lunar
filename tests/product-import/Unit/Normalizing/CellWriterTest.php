@@ -23,6 +23,7 @@ test('a value written for its column reads back as the same value', function (Co
     'price on a decimal comma column' => [new ColumnMapping(0, 'Pret', 'variant.price', format: ColumnFormat::number(',', '.')), 4990, '49,90'],
     'sale price in major units' => [new ColumnMapping(0, 'Pret promotional', 'variant.sale_price', format: ColumnFormat::number(',')), 14900, '149,00'],
     'negative price impact' => [new ColumnMapping(0, 'Impact', 'variant.price_impact', format: ColumnFormat::number('.')), -1550, '-15.50'],
+    'price impact with six decimals' => [new ColumnMapping(0, 'Impact on price', 'variant.price_impact', format: ColumnFormat::number('.')), 826.4463, '8.264463'],
     'discount amount' => [new ColumnMapping(0, 'Reducere', 'variant.discount_amount', format: ColumnFormat::number(',')), 2500, '25,00'],
     'weight with a dot' => [new ColumnMapping(0, 'Weight (kg)', 'variant.weight', format: ColumnFormat::number('.')), 1.25, '1.25'],
     'weight with a comma' => [new ColumnMapping(0, 'Greutate', 'variant.weight', format: ColumnFormat::number(',', '.')), 1250.5, '1250,5'],

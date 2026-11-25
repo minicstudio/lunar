@@ -2,17 +2,24 @@
 
 namespace Lunar\ProductImport\Taxonomy;
 
+use Illuminate\Database\Eloquent\Builder;
+use Lunar\DiscountTypes\AdvancedAmountOff;
 use Lunar\Models\Brand;
 use Lunar\Models\Collection;
+use Lunar\Models\Currency;
+use Lunar\Models\Discount;
+use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductOptionValue;
+use Lunar\Models\ProductVariant;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Support\KeyNormalizer;
 use Lunar\ProductImport\Support\TargetFieldRegistry;
 
 /**
  * The brands, one collection group's tree, the product options and their
- * values, and the product types' text attributes, loaded once and keyed for
- * matching in memory.
+ * values, the product types' text attributes, and the eligible discounts,
+ * loaded once and keyed for matching in memory.
  */
 class CatalogSnapshot
 {
@@ -50,6 +57,11 @@ class CatalogSnapshot
      * @var array<string, int> Normalized option name from cells => the existing option it uses.
      */
     public array $namedOptions = [];
+
+    /**
+     * @var array<int, array{name: string, kind: string, value: int|float, starts_at: ?string, ends_at: ?string}> Eligible discount id => its values, the amount for the default currency.
+     */
+    public array $discounts = [];
 
     /**
      * Load the catalog parts an import's values are matched against.
@@ -163,5 +175,51 @@ class CatalogSnapshot
         }
 
         return $path;
+    }
+
+    /**
+     * Load the eligible discounts (`eligibleDiscounts()`) with their kind,
+     * value (the amount for the default currency), start, and end.
+     */
+    public function loadDiscounts(): void
+    {
+        $currency = (string) Currency::getDefault()?->code;
+
+        foreach (static::eligibleDiscounts()->orderBy('id')->get(['id', 'name', 'data', 'starts_at', 'ends_at']) as $discount) {
+            $data = $discount->data ?? [];
+            $fixed = (bool) ($data['fixed_value'] ?? false);
+
+            $this->discounts[(int) $discount->id] = [
+                'name' => (string) $discount->name,
+                'kind' => $fixed ? RowDiscount::AMOUNT : RowDiscount::PERCENT,
+                'value' => $fixed ? (int) ($data['fixed_values'][$currency] ?? 0) : round((float) ($data['percentage'] ?? 0), 4),
+                'starts_at' => $discount->starts_at?->format('Y-m-d H:i:s'),
+                'ends_at' => $discount->ends_at?->format('Y-m-d H:i:s'),
+            ];
+        }
+    }
+
+    /**
+     * The discounts an import may add variants to: amount or percent off
+     * (`AdvancedAmountOff`), without a coupon, and limited to products or
+     * variants and to nothing else. Adding a variant to a discount limited by
+     * collection or brand, or to one without limits, would change which other
+     * products it reaches.
+     *
+     * @return Builder<Discount>
+     */
+    public static function eligibleDiscounts(): Builder
+    {
+        $purchasables = [Product::morphName(), ProductVariant::morphName()];
+
+        return Discount::query()
+            ->where('type', AdvancedAmountOff::class)
+            ->where(fn (Builder $query) => $query->whereNull('coupon')->orWhere('coupon', ''))
+            ->whereHas('discountables', fn (Builder $query) => $query->where('type', 'limitation')->whereIn('discountable_type', $purchasables))
+            ->whereDoesntHave('discountables', fn (Builder $query) => $query->where(
+                fn (Builder $query) => $query->whereNotIn('type', ['limitation', 'exclusion'])->orWhereNotIn('discountable_type', $purchasables)
+            ))
+            ->whereDoesntHave('collections')
+            ->whereDoesntHave('brands');
     }
 }

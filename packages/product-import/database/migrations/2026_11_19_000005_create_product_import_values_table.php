@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('source_value', 500);
             $table->string('normalized_key', 500);
             $table->json('path')->nullable();
+            $table->json('details')->nullable();
             $table->json('sheets')->nullable();
             $table->json('group_keys')->nullable();
             $table->unsignedInteger('product_count')->default(0);
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->string('action', 16)->nullable();
             $table->unsignedBigInteger('target_id')->nullable();
             $table->string('create_name', 500)->nullable();
+            $table->json('create_details')->nullable();
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->timestamps();
 

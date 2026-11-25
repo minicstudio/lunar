@@ -37,6 +37,7 @@ class CellWriter
             (bool) $target?->isPair() => $this->pairItems($column, (array) $value),
             is_array($value) => $this->list($column, $value),
             (bool) $target?->isMoney() && is_int($value) => $this->number($column, $value / max(1, $currencyFactor), (int) round(log10(max(1, $currencyFactor)))),
+            (bool) $target?->isMoney() && is_float($value) => $this->number($column, $value / max(1, $currencyFactor), maxDecimals: (int) round(log10(max(1, $currencyFactor))) + 4),
             is_int($value) || is_float($value) => $this->number($column, $value),
             is_bool($value) => $this->code($column, $value ? ValueMeaning::Yes : ValueMeaning::No),
             (bool) $target?->isDate() => $this->date($column, (string) $value),
@@ -47,13 +48,14 @@ class CellWriter
 
     /**
      * A number with the column's decimal separator and no thousands
-     * separator, with the given decimals or as many as it has.
+     * separator, with the given decimals or as many as it has, up to
+     * `$maxDecimals`.
      */
-    protected function number(ColumnMapping $column, int|float $number, ?int $decimals = null): string
+    protected function number(ColumnMapping $column, int|float $number, ?int $decimals = null, int $maxDecimals = 4): string
     {
         $text = $decimals !== null
             ? number_format($number, $decimals, '.', '')
-            : (is_int($number) ? (string) $number : Str::rtrim(Str::rtrim(number_format($number, 4, '.', ''), '0'), '.'));
+            : (is_int($number) ? (string) $number : Str::rtrim(Str::rtrim(number_format($number, $maxDecimals, '.', ''), '0'), '.'));
 
         return Str::replace('.', $column->format?->decimalSeparator ?? '.', $text);
     }

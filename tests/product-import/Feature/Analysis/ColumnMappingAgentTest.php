@@ -5,6 +5,8 @@ use Illuminate\JsonSchema\JsonSchemaTypeFactory;
 use Illuminate\JsonSchema\Types\ObjectType;
 use Illuminate\Support\Str;
 use Laravel\Ai\Contracts\HasTools;
+use Laravel\Ai\Contracts\Providers\TextProvider;
+use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Prompts\AgentPrompt;
 use Lunar\Models\Language;
 use Lunar\ProductImport\Analysis\ColumnMappingAgent;
@@ -18,6 +20,7 @@ beforeEach(function () {
     config([
         'lunar.product-import.ai.provider' => 'openai',
         'lunar.product-import.ai.model' => null,
+        'lunar.product-import.ai.fallback_models' => null,
         'lunar.product-import.ai.key' => null,
         'lunar.product-import.ai.url' => null,
         'ai.providers.openai.key' => 'sk-assistant',
@@ -54,6 +57,66 @@ test('with an own key the agent uses its own provider and the assistant config i
         ->and(config('ai.providers.product-import'))->toBeNull()
         ->and(config('ai.default'))->toBe('openai');
 });
+
+test('with fallback models the agent lists a provider copy per fallback model in failover order', function () {
+    config([
+        'lunar.product-import.ai.model' => 'gpt-primary',
+        'lunar.product-import.ai.fallback_models' => 'gpt-second,gpt-third',
+    ]);
+
+    expect((new ColumnMappingAgent(['ignore'], ['ro']))->provider())->toBe([
+        'openai' => 'gpt-primary',
+        'product-import-fallback-1' => 'gpt-second',
+        'product-import-fallback-2' => 'gpt-third',
+    ]);
+
+    config(['lunar.product-import.ai.key' => 'sk-import']);
+
+    expect((new ColumnMappingAgent(['ignore'], ['ro']))->provider())->toBe([
+        'product-import' => 'gpt-primary',
+        'product-import-fallback-1' => 'gpt-second',
+        'product-import-fallback-2' => 'gpt-third',
+    ])->and(config('ai.providers.openai.key'))->toBe('sk-assistant');
+});
+
+test('an overloaded model fails over to the next fallback model with the same key', function () {
+    config([
+        'lunar.product-import.ai.key' => 'sk-import',
+        'lunar.product-import.ai.model' => 'gpt-primary',
+        'lunar.product-import.ai.fallback_models' => 'gpt-second,gpt-third',
+    ]);
+
+    $tried = [];
+
+    ColumnMappingAgent::fake(function (string $prompt, $attachments, TextProvider $provider, string $model) use (&$tried): array {
+        $tried[] = [$provider->name(), $model, $provider->providerCredentials()['key']];
+
+        if ($model !== 'gpt-third') {
+            throw ProviderOverloadedException::forProvider($provider->name(), 503);
+        }
+
+        return ['columns' => [], 'grouping' => ['strategy' => 'per_row', 'column' => null, 'confidence' => 1]];
+    });
+
+    $response = (new ColumnMappingAgent(['product.name', 'ignore'], ['ro']))->prompt('{}');
+
+    expect($tried)->toBe([
+        ['product-import', 'gpt-primary', 'sk-import'],
+        ['product-import-fallback-1', 'gpt-second', 'sk-import'],
+        ['product-import-fallback-2', 'gpt-third', 'sk-import'],
+    ])->and($response->meta->model)->toBe('gpt-third');
+});
+
+test('when every model is overloaded the last failure is thrown', function () {
+    config([
+        'lunar.product-import.ai.model' => 'gpt-primary',
+        'lunar.product-import.ai.fallback_models' => 'gpt-second',
+    ]);
+
+    ColumnMappingAgent::fake(fn (string $prompt, $attachments, TextProvider $provider) => throw ProviderOverloadedException::forProvider($provider->name(), 503));
+
+    (new ColumnMappingAgent(['product.name', 'ignore'], ['ro']))->prompt('{}');
+})->throws(ProviderOverloadedException::class, 'AI provider [product-import-fallback-1] is overloaded.');
 
 test('the schema limits targets and languages to the allowed lists', function () {
     $agent = new ColumnMappingAgent(['product.name', 'variant.sku', 'ignore'], ['ro', 'hu']);

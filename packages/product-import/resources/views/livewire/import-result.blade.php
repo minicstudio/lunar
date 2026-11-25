@@ -6,7 +6,7 @@
   @endif
 
   <div class="grid gap-4 md:grid-cols-4">
-    @foreach (['new_products', 'updated_products', 'new_variants', 'updated_variants', 'skipped_rows', 'failed_rows', 'created_brands', 'created_categories', 'associations', 'images_downloaded', 'images_failed'] as $key)
+    @foreach (['new_products', 'updated_products', 'new_variants', 'updated_variants', 'skipped_rows', 'failed_rows', 'created_brands', 'created_categories', 'created_discounts', 'discount_variants', 'associations', 'images_downloaded', 'images_failed'] as $key)
     <x-filament::section compact>
       <div class="text-sm text-gray-500">{{ __('lunarpanel.product-import::ui.result.stats.'.$key) }}</div>
       <div class="text-2xl font-semibold">{{ (int) ($stats[$key] ?? 0) }}</div>
@@ -14,7 +14,7 @@
     @endforeach
   </div>
 
-  @foreach (['brands', 'categories', 'options', 'option_values'] as $type)
+  @foreach (['brands', 'categories', 'options', 'option_values', 'discounts'] as $type)
   @if (! empty($created[$type]))
   <x-filament::section :heading="__('lunarpanel.product-import::ui.result.created.'.$type)" compact>
     <p class="text-sm">{{ collect($created[$type])->pluck('name')->implode(', ') }}</p>
@@ -29,7 +29,7 @@
 
   @if ($failedImages !== [])
   <x-filament::section :heading="__('lunarpanel.product-import::ui.result.failed_images')">
-    <x-slot name="headerEnd">
+    <x-slot name="afterHeader">
       {{ $this->retryImagesAction }}
     </x-slot>
 

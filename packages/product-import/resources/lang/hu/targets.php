@@ -23,7 +23,7 @@ return [
     'product_cross_sells' => 'Kapcsolódó termékek (cross-sell)',
     'variant_gtin' => 'Változat GTIN',
     'variant_mpn' => 'Változat MPN',
-    'variant_price_impact' => 'Változat árkülönbözete',
+    'variant_price_impact' => 'Változat árkülönbözete (adó nélkül)',
     'variant_sale_price' => 'Változat akciós ára',
     'variant_sale_starts' => 'Akció kezdete',
     'variant_sale_ends' => 'Akció vége',

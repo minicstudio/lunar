@@ -31,9 +31,10 @@ use Lunar\ProductImport\Models\ProductImportImage;
 use Lunar\ProductImport\Models\ProductImportRow;
 
 /**
- * The outcome of a finished import: statistics, created records, failed rows
- * with corrections, the error report, and the retry of failed rows, and the
- * failed images with their reason, URL corrections, and their retry.
+ * The outcome of a finished import: statistics, created records (discounts
+ * among them), the variants added to discounts, failed rows with
+ * corrections, the error report, and the retry of failed rows, and the failed
+ * images with their reason, URL corrections, and their retry.
  */
 class ImportResult extends Component implements HasActions, HasSchemas, HasTable
 {

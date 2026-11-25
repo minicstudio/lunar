@@ -4,6 +4,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Lunar\FieldTypes\Text;
 use Lunar\Models\Language;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
@@ -106,14 +107,61 @@ test('three images arrive in order with the first as the primary image, and a se
         ->and(ProductImportImage::query()->where('product_import_id', $second->id)->pluck('status')->unique()->all())->toBe([ImageStatus::Existing]);
 });
 
-test('a variant image is linked to its variant', function () {
+test('a variant image is linked to its variant, and is the primary image of a product without an image of its own', function () {
     Http::fake(['https://img.example.com/*' => Http::response(imageBytes('jpeg'), 200, ['Content-Type' => 'image/jpeg'])]);
 
     $variant = ProductVariant::factory()->for($this->product, 'product')->create();
     downloadImages($this->import, pendingImages($this->import, $this->product, $this->row, ['https://img.example.com/s.jpg'], $variant->id));
 
     expect($variant->images()->pluck('media.id')->all())->toBe([ProductImportImage::query()->sole()->media_id])
-        ->and((bool) $variant->images()->first()->pivot->primary)->toBeTrue();
+        ->and((bool) $variant->images()->first()->pivot->primary)->toBeTrue()
+        ->and($this->product->fresh()->getFirstMedia(config('lunar.media.collection'))->getCustomProperty('primary'))->toBeTrue();
+});
+
+test('a product image and the variant images that repeat it share one file, and a variant image the product lacks is added to the product', function () {
+    Http::fake(['https://img.example.com/*' => Http::response(imageBytes(), 200, ['Content-Type' => 'image/png'])]);
+
+    $white = ProductVariant::factory()->for($this->product, 'product')->create();
+    $black = ProductVariant::factory()->for($this->product, 'product')->create();
+    $images = collect([
+        ['https://img.example.com/white.png', null],
+        ['https://img.example.com/white.png', $white->id],
+        ['https://img.example.com/black.png', $black->id],
+    ])->map(fn (array $image, int $position) => ProductImportImage::factory()->create([
+        'product_import_id' => $this->import->id,
+        'product_import_row_id' => $this->row->id,
+        'product_id' => $this->product->id,
+        'product_variant_id' => $image[1],
+        'url' => $image[0],
+        'position' => $position,
+    ]))->all();
+
+    downloadImages($this->import, $images);
+
+    $media = $this->product->fresh()->getMedia(config('lunar.media.collection'))->keyBy(fn ($item) => $item->getCustomProperty('source_url'));
+
+    expect($media)->toHaveCount(2)
+        ->and($white->images()->pluck('media.id')->all())->toBe([$media['https://img.example.com/white.png']->id])
+        ->and($black->images()->pluck('media.id')->all())->toBe([$media['https://img.example.com/black.png']->id])
+        ->and($media->map(fn ($item) => $item->getCustomProperty('primary'))->all())->toBe(['https://img.example.com/white.png' => true, 'https://img.example.com/black.png' => false]);
+
+    Http::assertSentCount(2);
+});
+
+test('images whose urls end in the same file name keep their own files, named after the product', function () {
+    Http::fake(['https://img.example.com/*' => Http::response(imageBytes(), 200, ['Content-Type' => 'image/png'])]);
+
+    $product = Product::factory()->create(['attribute_data' => collect(['name' => new Text('Tricou basic')])]);
+    downloadImages($this->import, pendingImages($this->import, $product, $this->row, [
+        'https://img.example.com/id/1/800/1000.png',
+        'https://img.example.com/id/2/800/1000.png',
+    ]));
+
+    $media = $product->fresh()->getMedia(config('lunar.media.collection'));
+
+    expect($media->pluck('file_name')->all())->toBe(['tricou-basic.png', 'tricou-basic-2.png'])
+        ->and($media->pluck('name')->unique()->all())->toBe(['Tricou basic'])
+        ->and($media->map(fn ($item) => $item->getPath())->unique())->toHaveCount(2);
 });
 
 test('a missing image fails with a warning on its row', function () {

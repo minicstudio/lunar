@@ -1122,6 +1122,7 @@ Table "lunar_product_import_rows" {
   "normalized" json
   "overrides" json
   "role" varchar(24)
+  "role_override" varchar(24)
   "source_id" varchar(255)
   "parent_ref" varchar(255)
   "group_key" varchar(255)
@@ -1177,11 +1178,12 @@ Table "lunar_product_import_sheets" {
 Table "lunar_product_import_values" {
   "id" bigint [pk, not null, increment]
   "product_import_id" bigint [not null]
-  "type" varchar(16) [not null]
+  "type" varchar(16) [not null, note: 'category, brand, option, option_value, property, or discount']
   "option_key" varchar(191) [not null, default: '']
   "source_value" varchar(500) [not null]
   "normalized_key" varchar(500) [not null]
   "path" json
+  "details" json [note: 'For a discount: its kind (percent or amount), value (the percent, or the amount in minor units of the default currency), start, and end from the file.']
   "sheets" json
   "group_keys" json
   "product_count" int [not null, default: '0']
@@ -1192,6 +1194,7 @@ Table "lunar_product_import_values" {
   "action" varchar(16)
   "target_id" bigint
   "create_name" varchar(500)
+  "create_details" json [note: 'For a discount to create: its kind, value, start, and end, prefilled from details.']
   "parent_id" bigint
   "created_at" timestamp
   "updated_at" timestamp

@@ -4,21 +4,33 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Lunar\Models\Brand;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
+use Lunar\Models\Product;
 use Lunar\Models\ProductType;
+use Lunar\Models\ProductVariant;
 use Lunar\ProductImport\Actions\CorrectRow;
 use Lunar\ProductImport\Actions\IncludeRows;
 use Lunar\ProductImport\Actions\SkipRows;
 use Lunar\ProductImport\Data\ColumnFormat;
 use Lunar\ProductImport\Data\ColumnMapping;
+use Lunar\ProductImport\Data\ImportOptions;
+use Lunar\ProductImport\Enums\ExistingVariants;
 use Lunar\ProductImport\Enums\ImportStatus;
+use Lunar\ProductImport\Enums\MatchType;
+use Lunar\ProductImport\Enums\RowRole;
+use Lunar\ProductImport\Enums\RowSkipReason;
 use Lunar\ProductImport\Enums\RowStatus;
+use Lunar\ProductImport\Enums\ValueAction;
+use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Exceptions\ImportActionRefused;
 use Lunar\ProductImport\Filament\Actions\CorrectRowAction;
 use Lunar\ProductImport\Filament\Livewire\PreviewStep;
 use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Queries\PreviewSummary;
+use Lunar\Tests\ProductImport\Support\Discounts;
+use Lunar\Tests\ProductImport\Support\GroupedRows;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
 use Lunar\Tests\ProductImport\TestCase;
 
@@ -111,6 +123,89 @@ test('an included row is validated again', function () {
         ->and(correctionRow(37)->skip_reason)->toBeNull();
 });
 
+test('a row that its type skips, included as a product with one variant, is validated and valid after a correction', function () {
+    $import = GroupedRows::import(ProductType::query()->firstOrFail()->id, [
+        2 => ['90', 'grouped', '', '', 'Set vară', '', '5', 'Furnizor Nou'],
+        3 => ['10', 'simple', '', 'CARD-10', 'Card cadou', '100,00', '3', ''],
+    ]);
+
+    expect(GroupedRows::row($import, 2)->skip_reason)->toBe(RowSkipReason::RowType)
+        ->and($import->values()->count())->toBe(0);
+
+    $included = app(IncludeRows::class)->handle($import, [GroupedRows::row($import, 2)->id], RowRole::ProductAndVariant);
+
+    $row = GroupedRows::row($import, 2);
+    $errors = collect($row->messages)->where('level', 'error');
+
+    expect($included)->toBe(1)
+        ->and($row->role)->toBe(RowRole::ProductAndVariant)
+        ->and($row->role_override)->toBe(RowRole::ProductAndVariant)
+        ->and($row->skip_reason)->toBeNull()
+        ->and($row->status)->toBe(RowStatus::Error)
+        ->and($errors->pluck('field')->all())->toBe(['variant.sku', 'variant.price'])
+        ->and(GroupedRows::row($import, 3)->status)->toBe(RowStatus::Valid)
+        ->and($import->values()->where('type', ValueType::Brand)->sole()->only(['source_value', 'action']))->toBe(['source_value' => 'Furnizor Nou', 'action' => ValueAction::Create])
+        ->and($import->fresh()->status)->toBe(ImportStatus::PreviewReady);
+
+    app(CorrectRow::class)->handle($row, ['variant.sku' => 'SET-90', 'variant.price' => '149,00']);
+
+    expect(GroupedRows::row($import, 2)->status)->toBe(RowStatus::Valid);
+});
+
+test('the role staff chose survives staging again after a stock column is mapped', function () {
+    $productTypeId = ProductType::query()->firstOrFail()->id;
+    $import = GroupedRows::import($productTypeId);
+
+    app(IncludeRows::class)->handle($import, [GroupedRows::row($import, 2)->id], RowRole::ProductAndVariant);
+
+    GroupedRows::map($import->sheets()->sole(), $productTypeId, withStock: true);
+    ImportBuilder::stage($import);
+
+    $row = GroupedRows::row($import, 2);
+
+    expect($row->role_override)->toBe(RowRole::ProductAndVariant)
+        ->and($row->role)->toBe(RowRole::ProductAndVariant)
+        ->and($row->skip_reason)->toBeNull()
+        ->and($row->status)->toBe(RowStatus::Error)
+        ->and($row->effectiveRow()->get('variant.stock'))->toBe(5);
+});
+
+test('a row skipped as an existing variant is not included, and its message names the import option that decides it', function () {
+    ProductVariant::factory()->for(Product::factory(), 'product')->create(['sku' => 'CARD-10']);
+
+    $import = GroupedRows::import(ProductType::query()->firstOrFail()->id, [
+        3 => ['10', 'simple', '', 'CARD-10', 'Card cadou', '100,00', '3', ''],
+    ], new ImportOptions(existingVariants: ExistingVariants::Skip));
+
+    $card = GroupedRows::row($import, 3);
+
+    expect($card->skip_reason)->toBe(RowSkipReason::Existing)
+        ->and(app(IncludeRows::class)->handle($import, [$card->id]))->toBe(0)
+        ->and(app(IncludeRows::class)->handle($import, [$card->id], RowRole::ProductAndVariant))->toBe(0)
+        ->and(GroupedRows::row($import, 3)->skip_reason)->toBe(RowSkipReason::Existing)
+        ->and(GroupedRows::row($import, 3)->role_override)->toBeNull()
+        ->and(collect(GroupedRows::row($import, 3)->messages)->pluck('message')->all())
+        ->toContain('The variant exists and stays unchanged. The "Existing variants" import option in the mapping step decides this.');
+});
+
+test('an included row whose brand needs a decision returns the import to the value review', function () {
+    Brand::factory()->create(['name' => 'Furnizor Textil']);
+
+    $import = GroupedRows::import(ProductType::query()->firstOrFail()->id, [
+        2 => ['90', 'grouped', '', '', 'Set vară', '', '5', 'Furnizor Textill'],
+        3 => ['10', 'simple', '', 'CARD-10', 'Card cadou', '100,00', '3', 'Furnizor Textil'],
+    ]);
+
+    app(IncludeRows::class)->handle($import, [GroupedRows::row($import, 2)->id], RowRole::ProductAndVariant);
+
+    $similar = $import->values()->where('source_value', 'Furnizor Textill')->sole();
+
+    expect($similar->match_type)->toBe(MatchType::Similar)
+        ->and($similar->action)->toBeNull()
+        ->and($import->values()->where('source_value', 'Furnizor Textil')->sole()->action)->toBe(ValueAction::UseExisting)
+        ->and($import->fresh()->status)->toBe(ImportStatus::ReviewingValues);
+});
+
 test('corrections are refused while importing', function () {
     $this->import->update(['status' => ImportStatus::Importing]);
 
@@ -169,4 +264,29 @@ test('correcting each value that could not be read clears its message, keeps the
             'product.slug.ro' => 'tricou-alb',
         ])
         ->and($row->raw)->toBe([0 => 'TB-1', 1 => 'Tricou', 2 => '1,25', 3 => '24.12.2026', 4 => 'maybe', 5 => 'ftp://cdn.example/1.jpg', 6 => '!!!']);
+});
+
+test('changing the discount of the only 50% row to 40% removes 50% and adds 40% with its default, keeping the other decisions', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $import = ImportBuilder::import(ImportStatus::Staging);
+    $sheet = Discounts::sheet($import, ProductType::factory()->create()->id, [
+        2 => ['OUT-RUHA-S', 'Rochie', '229,00', '', '30', '', '2026-12-31'],
+        3 => ['OUT-TASKA', 'Geantă', '59,00', '', '50', '', '2026-12-31'],
+    ]);
+    ImportBuilder::stage($import);
+    $import->update(['status' => ImportStatus::PreviewReady]);
+
+    $discounts = fn () => $import->values()->where('type', ValueType::Discount)->orderBy('normalized_key')->get();
+    $thirty = $discounts()->firstWhere('normalized_key', 'percent:30||2026-12-31 23:59:59');
+    $thirty->update(['action' => ValueAction::Skip]);
+
+    $row = ProductImportRow::query()->where('product_import_sheet_id', $sheet->id)->where('row_number', 3)->firstOrFail();
+
+    app(CorrectRow::class)->handle($row, ['variant.discount_percent' => '40']);
+
+    expect($discounts()->pluck('normalized_key')->all())->toBe(['percent:30||2026-12-31 23:59:59', 'percent:40||2026-12-31 23:59:59'])
+        ->and($discounts()->firstWhere('normalized_key', 'percent:30||2026-12-31 23:59:59')->action)->toBe(ValueAction::Skip)
+        ->and($discounts()->firstWhere('normalized_key', 'percent:40||2026-12-31 23:59:59')->action)->toBe(ValueAction::Create)
+        ->and($discounts()->firstWhere('normalized_key', 'percent:40||2026-12-31 23:59:59')->variant_count)->toBe(1);
 });

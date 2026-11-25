@@ -23,7 +23,7 @@ return [
     'product_cross_sells' => 'Cross-sells',
     'variant_gtin' => 'Variant GTIN',
     'variant_mpn' => 'Variant MPN',
-    'variant_price_impact' => 'Variant price impact',
+    'variant_price_impact' => 'Variant price impact (excl. tax)',
     'variant_sale_price' => 'Variant sale price',
     'variant_sale_starts' => 'Sale start',
     'variant_sale_ends' => 'Sale end',

@@ -19,6 +19,7 @@ class ImportOptions extends Data
 {
     /**
      * @param  list<int>  $additionalCollectionIds  Existing collections every imported product is also added to.
+     * @param  bool  $linkVariantImages  Whether a variant row's product images are also linked to its variant.
      */
     public function __construct(
         public MatchKey $matchKey = MatchKey::Sku,
@@ -26,11 +27,13 @@ class ImportOptions extends Data
         public NewProductStatus $newProductStatus = NewProductStatus::Draft,
         public ?int $collectionGroupId = null,
         public array $additionalCollectionIds = [],
+        public bool $linkVariantImages = false,
     ) {}
 
     /**
      * The defaults: match by SKU, update existing variants, create drafts,
-     * use the first collection group, and add no additional collections.
+     * use the first collection group, add no additional collections, and
+     * keep every product image on the product only.
      */
     public static function defaults(): self
     {

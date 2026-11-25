@@ -27,6 +27,7 @@ use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Models\ProductImportValue;
 use Lunar\ProductImport\Persisting\TaxonomyCreator;
 use Lunar\ProductImport\Taxonomy\PlannedRecords;
+use Lunar\Tests\ProductImport\Support\Discounts;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
 use Lunar\Tests\ProductImport\TestCase;
 
@@ -255,4 +256,71 @@ test('an option named in cells and a mapped new option with the same name create
         ->and(ProductOption::query()->count())->toBe(1)
         ->and($import->fresh()->resolved_options)->toMatchArray(['new:croiala' => $option->id, 'name:croiala' => $option->id])
         ->and(ProductOptionValue::query()->where('product_option_id', $option->id)->get()->map(fn ($value) => $value->translate('name'))->sort()->values()->all())->toBe(['Drept', 'Lejer', 'Slim']);
+});
+
+/**
+ * An import at the value review with the discounts 30% and 50% until the
+ * end of 31 December 2026, to be created.
+ */
+function discountImport(): ProductImport
+{
+    $import = ImportBuilder::import(ImportStatus::Staging);
+
+    Discounts::sheet($import, ProductType::factory()->create()->id, [
+        2 => ['OUT-RUHA-S', 'Rochie', '229,00', '', '30', '', '2026-12-31'],
+        3 => ['OUT-RUHA-M', 'Rochie', '229,00', '', '30', '', '2026-12-31'],
+        4 => ['OUT-TASKA', 'Geantă', '59,00', '', '50', '', '2026-12-31'],
+    ]);
+
+    ImportBuilder::stage($import);
+    $import->update(['status' => ImportStatus::ReviewingValues]);
+
+    return $import;
+}
+
+test('a discount can use another eligible discount, create one with other values, or be skipped', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $import = discountImport();
+    $blackWeek = Discounts::percent('Black Week', 40, '2026-11-20 00:00:00', '2026-11-30 23:59:59', [Product::factory()->create()]);
+    $thirty = $import->values()->where('type', ValueType::Discount)->where('normalized_key', 'percent:30||2026-12-31 23:59:59')->sole();
+    $fifty = $import->values()->where('type', ValueType::Discount)->where('normalized_key', 'percent:50||2026-12-31 23:59:59')->sole();
+
+    app(DecideValue::class)->useExisting($thirty, $blackWeek->id);
+
+    expect($thirty->refresh()->action)->toBe(ValueAction::UseExisting)
+        ->and($thirty->target_id)->toBe($blackWeek->id);
+
+    app(DecideValue::class)->create($thirty, 'Outlet iarnă', details: ['kind' => 'percent', 'value' => 25, 'starts_at' => null, 'ends_at' => '2027-01-15 23:59:59']);
+
+    expect($thirty->refresh()->action)->toBe(ValueAction::Create)
+        ->and($thirty->target_id)->toBeNull()
+        ->and($thirty->create_name)->toBe('Outlet iarnă')
+        ->and($thirty->create_details)->toBe(['kind' => 'percent', 'value' => 25, 'starts_at' => null, 'ends_at' => '2027-01-15 23:59:59'])
+        ->and($thirty->details['value'])->toBe(30);
+
+    app(DecideValue::class)->skip($fifty);
+
+    $taska = ProductImportRow::query()->where('product_import_id', $import->id)->where('match_value', 'OUT-TASKA')->sole();
+
+    expect($fifty->refresh()->action)->toBe(ValueAction::Skip)
+        ->and($taska->status)->toBe(RowStatus::Valid)
+        ->and(app(ContinueToPreview::class)->openDecisions($import))->toBe(0);
+});
+
+test('a discount that is not eligible, or invalid values to create, are refused', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $import = discountImport();
+    $thirty = $import->values()->where('type', ValueType::Discount)->where('normalized_key', 'percent:30||2026-12-31 23:59:59')->sole();
+    $withCoupon = Discounts::percent('Cupon', 30, '2026-11-20 00:00:00', null, [Product::factory()->create()]);
+    $withCoupon->update(['coupon' => 'IARNA30']);
+    $everyProduct = Discounts::percent('Toate', 30, '2026-11-20 00:00:00', null);
+
+    expect(fn () => app(DecideValue::class)->useExisting($thirty, $withCoupon->id))->toThrow(ImportActionRefused::class)
+        ->and(fn () => app(DecideValue::class)->useExisting($thirty, $everyProduct->id))->toThrow(ImportActionRefused::class)
+        ->and(fn () => app(DecideValue::class)->create($thirty, 'Prea mult', details: ['kind' => 'percent', 'value' => 120, 'starts_at' => null, 'ends_at' => null]))->toThrow(ImportActionRefused::class)
+        ->and(fn () => app(DecideValue::class)->create($thirty, 'Invers', details: ['kind' => 'amount', 'value' => 2000, 'starts_at' => '2027-01-01 00:00:00', 'ends_at' => '2026-12-01 23:59:59']))->toThrow(ImportActionRefused::class)
+        ->and($thirty->refresh()->action)->toBe(ValueAction::Create)
+        ->and($thirty->create_details)->toBe($thirty->details);
 });

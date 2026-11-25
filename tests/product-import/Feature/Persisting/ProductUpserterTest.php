@@ -2,13 +2,18 @@
 
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Lunar\Base\DiscountManagerInterface;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Attribute;
 use Lunar\Models\AttributeGroup;
+use Lunar\Models\Channel;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
 use Lunar\Models\Currency;
+use Lunar\Models\CustomerGroup;
+use Lunar\Models\Discount;
+use Lunar\Models\Discountable;
 use Lunar\Models\Language;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
@@ -19,14 +24,17 @@ use Lunar\Models\TaxClass;
 use Lunar\ProductImport\Data\ColumnFormat;
 use Lunar\ProductImport\Data\ImportOptions;
 use Lunar\ProductImport\Enums\ExistingVariants;
+use Lunar\ProductImport\Enums\GroupingStrategy;
 use Lunar\ProductImport\Enums\ImageStatus;
 use Lunar\ProductImport\Enums\ImportStatus;
 use Lunar\ProductImport\Enums\NewProductStatus;
 use Lunar\ProductImport\Enums\RowAction;
 use Lunar\ProductImport\Enums\RowStatus;
+use Lunar\ProductImport\Enums\ValueAction;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportImage;
 use Lunar\ProductImport\Models\ProductImportRow;
+use Lunar\Tests\ProductImport\Support\Discounts;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
 use Lunar\Tests\ProductImport\TestCase;
 
@@ -366,32 +374,6 @@ test('tags are added to the existing ones, and a decided property fills its attr
         ->and($product->attribute_data->has('compozitie'))->toBeFalse();
 });
 
-test('a running sale sets the sale price with the regular price as the compare price, and a sale that is over clears it', function () {
-    $this->travelTo(CarbonImmutable::parse('2026-11-23 10:00:00'));
-
-    $over = existingProduct('SALE-2', 24900);
-    $over->basePrices()->first()->update(['compare_price' => 24900]);
-
-    $import = ImportBuilder::import(ImportStatus::Staging);
-    $sheet = ImportBuilder::sheet($import, 'Produse', [
-        ['Cod', 'Denumire', 'Pret', 'Pret promotional', 'Sfarsit promotie'],
-        ['SALE-1', 'Rochie', '199,00', '149,00', ''],
-        ['SALE-2', 'Bluza', '199,00', '149,00', '2026-11-01 0:00:00'],
-    ]);
-    ImportBuilder::map($sheet, [0 => 'variant.sku', 1 => ['product.name', 'ro'], 2 => 'variant.price', 3 => 'variant.sale_price', 4 => 'variant.sale_ends'], $this->productType->id);
-    ImportBuilder::stage($import);
-
-    ImportBuilder::commit($import);
-
-    $running = ProductVariant::query()->where('sku', 'SALE-1')->sole()->basePrices()->sole();
-    $ended = $over->fresh()->basePrices()->sole();
-
-    expect($running->price->value)->toBe(14900)
-        ->and($running->compare_price->value)->toBe(19900)
-        ->and($ended->price->value)->toBe(19900)
-        ->and($ended->getRawOriginal('compare_price'))->toBeNull();
-});
-
 test('backorders and the stock status set how a variant can be bought', function () {
     $import = ImportBuilder::import(ImportStatus::Staging);
     $sheet = ImportBuilder::sheet($import, 'Produse', [
@@ -465,6 +447,46 @@ test('the image urls of a group are recorded in file order, the variant images l
     ])
         ->and($images->pluck('product_id')->unique()->all())->toBe([$small->product_id]);
 });
+
+test('with variant images linked, a variant row\'s product images are linked to its variant, and the product row and a product with one variant keep theirs', function (bool $linkVariantImages, array $expected) {
+    $import = ImportBuilder::import(ImportStatus::Staging, [
+        'options' => (new ImportOptions(collectionGroupId: $this->group->id, linkVariantImages: $linkVariantImages))->toArray(),
+    ]);
+    $sheet = ImportBuilder::sheet($import, 'Produse', [
+        ['ID', 'Parinte', 'Cod', 'Denumire', 'Pret', 'Marime', 'Imagini'],
+        ['1', '', 'TB', 'Tricou', '', '', 'https://img.example.com/a.jpg, https://img.example.com/b.jpg'],
+        ['2', 'id:1', 'TB-S', 'Tricou - S', '49,90', 'S', 'https://img.example.com/a.jpg'],
+        ['3', 'id:1', 'TB-M', 'Tricou - M', '49,90', 'M', 'https://img.example.com/c.jpg'],
+        ['4', '', 'GP', 'Geacă', '99,00', '', 'https://img.example.com/d.jpg'],
+    ]);
+    ImportBuilder::map($sheet, [
+        0 => 'source.id', 1 => 'source.parent', 2 => 'variant.sku', 3 => ['product.name', 'ro'],
+        4 => 'variant.price', 5 => 'variant.option', 6 => 'product.images',
+    ], $this->productType->id, strategy: GroupingStrategy::ByParent);
+    ImportBuilder::stage($import);
+
+    ImportBuilder::commit($import);
+
+    $skus = ProductVariant::query()->pluck('sku', 'id');
+
+    expect(ProductImportImage::query()->orderBy('product_id')->orderBy('position')->get()
+        ->map(fn (ProductImportImage $image) => [$image->url, $skus[$image->product_variant_id] ?? null])->all())
+        ->toBe($expected);
+})->with([
+    'linked' => [true, [
+        ['https://img.example.com/a.jpg', null],
+        ['https://img.example.com/b.jpg', null],
+        ['https://img.example.com/a.jpg', 'TB-S'],
+        ['https://img.example.com/c.jpg', 'TB-M'],
+        ['https://img.example.com/d.jpg', null],
+    ]],
+    'not linked' => [false, [
+        ['https://img.example.com/a.jpg', null],
+        ['https://img.example.com/b.jpg', null],
+        ['https://img.example.com/c.jpg', null],
+        ['https://img.example.com/d.jpg', null],
+    ]],
+]);
 
 /**
  * Import one sheet with a Romanian URL slug column and write it.
@@ -562,4 +584,121 @@ test('the meta title, description, and keywords are written into their attribute
     expect($product->translateAttribute('product-meta-title', 'ro'))->toBe('Rochie de vară albă')
         ->and($product->translateAttribute('product-meta-description', 'ro'))->toBe('Rochie lejeră din bumbac')
         ->and($product->translateAttribute('product-meta-keywords', 'ro'))->toBe('rochie, vara, bumbac');
+});
+
+test('a sale price is not written, the price has no compare price, and an existing compare price stays', function () {
+    $existing = existingProduct('SALE-2', 24900);
+    $existing->basePrices()->first()->update(['compare_price' => 24900]);
+
+    $import = ImportBuilder::import(ImportStatus::Staging);
+    $sheet = ImportBuilder::sheet($import, 'Produse', [
+        ['Cod', 'Denumire', 'Pret', 'Pret promotional'],
+        ['SALE-1', 'Rochie', '199,00', '149,00'],
+        ['SALE-2', 'Bluza', '199,00', '149,00'],
+    ]);
+    ImportBuilder::map($sheet, [0 => 'variant.sku', 1 => ['product.name', 'ro'], 2 => 'variant.price', 3 => 'variant.sale_price'], $this->productType->id);
+    ImportBuilder::stage($import);
+
+    ImportBuilder::commit($import);
+
+    $new = ProductVariant::query()->where('sku', 'SALE-1')->sole()->basePrices()->sole();
+    $updated = $existing->fresh()->basePrices()->sole();
+
+    expect($new->price->value)->toBe(19900)
+        ->and($new->getRawOriginal('compare_price'))->toBeNull()
+        ->and($updated->price->value)->toBe(19900)
+        ->and($updated->compare_price->value)->toBe(24900);
+});
+
+/**
+ * The outlet sheet: two dresses at 229.00 with 30% and a bag at 59.00 with
+ * 50%, all until the end of 31 December 2026, staged on 24 November 2026.
+ */
+function outletImport(int $productTypeId): ProductImport
+{
+    $import = ImportBuilder::import(ImportStatus::Staging);
+
+    Discounts::sheet($import, $productTypeId, [
+        2 => ['OUT-RUHA-S', 'Rochie S', '229,00', '', '30', '', '2026-12-31'],
+        3 => ['OUT-RUHA-M', 'Rochie M', '229,00', '', '30', '', '2026-12-31'],
+        4 => ['OUT-TASKA', 'Geantă', '59,00', '', '50', '', '2026-12-31'],
+    ]);
+
+    return ImportBuilder::stage($import);
+}
+
+/**
+ * The SKUs of the variants a discount is limited to.
+ *
+ * @return list<string>
+ */
+function limitedSkus(Discount $discount): array
+{
+    return ProductVariant::query()
+        ->whereIn('id', $discount->discountables()->where('type', 'limitation')->where('discountable_type', (new ProductVariant)->getMorphClass())->pluck('discountable_id'))
+        ->orderBy('sku')
+        ->pluck('sku')
+        ->all();
+}
+
+test('variants are added to the discounts created for them and keep their prices without a compare price', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-11-24 10:00:00'));
+
+    $import = outletImport($this->productType->id);
+
+    ImportBuilder::commit($import);
+
+    $thirty = Discount::query()->find($import->values()->where('normalized_key', 'percent:30||2026-12-31 23:59:59')->value('target_id'));
+    $fifty = Discount::query()->find($import->values()->where('normalized_key', 'percent:50||2026-12-31 23:59:59')->value('target_id'));
+    $prices = ProductVariant::query()->orderBy('sku')->get()->mapWithKeys(fn (ProductVariant $variant): array => [
+        $variant->sku => [$variant->basePrices()->sole()->price->value, $variant->basePrices()->sole()->getRawOriginal('compare_price')],
+    ])->all();
+
+    expect($prices)->toBe(['OUT-RUHA-M' => [22900, null], 'OUT-RUHA-S' => [22900, null], 'OUT-TASKA' => [5900, null]])
+        ->and(limitedSkus($thirty))->toBe(['OUT-RUHA-M', 'OUT-RUHA-S'])
+        ->and(limitedSkus($fifty))->toBe(['OUT-TASKA'])
+        ->and($thirty->ends_at->format('Y-m-d H:i:s'))->toBe('2026-12-31 23:59:59')
+        ->and($fifty->ends_at->format('Y-m-d H:i:s'))->toBe('2026-12-31 23:59:59');
+});
+
+test('using an existing discount adds the variants to it and changes nothing else on it', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-11-24 10:00:00'));
+
+    $limited = collect(range(1, 4))->map(fn (int $i): ProductVariant => existingProduct("IARNA-{$i}"))->all();
+    $iarna = Discounts::percent('Iarna', 30, '2026-11-20 00:00:00', '2026-12-31 23:59:59', $limited);
+    $channels = $iarna->channels()->get()->map(fn ($channel): array => [$channel->id, (bool) $channel->pivot->enabled])->all();
+    $groups = $iarna->customerGroups()->get()->map(fn ($group): array => [$group->id, (bool) $group->pivot->enabled])->all();
+    $before = $iarna->fresh()->only(['name', 'handle', 'data', 'starts_at', 'ends_at', 'coupon', 'priority']);
+
+    $import = outletImport($this->productType->id);
+    $import->values()->where('normalized_key', 'percent:50||2026-12-31 23:59:59')->update(['action' => ValueAction::Skip->value]);
+
+    ImportBuilder::commit($import);
+
+    $iarna->refresh();
+
+    expect($import->values()->where('normalized_key', 'percent:30||2026-12-31 23:59:59')->value('target_id'))->toBe($iarna->id)
+        ->and(limitedSkus($iarna))->toBe(['IARNA-1', 'IARNA-2', 'IARNA-3', 'IARNA-4', 'OUT-RUHA-M', 'OUT-RUHA-S'])
+        ->and($iarna->only(['name', 'handle', 'data', 'starts_at', 'ends_at', 'coupon', 'priority']))->toEqual($before)
+        ->and($iarna->channels()->get()->map(fn ($channel): array => [$channel->id, (bool) $channel->pivot->enabled])->all())->toBe($channels)
+        ->and($iarna->customerGroups()->get()->map(fn ($group): array => [$group->id, (bool) $group->pivot->enabled])->all())->toBe($groups)
+        ->and(Discount::count())->toBe(1)
+        ->and(Discountable::query()->where('discountable_id', ProductVariant::query()->where('sku', 'OUT-TASKA')->value('id'))->exists())->toBeFalse();
+});
+
+test('after the import the shop finds the discount of a variant', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-11-24 10:00:00'));
+
+    Channel::factory()->create(['default' => true]);
+    CustomerGroup::factory()->create(['default' => true]);
+
+    $import = outletImport($this->productType->id);
+
+    ImportBuilder::commit($import);
+
+    $variant = ProductVariant::query()->where('sku', 'OUT-RUHA-S')->sole();
+    $discount = app(DiscountManagerInterface::class)->getDiscountForPurchasable($variant);
+
+    expect($discount?->id)->toBe($import->values()->where('normalized_key', 'percent:30||2026-12-31 23:59:59')->value('target_id'))
+        ->and($discount->data['percentage'])->toBe(30);
 });

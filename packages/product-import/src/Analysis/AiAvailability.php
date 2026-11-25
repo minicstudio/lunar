@@ -43,6 +43,24 @@ class AiAvailability
     }
 
     /**
+     * The models of the same provider tried in order when the model before
+     * them is overloaded or rate limited, without blanks, repeats, and the
+     * configured model.
+     *
+     * @return list<string>
+     */
+    public function fallbackModels(): array
+    {
+        $models = config('lunar.product-import.ai.fallback_models');
+        $models = is_array($models) ? $models : explode(',', (string) $models);
+
+        return array_values(array_unique(array_filter(
+            array_map(fn (mixed $model): string => trim((string) $model), $models),
+            fn (string $model): bool => $model !== '' && $model !== $this->model(),
+        )));
+    }
+
+    /**
      * The driver of the configured provider.
      */
     public function driver(): ?string

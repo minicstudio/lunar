@@ -2,6 +2,7 @@
 
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Lunar\FieldTypes\Text;
@@ -86,7 +87,8 @@ test('the failed sheet shows the error panel with the code, the attempt, and ret
 
 test('continue is disabled until the failed sheet is retried or skipped', function () {
     $component = Livewire::test(SheetMappingStep::class, ['import' => $this->import])
-        ->assertActionDisabled('continue');
+        ->assertActionDisabled('continue')
+        ->assertSee('Skip sheet');
 
     $component->call('skipSheet', $this->produse->id)
         ->assertActionEnabled('continue');
@@ -201,6 +203,19 @@ test('the additional collections are a searchable multi-select that is saved wit
         ->assertFormFieldExists('additional_collection_ids', 'optionsForm', fn (Select $field): bool => $field->getOptionLabels() === [$all->id => 'Principal > Toate categoriile']);
 
     expect($this->import->fresh()->importOptions()->additionalCollectionIds)->toBe([$all->id]);
+});
+
+test('linking images to variants is an option that is off by default and saved when turned on', function () {
+    $this->import->update(['status' => ImportStatus::AwaitingMapping]);
+
+    expect($this->import->importOptions()->linkVariantImages)->toBeFalse();
+
+    Livewire::test(SheetMappingStep::class, ['import' => $this->import])
+        ->call('selectSheet', $this->outlet->id)
+        ->assertFormFieldExists('link_variant_images', 'optionsForm', fn (Toggle $field): bool => $field->getLabel() === 'Link images to variants')
+        ->set('options.link_variant_images', true);
+
+    expect($this->import->fresh()->importOptions()->linkVariantImages)->toBeTrue();
 });
 
 test('the import page refreshes itself while staging', function () {

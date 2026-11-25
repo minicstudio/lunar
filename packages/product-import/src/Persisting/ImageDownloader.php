@@ -8,6 +8,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Lunar\Base\MediaFileName;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 use Lunar\ProductImport\Enums\ImageStatus;
@@ -24,8 +25,9 @@ use Throwable;
  * checks every redirect the same way (at most 3), and refuses responses over
  * `images.max_size_kb`, slower than `images.timeout`, or of a type other
  * than JPEG, PNG, GIF, or WebP. A URL the product already has as media
- * (the `source_url` custom property) is not downloaded again. A failed image
- * is a warning on its row and never fails the row.
+ * (the `source_url` custom property) is not downloaded again. The file is
+ * named after the product, like an image uploaded in the admin. A failed
+ * image is a warning on its row and never fails the row.
  */
 class ImageDownloader
 {
@@ -73,9 +75,12 @@ class ImageDownloader
         try {
             [$content, $extension] = $this->fetch($image->url);
 
+            $fileName = $this->fileName($product, $this->name($image->url).'.'.$extension);
+            $productName = MediaFileName::ownerName($product);
+
             $media = $product->addMediaFromString($content)
-                ->usingName($this->name($image->url))
-                ->usingFileName($this->name($image->url).'.'.$extension)
+                ->usingName(filled($productName) ? Str::limit($productName, 255, '') : pathinfo($fileName, PATHINFO_FILENAME))
+                ->usingFileName($fileName)
                 ->withCustomProperties([
                     'source_url' => $image->url,
                     'primary' => $this->isPrimary($image, $product),
@@ -257,19 +262,31 @@ class ImageDownloader
     }
 
     /**
+     * A file name for the product's new image, named after the product like
+     * an image uploaded in the admin, with a number suffix when another of
+     * the product's images uses it. The product's images share one folder,
+     * so two images named after their URLs (`…/1/800/1000.jpg` and
+     * `…/2/800/1000.jpg`) would overwrite each other's file.
+     */
+    protected function fileName(Product $product, string $urlFileName): string
+    {
+        return MediaFileName::unique(
+            MediaFileName::forOwner($urlFileName, $product),
+            MediaFileName::usedBy($product->getMorphClass(), $product->getKey()),
+        );
+    }
+
+    /**
      * Whether the image becomes the product's primary image: the import's
-     * first product image of a product that has no primary image yet.
+     * first image of a product that has no primary image yet. The product's
+     * own images come first, so a variant's image is the primary image only
+     * when the file gives the product no image of its own.
      */
     protected function isPrimary(ProductImportImage $image, Product $product): bool
     {
-        if ($image->product_variant_id !== null) {
-            return false;
-        }
-
         $first = ProductImportImage::query()
             ->where('product_import_id', $image->product_import_id)
             ->where('product_id', $image->product_id)
-            ->whereNull('product_variant_id')
             ->min('position');
 
         return (int) $first === $image->position

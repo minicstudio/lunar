@@ -9,4 +9,5 @@ enum ValueType: string
     case Option = 'option';
     case OptionValue = 'option_value';
     case Property = 'property';
+    case Discount = 'discount';
 }

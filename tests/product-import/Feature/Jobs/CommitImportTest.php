@@ -9,16 +9,32 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Scout\EngineManager;
 use Laravel\Scout\Engines\NullEngine;
+use Laravel\Scout\ModelObserver;
+use Lunar\Events\ProductCreatedEvent;
+use Lunar\Facades\ModelManifest;
 use Lunar\Klaviyo\Jobs\SyncProductToKlaviyo;
+use Lunar\Models\Collection;
+use Lunar\Models\CollectionGroup;
+use Lunar\Models\Contracts\Collection as CollectionContract;
+use Lunar\Models\Contracts\Product as ProductContract;
 use Lunar\Models\Currency;
+use Lunar\Models\Discount;
+use Lunar\Models\Discountable;
 use Lunar\Models\Language;
 use Lunar\Models\Product;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\TaxClass;
+use Lunar\ProductImport\Actions\CorrectRow;
+use Lunar\ProductImport\Actions\IncludeRows;
 use Lunar\ProductImport\Actions\StartImport;
+use Lunar\ProductImport\Data\ImportOptions;
 use Lunar\ProductImport\Enums\ImageStatus;
 use Lunar\ProductImport\Enums\ImportStatus;
+use Lunar\ProductImport\Enums\RowRole;
+use Lunar\ProductImport\Enums\RowStatus;
+use Lunar\ProductImport\Enums\ValueAction;
+use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportImage;
 use Lunar\ProductImport\Models\ProductImportRow;
@@ -28,7 +44,11 @@ use Lunar\ProductImport\Persisting\HostResolver;
 use Lunar\ProductImport\Persisting\ImportResult;
 use Lunar\ProductImport\Persisting\ProductUpserter;
 use Lunar\ProductImport\Persisting\ProductUrls;
+use Lunar\Tests\ProductImport\Support\Discounts;
+use Lunar\Tests\ProductImport\Support\GroupedRows;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
+use Lunar\Tests\ProductImport\Support\Models\Collection as StoreCollection;
+use Lunar\Tests\ProductImport\Support\Models\Product as StoreProduct;
 use Lunar\Tests\ProductImport\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -203,6 +223,76 @@ test('the touched products are made searchable once', function () {
         ->and($productUpdates[0])->toHaveCount(2);
 });
 
+test('the store\'s own product and collection classes are created, and their listeners receive them', function () {
+    ModelManifest::replace(ProductContract::class, StoreProduct::class);
+    ModelManifest::replace(CollectionContract::class, StoreCollection::class);
+
+    // Like a host app's listener whose job type-hints the store's product
+    // class: any other class fails the product group with a TypeError.
+    $received = [];
+    Event::listen(ProductCreatedEvent::class, function (ProductCreatedEvent $event) use (&$received): void {
+        $received[] = [
+            (fn (StoreProduct $product): StoreProduct => $product)($event->product),
+            ModelObserver::syncingDisabledFor($event->product),
+        ];
+    });
+
+    $createdCollections = [];
+    StoreCollection::created(function (StoreCollection $collection) use (&$createdCollections): void {
+        $createdCollections[] = $collection;
+    });
+
+    $group = CollectionGroup::factory()->create();
+    $import = ImportBuilder::import(ImportStatus::Staging, [
+        'options' => (new ImportOptions(collectionGroupId: $group->id))->toArray(),
+    ]);
+    $sheet = ImportBuilder::sheet($import, 'Products', [
+        ['SKU', 'Name', 'Price', 'Category'],
+        ['TEE-CLASSIC-WHT-S', 'Classic Cotton T-Shirt', '49,90', 'T-Shirts'],
+    ]);
+    ImportBuilder::map($sheet, [0 => 'variant.sku', 1 => ['product.name', 'ro'], 2 => 'variant.price', 3 => 'product.category'], $this->productType->id);
+    ImportBuilder::stage($import);
+    $import->update(['status' => ImportStatus::PreviewReady]);
+
+    app(StartImport::class)->handle($import);
+
+    $import->refresh();
+    $product = Product::query()->sole();
+    $category = Collection::query()->sole();
+
+    expect($import->status)->toBe(ImportStatus::Completed)
+        ->and($import->stats)->toMatchArray(['new_products' => 1, 'failed_rows' => 0, 'created_categories' => 1])
+        ->and($product)->toBeInstanceOf(StoreProduct::class)
+        ->and($product->translateAttribute('name', 'ro'))->toBe('Classic Cotton T-Shirt')
+        ->and($received)->toHaveCount(1)
+        ->and($received[0][0]->id)->toBe($product->id)
+        ->and($received[0][1])->toBeTrue()
+        ->and($createdCollections)->toHaveCount(1)
+        ->and($createdCollections[0]->id)->toBe($category->id)
+        ->and($category->translateAttribute('name'))->toBe('T-Shirts')
+        ->and($product->collections->pluck('id')->all())->toBe([$category->id]);
+});
+
+test('a row that its type skips, included as a product with one variant and corrected, is imported as a product with one variant', function () {
+    $import = GroupedRows::import($this->productType->id, [
+        3 => ['10', 'simple', '', 'CARD-10', 'Card cadou', '100,00', '3', ''],
+    ]);
+
+    app(IncludeRows::class)->handle($import, [GroupedRows::row($import, 2)->id], RowRole::ProductAndVariant);
+    app(CorrectRow::class)->handle(GroupedRows::row($import, 2), ['variant.sku' => 'SET-90', 'variant.price' => '149,00']);
+
+    app(StartImport::class)->handle($import);
+
+    $product = ProductVariant::query()->where('sku', 'SET-90')->sole()->product;
+
+    expect($import->fresh()->status)->toBe(ImportStatus::Completed)
+        ->and($import->fresh()->stats)->toMatchArray(['new_products' => 2, 'new_variants' => 2, 'failed_rows' => 0])
+        ->and($product->translateAttribute('name', 'ro'))->toBe('Set vară')
+        ->and($product->variants)->toHaveCount(1)
+        ->and($product->variants->first()->basePrices->first()->price->value)->toBe(14900)
+        ->and(GroupedRows::row($import, 2)->status)->toBe(RowStatus::Imported);
+});
+
 test('klaviyo queues one product sync for a three-variant product', function () {
     Queue::fake([SyncProductToKlaviyo::class]);
 
@@ -305,4 +395,42 @@ test('a failed image leaves the import completed and is counted', function () {
         ->and($import->stats)->toMatchArray(['imported_rows' => 3, 'failed_rows' => 0, 'images_downloaded' => 2, 'images_failed' => 1, 'processed_images' => 3, 'total_images' => 3])
         ->and(collect(ProductImportRow::includedIn($import)->where('row_number', 4)->sole()->messages)->pluck('code')->all())->toContain('image_failed')
         ->and(ProductImportImage::query()->where('status', ImageStatus::Failed)->sole()->url)->toBe('https://img.example.com/missing.png');
+});
+
+test('the same file with discounts imported twice creates the discounts once and adds no variant twice', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24)->setTime(10, 0));
+
+    $outlet = function (): ProductImport {
+        $import = ImportBuilder::import(ImportStatus::Staging);
+        Discounts::sheet($import, $this->productType->id, [
+            2 => ['OUT-RUHA-S', 'Rochie S', '229,00', '', '30', '', '2026-12-31'],
+            3 => ['OUT-RUHA-M', 'Rochie M', '229,00', '', '30', '', '2026-12-31'],
+            4 => ['OUT-TASKA', 'Geantă', '59,00', '', '50', '', '2026-12-31'],
+        ]);
+        ImportBuilder::stage($import);
+        $import->update(['status' => ImportStatus::PreviewReady]);
+
+        return $import;
+    };
+
+    $first = $outlet();
+    app(StartImport::class)->handle($first);
+
+    expect($first->fresh()->status)->toBe(ImportStatus::Completed)
+        ->and($first->fresh()->stats)->toMatchArray(['created_discounts' => 2, 'discount_variants' => 3])
+        ->and(Discount::count())->toBe(2)
+        ->and(Discountable::count())->toBe(3);
+
+    $this->travel(5)->minutes();
+
+    $second = $outlet();
+
+    expect($second->values()->where('type', ValueType::Discount)->pluck('action')->unique()->all())->toBe([ValueAction::UseExisting]);
+
+    app(StartImport::class)->handle($second);
+
+    expect($second->fresh()->status)->toBe(ImportStatus::Completed)
+        ->and($second->fresh()->stats)->toMatchArray(['created_discounts' => 0, 'discount_variants' => 0, 'updated_variants' => 3])
+        ->and(Discount::count())->toBe(2)
+        ->and(Discountable::count())->toBe(3);
 });

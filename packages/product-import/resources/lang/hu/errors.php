@@ -28,6 +28,7 @@ return [
     'not_review_step' => 'Ez a módosítás csak a kategóriák és márkák ellenőrzésénél lehetséges.',
     'unknown_record' => 'A kiválasztott rekord itt nem létezik.',
     'name_required' => 'Adj meg egy nevet.',
+    'invalid_discount' => 'Adj meg 0-nál nagyobb és legfeljebb 100 százalékot vagy 0-nál nagyobb összeget, és olyan kezdetet, amely nem esik a vége utánra.',
     'parent_outside_group' => 'A szülőkategóriának a kiválasztott gyűjteménycsoportban kell lennie.',
     'open_decisions' => '{1} :count nyitott döntés van. Dönts, mielőtt továbblépsz.|[2,*] :count nyitott döntés van. Dönts, mielőtt továbblépsz.',
     'pruned' => 'Ennek az importálásnak a soradatai törölve lettek.',

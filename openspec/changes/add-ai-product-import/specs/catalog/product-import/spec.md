@@ -74,7 +74,7 @@ Each upload MUST create its own import, with its own files, sheets, rows, mappin
 
 ### Requirement: The catalog stays unchanged until staff approve the import
 
-Before staff start the import, the system MUST NOT create, update, or delete any product, variant, price, brand, collection, product option, or option value. Uploading, analysis, mapping, value review, validation, and row corrections MUST write only to the import's own staging data.
+Before staff start the import, the system MUST NOT create, update, or delete any product, variant, price, brand, collection, product option, option value, or discount. Uploading, analysis, mapping, value review, validation, and row corrections MUST write only to the import's own staging data.
 
 #### Scenario: Import cancelled before approval
 
@@ -102,7 +102,7 @@ An import MUST always have exactly one of these statuses: uploaded, analyzing, a
 
 #### Scenario: No values to review
 
-- **WHEN** staging finishes for a mapping that has no category, brand, or option column
+- **WHEN** staging finishes for a mapping that has no category, brand, option, or discount column
 - **THEN** the import goes from staging directly to preview ready
 
 #### Scenario: Background work in progress
@@ -158,7 +158,7 @@ Staff MUST be able to cancel an import in any status before importing. A cancell
 
 ### Requirement: Import history keeps the outcome of each import
 
-The imports list MUST show for each import the original file names, the staff member who uploaded them, the upload time, the status, the progress while importing, and a short result. The import detail page MUST show the statistics, the mapping of each sheet, the categories, brands, options, and option values it created, the images that failed, and its failed rows while they are kept.
+The imports list MUST show for each import the original file names, the staff member who uploaded them, the upload time, the status, the progress while importing, and a short result. The import detail page MUST show the statistics, the mapping of each sheet, the categories, brands, options, option values, and discounts it created, the images that failed, and its failed rows while they are kept.
 
 #### Scenario: Finished import in the list
 

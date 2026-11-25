@@ -11,6 +11,7 @@ final class ExtractedValue
 {
     /**
      * @param  list<string>  $path  The category levels, or the value itself.
+     * @param  ?array<string, mixed>  $details  For a discount: its kind, value, start, and end.
      * @param  array<string, true>  $sheets  Sheet names.
      * @param  array<string, true>  $groups  Product group keys.
      */
@@ -23,6 +24,7 @@ final class ExtractedValue
         public array $sheets = [],
         public array $groups = [],
         public int $variantCount = 0,
+        public ?array $details = null,
     ) {}
 
     /**

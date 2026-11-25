@@ -13,13 +13,15 @@ use Lunar\ProductImport\Enums\TargetField;
 use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Normalizing\RowNormalizer;
 use Lunar\ProductImport\Structuring\RowStructurer;
+use Lunar\ProductImport\Taxonomy\ValueCollector;
 use Lunar\ProductImport\Validation\AffectedGroups;
 use Lunar\ProductImport\Validation\ImportValidator;
 
 /**
  * Stores staff corrections of a row's normalized values in `overrides`,
- * apart from the raw cells, and validates the row's group again. A failed
- * row of a finished import can be corrected for a retry.
+ * apart from the raw cells, and validates the row's group again. A correction
+ * of a discount collects the import's discounts again. A failed row of a
+ * finished import can be corrected for a retry.
  */
 class CorrectRow
 {
@@ -29,6 +31,7 @@ class CorrectRow
         protected RowNormalizer $normalizer,
         protected RowStructurer $structurer,
         protected ImportValidator $validator,
+        protected ValueCollector $collector,
     ) {}
 
     /**
@@ -89,6 +92,10 @@ class CorrectRow
 
         if (! $afterImport) {
             $this->validator->validateGroups($import, AffectedGroups::for($import, [$row], [$previousMatch]));
+
+            if (array_intersect(array_keys($fields), array_map(fn (TargetField $field): string => $field->value, RowStructurer::DISCOUNT)) !== []) {
+                $this->collector->collectDiscounts($import);
+            }
         }
 
         return $row->refresh();

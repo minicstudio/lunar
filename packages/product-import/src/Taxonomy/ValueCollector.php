@@ -12,10 +12,10 @@ use Lunar\ProductImport\Models\ProductImportValue;
 use Lunar\ProductImport\Support\TargetFieldRegistry;
 
 /**
- * Collects the import's categories, brands, option names, option values, and
- * properties, matches them to the catalog, and stores them by their unique
- * key. Decisions of values
- * that still occur survive staging again; values that vanished are removed.
+ * Collects the import's categories, brands, option names, option values,
+ * properties, and discounts, matches them to the catalog, and stores them by
+ * their unique key. Decisions of values that still occur survive staging
+ * again; values that vanished are removed.
  */
 class ValueCollector
 {
@@ -49,19 +49,65 @@ class ValueCollector
 
         $catalog = CatalogSnapshot::load($options->collectionGroupId, $optionIds, $this->registry->defaultLanguage(), $productTypeIds);
 
-        $existing = $import->values()->get()->keyBy(fn (ProductImportValue $value): string => $value->type->value."\0".$value->option_key."\0".$value->normalized_key);
+        if (collect($extracted['values'])->contains(fn (ExtractedValue $value): bool => $value->type === ValueType::Discount)) {
+            $catalog->loadDiscounts();
+        }
+
+        $existing = $import->values()->get()->keyBy(fn (ProductImportValue $value): string => $this->key($value));
 
         $this->resolveNamedOptions($extracted['values'], $existing, $catalog);
+        $count = $this->store($import, $extracted['values'], $existing, $catalog);
+
+        $stats = $import->stats ?? [];
+        $stats['review'] = ['products_without_category' => $extracted['products_without_category']];
+        $import->forceFill(['stats' => $stats])->save();
+
+        return $count;
+    }
+
+    /**
+     * Collect and match only the import's discounts again, for example after
+     * a row correction changed a row's discount: a new discount gets its
+     * default decision, a discount that no row uses any more is removed, and
+     * the other discounts keep their decisions.
+     */
+    public function collectDiscounts(ProductImport $import): void
+    {
+        $extracted = $this->extractor->extract($import, [ValueType::Discount]);
+
+        $catalog = new CatalogSnapshot;
+        $catalog->loadDiscounts();
+
+        $existing = $import->values()
+            ->where('type', ValueType::Discount)
+            ->get()
+            ->keyBy(fn (ProductImportValue $value): string => $this->key($value));
+
+        $this->store($import, $extracted['values'], $existing, $catalog);
+    }
+
+    /**
+     * Store the matched values by their unique key: values that exist keep
+     * their decisions, new values get the default of their match, and the
+     * given existing values that no longer occur are removed. Returns how
+     * many values there are.
+     *
+     * @param  list<ExtractedValue>  $values
+     * @param  Collection<string, ProductImportValue>  $existing
+     */
+    protected function store(ProductImport $import, array $values, Collection $existing, CatalogSnapshot $catalog): int
+    {
         $kept = [];
 
-        DB::transaction(function () use ($import, $extracted, $catalog, $existing, &$kept): void {
-            foreach ($extracted['values'] as $value) {
+        DB::transaction(function () use ($import, $values, $catalog, $existing, &$kept): void {
+            foreach ($values as $value) {
                 $key = $value->key();
                 $kept[] = $key;
 
                 $attributes = [
                     'source_value' => Str::limit($value->sourceValue, 500, ''),
                     'path' => $value->path,
+                    'details' => $value->details,
                     'sheets' => array_keys($value->sheets),
                     'group_keys' => array_keys($value->groups),
                     'product_count' => count($value->groups),
@@ -93,6 +139,7 @@ class ValueCollector
                     'action' => $match->action,
                     'target_id' => $match->targetId,
                     'create_name' => $match->createName !== null ? Str::limit($match->createName, 500, '') : null,
+                    'create_details' => $match->createDetails,
                     'parent_id' => $match->parentId,
                 ]);
             }
@@ -104,11 +151,15 @@ class ValueCollector
             }
         });
 
-        $stats = $import->stats ?? [];
-        $stats['review'] = ['products_without_category' => $extracted['products_without_category']];
-        $import->forceFill(['stats' => $stats])->save();
-
         return count($kept);
+    }
+
+    /**
+     * The unique key of a stored value within its import.
+     */
+    protected function key(ProductImportValue $value): string
+    {
+        return $value->type->value."\0".$value->option_key."\0".$value->normalized_key;
     }
 
     /**

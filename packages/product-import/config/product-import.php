@@ -56,6 +56,11 @@ return [
     | Assistant chat keeps its own key when `key` is set here. `url` points
     | the provider at another base URL.
     |
+    | `fallback_models` is a comma-separated list of other models of the same
+    | provider, tried in order when the model before them is overloaded or
+    | rate limited (for example "gemini-3.5-flash,gemini-3.6-flash"). They
+    | use the same key and URL as `model`.
+    |
     | Only the headers, column statistics, and at most `sample_size` distinct
     | sample values of at most `sample_length` characters per column are sent,
     | enough for the AI to tell each column's number or date format and its
@@ -69,6 +74,7 @@ return [
     'ai' => [
         'provider' => env('PRODUCT_IMPORT_AI_PROVIDER'),
         'model' => env('PRODUCT_IMPORT_AI_MODEL'),
+        'fallback_models' => env('PRODUCT_IMPORT_AI_FALLBACK_MODELS'),
         'key' => env('PRODUCT_IMPORT_AI_API_KEY'),
         'url' => env('PRODUCT_IMPORT_AI_URL'),
         'timeout' => (int) env('PRODUCT_IMPORT_AI_TIMEOUT', 120),

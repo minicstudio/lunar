@@ -193,25 +193,55 @@ class ColumnMappingAgent implements Agent, HasStructuredOutput
     /**
      * The provider: the configured one, or an on-demand copy of it with the
      * import's own key or URL, so the AI Assistant keeps its own settings.
+     * With fallback models, the providers and their models in failover
+     * order: an on-demand copy of the provider per fallback model, since
+     * `laravel/ai` fails over by provider name.
+     *
+     * @return string|array<string, string|null>|null
      */
-    public function provider(): ?string
+    public function provider(): string|array|null
     {
         $availability = app(AiAvailability::class);
         $provider = $availability->provider();
 
-        if ($provider === null || ! $availability->usesOwnConfiguration()) {
-            return $provider;
+        if ($provider === null) {
+            return null;
         }
 
+        $primary = $availability->usesOwnConfiguration()
+            ? $this->buildProvider($availability, $provider, self::PROVIDER_NAME)
+            : $provider;
+
+        $fallbackModels = $availability->fallbackModels();
+
+        if ($fallbackModels === []) {
+            return $primary;
+        }
+
+        $providers = [$primary => $availability->model()];
+
+        foreach ($fallbackModels as $index => $model) {
+            $providers[$this->buildProvider($availability, $provider, self::PROVIDER_NAME.'-fallback-'.($index + 1))] = $model;
+        }
+
+        return $providers;
+    }
+
+    /**
+     * Register an on-demand copy of the configured provider under the given
+     * name, with the import's own key or URL when set.
+     */
+    protected function buildProvider(AiAvailability $availability, string $provider, string $name): string
+    {
         Ai::build([
             ...(array) config("ai.providers.{$provider}", []),
-            'name' => self::PROVIDER_NAME,
+            'name' => $name,
             'driver' => $availability->driver(),
             'key' => $availability->ownKey() ?? config("ai.providers.{$provider}.key"),
             'url' => $availability->ownUrl() ?? config("ai.providers.{$provider}.url"),
         ]);
 
-        return self::PROVIDER_NAME;
+        return $name;
     }
 
     /**

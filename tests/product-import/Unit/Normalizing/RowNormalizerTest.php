@@ -302,6 +302,20 @@ test('booleans, stock statuses, dates, and the other numbers are read by their t
     expect($unknown->invalid)->toBe(['variant.stock_status' => 'maybe']);
 });
 
+test('a price impact keeps four decimals of minor units, and a price none', function () {
+    $mapping = new SheetMapping(productTypeId: 1, weightUnit: 'kg', lengthUnit: 'cm', columns: [
+        new ColumnMapping(0, 'Price', 'variant.price', format: ColumnFormat::number('.')),
+        new ColumnMapping(1, 'Impact on price', 'variant.price_impact', format: ColumnFormat::number('.')),
+    ]);
+
+    $row = app(RowNormalizer::class)->normalize(['288.429752', '8.264463'], $mapping, 100);
+    $whole = app(RowNormalizer::class)->normalize(['', '16.000000'], $mapping, 100);
+
+    expect($row->values['variant.price'])->toBe(28842)
+        ->and($row->values['variant.price_impact'])->toBe(826.4463)
+        ->and($whole->values['variant.price_impact'])->toBe(1600);
+});
+
 test('every cell is cleaned on a sheet without any column convention', function () {
     $mapping = new SheetMapping(productTypeId: 1, columns: [
         new ColumnMapping(0, 'Cod', 'variant.sku'),

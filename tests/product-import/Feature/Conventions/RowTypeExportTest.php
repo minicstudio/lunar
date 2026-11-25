@@ -194,3 +194,21 @@ test('the export with hungarian headers maps the same way', function () {
         ->and($hungarianSheet->column(39)->header)->toBe('Tulajdonság neve 1')
         ->and($hungarianSheet->column(39)->target)->toBe('ignore');
 });
+
+test('the sale price next to the price imports the price and warns with the sale price and its dates', function () {
+    Http::fake(fn () => Http::response('', 404));
+
+    $import = stageRowTypeExport();
+    $jacket = exportRow($import, '60');
+
+    expect(collect($jacket->messages)->where('level', 'warning')->pluck('message')->all())
+        ->toContain('The price 1256.59 was imported. The file also has the sale price 999.00 (from 1 November 2026 until 24 December 2026). Correct the price to use it.')
+        ->and($import->values()->where('type', ValueType::Discount)->exists())->toBeFalse();
+
+    ImportBuilder::commit($import);
+
+    $price = ProductVariant::query()->where('sku', 'GP-60')->sole()->basePrices()->sole();
+
+    expect($price->price->value)->toBe(125659)
+        ->and($price->getRawOriginal('compare_price'))->toBeNull();
+});

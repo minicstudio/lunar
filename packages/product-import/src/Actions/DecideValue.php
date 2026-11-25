@@ -13,14 +13,17 @@ use Lunar\ProductImport\Enums\ValueAction;
 use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Exceptions\ImportActionRefused;
 use Lunar\ProductImport\Models\ProductImportValue;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Support\TargetFieldRegistry;
+use Lunar\ProductImport\Taxonomy\CatalogSnapshot;
 use Lunar\ProductImport\Taxonomy\ValueCollector;
 use Lunar\ProductImport\Validation\ImportValidator;
 
 /**
- * Records what a category, brand, or option value becomes: an existing
- * record of its type, a new record, or nothing. The rows that use the value
- * are validated again.
+ * Records what a category, brand, option, option value, property, or
+ * discount becomes: an existing record of its type, a new record, or
+ * nothing. A discount may use any eligible discount, or create one with
+ * edited values. The rows that use the value are validated again.
  */
 class DecideValue
 {
@@ -51,9 +54,13 @@ class DecideValue
     }
 
     /**
-     * Create a new record with the given name and, for a category, parent.
+     * Create a new record with the given name and, for a category, parent,
+     * or for a discount, kind, value, start, and end (by default those from
+     * the file).
+     *
+     * @param  ?array<string, mixed>  $details  For a discount: `kind`, `value` (the percent, or the amount in minor units), `starts_at`, and `ends_at`.
      */
-    public function create(ProductImportValue $value, string $name, ?int $parentId = null): ProductImportValue
+    public function create(ProductImportValue $value, string $name, ?int $parentId = null, ?array $details = null): ProductImportValue
     {
         $this->ensureReviewStep($value);
 
@@ -72,10 +79,17 @@ class DecideValue
             throw ImportActionRefused::because('parent_outside_group');
         }
 
+        $discount = $value->type === ValueType::Discount ? RowDiscount::fromArray($details ?? $value->create_details ?? $value->details) : null;
+
+        if ($value->type === ValueType::Discount && ($discount === null || ! $discount->isValid())) {
+            throw ImportActionRefused::because('invalid_discount');
+        }
+
         return $this->decide($value, [
             'action' => ValueAction::Create,
             'target_id' => null,
             'create_name' => Str::limit($name, 500, ''),
+            'create_details' => $discount?->toArray(),
             'parent_id' => $value->type === ValueType::Category ? $parentId : null,
         ]);
     }
@@ -144,6 +158,7 @@ class DecideValue
             ValueType::Property => app(TargetFieldRegistry::class)
                 ->textAttributes((int) Str::after($value->option_key, 'type:'))
                 ->contains(fn ($attribute): bool => (int) $attribute->id === $recordId),
+            ValueType::Discount => CatalogSnapshot::eligibleDiscounts()->whereKey($recordId)->exists(),
         };
     }
 

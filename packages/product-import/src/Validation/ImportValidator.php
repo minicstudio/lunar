@@ -28,7 +28,7 @@ use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Models\ProductImportSheet;
 use Lunar\ProductImport\Normalizing\CategoryList;
 use Lunar\ProductImport\Normalizing\NumberParser;
-use Lunar\ProductImport\Normalizing\SalePrice;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Persisting\ProductUrls;
 use Lunar\ProductImport\Structuring\ParentResolver;
 use Lunar\ProductImport\Support\TargetDefinition;
@@ -441,6 +441,7 @@ class ImportValidator
             }
 
             $this->checkNumbers($values, $mapping, (int) $context['factor'], $messages[$row->id]);
+            $this->checkDiscount($values, $messages[$row->id]);
 
             if ($isVariant && $match === null) {
                 if ($matchField !== TargetField::VariantSku->value && ! $values->filled(TargetField::VariantSku->value)) {
@@ -727,10 +728,10 @@ class ImportValidator
 
     /**
      * The non-blocking warnings: stock of 0, an EAN of an unusual length, a
-     * product stock that is not split among the variants, a sale that stays
-     * after its end or does not apply, up-sells and cross-sells that name
-     * nothing, images that are not web addresses, and empty mapped cells on
-     * an update.
+     * product stock that is not split among the variants, a discount that
+     * ended or that the shop does not apply, a sale price that is not
+     * imported, up-sells and cross-sells that name nothing, images that are
+     * not web addresses, and empty mapped cells on an update.
      *
      * @param  array<int, NormalizedRow>  $group
      * @param  list<array<string, mixed>>  $messages
@@ -755,7 +756,8 @@ class ImportValidator
         }
 
         if ($isVariant) {
-            $this->addSaleWarnings($values, (int) $context['factor'], $messages);
+            $this->addDiscountWarnings($values, (int) $context['factor'], $messages);
+            $this->addSaleWarning($values, (int) $context['factor'], $messages);
         }
 
         foreach ([TargetField::ProductUpsells, TargetField::ProductCrossSells] as $field) {
@@ -797,30 +799,123 @@ class ImportValidator
     }
 
     /**
-     * A sale that applies and has an end stays after it, because Lunar has no
-     * scheduled prices; a sale outside its dates, or not below the regular
-     * price, leaves the regular price.
+     * A discount that cannot be imported: both an amount and a percent above
+     * zero, a percent above 100, or a start after its end.
      *
      * @param  list<array<string, mixed>>  $messages
      */
-    protected function addSaleWarnings(NormalizedRow $values, int $factor, array &$messages): void
+    protected function checkDiscount(NormalizedRow $values, array &$messages): void
     {
-        $sale = SalePrice::for($values);
+        $amount = $values->get(TargetField::VariantDiscountAmount->value);
+        $percent = $values->get(TargetField::VariantDiscountPercent->value);
+        $hasAmount = is_int($amount) && $amount > 0;
+        $hasPercent = is_numeric($percent) && (float) $percent > 0;
 
-        if (! $sale->hasSale() || $sale->price === null) {
+        if (! $hasAmount && ! $hasPercent) {
             return;
         }
 
-        if ($sale->applies && $sale->endsAt !== null) {
-            $messages[] = $this->warning('sale_stays', TargetField::VariantSaleEnds->value, [
-                'price' => number_format($sale->salePrice / max(1, $factor), 2, '.', ''),
-                'date' => CarbonImmutable::parse($sale->endsAt)->locale(app()->getLocale())->translatedFormat('j F Y'),
+        if ($hasAmount && $hasPercent) {
+            $messages[] = $this->error('discount_both', TargetField::VariantDiscountPercent->value);
+        }
+
+        if ($hasPercent && (float) $percent > 100) {
+            $messages[] = $this->error('discount_percent_too_high', TargetField::VariantDiscountPercent->value, [
+                'value' => (new RowDiscount(RowDiscount::PERCENT, (float) $percent))->valueText(),
             ]);
         }
 
-        if (! $sale->applies) {
-            $messages[] = $this->warning('sale_not_applied', TargetField::VariantSalePrice->value);
+        $starts = $values->get(TargetField::VariantSaleStarts->value);
+        $ends = $values->get(TargetField::VariantSaleEnds->value);
+
+        if (is_string($starts) && is_string($ends) && $starts > $ends) {
+            $messages[] = $this->error('discount_dates', TargetField::VariantSaleStarts->value, [
+                'start' => $this->day($starts),
+                'end' => $this->day($ends),
+            ]);
         }
+    }
+
+    /**
+     * A discount that ended is not imported; a fixed amount that leaves less
+     * than the shop's minimum share of the price is not applied by the shop.
+     *
+     * @param  list<array<string, mixed>>  $messages
+     */
+    protected function addDiscountWarnings(NormalizedRow $values, int $factor, array &$messages): void
+    {
+        $discount = RowDiscount::for($values);
+
+        if ($discount === null) {
+            return;
+        }
+
+        if ($discount->hasEnded()) {
+            $messages[] = $this->warning('discount_ended', TargetField::VariantSaleEnds->value, ['date' => $this->day((string) $discount->endsAt)]);
+
+            return;
+        }
+
+        $price = $values->get(TargetField::VariantPrice->value);
+
+        if (is_int($price) && $discount->leavesTooLittleOf($price)) {
+            $messages[] = $this->warning('discount_not_applied', TargetField::VariantDiscountAmount->value, [
+                'amount' => $this->money((int) $discount->value, $factor),
+                'percent' => Str::rtrim(Str::rtrim(number_format(RowDiscount::minimumRemainingPercentage(), 2, '.', ''), '0'), '.'),
+            ]);
+        }
+    }
+
+    /**
+     * A sale price is not imported: a row whose sale price differs from its
+     * price warns with both and the sale's dates, so staff can correct the
+     * price to it.
+     *
+     * @param  list<array<string, mixed>>  $messages
+     */
+    protected function addSaleWarning(NormalizedRow $values, int $factor, array &$messages): void
+    {
+        $price = $values->get(TargetField::VariantPrice->value);
+        $sale = $values->get(TargetField::VariantSale->value);
+
+        if (! is_int($price) || ! is_int($sale) || $sale === $price) {
+            return;
+        }
+
+        $starts = $values->get(TargetField::VariantSaleStarts->value);
+        $ends = $values->get(TargetField::VariantSaleEnds->value);
+
+        $code = match (true) {
+            is_string($starts) && is_string($ends) => 'sale_price_between',
+            is_string($starts) => 'sale_price_from',
+            is_string($ends) => 'sale_price_until',
+            default => 'sale_price',
+        };
+
+        $messages[] = $this->warning($code, TargetField::VariantSale->value, [
+            'price' => $this->money($price, $factor),
+            'sale' => $this->money($sale, $factor),
+            'start' => is_string($starts) ? $this->day($starts) : '',
+            'end' => is_string($ends) ? $this->day($ends) : '',
+        ]);
+    }
+
+    /**
+     * An amount in minor units as a number in major units with a dot.
+     */
+    protected function money(int $amount, int $factor): string
+    {
+        $factor = max(1, $factor);
+
+        return number_format($amount / $factor, (int) round(log10($factor)), '.', '');
+    }
+
+    /**
+     * A stored date as a day in the current language, for example "24 December 2026".
+     */
+    protected function day(string $date): string
+    {
+        return CarbonImmutable::parse($date)->locale(app()->getLocale())->translatedFormat('j F Y');
     }
 
     /**
@@ -835,7 +930,7 @@ class ImportValidator
             && ! Str::startsWith($field, ['variant.option.', 'variant.option_name.', 'variant.option_value.', 'source.', TargetField::ProductSlug->value.'.'])
             && ! ($target?->isList() ?? false)
             && ! in_array($target, [
-                TargetField::VariantSalePrice, TargetField::VariantSaleStarts, TargetField::VariantSaleEnds,
+                TargetField::VariantSale, TargetField::VariantSaleStarts, TargetField::VariantSaleEnds,
                 TargetField::VariantDiscountAmount, TargetField::VariantDiscountPercent,
                 TargetField::VariantPriceImpact, TargetField::VariantWeightImpact, TargetField::VariantImage,
             ], true);

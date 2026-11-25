@@ -224,7 +224,7 @@ A row type column MAY give each row its role (see the export conventions). Other
 
 ### Requirement: Variant rows take missing values from their product row
 
-A variant row MUST take its product row's weight, dimensions, stock status, backorders, minimum quantity, and shippability when its own cell is empty. Identifiers, prices, and stock MUST NOT be taken. A price or weight impact MUST give the base value plus the impact, where the base is the row's own value or, when empty, its product row's.
+A variant row MUST take its product row's weight, dimensions, stock status, backorders, minimum quantity, and shippability when its own cell is empty. A variant row without a discount amount or percent of its own MUST take its product row's discount with its start and end. Identifiers, prices, and stock MUST NOT be taken. A price or weight impact MUST give the base value plus the impact, where the base is the row's own value or, when empty, its product row's.
 
 #### Scenario: Weight from the parent
 
@@ -235,6 +235,25 @@ A variant row MUST take its product row's weight, dimensions, stock status, back
 
 - **WHEN** a product row's price is 100.00 and its variant row's price impact is 15.50
 - **THEN** the variant's price is 115.50
+
+#### Scenario: Discount from the products file
+
+- **WHEN** the products file gives product 12 the discount percent 10 until 31 December 2026, and its two variant rows in the variants file have no discount
+- **THEN** both variants carry the discount 10% until 31 December 2026
+
+### Requirement: A price impact is without tax
+
+A price impact MUST be read as an amount without tax. When the store keeps prices with tax, the impact MUST be multiplied by 1 plus the rate of the default tax class in the default tax zone before it is added to the base price. Only the sum MUST be rounded to minor units.
+
+#### Scenario: Price impact on a price with tax
+
+- **WHEN** the store keeps prices with tax, the default tax class has 21% in the default tax zone, a product row's price is 349.00, and its variant row's price impact is 8.264463
+- **THEN** the variant's price is 359.00, not 357.26
+
+#### Scenario: Price impact on a price without tax
+
+- **WHEN** the store keeps prices without tax, a product row's price is 288.43, and its variant row's price impact is 8.264463
+- **THEN** the variant's price is 296.69
 
 ### Requirement: Each sheet has a product type
 
@@ -247,12 +266,12 @@ Each included sheet MUST have a product type before staff can continue. The prod
 
 ### Requirement: Import options apply to all sheets
 
-The import MUST store these options: the match key (SKU by default, or EAN), what to do with existing variants (update by default, or skip), the status of new products (draft by default, published, or from the status column), the collection group for categories, and additional collections (none by default). Separators MUST NOT be import options: they belong to columns. The currency MUST be the store's default currency.
+The import MUST store these options: the match key (SKU by default, or EAN), what to do with existing variants (update by default, or skip), the status of new products (draft by default, published, or from the status column), the collection group for categories, additional collections (none by default), and whether the product images of variant rows are also linked to their variants (off by default). Separators MUST NOT be import options: they belong to columns. The currency MUST be the store's default currency.
 
 #### Scenario: Defaults
 
 - **WHEN** staff reach the mapping step without changing options
-- **THEN** the import matches by SKU, updates existing variants, creates new products as drafts, and adds no additional collections
+- **THEN** the import matches by SKU, updates existing variants, creates new products as drafts, adds no additional collections, and links no product image to a variant
 
 ### Requirement: New products take their status from the status option
 

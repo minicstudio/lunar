@@ -9,6 +9,7 @@ use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
 use Lunar\Models\Currency;
 use Lunar\Models\Language;
+use Lunar\Models\Product;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductType;
 use Lunar\ProductImport\Data\ImportOptions;
@@ -20,6 +21,7 @@ use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportSheet;
 use Lunar\ProductImport\Models\ProductImportValue;
+use Lunar\Tests\ProductImport\Support\Discounts;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
 use Lunar\Tests\ProductImport\TestCase;
 
@@ -234,4 +236,76 @@ test('an option name uses an existing option through its name in another languag
         ->and($materialValue->option_key)->toBe('type:'.$this->productType->id)
         ->and($composition->action)->toBe(ValueAction::Skip)
         ->and($composition->match_type)->toBe(MatchType::None);
+});
+
+test('a discount with the same percent and an open start uses the eligible discount that has started', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24)->setTime(10, 0));
+
+    $product = Product::factory()->create();
+    $iarna = Discounts::percent('Iarna', 30, '2026-11-20 00:00:00', '2026-12-31 23:59:59', [$product]);
+
+    Discounts::sheet($this->import, $this->productType->id, [
+        2 => ['OUT-RUHA-S', 'Rochie', '229,00', '', '30', '', '2026-12-31'],
+    ]);
+
+    ImportBuilder::stage($this->import);
+
+    $value = storedValue($this->import, ValueType::Discount, 'percent:30||2026-12-31 23:59:59');
+
+    expect($value->match_type)->toBe(MatchType::Exact)
+        ->and($value->action)->toBe(ValueAction::UseExisting)
+        ->and($value->target_id)->toBe($iarna->id)
+        ->and($value->source_value)->toBe('30% · until 31 Dec 2026')
+        ->and($value->details)->toBe(['kind' => 'percent', 'value' => 30, 'starts_at' => null, 'ends_at' => '2026-12-31 23:59:59']);
+});
+
+test('discounts with the same value and dates are one value per kind, value, and dates, and new ones are set to be created', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    Discounts::sheet($this->import, $this->productType->id, [
+        2 => ['OUT-RUHA-S', 'Rochie', '229,00', '', '30', '', '2026-12-31'],
+        3 => ['OUT-RUHA-M', 'Rochie', '229,00', '', '30', '', '2026-12-31'],
+        4 => ['OUT-TASKA', 'Geantă', '59,00', '', '50', '', '2026-12-31'],
+        5 => ['OUT-VECHI', 'Bluză', '99,00', '', '30', '', '2026-11-01'],
+    ]);
+
+    ImportBuilder::stage($this->import);
+
+    $thirty = storedValue($this->import, ValueType::Discount, 'percent:30||2026-12-31 23:59:59');
+    $fifty = storedValue($this->import, ValueType::Discount, 'percent:50||2026-12-31 23:59:59');
+
+    expect($this->import->values()->where('type', ValueType::Discount)->count())->toBe(2)
+        ->and($thirty->variant_count)->toBe(2)
+        ->and($thirty->product_count)->toBe(2)
+        ->and($thirty->match_type)->toBe(MatchType::None)
+        ->and($thirty->action)->toBe(ValueAction::Create)
+        ->and($thirty->create_name)->toBe('30% · until 31 Dec 2026')
+        ->and($thirty->create_details)->toBe($thirty->details)
+        ->and($fifty->variant_count)->toBe(1)
+        ->and($fifty->action)->toBe(ValueAction::Create);
+});
+
+test('a discount limited to a collection is not matched, and a discount of the same amount and dates limited to products is used', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $product = Product::factory()->create();
+    $toamna = Discounts::percent('Toamnă', 30, '2026-12-01 00:00:00', '2026-12-31 23:59:59');
+    $toamna->collections()->attach($this->rochii->id, ['type' => 'limitation']);
+    Discounts::amount('Decembrie fără limită', 2000, '2026-12-01 00:00:00', '2026-12-31 23:59:59');
+    $decembrie = Discounts::amount('Decembrie', 2000, '2026-12-01 00:00:00', '2026-12-31 23:59:59', [$product]);
+
+    Discounts::sheet($this->import, $this->productType->id, [
+        2 => ['OUT-RUHA-S', 'Rochie', '229,00', '', '30', '2026-12-01', '2026-12-31'],
+        3 => ['OUT-TASKA', 'Geantă', '59,00', '20,00', '', '2026-12-01', '2026-12-31'],
+    ]);
+
+    ImportBuilder::stage($this->import);
+
+    $percent = storedValue($this->import, ValueType::Discount, 'percent:30|2026-12-01 00:00:00|2026-12-31 23:59:59');
+    $amount = storedValue($this->import, ValueType::Discount, 'amount:2000|2026-12-01 00:00:00|2026-12-31 23:59:59');
+
+    expect($percent->match_type)->toBe(MatchType::None)
+        ->and($percent->action)->toBe(ValueAction::Create)
+        ->and($amount->action)->toBe(ValueAction::UseExisting)
+        ->and($amount->target_id)->toBe($decembrie->id);
 });

@@ -6,6 +6,7 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
@@ -25,6 +26,7 @@ use Lunar\ProductImport\Actions\ReturnToMapping;
 use Lunar\ProductImport\Actions\ReturnToValueReview;
 use Lunar\ProductImport\Actions\SkipRows;
 use Lunar\ProductImport\Actions\StartImport;
+use Lunar\ProductImport\Enums\ImportStatus;
 use Lunar\ProductImport\Enums\RowAction;
 use Lunar\ProductImport\Enums\RowRole;
 use Lunar\ProductImport\Enums\RowSkipReason;
@@ -34,11 +36,13 @@ use Lunar\ProductImport\Exceptions\ImportActionRefused;
 use Lunar\ProductImport\Filament\Actions\CorrectRowAction;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportRow;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Queries\PreviewSummary;
 
 /**
  * The preview: the products and variants the import will create or update,
- * with totals, filters, row corrections, skips, and the start action.
+ * with each variant's price and discount, totals, filters, row corrections,
+ * skips, and the start action.
  */
 class PreviewStep extends Component implements HasActions, HasSchemas, HasTable
 {
@@ -115,6 +119,15 @@ class PreviewStep extends Component implements HasActions, HasSchemas, HasTable
                         return $price === null ? null : number_format($price / $factor, 2, ',', '.');
                     })
                     ->placeholder('-'),
+                TextColumn::make('discount')
+                    ->label(__('lunarpanel.product-import::ui.preview.discount'))
+                    ->state(function (ProductImportRow $record) use ($factor): ?string {
+                        $discount = $record->isVariantRow() ? RowDiscount::for($record->effectiveRow()) : null;
+
+                        // A discount that ended is not imported.
+                        return $discount !== null && ! $discount->hasEnded() ? $discount->describe($factor, Currency::getDefault()?->code) : null;
+                    })
+                    ->placeholder('-'),
                 TextColumn::make('stock')
                     ->label(__('lunarpanel.product-import::ui.preview.stock'))
                     ->state(fn (ProductImportRow $record): mixed => $record->effectiveRow()->get(TargetField::VariantStock->value))
@@ -147,6 +160,31 @@ class PreviewStep extends Component implements HasActions, HasSchemas, HasTable
                     ->color('gray')
                     ->visible(fn (ProductImportRow $record): bool => $record->skip_reason === RowSkipReason::Staff)
                     ->action(fn (ProductImportRow $record) => $this->run(fn () => app(IncludeRows::class)->handle($this->import(), [$record->id]))),
+                Action::make('includeRowAs')
+                    ->label(__('lunarpanel.product-import::ui.preview.include'))
+                    ->color('gray')
+                    ->visible(fn (ProductImportRow $record): bool => $record->skip_reason === RowSkipReason::RowType)
+                    ->modalHeading(fn (ProductImportRow $record): string => __('lunarpanel.product-import::ui.preview.include_heading', ['sheet' => $record->sheet->name, 'row' => $record->row_number]))
+                    ->modalSubmitActionLabel(__('lunarpanel.product-import::ui.preview.include'))
+                    ->schema([
+                        Select::make('role')
+                            ->label(__('lunarpanel.product-import::ui.preview.include_role'))
+                            ->options(collect([RowRole::ProductAndVariant, RowRole::Product, RowRole::Variant])
+                                ->mapWithKeys(fn (RowRole $role): array => [$role->value => __('lunarpanel.product-import::ui.preview.roles.'.$role->value)])
+                                ->all())
+                            ->default(RowRole::ProductAndVariant->value)
+                            ->selectablePlaceholder(false)
+                            ->required(),
+                    ])
+                    ->action(function (ProductImportRow $record, array $data): void {
+                        $this->run(fn () => app(IncludeRows::class)->handle($this->import(), [$record->id], RowRole::from($data['role'])));
+
+                        // A new category, brand, or option value of the row needs a decision first.
+                        if ($this->import()->status === ImportStatus::ReviewingValues) {
+                            Notification::make()->warning()->title(__('lunarpanel.product-import::ui.preview.decide_included_values'))->send();
+                            $this->dispatch('product-import-changed');
+                        }
+                    }),
             ])
             ->toolbarActions([
                 BulkAction::make('skipSelected')

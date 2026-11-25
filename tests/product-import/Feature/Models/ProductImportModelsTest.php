@@ -126,3 +126,16 @@ test('a transition saves the extra attributes', function () {
 
     expect($import->fresh()->failure_message)->toBe('Too many rows');
 });
+
+test('a discount value stores and reads back its details and the details to create', function () {
+    $value = ProductImportValue::factory()->discount()->create([
+        'create_details' => ['kind' => 'percent', 'value' => 25, 'starts_at' => null, 'ends_at' => '2027-01-15 23:59:59'],
+    ]);
+
+    $value->refresh();
+
+    expect($value->type)->toBe(ValueType::Discount)
+        ->and($value->normalized_key)->toBe('percent:30||2026-12-31 23:59:59')
+        ->and($value->details)->toBe(['kind' => 'percent', 'value' => 30, 'starts_at' => null, 'ends_at' => '2026-12-31 23:59:59'])
+        ->and($value->create_details)->toBe(['kind' => 'percent', 'value' => 25, 'starts_at' => null, 'ends_at' => '2027-01-15 23:59:59']);
+});

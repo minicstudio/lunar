@@ -6,6 +6,10 @@ use Lunar\Models\Language;
 use Lunar\Models\Product;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
+use Lunar\Models\TaxClass;
+use Lunar\Models\TaxRate;
+use Lunar\Models\TaxRateAmount;
+use Lunar\Models\TaxZone;
 use Lunar\ProductImport\Data\ColumnFormat;
 use Lunar\ProductImport\Enums\GroupingStrategy;
 use Lunar\ProductImport\Enums\ImportStatus;
@@ -125,6 +129,74 @@ test('a variation takes the weight of its product row, and an impact gives the b
         ->and($inherited->normalized['variant.price'])->toBeNull()
         ->and($own->get('variant.weight'))->toBe(0.7)
         ->and($own->get('variant.price'))->toBe(12000);
+});
+
+test('with prices kept with tax, a price impact gets the tax of the default tax class before it is added', function () {
+    config(['lunar.pricing.stored_inclusive_of_tax' => true]);
+
+    $taxClass = TaxClass::factory()->create(['default' => true]);
+    $otherClass = TaxClass::factory()->create(['default' => false]);
+    $zone = TaxZone::factory()->create(['default' => true]);
+    $otherZone = TaxZone::factory()->create(['default' => false]);
+    $vat = TaxRate::factory()->create(['tax_zone_id' => $zone->id]);
+    $foreignVat = TaxRate::factory()->create(['tax_zone_id' => $otherZone->id]);
+    TaxRateAmount::factory()->create(['tax_rate_id' => $vat->id, 'tax_class_id' => $taxClass->id, 'percentage' => 21]);
+    TaxRateAmount::factory()->create(['tax_rate_id' => $vat->id, 'tax_class_id' => $otherClass->id, 'percentage' => 5]);
+    TaxRateAmount::factory()->create(['tax_rate_id' => $foreignVat->id, 'tax_class_id' => $taxClass->id, 'percentage' => 27]);
+
+    // A shop export: 349.00 with tax, and impacts without tax that are
+    // +10.00, +20.00, and -10.00 with 21%.
+    $sheet = parentSheet($this->import, $this->productType->id, [
+        2 => ['1', '', '', 'Adidași AirFlow', '349,00', '0,85', '', '', '', ''],
+        3 => ['', '1', 'AF-42-NEG', '', '', '', '10', 'Culoare', 'Negru', '0,000000'],
+        4 => ['', '1', 'AF-42-ALB', '', '', '', '0', 'Culoare', 'Alb', '8,264463'],
+        5 => ['', '1', 'AF-42-ROS', '', '', '', '2', 'Culoare', 'Roșu', '16,528926'],
+        6 => ['', '1', 'AF-42-GRI', '', '', '', '4', 'Culoare', 'Gri', '-8,264463'],
+    ]);
+
+    ImportBuilder::stage($this->import);
+
+    expect(structuredRow($sheet, 3)->effectiveRow()->get('variant.price'))->toBe(34900)
+        ->and(structuredRow($sheet, 4)->effectiveRow()->get('variant.price'))->toBe(35900)
+        ->and(structuredRow($sheet, 5)->effectiveRow()->get('variant.price'))->toBe(36900)
+        ->and(structuredRow($sheet, 6)->effectiveRow()->get('variant.price'))->toBe(33900);
+
+    config(['lunar.pricing.stored_inclusive_of_tax' => false]);
+    ImportBuilder::stage($this->import);
+
+    expect(structuredRow($sheet, 4)->effectiveRow()->get('variant.price'))->toBe(35726);
+});
+
+test('variant rows without a discount of their own take the product row\'s discount with its dates', function () {
+    $products = ImportBuilder::sheet($this->import, 'products_import.csv', [
+        1 => ['ID', 'Name', 'Price', 'Discount percent', 'Discount from', 'Discount to'],
+        2 => ['12', 'Cămașă', '100,00', '10', '2026-12-01 0:00:00', '2026-12-31 23:59:59'],
+    ]);
+    ImportBuilder::map($products, [
+        0 => 'source.id', 1 => ['product.name', 'ro'], 2 => 'variant.price', 3 => 'variant.discount_percent', 4 => 'variant.sale_starts', 5 => 'variant.sale_ends',
+    ], $this->productType->id, strategy: GroupingStrategy::ByParent);
+
+    $variants = ImportBuilder::sheet($this->import, 'combinations_import.csv', [
+        1 => ['Product ID', 'SKU', 'Size', 'Discount percent'],
+        2 => ['12', 'CAM-S', 'S', ''],
+        3 => ['12', 'CAM-M', 'M', ''],
+        4 => ['12', 'CAM-L', 'L', '20'],
+    ]);
+    ImportBuilder::map($variants, [
+        0 => 'source.parent', 1 => 'variant.sku', 2 => ['variant.option', 'Size'], 3 => 'variant.discount_percent',
+    ], $this->productType->id, strategy: GroupingStrategy::ByParent);
+
+    ImportBuilder::stage($this->import);
+
+    $discountOf = fn (int $rowNumber): array => array_intersect_key(
+        structuredRow($variants, $rowNumber)->effectiveRow()->values,
+        array_flip(['variant.discount_percent', 'variant.sale_starts', 'variant.sale_ends']),
+    );
+
+    expect($discountOf(2))->toBe(['variant.discount_percent' => 10, 'variant.sale_starts' => '2026-12-01 00:00:00', 'variant.sale_ends' => '2026-12-31 23:59:59'])
+        ->and($discountOf(3))->toBe($discountOf(2))
+        ->and($discountOf(4))->toBe(['variant.discount_percent' => 20])
+        ->and(structuredRow($variants, 2)->normalized['variant.discount_percent'])->toBeNull();
 });
 
 test('a pair value without a name takes the name of the same pair from the product row', function () {

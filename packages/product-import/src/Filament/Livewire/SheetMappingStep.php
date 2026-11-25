@@ -8,6 +8,7 @@ use Filament\Actions\Contracts\HasActions;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
@@ -142,12 +143,14 @@ class SheetMappingStep extends Component implements HasActions, HasSchemas
             'new_product_status' => $options->newProductStatus->value,
             'collection_group_id' => $options->collectionGroupId,
             'additional_collection_ids' => $options->additionalCollectionIds,
+            'link_variant_images' => $options->linkVariantImages,
         ];
     }
 
     /**
      * The import options that are Filament fields: the additional
-     * collections, searched in every collection group.
+     * collections, searched in every collection group, and whether variant
+     * rows link their images to their variants.
      */
     public function optionsForm(Schema $schema): Schema
     {
@@ -164,6 +167,11 @@ class SheetMappingStep extends Component implements HasActions, HasSchemas
                         ->get()
                         ->mapWithKeys(fn (CollectionContract $collection): array => [$collection->getKey() => static::getCollectionOptionLabel($collection)])
                         ->all())
+                    ->disabled(fn (): bool => $this->import()->status->isBusy())
+                    ->live(),
+                Toggle::make('link_variant_images')
+                    ->label(__('lunarpanel.product-import::ui.mapping.link_variant_images'))
+                    ->helperText(__('lunarpanel.product-import::ui.mapping.link_variant_images_help'))
                     ->disabled(fn (): bool => $this->import()->status->isBusy())
                     ->live(),
             ]);
@@ -757,6 +765,7 @@ class SheetMappingStep extends Component implements HasActions, HasSchemas
             newProductStatus: NewProductStatus::tryFrom((string) ($this->options['new_product_status'] ?? '')) ?? NewProductStatus::Draft,
             collectionGroupId: filled($this->options['collection_group_id'] ?? null) ? (int) $this->options['collection_group_id'] : null,
             additionalCollectionIds: array_values(array_unique(array_map('intval', array_filter((array) ($this->options['additional_collection_ids'] ?? []), 'is_numeric')))),
+            linkVariantImages: (bool) ($this->options['link_variant_images'] ?? false),
         );
     }
 

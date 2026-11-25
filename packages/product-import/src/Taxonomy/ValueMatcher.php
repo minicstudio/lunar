@@ -2,10 +2,12 @@
 
 namespace Lunar\ProductImport\Taxonomy;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Lunar\ProductImport\Enums\MatchType;
 use Lunar\ProductImport\Enums\ValueAction;
 use Lunar\ProductImport\Enums\ValueType;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Support\KeyNormalizer;
 
 /**
@@ -17,6 +19,8 @@ use Lunar\ProductImport\Support\KeyNormalizer;
  * product options by name in any language, and their values the values of
  * the option the name uses. Properties match the product type's text
  * attributes and default to skip, because the import creates no attributes.
+ * Discounts match an eligible discount with the same kind, value, start, and
+ * end, and are otherwise created; they are never similar.
  */
 class ValueMatcher
 {
@@ -31,6 +35,7 @@ class ValueMatcher
             ValueType::OptionValue => $this->matchOptionValue($value, $catalog),
             ValueType::Category => $this->matchCategory($value, $catalog),
             ValueType::Property => $this->matchProperty($value, $catalog),
+            ValueType::Discount => $this->matchDiscount($value, $catalog),
         };
     }
 
@@ -98,6 +103,50 @@ class ValueMatcher
             $closest !== null && $score >= $this->threshold() => new MatchResult(MatchType::Similar, $closest, $score, ValueAction::Skip),
             default => new MatchResult(MatchType::None, action: ValueAction::Skip),
         };
+    }
+
+    /**
+     * Use an eligible discount with the same percent, or the same amount for
+     * the default currency, and the same start and end; otherwise create one
+     * with the file's values. An empty start matches a discount that has
+     * started, and an empty end only a discount without an end.
+     */
+    protected function matchDiscount(ExtractedValue $value, CatalogSnapshot $catalog): MatchResult
+    {
+        $discount = RowDiscount::fromArray($value->details);
+
+        foreach ($discount !== null ? $catalog->discounts : [] as $id => $existing) {
+            if ($this->sameDiscount($discount, $existing)) {
+                return new MatchResult(MatchType::Exact, $id, 1.0, ValueAction::UseExisting, $id);
+            }
+        }
+
+        return new MatchResult(MatchType::None, action: ValueAction::Create, createName: $value->sourceValue, createDetails: $value->details);
+    }
+
+    /**
+     * Whether an existing discount takes the same off between the same dates,
+     * to the minute.
+     *
+     * @param  array{kind: string, value: int|float, starts_at: ?string, ends_at: ?string}  $existing
+     */
+    public function sameDiscount(RowDiscount $discount, array $existing): bool
+    {
+        $minute = fn (?string $date): ?string => $date !== null ? CarbonImmutable::parse($date)->format('Y-m-d H:i') : null;
+
+        $sameValue = $discount->kind === RowDiscount::AMOUNT
+            ? (int) $existing['value'] === (int) $discount->value
+            : abs((float) $existing['value'] - (float) $discount->value) < 0.0001;
+
+        $sameStart = $discount->startsAt === null
+            ? $existing['starts_at'] !== null && CarbonImmutable::parse($existing['starts_at'])->lessThanOrEqualTo(CarbonImmutable::now())
+            : $minute($existing['starts_at']) === $minute($discount->startsAt);
+
+        $sameEnd = $discount->endsAt === null
+            ? $existing['ends_at'] === null
+            : $minute($existing['ends_at']) === $minute($discount->endsAt);
+
+        return $existing['kind'] === $discount->kind && $sameValue && $sameStart && $sameEnd;
     }
 
     /**

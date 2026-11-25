@@ -16,7 +16,9 @@ use Lunar\ProductImport\Normalizing\ListItems;
  * row's role: `single` is a product with one variant, `parent` a product
  * whose variants are other rows, `variant` a variant, and `skip` a row that
  * is not imported. `not_shippable` on any item makes the variant not
- * shippable. A row without a role item follows the general rule.
+ * shippable. A row without a role item follows the general rule. A role
+ * that staff chose when they included a row comes before the type's role,
+ * and the type keeps only its `not_shippable` meaning.
  */
 final readonly class RowTypes
 {
@@ -27,15 +29,15 @@ final readonly class RowTypes
 
     /**
      * Read the row type of a row of the sheet. A sheet without a row type
-     * column, and a row without a type, give no role.
+     * column, and a row without a type, give no role, unless staff chose one.
      */
-    public static function read(SheetMapping $mapping, NormalizedRow $values): self
+    public static function read(SheetMapping $mapping, NormalizedRow $values, ?RowRole $roleOverride = null): self
     {
         $column = $mapping->columnsFor(TargetField::SourceType)[0] ?? null;
         $type = $values->get(TargetField::SourceType->value);
 
         if ($column === null || ! is_string($type) || $type === '') {
-            return new self;
+            return new self($roleOverride);
         }
 
         $role = null;
@@ -55,13 +57,13 @@ final readonly class RowTypes
             }
         }
 
-        return new self($role, $notShippable);
+        return new self($roleOverride ?? $role, $notShippable);
     }
 
     /**
-     * Whether the type means a product with one variant, whose option pairs
-     * and `Name:Value` items are properties: a single variant has no options
-     * to choose between.
+     * Whether the type, or the role staff chose, means a product with one
+     * variant, whose option pairs and `Name:Value` items are properties: a
+     * single variant has no options to choose between.
      */
     public function isSingle(): bool
     {

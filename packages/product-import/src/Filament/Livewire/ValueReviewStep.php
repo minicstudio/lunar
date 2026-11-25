@@ -5,6 +5,8 @@ namespace Lunar\ProductImport\Filament\Livewire;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -15,6 +17,8 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -22,6 +26,8 @@ use Lunar\Models\Attribute;
 use Lunar\Models\Brand;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
+use Lunar\Models\Currency;
+use Lunar\Models\Discount;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductOptionValue;
 use Lunar\ProductImport\Actions\ContinueToPreview;
@@ -34,12 +40,16 @@ use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Exceptions\ImportActionRefused;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportValue;
+use Lunar\ProductImport\Normalizing\DateParser;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Support\TargetFieldRegistry;
 use Lunar\ProductImport\Taxonomy\CatalogSnapshot;
 
 /**
- * The category, brand, and option value review: a tab per type, the match of
- * each value, and a decision per value.
+ * The review of categories, brands, options, option values, properties, and
+ * discounts: a tab per type, the match of each value, and a decision per
+ * value. A discount shows its value and dates, and is created with an
+ * edited name, kind, value, start, and end.
  */
 class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTable
 {
@@ -92,6 +102,7 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
             ->columns([
                 TextColumn::make('source_value')
                     ->label(__('lunarpanel.product-import::ui.values.value'))
+                    ->formatStateUsing(fn (string $state, ProductImportValue $record): string => $record->type === ValueType::Discount ? $this->discountText($record->details) ?? $state : $state)
                     ->searchable()
                     ->description(fn (ProductImportValue $record): ?string => $record->type === ValueType::OptionValue ? $this->optionName($record->option_key) : null),
                 TextColumn::make('sheets')
@@ -102,7 +113,7 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
                     ->sortable(),
                 TextColumn::make('variant_count')
                     ->label(__('lunarpanel.product-import::ui.values.variants'))
-                    ->visible(fn (): bool => $this->type === ValueType::OptionValue->value),
+                    ->visible(fn (): bool => in_array($this->type, [ValueType::OptionValue->value, ValueType::Discount->value], true)),
                 TextColumn::make('match_type')
                     ->label(__('lunarpanel.product-import::ui.values.match'))
                     ->badge()
@@ -113,9 +124,11 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
                         MatchType::Similar => 'warning',
                         default => 'gray',
                     })
-                    ->description(fn (ProductImportValue $record): ?string => $record->match_type === MatchType::Similar
-                        ? $this->recordName($record, $record->matched_id).' · '.(int) round(($record->score ?? 0) * 100).'%'
-                        : null),
+                    ->description(fn (ProductImportValue $record): ?string => match (true) {
+                        $record->match_type === MatchType::Similar => $this->recordName($record, $record->matched_id).' · '.(int) round(($record->score ?? 0) * 100).'%',
+                        $record->type === ValueType::Discount && $record->matched_id !== null => $this->recordName($record, $record->matched_id),
+                        default => null,
+                    }),
                 TextColumn::make('decision')
                     ->label(__('lunarpanel.product-import::ui.values.decision'))
                     ->state(fn (ProductImportValue $record): string => $this->decisionText($record))
@@ -155,11 +168,13 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
         return Action::make('create')
             ->label(__('lunarpanel.product-import::ui.values.create'))
             ->visible(fn (ProductImportValue $record): bool => $record->type !== ValueType::Property)
-            ->fillForm(fn (ProductImportValue $record): array => [
-                'name' => $record->create_name ?? ($record->type === ValueType::Category ? end($record->path) : $record->source_value),
-                'parent' => $record->parent_id,
-            ])
-            ->schema(fn (ProductImportValue $record): array => array_values(array_filter([
+            ->fillForm(fn (ProductImportValue $record): array => $record->type === ValueType::Discount
+                ? $this->discountForm($record)
+                : [
+                    'name' => $record->create_name ?? ($record->type === ValueType::Category ? Arr::last($record->path ?? []) : null) ?? $record->source_value,
+                    'parent' => $record->parent_id,
+                ])
+            ->schema(fn (ProductImportValue $record): array => $record->type === ValueType::Discount ? $this->discountSchema() : array_values(array_filter([
                 TextInput::make('name')
                     ->label(__('lunarpanel.product-import::ui.values.name'))
                     ->helperText($record->type === ValueType::Category ? __('lunarpanel.product-import::ui.values.name_help') : null)
@@ -173,8 +188,117 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
                     : null,
             ])))
             ->action(fn (array $data, ProductImportValue $record) => $this->decide(
-                fn () => app(DecideValue::class)->create($record, (string) $data['name'], filled($data['parent'] ?? null) ? (int) $data['parent'] : null)
+                fn () => app(DecideValue::class)->create(
+                    $record,
+                    (string) $data['name'],
+                    filled($data['parent'] ?? null) ? (int) $data['parent'] : null,
+                    $record->type === ValueType::Discount ? $this->discountDetails($data) : null,
+                )
             ));
+    }
+
+    /**
+     * The create form of a discount: its name and the kind, value (an amount
+     * in major units), start, and end to create, prefilled from the file.
+     *
+     * @return array<string, mixed>
+     */
+    protected function discountForm(ProductImportValue $value): array
+    {
+        $discount = RowDiscount::fromArray($value->create_details ?? $value->details);
+
+        return [
+            'name' => $value->create_name ?? $value->source_value,
+            'kind' => $discount?->kind ?? RowDiscount::PERCENT,
+            'value' => match (true) {
+                $discount === null => null,
+                $discount->kind === RowDiscount::AMOUNT => number_format((int) $discount->value / $this->currencyFactor(), $this->currencyDecimals(), '.', ''),
+                default => $discount->valueText(),
+            },
+            'starts_at' => $discount?->startsAt,
+            'ends_at' => $discount?->endsAt,
+        ];
+    }
+
+    /**
+     * The fields of a discount to create.
+     *
+     * @return list<Field>
+     */
+    protected function discountSchema(): array
+    {
+        return [
+            TextInput::make('name')
+                ->label(__('lunarpanel.product-import::ui.values.name'))
+                ->required()
+                ->maxLength(255),
+            Select::make('kind')
+                ->label(__('lunarpanel.product-import::ui.discounts.kind'))
+                ->options([
+                    RowDiscount::PERCENT => __('lunarpanel.product-import::ui.discounts.kinds.percent'),
+                    RowDiscount::AMOUNT => __('lunarpanel.product-import::ui.discounts.kinds.amount'),
+                ])
+                ->required(),
+            TextInput::make('value')
+                ->label(__('lunarpanel.product-import::ui.discounts.value'))
+                ->helperText(__('lunarpanel.product-import::ui.discounts.value_help', ['currency' => (string) Currency::getDefault()?->code]))
+                ->numeric()
+                ->minValue(0)
+                ->required(),
+            DateTimePicker::make('starts_at')
+                ->label(__('lunarpanel.product-import::ui.discounts.starts_at'))
+                ->helperText(__('lunarpanel.product-import::ui.discounts.starts_at_help')),
+            DateTimePicker::make('ends_at')
+                ->label(__('lunarpanel.product-import::ui.discounts.ends_at'))
+                ->helperText(__('lunarpanel.product-import::ui.discounts.ends_at_help')),
+        ];
+    }
+
+    /**
+     * The details of a discount to create from its form: the percent, or the
+     * amount in minor units of the default currency.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{kind: string, value: int|float, starts_at: ?string, ends_at: ?string}
+     */
+    protected function discountDetails(array $data): array
+    {
+        $kind = (string) ($data['kind'] ?? RowDiscount::PERCENT);
+        $value = (float) ($data['value'] ?? 0);
+        $date = fn (mixed $date): ?string => filled($date) ? Carbon::parse((string) $date)->format(DateParser::STORED_FORMAT) : null;
+
+        return [
+            'kind' => $kind,
+            'value' => $kind === RowDiscount::AMOUNT ? (int) round($value * $this->currencyFactor()) : round($value, 4),
+            'starts_at' => $date($data['starts_at'] ?? null),
+            'ends_at' => $date($data['ends_at'] ?? null),
+        ];
+    }
+
+    /**
+     * A discount's value and dates in words, from its details.
+     *
+     * @param  ?array<string, mixed>  $details
+     */
+    protected function discountText(?array $details): ?string
+    {
+        return RowDiscount::fromArray($details)?->describe($this->currencyFactor(), Currency::getDefault()?->code);
+    }
+
+    /**
+     * The default currency's minor units per unit.
+     */
+    protected function currencyFactor(): int
+    {
+        return max(1, (int) (Currency::getDefault()?->factor ?? 100));
+    }
+
+    /**
+     * The default currency's decimals.
+     */
+    protected function currencyDecimals(): int
+    {
+        return (int) round(log10($this->currencyFactor()));
     }
 
     public function continueAction(): Action
@@ -293,7 +417,24 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
             ValueType::Property => app(TargetFieldRegistry::class)->textAttributes((int) Str::after($value->option_key, 'type:'))
                 ->mapWithKeys(fn ($attribute): array => [$attribute->id => (string) ($attribute->translate('name') ?: $attribute->handle)])
                 ->all(),
+            ValueType::Discount => $this->discountOptions(),
         };
+    }
+
+    /**
+     * The eligible discounts a discount may use, with their value and dates.
+     *
+     * @return array<int, string>
+     */
+    protected function discountOptions(): array
+    {
+        $snapshot = new CatalogSnapshot;
+        $snapshot->loadDiscounts();
+
+        return collect($snapshot->discounts)
+            ->map(fn (array $discount): string => $discount['name'].' ('.$this->discountText($discount).')')
+            ->sort()
+            ->all();
     }
 
     /**
@@ -330,6 +471,7 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
             ValueType::Option => (string) (ProductOption::query()->find($id)?->translate('name') ?? '#'.$id),
             ValueType::OptionValue => (string) (ProductOptionValue::query()->find($id)?->translate('name') ?? '#'.$id),
             ValueType::Property => (string) (Attribute::query()->find($id)?->translate('name') ?? '#'.$id),
+            ValueType::Discount => (string) (Discount::query()->find($id)?->name ?? '#'.$id),
         };
     }
 
@@ -340,13 +482,16 @@ class ValueReviewStep extends Component implements HasActions, HasSchemas, HasTa
     {
         return match ($value->action) {
             ValueAction::UseExisting => __('lunarpanel.product-import::ui.values.decisions.use_existing', ['name' => $this->recordName($value, $value->target_id)]),
-            ValueAction::Create => $value->type === ValueType::Category && $value->parent_id !== null
-                ? __('lunarpanel.product-import::ui.values.decisions.create_under', ['name' => $value->create_name, 'parent' => $this->recordName($value, $value->parent_id)])
-                : __('lunarpanel.product-import::ui.values.decisions.create', ['name' => $value->create_name]),
+            ValueAction::Create => match (true) {
+                $value->type === ValueType::Category && $value->parent_id !== null => __('lunarpanel.product-import::ui.values.decisions.create_under', ['name' => $value->create_name, 'parent' => $this->recordName($value, $value->parent_id)]),
+                $value->type === ValueType::Discount => __('lunarpanel.product-import::ui.values.decisions.create_discount', ['name' => $value->create_name, 'discount' => (string) $this->discountText($value->create_details ?? $value->details)]),
+                default => __('lunarpanel.product-import::ui.values.decisions.create', ['name' => $value->create_name]),
+            },
             ValueAction::Skip => match ($value->type) {
                 ValueType::OptionValue => trans_choice('lunarpanel.product-import::ui.values.decisions.skip_variants', $value->variant_count, ['count' => $value->variant_count]),
                 ValueType::Option => __('lunarpanel.product-import::ui.values.decisions.skip_option'),
                 ValueType::Property => __('lunarpanel.product-import::ui.values.decisions.skip_property'),
+                ValueType::Discount => __('lunarpanel.product-import::ui.values.decisions.skip_discount'),
                 default => __('lunarpanel.product-import::ui.values.decisions.skip'),
             },
             null => __('lunarpanel.product-import::ui.values.decisions.open'),

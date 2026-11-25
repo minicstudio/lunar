@@ -3,18 +3,22 @@
 namespace Lunar\ProductImport\Persisting;
 
 use Illuminate\Database\Eloquent\Builder;
+use Lunar\Models\Discountable;
+use Lunar\Models\ProductVariant;
 use Lunar\ProductImport\Enums\ImageStatus;
 use Lunar\ProductImport\Enums\ImportStatus;
 use Lunar\ProductImport\Enums\RowAction;
 use Lunar\ProductImport\Enums\RowStatus;
+use Lunar\ProductImport\Enums\ValueAction;
+use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportImage;
 use Lunar\ProductImport\Models\ProductImportRow;
 
 /**
  * Counts an import's outcome from its rows and images: new and updated
- * products and variants, skipped and failed rows, created records, added
- * associations, downloaded, existing, and failed images, and processed
+ * products and variants, skipped and failed rows, created records, variants
+ * added to discounts, added associations, downloaded, existing, and failed images, and processed
  * groups and images. Failed images never change the status.
  */
 class ImportResult
@@ -42,6 +46,8 @@ class ImportResult
             'created_categories' => count($created['categories'] ?? []),
             'created_options' => count($created['options'] ?? []),
             'created_option_values' => count($created['option_values'] ?? []),
+            'created_discounts' => count($created['discounts'] ?? []),
+            'discount_variants' => $this->variantsAddedToDiscounts($import),
             'processed_groups' => $this->processedGroups($import),
             'total_groups' => (int) ($import->stats['total_groups'] ?? 0),
             'associations' => (int) ($import->stats['associations'] ?? 0),
@@ -51,6 +57,41 @@ class ImportResult
             'processed_images' => $this->processedImages($import),
             'total_images' => $this->totalImages($import),
         ];
+    }
+
+    /**
+     * The imported variants that this import added to their discounts: the
+     * links to the discounts its values use or created, made since it
+     * started. A link that an earlier import made is not counted again.
+     */
+    public function variantsAddedToDiscounts(ProductImport $import): int
+    {
+        $discountIds = $import->values()
+            ->where('type', ValueType::Discount)
+            ->whereIn('action', [ValueAction::UseExisting, ValueAction::Create])
+            ->whereNotNull('target_id')
+            ->pluck('target_id')
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($discountIds === [] || $import->started_at === null) {
+            return 0;
+        }
+
+        $variantIds = ProductImportRow::includedIn($import)
+            ->where('status', RowStatus::Imported)
+            ->whereNotNull('product_variant_id')
+            ->select('product_variant_id');
+
+        return Discountable::query()
+            ->whereIn('discount_id', $discountIds)
+            ->where('type', 'limitation')
+            ->where('discountable_type', ProductVariant::morphName())
+            ->whereIn('discountable_id', $variantIds)
+            ->where('created_at', '>=', $import->started_at)
+            ->distinct()
+            ->count('discountable_id');
     }
 
     /**

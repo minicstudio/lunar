@@ -23,7 +23,7 @@ return [
     'product_cross_sells' => 'Produse asociate (cross-sell)',
     'variant_gtin' => 'GTIN variantă',
     'variant_mpn' => 'MPN variantă',
-    'variant_price_impact' => 'Impact asupra prețului variantei',
+    'variant_price_impact' => 'Impact asupra prețului variantei (fără TVA)',
     'variant_sale_price' => 'Preț promoțional variantă',
     'variant_sale_starts' => 'Început promoție',
     'variant_sale_ends' => 'Sfârșit promoție',

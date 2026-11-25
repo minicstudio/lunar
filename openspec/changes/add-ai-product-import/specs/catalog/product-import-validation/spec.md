@@ -170,19 +170,51 @@ A slug that another product already uses in its language, or that another produc
 - **WHEN** a row updates product #1842, whose Romanian URL is "rochie-de-vara", and its slug cell holds "rochie-vara"
 - **THEN** the row has a warning that the product keeps the URL "rochie-de-vara"
 
-### Requirement: Sale prices are checked
+### Requirement: Sale prices are reported, not imported
 
-A sale that applies today and has an end date MUST give a warning that the sale price stays after that date. A sale outside its dates, and a sale price that is not lower than the regular price, MUST give a warning that the regular price is used.
+A row with a sale price that differs from its price MUST give a warning that its price was imported and that the file also has the sale price, with the sale's dates when it has them, so that staff can correct the price. The warning MUST disappear when the row's price equals the sale price.
 
-#### Scenario: Sale ending at Christmas
+#### Scenario: Sale price next to the price
 
-- **WHEN** today is 23 November 2026 and a row has the regular price 199,00, the sale price 149,00, and the sale end 24 December 2026
-- **THEN** the row has a warning that the sale price 149.00 stays after 24 December 2026
+- **WHEN** a row has the price 199,00, the sale price 149,00, and the sale end 24 December 2026
+- **THEN** the row has the warning "The price 199.00 was imported. The file also has the sale price 149.00 (until 24 December 2026). Correct the price to use it."
 
-#### Scenario: Sale already over
+#### Scenario: Price corrected to the sale price
 
-- **WHEN** a row's sale ended on 1 November 2026
-- **THEN** the row has a warning that the regular price is used
+- **WHEN** staff correct the price of that row to 149,00
+- **THEN** the warning disappears and the variant will be imported at 149.00 without a compare price
+
+### Requirement: Discounts are checked
+
+A row with both a discount amount and a discount percent above zero MUST have an error naming both. A discount percent above 100 and a discount whose start is after its end MUST be errors.
+
+#### Scenario: Amount and percent
+
+- **WHEN** a row has the discount amount 20,00 and the discount percent 10
+- **THEN** the row has an error that it gives both a discount amount and a discount percent
+
+### Requirement: Discount dates cover whole days
+
+A discount date without a time MUST read as the start of its day for a start and as the end of its day for an end.
+
+#### Scenario: End date without a time
+
+- **WHEN** a sale end column has the date format "Y-m-d" and a row's discount ends on "2026-12-31"
+- **THEN** the discount ends on 31 December 2026 at 23:59:59
+
+### Requirement: Discounts that will not apply are reported
+
+A discount whose end is before today MUST give a warning that it is not imported. A discount amount that leaves less of the price than the store's minimum remaining share (10% by default) MUST give a warning that the shop does not apply it to that variant.
+
+#### Scenario: Discount already over
+
+- **WHEN** today is 24 November 2026 and a row's discount of 30% ended on 1 November 2026
+- **THEN** the row has a warning that the discount ended on 1 November 2026 and is not imported, and the row is imported without it
+
+#### Scenario: Amount that leaves too little
+
+- **WHEN** a row has the price 59,00 and the discount amount 55,00
+- **THEN** the row has a warning that the shop does not apply the discount 55.00 to this variant, because less than 10% of the price would remain
 
 ### Requirement: Unresolved references and stock pools are warnings
 
@@ -200,7 +232,7 @@ The system MUST warn, without blocking, about an up-sell or cross-sell reference
 
 ### Requirement: The preview shows what the import will do
 
-The preview MUST list product groups with their action (new, or update of a named product), their product row, their variants, and each variant's SKU, options, price, compare price, stock, status, and messages. It MUST show totals for products, new products, updated products, variants, warnings, and errors, and filters for all, new, update, with problems, and skipped.
+The preview MUST list product groups with their action (new, or update of a named product), their product row, their variants, and each variant's SKU, options, price, discount, stock, status, and messages. It MUST show totals for products, new products, updated products, variants, warnings, and errors, and filters for all, new, update, with problems, and skipped.
 
 #### Scenario: Totals
 
@@ -216,14 +248,37 @@ Staff MUST be able to edit a row's normalized values in the preview. The form MU
 - **WHEN** staff enter 49,90 as the price of "Produse" row 37, whose price cell was empty
 - **THEN** the row's error disappears, its raw price stays empty, and the form shows "Original cell: empty"
 
+### Requirement: A corrected discount is reviewed again
+
+A correction that changes a row's discount MUST collect the import's discounts again: a new discount is matched and gets its default, a discount that no row uses any more is removed, and the other discounts keep their decisions.
+
+#### Scenario: Change a discount
+
+- **WHEN** staff change the discount percent of the only row with 50% to 40
+- **THEN** the discount 50% disappears from the review, and 40% appears with that row, matched and with its default decision
+
 ### Requirement: Staff can skip rows
 
-Staff MUST be able to skip a single row, skip all rows with errors at once, and include a skipped row again before the import starts. Skipped rows MUST NOT be imported.
+Staff MUST be able to skip a single row, skip all rows with errors at once, and include a skipped row again before the import starts (see "Staff can include skipped rows"). Skipped rows MUST NOT be imported.
 
 #### Scenario: Skip all error rows
 
 - **WHEN** staff skip all rows with errors in a preview with 6 error rows
 - **THEN** those 6 rows are marked as skipped and the error total becomes 0
+
+### Requirement: Staff can include skipped rows
+
+Staff MUST be able to include a row that staff skipped, and a row that its type skips. For a row that its type skips, staff MUST choose whether it is a product with one variant, a product whose variants are other rows, or a variant. The row MUST then be validated like any other row, and the choice MUST be kept when the import is staged again. A row skipped because existing variants are left alone, or because its option value is skipped, MUST say in its message where that decision is changed.
+
+#### Scenario: Include a row that its type skips
+
+- **WHEN** the "grouped" row "Set vară" is skipped by its type, and staff include it as a product with one variant
+- **THEN** the row is no longer skipped, the preview shows "Set vară" as a new product, and its missing SKU and price are errors that staff correct or skip
+
+#### Scenario: A row skipped as an existing variant
+
+- **WHEN** the import leaves existing variants alone and the row "TEE-CLASSIC-WHT-S" matches an existing variant
+- **THEN** the row is skipped, offers no include action, and its message says that the "Existing variants" import option in the mapping step decides this
 
 ### Requirement: The import starts only with something to import
 

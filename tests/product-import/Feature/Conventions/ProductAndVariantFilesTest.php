@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Lunar\Models\CollectionGroup;
 use Lunar\Models\Currency;
+use Lunar\Models\Discount;
 use Lunar\Models\Language;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
@@ -125,7 +126,7 @@ test('features are properties, categories are paths, and the codes are read with
         ->and(fileRow($import, 'CUR-14')->effectiveRow()->get('variant.shippable'))->toBeTrue();
 });
 
-test('a discount percent is a sale with the regular price as the compare price', function () {
+test('a discount percent keeps the price without a compare price and links the variant to a discount', function () {
     Http::fake(fn () => Http::response('', 404));
 
     $import = stageProductAndVariantFiles(new ImportOptions(
@@ -137,9 +138,13 @@ test('a discount percent is a sale with the regular price as the compare price',
 
     $belt = ProductVariant::query()->where('sku', 'CUR-14')->sole();
     $price = $belt->basePrices()->sole();
+    $discount = Discount::query()->find($import->values()->where('type', ValueType::Discount)->sole()->target_id);
 
-    expect($price->price->value)->toBe(15000)
-        ->and($price->compare_price->value)->toBe(20000)
+    expect($price->price->value)->toBe(20000)
+        ->and($price->getRawOriginal('compare_price'))->toBeNull()
+        ->and($discount->data['percentage'])->toBe(25)
+        ->and($discount->ends_at)->toBeNull()
+        ->and($discount->discountables()->where('type', 'limitation')->pluck('discountable_id')->all())->toBe([$belt->id])
         ->and($belt->product->status)->toBe('published')
         ->and(ProductVariant::query()->where('sku', 'CARD-16')->sole()->product->status)->toBe('draft')
         ->and(ProductVariant::query()->where('sku', 'CAM-12-M-ALB')->sole()->basePrices()->sole()->price->value)->toBe(11000)

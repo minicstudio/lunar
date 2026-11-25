@@ -6,8 +6,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Lunar\Models\Attribute;
+use Lunar\Models\Discountable;
 use Lunar\Models\Product;
-use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductVariant;
 use Lunar\Models\Tag;
 use Lunar\ProductImport\Data\NormalizedRow;
@@ -24,7 +24,7 @@ use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportImage;
 use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Normalizing\CategoryList;
-use Lunar\ProductImport\Normalizing\SalePrice;
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Structuring\RowStructurer;
 use Lunar\ProductImport\Taxonomy\ValueKeys;
 use RuntimeException;
@@ -35,8 +35,10 @@ use Throwable;
  * with a lock, restores a trashed product, creates or updates the product
  * with only its mapped, non-empty fields, adds its categories and the
  * additional collections without removing any, sets its URL slugs
- * (`ProductUrls`), attaches options, and creates or updates the variants and
- * their base price. Nothing is deleted. Search syncing is off while writing.
+ * (`ProductUrls`), attaches options, creates or updates the variants and
+ * their base price without touching the compare price, and adds each variant
+ * to its decided discount. Nothing is deleted. Search syncing is off while
+ * writing.
  */
 class ProductUpserter
 {
@@ -57,7 +59,14 @@ class ProductUpserter
      */
     public function upsert(ProductImport $import, string $groupKey, CommitContext $context): void
     {
-        Product::withoutSyncingToSearch(fn () => ProductVariant::withoutSyncingToSearch(
+        // Scout turns syncing off per class, so it is turned off for the
+        // store's own model classes, which the written records are.
+        /** @var class-string<Product> $products */
+        $products = Product::modelClass();
+        /** @var class-string<ProductVariant> $variants */
+        $variants = ProductVariant::modelClass();
+
+        $products::withoutSyncingToSearch(fn () => $variants::withoutSyncingToSearch(
             fn () => DB::transaction(fn () => $this->write($import, $groupKey, $context))
         ));
     }
@@ -179,25 +188,35 @@ class ProductUpserter
             ])->save();
         }
 
-        $this->recordImages($import, $product, $ordered, $effective, $written);
+        $this->recordImages($import, $product, $ordered, $effective, $written, $context->importOptions->linkVariantImages);
     }
 
     /**
      * Record the group's image URLs for downloading after the products are
      * written: the product's images in file order (the product row's first),
-     * then each variant row's own images, linked to its variant. A URL the
-     * import already recorded for the product is kept as it is.
+     * then each variant row's own images, linked to its variant. When the
+     * import links variant images, the product images of a row that writes
+     * a variant are that variant's images too, unless the row is the group's
+     * only row: a product with one variant keeps its images on the product.
+     * A URL the import already recorded for the product is kept as it is.
      *
      * @param  Collection<int, ProductImportRow>  $ordered  The group's rows, the product row first.
      * @param  array<int, NormalizedRow>  $effective
      * @param  array<int, ?int>  $variantIds  Row id => written variant id.
      */
-    protected function recordImages(ProductImport $import, Product $product, Collection $ordered, array $effective, array $variantIds): void
+    protected function recordImages(ProductImport $import, Product $product, Collection $ordered, array $effective, array $variantIds, bool $linkVariantImages): void
     {
         $position = 0;
         $seen = [];
+        $linksToVariant = fn (ProductImportRow $row): bool => $linkVariantImages
+            && $ordered->count() > 1
+            && ($variantIds[$row->id] ?? null) !== null;
 
         foreach ($ordered as $row) {
+            if ($linksToVariant($row)) {
+                continue;
+            }
+
             foreach ((array) $effective[$row->id]->get(TargetField::ProductImages->value) as $url) {
                 $this->recordImage($import, $product, $row, null, (string) $url, $position, $seen);
             }
@@ -210,7 +229,12 @@ class ProductUpserter
                 continue;
             }
 
-            foreach ((array) $effective[$row->id]->get(TargetField::VariantImage->value) as $url) {
+            $urls = [
+                ...($linksToVariant($row) ? (array) $effective[$row->id]->get(TargetField::ProductImages->value) : []),
+                ...(array) $effective[$row->id]->get(TargetField::VariantImage->value),
+            ];
+
+            foreach ($urls as $url) {
                 $this->recordImage($import, $product, $row, $variantId, (string) $url, $position, $seen);
             }
         }
@@ -257,7 +281,7 @@ class ProductUpserter
         $values = $ordered->map(fn (ProductImportRow $row): NormalizedRow => $effective[$row->id])->all();
 
         $creating = $product === null;
-        $product ??= new Product([
+        $product ??= new (Product::modelClass())([
             'product_type_id' => $mapping->productTypeId,
             'status' => $this->newProductStatus($values, $context),
         ]);
@@ -533,7 +557,8 @@ class ProductUpserter
 
     /**
      * Create the variant, or restore and update the existing one with the
-     * row's mapped, non-empty fields, then its option values and base price.
+     * row's mapped, non-empty fields, then its option values, its base price,
+     * and its discount.
      *
      * @param  array<string, int>  $optionIds
      */
@@ -591,17 +616,45 @@ class ProductUpserter
 
         $this->writeOptionValues($variant, $row, $optionIds, $context);
 
-        $prices = SalePrice::for($row);
+        $price = $row->get(TargetField::VariantPrice->value);
 
-        // A row that writes a price writes its compare price with it.
-        if ($prices->price !== null) {
+        // The row's own price, never a sale price; the compare price stays as it is.
+        if (is_int($price)) {
             $variant->prices()->updateOrCreate(
                 ['currency_id' => $context->currency->id, 'min_quantity' => 1, 'customer_group_id' => null],
-                ['price' => $prices->price, 'compare_price' => $prices->comparePrice],
+                ['price' => $price],
             );
         }
 
+        $this->linkDiscount($variant, $row, $context);
+
         return $variant;
+    }
+
+    /**
+     * Add the variant to the discount its row's discount was decided to use
+     * or create, as a variant the discount is limited to, unless it is
+     * already. The variant's other discounts stay.
+     */
+    protected function linkDiscount(ProductVariant $variant, NormalizedRow $row, CommitContext $context): void
+    {
+        $discount = RowDiscount::for($row);
+        $discountId = $discount !== null ? $context->target(ValueType::Discount->value, '', $discount->key()) : null;
+
+        if ($discountId === null) {
+            return;
+        }
+
+        $link = [
+            'discount_id' => $discountId,
+            'discountable_type' => $variant->getMorphClass(),
+            'discountable_id' => $variant->id,
+            'type' => 'limitation',
+        ];
+
+        if (! Discountable::query()->where($link)->exists()) {
+            (new (Discountable::modelClass()))->forceFill($link)->save();
+        }
     }
 
     /**
@@ -654,7 +707,7 @@ class ProductUpserter
                 throw new RuntimeException("The option value \"{$value}\" has no record.");
             }
 
-            $current = $variant->values()->where('product_option_id', $optionId)->pluck((new ProductOptionValue)->getTable().'.id')->all();
+            $current = $variant->values()->where('product_option_id', $optionId)->pluck($variant->values()->getRelated()->getQualifiedKeyName())->all();
             $detach = array_diff($current, [$valueId]);
 
             if ($detach !== []) {

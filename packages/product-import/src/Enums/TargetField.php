@@ -28,7 +28,7 @@ enum TargetField: string
     case VariantMpn = 'variant.mpn';
     case VariantPrice = 'variant.price';
     case VariantPriceImpact = 'variant.price_impact';
-    case VariantSalePrice = 'variant.sale_price';
+    case VariantSale = 'variant.sale_price';
     case VariantSaleStarts = 'variant.sale_starts';
     case VariantSaleEnds = 'variant.sale_ends';
     case VariantDiscountAmount = 'variant.discount_amount';
@@ -118,7 +118,7 @@ enum TargetField: string
         return in_array($this, [
             self::VariantPrice,
             self::VariantPriceImpact,
-            self::VariantSalePrice,
+            self::VariantSale,
             self::VariantDiscountAmount,
             self::VariantDiscountPercent,
             self::VariantStock,
@@ -148,7 +148,7 @@ enum TargetField: string
         return in_array($this, [
             self::VariantPrice,
             self::VariantPriceImpact,
-            self::VariantSalePrice,
+            self::VariantSale,
             self::VariantDiscountAmount,
         ], true);
     }

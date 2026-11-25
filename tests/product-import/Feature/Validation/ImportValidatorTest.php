@@ -18,6 +18,7 @@ use Lunar\ProductImport\Enums\RowStatus;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\ProductImport\Models\ProductImportSheet;
+use Lunar\Tests\ProductImport\Support\Discounts;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
 use Lunar\Tests\ProductImport\TestCase;
 
@@ -324,7 +325,7 @@ test('existing variants set to be skipped are marked as skipped', function () {
 
     expect($row->status)->toBe(RowStatus::Skipped)
         ->and($row->skip_reason)->toBe(RowSkipReason::Existing)
-        ->and(rowMessages($row, 'info'))->toBe(['The variant exists and stays unchanged']);
+        ->and(rowMessages($row, 'info'))->toBe(['The variant exists and stays unchanged. The "Existing variants" import option in the mapping step decides this.']);
 });
 
 test('an unknown status of a new product is a warning when new products take the status column', function () {
@@ -415,20 +416,57 @@ test('an empty size on a variation is an error', function () {
         ->and(rowMessages(stagedRow($sheet, 3)))->toBe([]);
 });
 
-test('a sale ending at christmas warns, and an up-sell outside the file warns', function () {
-    $this->travelTo(now()->setDate(2026, 11, 23));
+test('a sale price next to the price warns with both and the sale\'s dates, and an up-sell outside the file warns', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
 
     $sheet = variableSheet($this->import, $this->productType->id, [
         2 => ['57', '', '', 'Rochie vară', '', '', 'Size', 'S', '', '', 'id:310, id:57'],
         3 => ['58', 'id:57', 'RV-S', '', '199,00', '3', 'Size', 'S', '149,00', '2026-12-24 23:59:59', ''],
-        4 => ['60', '', 'TB-1', 'Tricou', '199,00', '3', '', '', '149,00', '2026-11-01 23:59:59', ''],
+        4 => ['60', '', 'TB-1', 'Tricou', '199,00', '3', '', '', '149,00', '', ''],
+        5 => ['61', '', 'TB-2', 'Tricou', '149,00', '3', '', '', '149,00', '2026-12-24 23:59:59', ''],
     ]);
 
     ImportBuilder::stage($this->import);
 
-    expect(rowMessages(stagedRow($sheet, 3), 'warning'))->toBe(['The sale price 149.00 stays after 24 December 2026, because a sale does not end by itself'])
+    expect(rowMessages(stagedRow($sheet, 3), 'warning'))->toBe(['The price 199.00 was imported. The file also has the sale price 149.00 (until 24 December 2026). Correct the price to use it.'])
         ->and(rowMessages(stagedRow($sheet, 2), 'warning'))->toBe(['The up-sell "id:310" was not found'])
-        ->and(rowMessages(stagedRow($sheet, 4), 'warning'))->toBe(['The sale does not apply today or is not below the regular price, so the regular price is used']);
+        ->and(rowMessages(stagedRow($sheet, 4), 'warning'))->toBe(['The price 199.00 was imported. The file also has the sale price 149.00. Correct the price to use it.'])
+        ->and(stagedRow($sheet, 5)->messages)->toBe([]);
+});
+
+test('a discount with an amount and a percent, a percent above 100, or a start after its end is an error', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $sheet = Discounts::sheet($this->import, $this->productType->id, [
+        2 => ['OUT-1', 'Rochie', '199,00', '20,00', '10', '', ''],
+        3 => ['OUT-2', 'Rochie', '199,00', '', '150', '', ''],
+        4 => ['OUT-3', 'Rochie', '199,00', '', '30', '2026-12-31', '2026-12-01'],
+        5 => ['OUT-4', 'Rochie', '199,00', '', '30', '2026-12-01', '2026-12-31'],
+    ]);
+
+    ImportBuilder::stage($this->import);
+
+    expect(rowMessages(stagedRow($sheet, 2)))->toBe(['The row gives both a discount amount and a discount percent'])
+        ->and(rowMessages(stagedRow($sheet, 3)))->toBe(['The discount percent 150 is above 100'])
+        ->and(rowMessages(stagedRow($sheet, 4)))->toBe(['The discount starts on 31 December 2026, after it ends on 1 December 2026'])
+        ->and(stagedRow($sheet, 5)->status)->toBe(RowStatus::Valid);
+});
+
+test('a discount that ended warns that it is not imported, and an amount that leaves too little of the price warns', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $sheet = Discounts::sheet($this->import, $this->productType->id, [
+        2 => ['OUT-1', 'Rochie', '229,00', '', '30', '', '2026-11-01'],
+        3 => ['OUT-2', 'Geantă', '59,00', '55,00', '', '', ''],
+        4 => ['OUT-3', 'Geantă', '59,00', '50,00', '', '', ''],
+    ]);
+
+    ImportBuilder::stage($this->import);
+
+    expect(rowMessages(stagedRow($sheet, 2), 'warning'))->toBe(['The discount ended on 1 November 2026 and is not imported'])
+        ->and(stagedRow($sheet, 2)->status)->toBe(RowStatus::Warning)
+        ->and(rowMessages(stagedRow($sheet, 3), 'warning'))->toBe(['The shop does not apply the discount 55.00 to this variant, because less than 10% of the price would remain'])
+        ->and(stagedRow($sheet, 4)->messages)->toBe([]);
 });
 
 test('the stock of the parent warns on its variations without stock', function () {

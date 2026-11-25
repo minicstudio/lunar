@@ -75,7 +75,7 @@ A column mapped to the status, stock status, backorders, or shippable target MAY
 
 ### Requirement: A row type column decides the rows' roles
 
-A column mapped to the row type holds one item or a list of items per row. Each item MAY mean a product with one variant, a product whose variants are other rows, a variant, a row that is not imported, or not shippable. The first item with a role MUST decide the row's role. A row that is not imported MUST be skipped with a message naming its type. A row without a role item MUST follow the general role rule.
+A column mapped to the row type holds one item or a list of items per row. Each item MAY mean a product with one variant, a product whose variants are other rows, a variant, a row that is not imported, or not shippable. The first item with a role MUST decide the row's role. A row that is not imported MUST be skipped with a message naming its type, unless staff include it with a role (validation spec, "Staff can include skipped rows"). A row without a role item MUST follow the general role rule.
 
 #### Scenario: Product with variant rows
 

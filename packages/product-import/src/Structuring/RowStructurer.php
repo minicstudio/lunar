@@ -5,6 +5,8 @@ namespace Lunar\ProductImport\Structuring;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Lunar\Models\TaxClass;
+use Lunar\Models\TaxZone;
 use Lunar\ProductImport\Data\NormalizedRow;
 use Lunar\ProductImport\Data\SheetMapping;
 use Lunar\ProductImport\Enums\GroupingStrategy;
@@ -16,11 +18,14 @@ use Lunar\ProductImport\Support\KeyNormalizer;
 
 /**
  * Turns normalized rows into products and variants. It decides each row's
- * role from its row type (`RowTypes`) or the general rule, resolves parent
+ * role from the role staff chose when they included the row, its row type
+ * (`RowTypes`), or the general rule, resolves parent
  * references across the included sheets, joins rows into the group of their
  * parent, completes variant rows from their product row (inherited fields,
- * price and weight impacts, pair names, and a row type that is not
- * shippable), and reads options and properties from cells. What it derives
+ * the discount, price and weight impacts, pair names, and a row type that is
+ * not shippable), and reads options and properties from cells. A price
+ * impact is read as an amount without tax, so it gets the tax when the store
+ * keeps prices with tax. What it derives
  * is stored apart from the normalized values, so structuring again starts
  * from the cells.
  */
@@ -45,6 +50,19 @@ class RowStructurer
         TargetField::VariantBackorders,
         TargetField::VariantMinQuantity,
         TargetField::VariantShippable,
+    ];
+
+    /**
+     * The fields of a discount, which a variant row without a discount of its
+     * own takes together from its product row.
+     *
+     * @var list<TargetField>
+     */
+    public const DISCOUNT = [
+        TargetField::VariantDiscountAmount,
+        TargetField::VariantDiscountPercent,
+        TargetField::VariantSaleStarts,
+        TargetField::VariantSaleEnds,
     ];
 
     /**
@@ -74,13 +92,13 @@ class RowStructurer
         $resolver = new ParentResolver;
 
         ProductImportRow::includedIn($import)
-            ->select(['id', 'product_import_sheet_id', 'row_number', 'normalized', 'overrides', 'group_key'])
+            ->select(['id', 'product_import_sheet_id', 'row_number', 'normalized', 'overrides', 'group_key', 'role_override'])
             ->chunkById(self::CHUNK, function (Collection $chunk) use ($mappings, &$rows, $resolver): void {
                 foreach ($chunk as $row) {
                     /** @var ProductImportRow $row */
                     $mapping = $mappings[$row->product_import_sheet_id];
                     $values = NormalizedRow::effective($row->normalized, $row->overrides, false);
-                    $role = RowTypes::read($mapping, $values)->role;
+                    $role = RowTypes::read($mapping, $values, $row->role_override)->role;
                     $sourceId = $this->text($values->get(TargetField::SourceId->value));
                     $sku = $this->text($values->get(TargetField::VariantSku->value));
 
@@ -204,19 +222,20 @@ class RowStructurer
     protected function completeGroups(ProductImport $import, ?array $groupKeys, array $notes): void
     {
         $mappings = $this->mappings($import);
+        $impactTax = $this->priceImpactTax();
         $group = [];
         $groupKey = null;
 
         $rows = ProductImportRow::includedIn($import)
             ->when($groupKeys !== null, fn ($query) => $query->whereIn('group_key', $groupKeys))
-            ->select(['id', 'product_import_sheet_id', 'row_number', 'normalized', 'overrides', 'group_key', 'role'])
+            ->select(['id', 'product_import_sheet_id', 'row_number', 'normalized', 'overrides', 'group_key', 'role', 'role_override'])
             ->orderBy('group_key')
             ->orderBy('product_import_sheet_id')
             ->orderBy('row_number');
 
-        $flush = function () use (&$group, $mappings, $notes): void {
+        $flush = function () use (&$group, $mappings, $notes, $impactTax): void {
             if ($group !== []) {
-                DB::transaction(fn () => $this->completeGroup($group, $mappings, $notes));
+                DB::transaction(fn () => $this->completeGroup($group, $mappings, $notes, $impactTax));
             }
 
             $group = [];
@@ -240,15 +259,16 @@ class RowStructurer
      * @param  list<ProductImportRow>  $rows
      * @param  array<int, SheetMapping>  $mappings
      * @param  array<int, array<string, mixed>>  $notes
+     * @param  float  $impactTax  What a price impact is multiplied by (`priceImpactTax()`).
      */
-    protected function completeGroup(array $rows, array $mappings, array $notes): void
+    protected function completeGroup(array $rows, array $mappings, array $notes, float $impactTax): void
     {
         $base = [];
         $types = [];
 
         foreach ($rows as $row) {
             $base[$row->id] = NormalizedRow::effective($row->normalized, $row->overrides, false);
-            $types[$row->id] = RowTypes::read($mappings[$row->product_import_sheet_id], $base[$row->id]);
+            $types[$row->id] = RowTypes::read($mappings[$row->product_import_sheet_id], $base[$row->id], $row->role_override);
         }
 
         $productRow = null;
@@ -280,7 +300,7 @@ class RowStructurer
                 $this->inherit($values, $base[$productRow->id], $mappings[$row->product_import_sheet_id], $mappings[$productRow->product_import_sheet_id], $derived[$row->id], $rowNotes[$row->id]);
             }
 
-            $this->impacts($values, $productRow !== null ? $base[$productRow->id] : null, $derived[$row->id]);
+            $this->impacts($values, $productRow !== null ? $base[$productRow->id] : null, $derived[$row->id], $impactTax);
 
             [$options, $missing] = $this->cellOptions($values, $derived[$row->id], $productRow !== null ? $base[$productRow->id] : null);
 
@@ -305,7 +325,7 @@ class RowStructurer
             $properties = (array) $values->get(TargetField::ProductProperties->value);
 
             if ($row->role->isVariant()) {
-                $this->impacts($values, null, $derived[$row->id]);
+                $this->impacts($values, null, $derived[$row->id], $impactTax);
             }
 
             if ($row->role === RowRole::Product) {
@@ -347,8 +367,8 @@ class RowStructurer
 
     /**
      * Take the product row's values that the variant row lacks: the inherited
-     * fields, the base of a price or weight impact, and a note of the product
-     * row's stock when the variant has none.
+     * fields, the discount with its dates when the variant row gives none, and
+     * a note of the product row's stock when the variant has none.
      *
      * @param  array<string, mixed>  $derived
      * @param  array<string, mixed>  $notes
@@ -372,21 +392,38 @@ class RowStructurer
         if (! $values->filled(TargetField::VariantStock->value) && $product->filled(TargetField::VariantStock->value)) {
             $notes['product_stock'] = $product->get(TargetField::VariantStock->value);
         }
+
+        // A products file gives a discount to every variant of the product.
+        if (! $this->hasDiscount($values) && $this->hasDiscount($product)) {
+            foreach (self::DISCOUNT as $field) {
+                $derived[$field->value] = $product->get($field->value);
+            }
+        }
+    }
+
+    /**
+     * Whether a row gives a discount amount or percent.
+     */
+    protected function hasDiscount(NormalizedRow $values): bool
+    {
+        return $values->filled(TargetField::VariantDiscountAmount->value) || $values->filled(TargetField::VariantDiscountPercent->value);
     }
 
     /**
      * Apply a price or weight impact: the base value plus the impact, where
-     * the base is the row's own value or, when empty, its product row's.
+     * the base is the row's own value or, when empty, its product row's. A
+     * price impact is an amount without tax, as exports write it, so it is
+     * multiplied by `$impactTax` first and then rounded to minor units.
      *
      * @param  array<string, mixed>  $derived
      */
-    protected function impacts(NormalizedRow $values, ?NormalizedRow $product, array &$derived): void
+    protected function impacts(NormalizedRow $values, ?NormalizedRow $product, array &$derived, float $impactTax): void
     {
         $impact = $values->get(TargetField::VariantPriceImpact->value);
         $price = $values->get(TargetField::VariantPrice->value) ?? $product?->get(TargetField::VariantPrice->value);
 
-        if (is_int($impact) && is_int($price)) {
-            $derived[TargetField::VariantPrice->value] = $price + $impact;
+        if ((is_int($impact) || is_float($impact)) && is_int($price)) {
+            $derived[TargetField::VariantPrice->value] = $price + (int) round($impact * $impactTax);
         }
 
         $impact = $values->get(TargetField::VariantWeightImpact->value);
@@ -494,6 +531,32 @@ class RowStructurer
         return $import->sheets()->get()
             ->mapWithKeys(fn ($sheet): array => [$sheet->id => $sheet->sheetMapping()])
             ->all();
+    }
+
+    /**
+     * What a price impact is multiplied by: 1 when the store keeps prices
+     * without tax, otherwise 1 plus the tax rate that Lunar adds to a price
+     * of the default tax class in the default tax zone (the class new
+     * variants get), such as 1.21 for 21%.
+     */
+    protected function priceImpactTax(): float
+    {
+        if (! config('lunar.pricing.stored_inclusive_of_tax', false)) {
+            return 1.0;
+        }
+
+        $taxClass = TaxClass::getDefault();
+        $taxZone = TaxZone::getDefault();
+
+        if ($taxClass === null || $taxZone === null) {
+            return 1.0;
+        }
+
+        $percentage = (float) $taxClass->taxRateAmounts()
+            ->whereIn('tax_rate_id', $taxZone->taxRates()->select('id'))
+            ->sum('percentage');
+
+        return 1 + $percentage / 100;
     }
 
     /**

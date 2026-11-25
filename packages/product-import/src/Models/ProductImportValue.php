@@ -13,8 +13,8 @@ use Lunar\ProductImport\Enums\ValueAction;
 use Lunar\ProductImport\Enums\ValueType;
 
 /**
- * One distinct category, brand, or option value of an import, with its
- * match against the catalog and the staff decision.
+ * One distinct category, brand, option, option value, property, or discount
+ * of an import, with its match against the catalog and the staff decision.
  *
  * @property int $id
  * @property int $product_import_id
@@ -23,6 +23,7 @@ use Lunar\ProductImport\Enums\ValueType;
  * @property string $source_value
  * @property string $normalized_key
  * @property ?list<string> $path
+ * @property ?array{kind: string, value: int|float, starts_at: ?string, ends_at: ?string} $details
  * @property ?list<string> $sheets
  * @property ?list<string> $group_keys
  * @property int $product_count
@@ -33,6 +34,7 @@ use Lunar\ProductImport\Enums\ValueType;
  * @property ?ValueAction $action
  * @property ?int $target_id
  * @property ?string $create_name
+ * @property ?array{kind: string, value: int|float, starts_at: ?string, ends_at: ?string} $create_details
  * @property ?int $parent_id
  * @property ?Carbon $created_at
  * @property ?Carbon $updated_at
@@ -56,6 +58,8 @@ class ProductImportValue extends BaseModel
         return [
             'type' => ValueType::class,
             'path' => 'array',
+            'details' => 'array',
+            'create_details' => 'array',
             'sheets' => 'array',
             'group_keys' => 'array',
             'match_type' => MatchType::class,

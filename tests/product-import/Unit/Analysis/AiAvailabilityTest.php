@@ -9,6 +9,7 @@ beforeEach(function () {
     config([
         'lunar.product-import.ai.provider' => null,
         'lunar.product-import.ai.model' => null,
+        'lunar.product-import.ai.fallback_models' => null,
         'lunar.product-import.ai.key' => null,
         'lunar.product-import.ai.url' => null,
         'ai.providers.openai.key' => null,
@@ -49,4 +50,23 @@ test('the ai line names the provider and the default model', function () {
     config(['lunar.product-import.ai.model' => 'gemini-2.5-flash']);
 
     expect(app(AiAvailability::class)->label())->toBe('AI analysis: gemini · gemini-2.5-flash');
+});
+
+test('without fallback models the list is empty', function () {
+    expect(app(AiAvailability::class)->fallbackModels())->toBe([]);
+});
+
+test('the fallback models are read from a comma-separated list without blanks, repeats, and the configured model', function () {
+    config([
+        'lunar.product-import.ai.model' => 'gemini-3.5-flash-lite',
+        'lunar.product-import.ai.fallback_models' => ' gemini-3.5-flash, ,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.5-flash ',
+    ]);
+
+    expect(app(AiAvailability::class)->fallbackModels())->toBe(['gemini-3.5-flash', 'gemini-3.6-flash']);
+});
+
+test('the fallback models may be an array', function () {
+    config(['lunar.product-import.ai.fallback_models' => ['gemini-3.5-flash', 'gemini-3.6-flash']]);
+
+    expect(app(AiAvailability::class)->fallbackModels())->toBe(['gemini-3.5-flash', 'gemini-3.6-flash']);
 });

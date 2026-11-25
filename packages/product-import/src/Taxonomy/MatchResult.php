@@ -10,6 +10,9 @@ use Lunar\ProductImport\Enums\ValueAction;
  */
 final readonly class MatchResult
 {
+    /**
+     * @param  ?array<string, mixed>  $createDetails  For a discount to create: its kind, value, start, and end.
+     */
     public function __construct(
         public MatchType $matchType,
         public ?int $matchedId = null,
@@ -18,5 +21,6 @@ final readonly class MatchResult
         public ?int $targetId = null,
         public ?string $createName = null,
         public ?int $parentId = null,
+        public ?array $createDetails = null,
     ) {}
 }

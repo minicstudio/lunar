@@ -28,6 +28,7 @@ return [
     'not_review_step' => 'This change is only possible in the category and brand review.',
     'unknown_record' => 'The chosen record does not exist here.',
     'name_required' => 'Enter a name.',
+    'invalid_discount' => 'Enter a percent above 0 and up to 100, or an amount above 0, and a start that is not after the end.',
     'parent_outside_group' => 'The parent category must belong to the chosen collection group.',
     'open_decisions' => '{1} There is :count open decision. Decide it before continuing.|[2,*] There are :count open decisions. Decide them before continuing.',
     'pruned' => 'The row data of this import was removed.',

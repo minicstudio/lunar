@@ -1,10 +1,17 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Lunar\DiscountTypes\AdvancedAmountOff;
+use Lunar\Facades\ModelManifest;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Brand;
+use Lunar\Models\Channel;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
+use Lunar\Models\Contracts\Collection as CollectionContract;
+use Lunar\Models\Currency;
+use Lunar\Models\CustomerGroup;
+use Lunar\Models\Discount;
 use Lunar\Models\Language;
 use Lunar\Models\ProductOption;
 use Lunar\Models\ProductOptionValue;
@@ -19,6 +26,7 @@ use Lunar\ProductImport\Jobs\CommitTaxonomy;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportValue;
 use Lunar\Tests\ProductImport\Support\ImportBuilder;
+use Lunar\Tests\ProductImport\Support\Models\Collection as StoreCollection;
 use Lunar\Tests\ProductImport\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -97,6 +105,31 @@ test('vara is created as a child of femei > rochii', function () {
         ->and($created->parent_id)->toBe($this->rochii->id);
 });
 
+test('a new category path is created nested with the store\'s own collection class', function () {
+    // The store's class fires each model event twice (as itself and as
+    // Lunar's class), so the tree's saving listener runs twice per save.
+    ModelManifest::replace(CollectionContract::class, StoreCollection::class);
+
+    $chinos = decidedImportValue($this->import, ValueType::Category, 'Barbati > Pantaloni > Chinos');
+    $vara = decidedImportValue($this->import, ValueType::Category, 'Vară', ['parent_id' => $this->rochii->id]);
+
+    runCommitTaxonomy($this->import);
+
+    $chinosCollection = Collection::query()->find($chinos->fresh()->target_id);
+    $pantaloni = Collection::query()->find($chinosCollection->parent_id);
+    $barbati = Collection::query()->find($pantaloni?->parent_id);
+    $varaCollection = Collection::query()->find($vara->fresh()->target_id);
+
+    expect($chinosCollection)->toBeInstanceOf(StoreCollection::class)
+        ->and($pantaloni?->translateAttribute('name'))->toBe('Pantaloni')
+        ->and($barbati?->translateAttribute('name'))->toBe('Barbati')
+        ->and($barbati?->parent_id)->toBeNull()
+        ->and($varaCollection->parent_id)->toBe($this->rochii->id)
+        ->and(Collection::query()->where('collection_group_id', $this->group->id)->countErrors())
+        ->toMatchArray(['oddness' => 0, 'duplicates' => 0, 'wrong_parent' => 0, 'missing_parent' => 0])
+        ->and($chinosCollection->isDescendantOf($barbati))->toBeTrue();
+});
+
 test('two values set to create furnizor textil create one brand', function () {
     $first = decidedImportValue($this->import, ValueType::Brand, 'Furnizor Textil SRL', ['create_name' => 'Furnizor Textil']);
     $second = decidedImportValue($this->import, ValueType::Brand, 'Furnizor Textil S.R.L.', ['create_name' => 'furnizor textil']);
@@ -140,4 +173,51 @@ test('an exception rolls everything back and fails the import', function () {
         ->and(ProductOption::count())->toBe($options)
         ->and($this->import->fresh()->status)->toBe(ImportStatus::Failed)
         ->and($this->import->fresh()->failure_message)->toBe('Creating the categories, brands, and options failed, so no product was written.');
+});
+
+test('a discount without a start becomes one discount for every customer that starts now and ends at the end of its day', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24)->setTime(10, 30));
+
+    $web = Channel::factory()->create(['default' => true]);
+    $app = Channel::factory()->create(['default' => false]);
+    $retail = CustomerGroup::factory()->create(['default' => true]);
+    $wholesale = CustomerGroup::factory()->create(['default' => false]);
+
+    $first = ProductImportValue::factory()->for($this->import, 'import')->discount()->create(['create_name' => 'Outlet iarnă']);
+    $second = ProductImportValue::factory()->for($this->import, 'import')->discount()->create([
+        'normalized_key' => 'percent:30||2026-12-31 23:59:59 (other sheet spelling)',
+        'create_name' => 'Outlet',
+    ]);
+
+    runCommitTaxonomy($this->import);
+
+    $discount = Discount::query()->sole();
+
+    expect($first->fresh()->target_id)->toBe($discount->id)
+        ->and($second->fresh()->target_id)->toBe($discount->id)
+        ->and($discount->name)->toBe('Outlet iarnă')
+        ->and($discount->handle)->toBe('outlet-iarna')
+        ->and($discount->type)->toBe(AdvancedAmountOff::class)
+        ->and($discount->coupon)->toBeNull()
+        ->and($discount->data)->toBe(['fixed_value' => false, 'free_shipping' => false, 'percentage' => 30])
+        ->and($discount->starts_at->format('Y-m-d H:i'))->toBe('2026-11-24 10:30')
+        ->and($discount->ends_at->format('Y-m-d H:i:s'))->toBe('2026-12-31 23:59:59')
+        ->and($discount->channels()->wherePivot('enabled', true)->pluck('lunar_channels.id')->sort()->values()->all())->toBe([$web->id, $app->id])
+        ->and($discount->customerGroups()->wherePivot('enabled', true)->wherePivot('visible', true)->pluck('lunar_customer_groups.id')->sort()->values()->all())->toBe([$retail->id, $wholesale->id])
+        ->and($this->import->fresh()->stats['created']['discounts'])->toBe([['id' => $discount->id, 'name' => 'Outlet iarnă']]);
+});
+
+test('an amount discount is set for the default currency, and a taken handle gets a number', function () {
+    Currency::factory()->create(['code' => 'RON', 'default' => true, 'decimal_places' => 2]);
+    Discount::factory()->create(['handle' => 'reducere']);
+
+    $value = ProductImportValue::factory()->for($this->import, 'import')->discount('amount', 2000, '2026-12-01 00:00:00', '2026-12-31 23:59:59')->create(['create_name' => 'Reducere']);
+
+    runCommitTaxonomy($this->import);
+
+    $discount = Discount::query()->find($value->fresh()->target_id);
+
+    expect($discount->handle)->toBe('reducere-2')
+        ->and($discount->data)->toBe(['fixed_value' => true, 'free_shipping' => false, 'fixed_values' => ['RON' => 2000]])
+        ->and($discount->starts_at->format('Y-m-d H:i:s'))->toBe('2026-12-01 00:00:00');
 });

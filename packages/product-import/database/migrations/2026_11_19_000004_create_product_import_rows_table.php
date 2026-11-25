@@ -25,6 +25,7 @@ return new class extends Migration
             $table->json('normalized')->nullable();
             $table->json('overrides')->nullable();
             $table->string('role', 24)->nullable();
+            $table->string('role_override', 24)->nullable();
             $table->string('source_id')->nullable();
             $table->string('parent_ref')->nullable();
             $table->string('group_key')->nullable();
@@ -38,7 +39,7 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id')->nullable();
             $table->unsignedBigInteger('product_variant_id')->nullable();
 
-            $table->index(['product_import_sheet_id', 'row_number']);
+            $table->index(['product_import_sheet_id', 'row_number'], 'product_import_rows_sheet_row_number');
             $table->index(['product_import_id', 'status']);
             $table->index(['product_import_id', 'group_key']);
             $table->index(['product_import_id', 'match_value']);

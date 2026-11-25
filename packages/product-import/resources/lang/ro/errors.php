@@ -28,6 +28,7 @@ return [
     'not_review_step' => 'Această modificare este posibilă doar la verificarea categoriilor și brandurilor.',
     'unknown_record' => 'Înregistrarea aleasă nu există aici.',
     'name_required' => 'Introdu un nume.',
+    'invalid_discount' => 'Introdu un procent peste 0 și cel mult 100 sau o sumă peste 0, și un început care nu este după sfârșit.',
     'parent_outside_group' => 'Categoria părinte trebuie să aparțină grupului de colecții ales.',
     'open_decisions' => '{1} Există :count decizie deschisă. Decide înainte de a continua.|[2,*] Există :count decizii deschise. Decide înainte de a continua.',
     'pruned' => 'Datele rândurilor acestui import au fost șterse.',

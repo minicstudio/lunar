@@ -8,6 +8,7 @@ use Lunar\Models\Product;
 use Lunar\Models\ProductType;
 use Lunar\Models\ProductVariant;
 use Lunar\ProductImport\Actions\ContinueToStaging;
+use Lunar\ProductImport\Actions\DecideValue;
 use Lunar\ProductImport\Actions\ReturnToMapping;
 use Lunar\ProductImport\Actions\ReturnToValueReview;
 use Lunar\ProductImport\Actions\SaveSheetMapping;
@@ -16,6 +17,8 @@ use Lunar\ProductImport\Data\ColumnFormat;
 use Lunar\ProductImport\Data\NormalizedRow;
 use Lunar\ProductImport\Enums\ImportStatus;
 use Lunar\ProductImport\Enums\RowStatus;
+use Lunar\ProductImport\Enums\ValueAction;
+use Lunar\ProductImport\Enums\ValueType;
 use Lunar\ProductImport\Exceptions\ImportActionRefused;
 use Lunar\ProductImport\Models\ProductImportRow;
 use Lunar\Tests\ProductImport\Support\AiFakes;
@@ -114,4 +117,43 @@ test('returning to the mapping is refused while staging', function () {
 
     expect(fn () => app(ReturnToMapping::class)->handle($this->import))
         ->toThrow(ImportActionRefused::class, 'The import is being processed. Wait until it has finished.');
+});
+
+test('a discount decision survives mapping a stock column and staging again', function () {
+    $this->travelTo(now()->setDate(2026, 11, 24));
+
+    $import = ImportBuilder::import(ImportStatus::AwaitingMapping);
+    $sheet = ImportBuilder::sheet($import, 'Outlet', [
+        ['Cod', 'Denumire', 'Pret', 'Reducere %', 'Pana la', 'Stoc'],
+        ['OUT-RUHA-S', 'Rochie', '229,00', '30', '2026-12-31', '4'],
+        ['OUT-TASKA', 'Geantă', '59,00', '50', '2026-12-31', '2'],
+    ]);
+    ImportBuilder::map($sheet, [
+        0 => 'variant.sku', 1 => ['product.name', 'ro'], 2 => 'variant.price', 3 => 'variant.discount_percent',
+        4 => ['variant.sale_ends', null, ColumnFormat::date('Y-m-d')],
+    ], $this->productType->id);
+
+    app(ContinueToStaging::class)->handle($import);
+
+    expect($import->fresh()->status)->toBe(ImportStatus::ReviewingValues);
+
+    $thirty = $import->values()->where('type', ValueType::Discount)->where('normalized_key', 'percent:30||2026-12-31 23:59:59')->sole();
+    app(DecideValue::class)->create($thirty, 'Outlet iarnă', details: ['kind' => 'percent', 'value' => 25, 'starts_at' => null, 'ends_at' => '2027-01-15 23:59:59']);
+
+    app(ReturnToMapping::class)->handle($import->fresh());
+
+    $mapping = $sheet->fresh()->sheetMapping();
+    $mapping->column(5)->target = 'variant.stock';
+    $mapping->column(5)->format = ColumnFormat::number(',', '.');
+    app(SaveSheetMapping::class)->handle($sheet->fresh(), $mapping);
+
+    app(ContinueToStaging::class)->handle($import->fresh());
+
+    $thirty->refresh();
+
+    expect($import->fresh()->status)->toBe(ImportStatus::ReviewingValues)
+        ->and($thirty->action)->toBe(ValueAction::Create)
+        ->and($thirty->create_name)->toBe('Outlet iarnă')
+        ->and($thirty->create_details)->toBe(['kind' => 'percent', 'value' => 25, 'starts_at' => null, 'ends_at' => '2027-01-15 23:59:59'])
+        ->and(ProductImportRow::query()->where('product_import_sheet_id', $sheet->id)->where('row_number', 2)->sole()->effectiveRow()->get('variant.stock'))->toBe(4);
 });

@@ -19,8 +19,9 @@ use Lunar\ProductImport\Support\TargetFieldRegistry;
  * conventions (`ColumnConventions`: code meanings, item parts, and the image
  * size suffix). Then come trimmed text, numbers and dates read strictly in
  * their column's format (cells the spreadsheet stores as numbers or dates in
- * their fixed form), prices in the default currency's minor units,
- * whole-number stock, weights in the sheet's unit (never converted),
+ * their fixed form), prices in the default currency's minor units (a price
+ * impact keeps up to four decimals of them, because tax may still multiply
+ * it, `RowStructurer`), whole-number stock, weights in the sheet's unit (never converted),
  * statuses, lists split on their column's separators, category paths, and
  * option values. A value that does not read keeps its raw text for the
  * message. The raw cells are never changed.
@@ -158,7 +159,9 @@ class RowNormalizer
         }
 
         if ($format === TargetDefinition::FORMAT_DATE) {
-            $date = $isTyped ? $this->dates->parseTyped($text) : $this->dates->parse($text, $column->format?->dateFormat);
+            // An end without a time lasts until the end of its day.
+            $endOfDay = $target === TargetField::VariantSaleEnds;
+            $date = $isTyped ? $this->dates->parseTyped($text, $endOfDay) : $this->dates->parse($text, $column->format?->dateFormat, $endOfDay);
 
             $date === null
                 ? $this->invalid($row, $field, $text)
@@ -284,10 +287,23 @@ class RowNormalizer
         }
 
         $row->values[$field] = match (true) {
+            $target === TargetField::VariantPriceImpact => $this->preciseMinorUnits($number, $currencyFactor),
             (bool) $target?->isMoney() => (int) bcmul($number, (string) $currencyFactor, 0),
             (bool) $target?->isWholeNumber() => (int) $number,
             default => round((float) $number, 4),
         };
+    }
+
+    /**
+     * An amount in minor units with up to four decimals of them: an integer
+     * when it is whole, otherwise a float, such as 826.4463 for 8.264463.
+     */
+    protected function preciseMinorUnits(string $number, int $currencyFactor): int|float
+    {
+        $minor = bcmul($number, (string) $currencyFactor, 4);
+        $whole = bcadd($minor, '0', 0);
+
+        return bccomp($minor, $whole, 4) === 0 ? (int) $whole : (float) $minor;
     }
 
     /**

@@ -75,19 +75,20 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
 ## 12. Integration checks
 
 - [x] 12.1 Run `php -d memory_limit=-1 vendor/bin/pest --testsuite product-import --parallel --passthru-php="-d memory_limit=-1"` and the `core` and `admin` suites one at a time. Compare failures against the known pre-existing ones in the project memory before calling any of them new. Run `vendor/bin/pint --test` on the changed paths and `composer test:phpstan` (the 25 errors it already reports are expected). Verify that the product-import suite is green and nothing else changed.
-- [ ] 12.2 After groups 14–18, on the lerd site `webshop-demo` (the one that uses the local lunar packages) with `PRODUCT_IMPORT_ENABLED=true`, a real provider key, and the plugin registered locally, run end-to-end imports of:
-  - a supplier-style XLSX with two sheets, Romanian headers, decimal commas, and category path columns that use different separators on each sheet;
+- [ ] 12.2 After groups 14–20, on the lerd site `webshop-demo` (the one that uses the local lunar packages) with `PRODUCT_IMPORT_ENABLED=true`, a real provider key, and the plugin registered locally, run end-to-end imports of:
+  - a supplier-style XLSX with two sheets, Romanian headers, decimal commas, category path columns that use different separators on each sheet, and a discount percent column with an end date;
   - a shop export from a shop with a decimal comma, with a row type column, parent references, renumbered attribute pairs, sale prices, up-sells, images (one of them unreachable), meta title, description, and keywords columns, and a URL slug column;
   - a products file with a separate variants file joined by product ID, with packed `Name:Type:Position` cells and price impacts.
 
   Turn on lerd `diag` browser logging, and check the request lenses for N+1 queries and errors. Verify that:
-  - the products appear in the admin as drafts with variants, prices, compare prices, categories, brand, tags, associations, and images;
+  - the products appear in the admin as drafts with variants, prices without compare prices, categories, brand, tags, associations, and images;
+  - the discounts appear under Discounts with the file's values and dates, limited to their variants, and the storefront shows the discounted price once a product is published; the sale prices of the shop export show as warnings in the preview;
   - weights such as "1.250" read 1.25 while prices read with the decimal comma;
   - the rows of the variants file sit under their products with the impacts applied;
   - each sheet's categories are split on its own separators;
   - the new products' SEO attributes and URLs come from the file, and the storefront product page uses them;
   - the unreachable image shows on the result page, and after correcting its URL, **Retry failed images** downloads it;
-  - a second run of each file only updates the products, keeps their URLs, and downloads no image again.
+  - a second run of each file only updates the products, keeps their URLs, uses the discounts of the first run, and downloads no image again.
 
 ## 13. Plan revisions
 
@@ -235,6 +236,7 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
     - variant rows 4 and 90 join "id:57", and a variant row on another sheet joins product 12;
     - a parent "HO-114-M" joins product #1842, and a reference to nothing gives an error;
     - a variant row without weight gets 0.5, and an impact of 15.50 on 100.00 gives 115.50;
+    - with prices stored with tax and 21% on the default tax class, impacts of 8.264463, 16.528926, and -8.264463 on 349.00 give 359.00, 369.00, and 339.00 (357.26 without the tax);
     - a pair value without a name takes "Size" from the product row;
     - a parent's "Material" is a property and its "Size" is skipped.
   - `ImportValidatorTest.php`:
@@ -292,6 +294,8 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
     - "http://127.0.0.1/admin.png", a host resolving to 10.0.0.5, and a redirect to 169.254.169.254 are refused without a request to them;
     - an 11 MB image and a `text/html` response are refused.
   - `CommitImportTest.php`: the chain order, progress over groups and then images, and a failed image leaving the import completed.
+
+  (The sale and compare price rule is replaced by discounts in group 19.)
 - [x] 16.9 Update the docs.
   - Add to `docs/database/schema.dbml` the new tables and columns that 16.1, 16.4, and 16.8 did not already add.
   - Mention the shop export support in the package row of `docs/system/CODE_MAP.md`.
@@ -380,7 +384,7 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
   - a tax-inclusive store reads 1503.85, and the image becomes ".../12.jpg";
   - "Cămașă" has S / Alb at 100.00 and M / Alb at 110.00, each weighing 0.3;
   - product 14 gets one variant "CUR-14", and a variant row of product 99 has the parent error;
-  - "Compoziție:Bumbac 100%:1" is a property, and 25% off 200.00 gives 150.00 with the compare price 200.00;
+  - "Compoziție:Bumbac 100%:1" is a property, and 25% off 200.00 gives 150.00 with the compare price 200.00 (a 25% discount on the price 200.00 since 19.6);
   - product 7 has variants at 50.00, 50.00, and 55.00.
 
   Also verify that `grep -rniE 'woocommerce|prestashop' tests/product-import` finds nothing.
@@ -520,6 +524,129 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
   - `docs/system/CODE_MAP.md`: mention SEO fields, URL slugs, and retrying failed images in the package row.
   - Add a bullet to the changelog of the implementation date: separators and units per column from the AI, SEO fields and URL slugs, and retrying failed images.
   - Run the product-import suite, `vendor/bin/pint --test` on the changed paths, and `composer test:phpstan` as in 12.1.
+
+## 19. Discounts instead of compare prices (2026-11-24)
+
+- [x] 19.1 Discount values in the staging tables (design §2, §7).
+  - Edit the unreleased `lunar_product_import_values` create migration in place: add the json columns `details` and `create_details`. A local database needs `migrate:fresh`.
+  - Add `ValueType::Discount`, the casts on `ProductImportValue`, and factory states.
+  - Update `docs/database/schema.dbml`.
+
+  Verify with `ProductImportModelsTest.php`: a discount value stores and reads back its `details` and `create_details`.
+- [x] 19.2 Read a row's discount and sale price (design §6, §8, §9).
+  - Replace `Normalizing\SalePrice` with `Normalizing\RowDiscount`. It reads the kind (percent or amount), the value (the percent, or the amount in minor units), the start, and the end. A date format without a time gives the start of the day for a start and the end of the day for an end.
+  - `RowStructurer`: a variant row without a discount amount or percent of its own takes its product row's discount with its start and end.
+  - `ImportValidator`:
+    - an amount and a percent above zero on one row, a percent above 100, and a start after the end are errors;
+    - a discount that ended before today warns that it is not imported;
+    - an amount that leaves less than `lunar.discounts.fixed_value_minimum_remaining_percentage` of the price warns that the shop does not apply it;
+    - a sale price that differs from the price warns with the imported price, the sale price, and its dates, and the warning disappears when the price equals the sale price.
+  - Remove `sale_stays` and `sale_not_applied`, and add the new texts in en, hu, and ro.
+
+  Verify with:
+  - `RowDiscountTest.php`: 30% with the end "2026-12-31" in `Y-m-d` ends at 23:59:59 that day; "Y-m-d G:i:s" keeps its time; an amount of 20,00 is 2000 minor units.
+  - `RowStructurerTest.php`: product 12's 10% until 31 December 2026 reaches both of its variant rows, and a variant row with its own 20% keeps it.
+  - `ImportValidatorTest.php`: each error and warning above, including "The price 199.00 was imported. The file also has the sale price 149.00 (until 24 December 2026). Correct the price to use it.", and the price 59,00 with the amount 55,00.
+- [x] 19.3 Collect and match discounts (design §7).
+  - `ValueExtractor` collects one value per kind, value, start, and end, with `details`, a readable `source_value`, and its product and variant counts. It does not collect a discount that ended before today.
+  - `CatalogSnapshot` loads the eligible discounts once: `AdvancedAmountOff`, no coupon, and limited only to products or variants.
+  - `ValueMatcher`: same percent, or `fixed_value` with the same amount for the default currency, the same start, and the same end gives use. An empty start matches a discount that has started, and an empty end only one without an end. Anything else is new and defaults to create, with `create_name` and `create_details` prefilled. No discount is similar.
+  - `DecideValue`: use any eligible discount; create with an edited name, kind, value, start, and end; or skip.
+  - `CorrectRow` collects the import's discounts again when a correction changes a row's discount, keeping existing decisions and removing values that no row uses.
+  - Re-staging keeps `create_details` with the other decision columns.
+
+  Verify with:
+  - `ValueMatcherTest.php`: "Iarna" 30% until 31 December 2026 is used; 30% for "OUT-RUHA-S" and "OUT-RUHA-M" and 50% for "OUT-TASKA" are two new values with 2 and 1 variants; a 30% discount limited to the collection "Toamnă" is not matched; a discount ended on 1 November 2026 is not collected.
+  - `DecideValueTest.php`: using "Black Week", creating "Outlet iarnă" 25% until 15 January 2027, and skipping 50%; a discount that is not eligible is refused as a choice.
+  - `RowCorrectionTest.php`: changing the only 50% row to 40 removes 50% and adds 40% with its default.
+  - `StageImportTest.php`: a discount decision survives a stock-column change.
+- [x] 19.4 Write prices without compare prices, and discounts (design §9).
+  - `TaxonomyCreator` creates the discounts decided as create, as `AdvancedAmountOff` without a coupon:
+    - a unique handle from the name;
+    - the percentage, or the fixed value for the default currency;
+    - the start from the details or the moment it is created, and the end from the details;
+    - enabled in every channel, and enabled and visible for every customer group.
+    It writes `target_id`, and values with the same kind, value, start, and end create one discount.
+  - `ProductUpserter` writes the row's price and never writes or clears `compare_price`. It adds each variant whose discount is decided as use or create to that discount as a `limitation` discountable, unless the link exists, and never removes one.
+  - `FinalizeImport` counts the discounts created and the variants added to discounts.
+
+  Verify with:
+  - `TaxonomyCreatorTest.php`: 30% until 31 December 2026 without a start becomes one discount that starts now, ends at 23:59:59 that day, and is enabled in every channel and customer group; two values set to create the same discount create one.
+  - `ProductUpserterTest.php`:
+    - the sale price 149,00 next to 199,00 writes 199.00 without a compare price;
+    - an existing compare price of 249.00 stays;
+    - "OUT-RUHA-S" and "OUT-RUHA-M" at 229.00 are added to the 30% discount and "OUT-TASKA" at 59.00 to the 50% one;
+    - using "Iarna" adds 2 variants and leaves its name, data, dates, channels, and customer groups unchanged;
+    - a skipped discount links nothing.
+  - `CommitImportTest.php`: the same file twice creates the discounts once and adds no variant twice; the stats count the created discounts and the linked variants.
+  - `DiscountManager::getDiscountForPurchasable()` returns the 30% discount for "OUT-RUHA-S" after the import.
+- [x] 19.5 Show discounts in the admin (design §10).
+  - `ValueReviewStep`: a discounts tab with the value and dates, the product and variant counts, the matched discount, and the decision actions, whose create form edits the name, kind, value, start, and end.
+  - `PreviewStep`: a discount column next to the price, instead of the compare price.
+  - `ImportResult` and the import detail page list the created discounts and the number of variants added to discounts.
+  - Add the texts in en, hu, and ro.
+
+  Verify with `ValueReviewStepTest.php` (the tab lists 30% with 2 variants and lets staff pick "Black Week"), `PreviewStepTest.php` (the discount column shows "30% · until 31 Dec 2026"), and `ImportResultTest.php` (the created discounts are listed).
+- [x] 19.6 Update the convention tests and fixtures.
+  - `RowTypeExportTest.php`: the sale price "999,00" next to "1256,59" imports 1256.59 with the sale price warning.
+  - `ProductAndVariantFilesTest.php`: product 14 keeps the price 200.00 without a compare price and its variant carries the 25% discount.
+  - Replace every expectation of a compare price set by the import.
+
+  Verify that `grep -rnE 'SalePrice|comparePrice|compare_price|sale_stays|sale_not_applied' packages/product-import` finds nothing.
+- [x] 19.7 Docs and checks.
+  - `docs/system/CODE_MAP.md`: mention discounts in the package row.
+  - Add a bullet to the changelog of the implementation date: discounts from the file become Lunar discounts reviewed like categories, the import never writes a compare price, and a sale price is reported as a warning.
+  - Run the product-import suite, `vendor/bin/pint --test` on the changed paths, and `composer test:phpstan` as in 12.1.
+
+## 20. End-to-end fixes on webshop-demo (2026-11-24)
+
+- [x] 20.1 Create records through Lunar's model manifest (design §9, model classes).
+  - `ProductUpserter::writeProduct()` creates the product as `new (Product::modelClass())`.
+  - `TaxonomyCreator::createCategory()` creates the category as `new (Collection::modelClass())`.
+  - `ProductUpserter` creates the discount link with `Discountable::modelClass()` instead of `new Discountable`.
+  - No other `new` of a Lunar model remains in `src/Persisting`; queries and relations already go through the manifest.
+
+  Verify with `CommitImportTest.php`: with `ModelManifest::replace()` of the product and collection contracts by test classes that extend `Lunar\Models\Product` and `Lunar\Models\Collection`, and a `ProductCreatedEvent` listener that type-hints the test product class, an import creates "Classic Cotton T-Shirt" and its new category "T-Shirts" as the test classes, the listener receives the test product, and no group fails.
+- [ ] 20.2 Separate the columns in the mapping step (design §10).
+  - In `sheet-mapping-step.blade.php`, give each column row a visible divider (`border-gray-200 dark:border-white/10` instead of `border-gray-100 dark:border-white/5`). Use `border-t`, not `border-b`: the package's views are not a Tailwind source of `lunar-panel.css`, which has `border-t` but no `border-b`, so a `border-b` row shows no line. For the same reason use `pe-2` instead of `pe-4` in the table's cells, so the target settings and the confidence badge do not touch.
+  - Use `py-4` instead of `py-2` in the column cells.
+  - Use `gap-2` instead of `gap-1` between the settings under the target.
+
+  Verify on `webshop-demo` with the WooCommerce export, in the light and the dark theme, that a column with a number format, a list separator, and code meanings stays visibly apart from the next column.
+- [x] 20.3 Include rows that their type skips (design §2, §8, §10; validation spec, "Staff can include skipped rows").
+  - Add the nullable `role_override` column to the rows migration (the package is unreleased) and cast it to `RowRole` in `ProductImportRow`. Staging again keeps it, like `overrides`.
+  - `IncludeRows::handle()` takes an optional role. It includes rows that staff skipped, as now, and rows that their type skips when a role is given, storing it in `role_override`. It then structures and validates their groups again. It includes no row skipped as an existing variant or for a skipped option value.
+  - `RowStructurer` uses `role_override` before the row type. The row's type keeps its `not_shippable` meaning.
+  - In `PreviewStep`, **Include** shows on rows that staff or their type skipped. For a row that its type skips, it opens a role select: a product with one variant (default), a product whose variants are other rows, or a variant.
+  - The `skip_existing` message names the "Existing variants" import option in the mapping step. The `option_value_skipped` message names the option value's decision in the review. Add the texts in en, hu, and ro.
+
+  Verify with:
+  - `RowCorrectionTest.php`:
+    - "Set vară", skipped as "grouped", included as a product with one variant, becomes `product_and_variant` with missing SKU and price errors, and is valid after a correction adds them;
+    - its role survives a stock-column change that stages again;
+    - a row skipped as an existing variant is not included.
+  - `PreviewStepTest.php`: **Include** shows on the "grouped" row and on a staff-skipped row, not on a row skipped as an existing variant.
+  - `CommitImportTest.php`: the included "Set vară" is imported as a product with one variant.
+- [x] 20.4 Give every image its own file, and link images to variants on request (design §9, images and linking images to variants; commit spec, "Images are downloaded after the products"; column-mapping spec, "Import options apply to all sheets").
+  - On `webshop-demo`, every product of the WooCommerce import had one image file for two media records: the files were named after the URL (`1000.jpg` for every picsum URL), and `lunar-frontend` stores a product's images in one folder. `ImageDownloader` names the file after the product with `MediaFileName::forOwner()` and `MediaFileName::unique()` against the product's media, as the admin does for an upload, and names the media after the product.
+  - `ImageDownloader::isPrimary()` takes the import's first image of the product, a variant's too, so a product whose file gives only variant images still gets a primary image.
+  - Add `link_variant_images` (default false) to `ImportOptions`, with a toggle under the additional collections in `SheetMappingStep::optionsForm()` and its label and help in en, hu, and ro.
+  - `ProductUpserter::recordImages()`: with the option, a row that writes a variant records its product images with its variant, unless it is the group's only row. The downloader then adds an image the product lacks to the product and links it, and links one the product has.
+
+  Verify with:
+  - `ImageDownloaderTest.php`: two URLs ending in `1000.png` give `tricou-basic.png` and `tricou-basic-2.png`; a product image repeated by one variant, and an image of another variant only, give two images, each linked to its variant, one download each; a variant's image is the primary image of a product without its own.
+  - `ProductUpserterTest.php`: with and without the option, a product row, two variant rows, and a product with one variant record the expected URLs and variants.
+  - `SheetMappingStepTest.php`: the toggle is off by default and its change is saved.
+- [ ] 20.5 Docs and checks.
+  - `docs/database/schema.dbml`: add `role_override` to `lunar_product_import_rows`.
+  - Add a bullet to the changelog of the implementation date covering four changes:
+    - imported records use the store's own model classes;
+    - the mapping step separates its columns;
+    - staff can include rows that their type skips;
+    - imported images keep their own files and can be linked to variants.
+  - Run the product-import suite, `vendor/bin/pint --test` on the changed paths, and `composer test:phpstan` as in 12.1.
+  - On `webshop-demo`, first retry the failed rows of the earlier WooCommerce import, and check that its products and variants are created. Then run the package migrations again for `role_override`, which drops the earlier imports. Import `wc-product-export-24-11-2026.csv` again and check that the "grouped" row can be included.
+  - On `webshop-demo`, delete the products of the earlier WooCommerce import with their images first, because their media records share files. Import the export again with **Link images to variants** on, and check that "Classic Cotton T-Shirt" has two image files, and that the shop shows the white image for a white size and the black image for a black size.
 
 ## Workflow follow-up
 

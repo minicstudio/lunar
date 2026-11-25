@@ -2,6 +2,7 @@
 
 namespace Lunar\ProductImport\Taxonomy;
 
+use Lunar\ProductImport\Normalizing\RowDiscount;
 use Lunar\ProductImport\Support\KeyNormalizer;
 
 /**
@@ -41,5 +42,13 @@ class ValueKeys
     public static function propertyType(?int $productTypeId): string
     {
         return 'type:'.($productTypeId ?? 0);
+    }
+
+    /**
+     * The key of a discount: its kind, value, start, and end.
+     */
+    public static function discount(RowDiscount $discount): string
+    {
+        return $discount->key();
     }
 }

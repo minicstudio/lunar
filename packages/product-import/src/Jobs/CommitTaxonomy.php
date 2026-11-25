@@ -14,8 +14,8 @@ use Lunar\ProductImport\Persisting\TaxonomyCreator;
 use Throwable;
 
 /**
- * Creates the brands, categories, options, and option values staff decided
- * to create, before any product is written. When it fails, nothing is
+ * Creates the brands, categories, options, option values, and discounts
+ * staff decided to create, before any product is written. When it fails, nothing is
  * written and the import fails.
  */
 class CommitTaxonomy implements ShouldQueue
@@ -49,7 +49,7 @@ class CommitTaxonomy implements ShouldQueue
      */
     public function failed(?Throwable $exception): void
     {
-        Log::error('Product import: creating categories, brands, and options failed.', [
+        Log::error('Product import: creating categories, brands, options, and discounts failed.', [
             'product_import_id' => $this->importId,
             'exception' => $exception,
         ]);
