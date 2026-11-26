@@ -507,6 +507,18 @@ Table "lunar_collections" {
   }
 }
 
+Table "lunar_conversion_events" {
+  "id" bigint [pk, not null, increment]
+  "type" varchar(32) [not null]
+  "cart_id" bigint [not null]
+  "created_at" timestamp
+
+  Indexes {
+    created_at [name: "lunar_conversion_events_created_at_index"]
+    (cart_id, type) [name: "lunar_conversion_events_cart_id_type_index"]
+  }
+}
+
 Table "lunar_counties" {
   "id" bigint [pk, not null, increment]
   "name" varchar(255) [not null]

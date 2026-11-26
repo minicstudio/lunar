@@ -14,6 +14,11 @@ test('the analytics config is merged with traffic recording off by default', fun
         ->and(config('lunar.analytics.traffic.click_ids'))->toHaveKeys(['gclid', 'gbraid', 'wbraid', 'fbclid']);
 });
 
+test('the analytics config has conversion recording off by default', function () {
+    expect(config('lunar.analytics'))->toHaveKey('conversions')
+        ->and(config('lunar.analytics.conversions.enabled'))->toBeFalse();
+});
+
 test('the plugin is registered on the lunar panel with its id', function () {
     expect(AnalyticsPlugin::make()->getId())->toBe('lunar-analytics')
         ->and(Filament::getPanel('lunar')->hasPlugin('lunar-analytics'))->toBeTrue();

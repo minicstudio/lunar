@@ -23,11 +23,11 @@ class EnsureAnalyticsPermissions
             return;
         }
 
-        $permission = 'analytics:traffic-sources';
-
-        Permission::firstOrCreate([
-            'name' => $permission,
-            'guard_name' => $guard,
-        ]);
+        foreach (['analytics:traffic-sources', 'analytics:conversions'] as $permission) {
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => $guard,
+            ]);
+        }
     }
 }

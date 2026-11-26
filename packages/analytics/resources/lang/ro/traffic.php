@@ -6,11 +6,6 @@ return [
         'navigation_label' => 'Surse de trafic',
     ],
 
-    'filters' => [
-        'from' => 'De la',
-        'to' => 'Până la',
-    ],
-
     'stats' => [
         'visits' => 'Vizite',
         'carts' => 'Coșuri',

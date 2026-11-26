@@ -6,11 +6,6 @@ return [
         'navigation_label' => 'Traffic sources',
     ],
 
-    'filters' => [
-        'from' => 'From',
-        'to' => 'To',
-    ],
-
     'stats' => [
         'visits' => 'Visits',
         'carts' => 'Carts',

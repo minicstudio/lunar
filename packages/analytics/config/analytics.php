@@ -83,4 +83,30 @@ return [
             'fbclid' => ['source' => 'facebook', 'medium' => 'social', 'before_referrer' => false],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conversions
+    |--------------------------------------------------------------------------
+    |
+    | Records the storefront's adds to cart, cart starts and checkout starts
+    | and powers the admin "Conversions" report. Hosts call
+    | `ConversionEventRecorder::addToCart()` after each successful add to
+    | cart and `ConversionEventRecorder::beginCheckout()` when the checkout
+    | page opens for a valid cart.
+    |
+    */
+    'conversions' => [
+        /*
+        |----------------------------------------------------------------------
+        | Enabled
+        |----------------------------------------------------------------------
+        |
+        | When false, no conversion events are recorded. Independent of
+        | traffic recording. The report keeps showing the events already
+        | stored, and purchases are always counted.
+        |
+        */
+        'enabled' => env('ANALYTICS_CONVERSIONS_ENABLED', false),
+    ],
 ];
