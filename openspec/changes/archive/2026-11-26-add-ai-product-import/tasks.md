@@ -75,7 +75,7 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
 ## 12. Integration checks
 
 - [x] 12.1 Run `php -d memory_limit=-1 vendor/bin/pest --testsuite product-import --parallel --passthru-php="-d memory_limit=-1"` and the `core` and `admin` suites one at a time. Compare failures against the known pre-existing ones in the project memory before calling any of them new. Run `vendor/bin/pint --test` on the changed paths and `composer test:phpstan` (the 25 errors it already reports are expected). Verify that the product-import suite is green and nothing else changed.
-- [ ] 12.2 After groups 14–20, on the lerd site `webshop-demo` (the one that uses the local lunar packages) with `PRODUCT_IMPORT_ENABLED=true`, a real provider key, and the plugin registered locally, run end-to-end imports of:
+- [x] 12.2 After groups 14–20, on the lerd site `webshop-demo` (the one that uses the local lunar packages) with `PRODUCT_IMPORT_ENABLED=true`, a real provider key, and the plugin registered locally, run end-to-end imports of:
   - a supplier-style XLSX with two sheets, Romanian headers, decimal commas, category path columns that use different separators on each sheet, and a discount percent column with an end date;
   - a shop export from a shop with a decimal comma, with a row type column, parent references, renumbered attribute pairs, sale prices, up-sells, images (one of them unreachable), meta title, description, and keywords columns, and a URL slug column;
   - a products file with a separate variants file joined by product ID, with packed `Name:Type:Position` cells and price impacts.
@@ -607,7 +607,7 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
   - No other `new` of a Lunar model remains in `src/Persisting`; queries and relations already go through the manifest.
 
   Verify with `CommitImportTest.php`: with `ModelManifest::replace()` of the product and collection contracts by test classes that extend `Lunar\Models\Product` and `Lunar\Models\Collection`, and a `ProductCreatedEvent` listener that type-hints the test product class, an import creates "Classic Cotton T-Shirt" and its new category "T-Shirts" as the test classes, the listener receives the test product, and no group fails.
-- [ ] 20.2 Separate the columns in the mapping step (design §10).
+- [x] 20.2 Separate the columns in the mapping step (design §10).
   - In `sheet-mapping-step.blade.php`, give each column row a visible divider (`border-gray-200 dark:border-white/10` instead of `border-gray-100 dark:border-white/5`). Use `border-t`, not `border-b`: the package's views are not a Tailwind source of `lunar-panel.css`, which has `border-t` but no `border-b`, so a `border-b` row shows no line. For the same reason use `pe-2` instead of `pe-4` in the table's cells, so the target settings and the confidence badge do not touch.
   - Use `py-4` instead of `py-2` in the column cells.
   - Use `gap-2` instead of `gap-1` between the settings under the target.
@@ -637,7 +637,7 @@ Run single test files with `php -d memory_limit=-1 vendor/bin/pest <path>` and t
   - `ImageDownloaderTest.php`: two URLs ending in `1000.png` give `tricou-basic.png` and `tricou-basic-2.png`; a product image repeated by one variant, and an image of another variant only, give two images, each linked to its variant, one download each; a variant's image is the primary image of a product without its own.
   - `ProductUpserterTest.php`: with and without the option, a product row, two variant rows, and a product with one variant record the expected URLs and variants.
   - `SheetMappingStepTest.php`: the toggle is off by default and its change is saved.
-- [ ] 20.5 Docs and checks.
+- [x] 20.5 Docs and checks.
   - `docs/database/schema.dbml`: add `role_override` to `lunar_product_import_rows`.
   - Add a bullet to the changelog of the implementation date covering four changes:
     - imported records use the store's own model classes;
