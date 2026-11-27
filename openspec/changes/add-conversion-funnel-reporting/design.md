@@ -244,6 +244,29 @@ After a completed order, `CartSessionManager::fetchOrCreate()` creates a new car
 
 *Alternative:* stop `CartSessionManager` from creating the cart. Rejected: it changes upstream core code and every `current()` caller after an order.
 
+### Visits confirmed by the browser (user decision, 2026-11-27)
+
+After LFP-956, Direct still dominated on live shops. CrawlerDetect only catches crawlers that name themselves; the LFP-956 session analysis showed crawlers with plain browser user agents (Geedo from its own range, data centre proxies, a residential botnet) that open one page per session, keep no cookie and run no script. A crawler without cookies starts a new session, and so a new Direct visit, on every request.
+
+A visit is stored at the first page view as before, but with `confirmed_at` null, and the session keeps it as its current visit. It is confirmed (`confirmed_at` set) when the session shows a browser holds it:
+- the session's next storefront page view (`record()`): the browser sent the session cookie back;
+- an add to cart (`current()`, called by the cart observer);
+- the presence script on the landing page, which calls `POST /lunar/presence` with `navigator.sendBeacon()` (`confirm()`). It covers visitors who leave after one page: about a quarter of the real Facebook and Google sessions in the LFP-956 sample. Without it, those visits would drop out with the crawlers and the order rate would rise falsely.
+
+A visit started by a session that already holds a visit or a pending visit is stored confirmed. The recorder keeps the confirmed visit id under `analytics_traffic_confirmed_visit`, so it updates each visit once. The update only touches a visit whose `confirmed_at` is null, so repeated or concurrent confirmations change nothing, and a failed update is reported and never interrupts a page or an add to cart. The report counts only confirmed visits; the migration marks the stored ones confirmed at their `created_at`, so earlier figures stay. `TrafficVisit` is `MassPrunable`: unconfirmed visits older than 30 days are deleted by `model:prune`, which the host schedules. They stay that long so the share of unconfirmed visits per source can be checked in the database.
+
+The package registers the presence route itself (`routes/web.php`, `POST /lunar/presence`, `lunar.analytics.traffic.presence`), outside the `web` group, with only `EncryptCookies`. A host route file would not do: lunar-frontend loads its `routes/web.php` inside its storefront middleware stack, which starts and saves the session and checks CSRF tokens. The controller loads the session from its cookie and never saves it, and confirming the visitor's own visit needs no CSRF token. Product and category pages load lazy Livewire components at the same time as the call; a saved session from the presence call could overwrite what those requests write, such as a new cart id. So the confirmation lives only in the visit row, and the session learns it at its next page view. The path avoids words ad blockers filter (`analytics`, `track`, `collect`). The presence script view (`lunar.analytics::traffic.presence-script`) renders only while the session has no visit, recording is on and no staff member is logged in; it takes the host's CSP nonce, and waits for `prerenderingchange` on a prerendered page.
+
+A prefetch's pending visit is still recorded at the session's next request, not by the presence call: the call cannot save the session, so a visit it inserted would be inserted again by the next page view. A prefetched landing page that is opened but left without another request therefore still records no visit, as before.
+
+*Alternative:* keep new visits only in the session until confirmed (as prefetches are). Rejected: the presence call would then have to write the session, with the overwrite risk above, or a visit could be inserted twice.
+
+*Alternative:* confirmation by the second page view only. Rejected: visitors who leave after one page would drop out, which raises the order rate and favours sources with fewer one-page visits.
+
+*Alternative:* IP range filters. Rejected (user decision): they only catch known ranges.
+
+Crawlers that run scripts and keep cookies (headless browsers) still count. A visitor who blocks scripts and leaves after one page does not.
+
 ## Risks / Trade-offs
 
 - [A host does not call the recorder] → Adds to cart, carts and checkouts stay 0, while purchases are still counted. `UPGRADE.md` lists the calls among host responsibilities.

@@ -29,6 +29,7 @@ Some of this already exists, and some of it is missing:
   Purchases follow the traffic report's order rules, so both pages show the same purchase count. Events of carts whose orders all do not count, such as test orders, are left out, as the traffic report does with carts.
 - **Shared report code.** The period filter, the day/week/month grouping and the order-counting rules move out of the traffic classes into shared classes. Both reports use them, and the traffic report's figures do not change.
 - The migration state class also creates `analytics:conversions`. No role is created.
+- **Visits confirmed by the browser (user decision, 2026-11-27).** Direct traffic stayed high on live shops after LFP-956, because crawlers sending a browser user agent pass the crawler detection. A visit is now stored unconfirmed at the first page view of a session and only counts once the session shows a browser holds it: a second page view, an add to cart, or a small presence script on the landing page that calls a new route. Crawlers that keep no cookies and run no scripts never confirm. Unconfirmed visits are deleted after 30 days; visits already stored count as confirmed.
 - **Traffic source on the first product (user decision, 2026-11-27).** A cart gets its traffic source when a product is first added to it, not when it is created. The empty cart created after a completed order therefore gets no source: the Traffic sources report no longer counts it, and it no longer passes the old visit to the customer's next cart and order. Stored carts are not changed.
 
 ## Capabilities
@@ -41,9 +42,8 @@ Some of this already exists, and some of it is missing:
 ### Modified Capabilities
 
 - `analytics/traffic-attribution`: a cart gets its source when a product is first added to it, so an empty cart has none.
-- `analytics/traffic-recording`: a pending visit is recorded when a product is added to a cart without a source, not when a cart is created.
-
-`analytics/traffic-report` keeps its requirements. Only its implementation moves to the shared period and order classes.
+- `analytics/traffic-recording`: a pending visit is recorded when a product is added to a cart without a source, not when a cart is created; a visit counts once a browser confirms it, with the presence script and route, and unconfirmed visits are deleted after 30 days.
+`analytics/traffic-report` keeps its requirements: it counts only confirmed visits, as `analytics/traffic-recording` defines, and otherwise only its implementation moves to the shared period and order classes.
 
 ## Impact
 
@@ -56,6 +56,7 @@ Some of this already exists, and some of it is missing:
   - `src/Traffic/Reports/TrafficReportQuery` and `src/Traffic/Filament/Pages/TrafficSourcesPage` use the shared classes;
   - `AnalyticsServiceProvider`, `AnalyticsPlugin`;
   - `src/Traffic/Observers/StampCartWithTrafficSource` observes `CartLine` `created` instead of `Cart` `creating`;
+  - visit confirmation: a `confirmed_at` migration on `lunar_traffic_visits`, `TrafficVisit` pruning, `TrafficVisitRecorder`, the presence route (`routes/web.php`, `Traffic/Http/Controllers/ConfirmTrafficVisitController`), the presence script view (`resources/views/traffic/presence-script.blade.php`) and `TrafficReportQuery`;
   - `resources/lang/{en,hu,ro}` (new `conversions.php`, filter labels moved to `plugin.php`, permission labels).
 - Core, admin and other packages: not changed. No new Composer dependency.
 - Tests in `tests/analytics/Feature/Conversions/` and `tests/analytics/Unit/`. The existing traffic tests must stay green, except `StampCartWithTrafficSourceTest` and the sanity check in `tests/core/Unit/Actions/Orders/SplitOrderTest.php`, which follow the new stamping.
@@ -63,7 +64,7 @@ Some of this already exists, and some of it is missing:
   - `addToCart()` after each successful add: product page, product card, gift selection, wishlist and reorder;
   - `beginCheckout()` where the checkout page dispatches `CheckoutInitiatedEvent`.
 
-  The counterpart can also add `lunar_conversion_events` to the AI assistant's allowed tables.
+  The counterpart can also add `lunar_conversion_events` to the AI assistant's allowed tables. It also includes the presence script in its layout and schedules `model:prune` for `TrafficVisit`.
 - Docs:
   - `docs/system/CODE_MAP.md`;
   - `docs/system/PROJECT_SPECIFICATION.md`;

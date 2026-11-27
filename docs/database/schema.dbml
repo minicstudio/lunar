@@ -1797,6 +1797,7 @@ Table "lunar_traffic_visits" {
   "referrer_host" varchar(255)
   "landing_path" varchar(255) [not null]
   "created_at" timestamp
+  "confirmed_at" timestamp [note: 'When a browser confirmed the visit; reports count only confirmed visits.']
 
   Indexes {
     created_at [name: "lunar_traffic_visits_created_at_index"]

@@ -1,8 +1,11 @@
 <?php
 
 use Filament\Facades\Filament;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Schema;
 use Lunar\Actions\Carts\MergeCart;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
 use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
@@ -169,12 +172,36 @@ test('the first product on a prefetched landing page records the pending visit a
 
     expect([$visit->source, $visit->medium, $visit->referrer_host, $visit->landing_path])
         ->toBe(['google', 'organic', 'google.com', '/products/phone'])
+        ->and($visit->confirmed_at)->not->toBeNull()
         ->and(trafficSourceOf($cart))->toBe([
             'visit_id' => $visit->id,
             'source' => 'google',
             'medium' => 'organic',
             'campaign' => null,
         ]);
+});
+
+test('adding a product confirms the visit the cart gets', function () {
+    $payload = putCurrentVisit('facebook', 'social');
+    TrafficVisit::query()->whereKey($payload['visit_id'])->update(['confirmed_at' => null]);
+
+    $cart = Cart::factory()->create();
+    addCartLine($cart);
+
+    expect(TrafficVisit::query()->findOrFail($payload['visit_id'])->confirmed_at)->not->toBeNull()
+        ->and(trafficSourceOf($cart))->toBe($payload);
+});
+
+test('a failed visit confirmation is reported and the cart still gets the visit', function () {
+    Exceptions::fake();
+    $payload = putCurrentVisit('facebook', 'social');
+    Schema::drop('lunar_traffic_visits');
+
+    $cart = Cart::factory()->create();
+    addCartLine($cart);
+
+    Exceptions::assertReported(QueryException::class);
+    expect(trafficSourceOf($cart))->toBe($payload);
 });
 
 test('a cart gets no traffic source without a trackable visit', function (Closure $setUp) {

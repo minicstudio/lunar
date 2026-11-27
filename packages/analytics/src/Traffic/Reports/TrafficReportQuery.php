@@ -339,12 +339,13 @@ class TrafficReportQuery
     }
 
     /**
-     * The period's visits, without those left out because of their orders.
+     * The period's confirmed visits, without those left out because of their orders.
      */
     protected function visitsQuery(): Builder
     {
         return TrafficVisit::query()
             ->toBase()
+            ->whereNotNull('confirmed_at')
             ->whereBetween('created_at', [$this->period->from(), $this->period->to()])
             ->whereNotIn('id', $this->orders->excludedVisitIds());
     }

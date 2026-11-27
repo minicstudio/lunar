@@ -105,11 +105,13 @@ class AnalyticsServiceProvider extends ServiceProvider
     }
 
     /**
-     * Load package migrations and translations.
+     * Load package migrations, translations, storefront views and the presence route.
      */
     protected function loadPackageAssets(): void
     {
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunarpanel.analytics');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'lunar.analytics');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
         if (! config('lunar.database.disable_migrations', false)) {
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');

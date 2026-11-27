@@ -72,6 +72,10 @@ class ConversionFunnelChart extends ApexChartWidget
             'tooltip' => [
                 'enabled' => false,
             ],
+            'states' => [
+                'hover' => ['filter' => ['type' => 'none']],
+                'active' => ['filter' => ['type' => 'none']],
+            ],
         ];
     }
 
