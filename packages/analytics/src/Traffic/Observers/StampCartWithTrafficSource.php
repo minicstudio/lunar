@@ -4,13 +4,15 @@ namespace Lunar\Analytics\Traffic\Observers;
 
 use ArrayObject;
 use Lunar\Analytics\Traffic\Services\TrafficVisitRecorder;
-use Lunar\Models\Cart;
+use Lunar\Models\CartLine;
 
 /**
- * Stamps a new cart with the source of the session's current visit.
+ * Stamps a cart with the source of the session's current visit when a
+ * product line is added to it, so an empty cart, such as the one created
+ * after a completed order, gets no source.
  *
- * Only `creating` is handled, so the first source stays: later visits never
- * change it. Landing path and referrer host stay on the visit only.
+ * A cart that has a source keeps it: later visits never change it. Landing
+ * path and referrer host stay on the visit only.
  */
 class StampCartWithTrafficSource
 {
@@ -18,13 +20,20 @@ class StampCartWithTrafficSource
 
     /**
      * Merge `traffic_source` (`visit_id`, `source`, `medium`, `campaign`) into
-     * the new cart's meta, keeping its other keys. Does not save the cart.
+     * the meta of the new line's cart, keeping its other keys, and save the
+     * cart without events. Does nothing when the cart already has a source.
      */
-    public function creating(Cart $cart): void
+    public function created(CartLine $line): void
     {
         $visit = $this->recorder->current();
 
         if ($visit === null) {
+            return;
+        }
+
+        $cart = $line->cart;
+
+        if ($cart === null) {
             return;
         }
 
@@ -37,5 +46,6 @@ class StampCartWithTrafficSource
         $meta['traffic_source'] = $visit;
 
         $cart->meta = $meta;
+        $cart->saveQuietly();
     }
 }

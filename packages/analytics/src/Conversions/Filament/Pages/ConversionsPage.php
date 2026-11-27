@@ -7,6 +7,7 @@ use Filament\Facades\Filament;
 use Filament\Pages\Dashboard;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Gate;
+use Lunar\Analytics\Conversions\Filament\Widgets\ConversionFunnelChart;
 use Lunar\Analytics\Conversions\Filament\Widgets\ConversionsOverTimeChart;
 use Lunar\Analytics\Conversions\Filament\Widgets\ConversionStatsOverview;
 use Lunar\Analytics\Filament\Concerns\HasPeriodFilters;
@@ -74,6 +75,7 @@ class ConversionsPage extends Dashboard
     {
         return [
             ConversionStatsOverview::class,
+            ConversionFunnelChart::class,
             ConversionsOverTimeChart::class,
         ];
     }

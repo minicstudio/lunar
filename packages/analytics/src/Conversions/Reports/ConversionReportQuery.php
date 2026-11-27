@@ -4,6 +4,7 @@ namespace Lunar\Analytics\Conversions\Reports;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Lunar\Analytics\Conversions\Enums\ConversionEventType;
 use Lunar\Analytics\Conversions\Models\ConversionEvent;
@@ -83,9 +84,7 @@ class ConversionReportQuery
         $carts = (int) ($events[ConversionEventType::CartStarted->value] ?? 0);
         $checkouts = (int) ($events[ConversionEventType::BeginCheckout->value] ?? 0);
         $purchases = $this->orders->placedQuery()->count();
-        $trackedPurchases = $purchases === 0 ? 0 : $this->orders->placedQuery()
-            ->whereIn('cart_id', ConversionEvent::query()->select('cart_id'))
-            ->count();
+        $trackedPurchases = $purchases === 0 ? 0 : $this->trackedPurchasesQuery()->count();
 
         return [
             'add_to_cart' => $addToCart,
@@ -102,9 +101,9 @@ class ConversionReportQuery
     /**
      * The four steps over time, grouped as `ReportPeriod::group()` does: per
      * day, week or month by period length; buckets without events or
-     * purchases give 0. Purchases are all counted orders, tracked or not.
+     * purchases give 0. Purchases are only the tracked ones, as in the rates.
      *
-     * @return array{interval: 'day'|'week'|'month', steps: array{add_to_cart: array<string, int>, carts: array<string, int>, checkouts: array<string, int>, purchases: array<string, int>}}
+     * @return array{interval: 'day'|'week'|'month', steps: array{add_to_cart: array<string, int>, carts: array<string, int>, checkouts: array<string, int>, tracked_purchases: array<string, int>}}
      */
     public function overTime(): array
     {
@@ -112,7 +111,7 @@ class ConversionReportQuery
             'add_to_cart' => [],
             'carts' => [],
             'checkouts' => [],
-            'purchases' => [],
+            'tracked_purchases' => [],
         ];
 
         $events = $this->eventsQuery()
@@ -129,7 +128,7 @@ class ConversionReportQuery
             }
         }
 
-        $perDay['purchases'] = $this->orders->placedQuery()
+        $perDay['tracked_purchases'] = $this->trackedPurchasesQuery()
             ->toBase()
             ->selectRaw('DATE(placed_at) as day, COUNT(*) as purchases')
             ->groupByRaw('DATE(placed_at)')
@@ -152,6 +151,15 @@ class ConversionReportQuery
             ->toBase()
             ->whereBetween('created_at', [$this->period->from(), $this->period->to()])
             ->whereNotIn('cart_id', $this->orders->excludedCartIds());
+    }
+
+    /**
+     * The period's counted orders whose cart has a conversion event of any time.
+     */
+    protected function trackedPurchasesQuery(): EloquentBuilder
+    {
+        return $this->orders->placedQuery()
+            ->whereIn('cart_id', ConversionEvent::query()->select('cart_id'));
     }
 
     /**

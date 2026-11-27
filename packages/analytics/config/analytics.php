@@ -8,10 +8,11 @@ return [
     | Traffic sources
     |--------------------------------------------------------------------------
     |
-    | Records where storefront visitors come from, stamps new carts with the
-    | source of the current visit and powers the admin "Traffic sources"
-    | report. Hosts attach the `RecordTrafficVisit` middleware to their
-    | storefront routes, inside `StartSession`.
+    | Records where storefront visitors come from, stamps carts with the
+    | source of the current visit when a product is added to them and powers
+    | the admin "Traffic sources" report. Hosts attach the
+    | `RecordTrafficVisit` middleware to their storefront routes, inside
+    | `StartSession`.
     |
     */
     'traffic' => [
@@ -21,8 +22,8 @@ return [
         | Enabled
         |----------------------------------------------------------------------
         |
-        | When false, no visits are recorded and new carts get no traffic
-        | source. The report keeps showing the data already stored.
+        | When false, no visits are recorded and carts get no traffic source.
+        | The report keeps showing the data already stored.
         |
         */
         'enabled' => env('ANALYTICS_TRAFFIC_ENABLED', false),

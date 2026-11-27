@@ -141,7 +141,7 @@
   - **Widgets:**
     - `Filament/Widgets/Concerns/InteractsWithConversionReport.php`;
     - `ConversionStatsOverview`: four stats, with the checkout rate on "Checkouts", and the purchase rate and cart purchase rate on "Purchases"; a rate without a value shows "—";
-    - `ConversionsOverTimeChart`: an ApexCharts line with four series, labels as in `VisitsOverTimeChart`, and a heading per interval.
+    - `ConversionsOverTimeChart`: an ApexCharts grouped bar chart with four series, labels as in `VisitsOverTimeChart`, and a heading per interval.
   - **Plugin.** Register the page and widgets in `AnalyticsPlugin::register()`.
 
   Add `tests/analytics/Feature/Conversions/ConversionsPageTest.php`:
@@ -189,6 +189,26 @@
 - [x] 7.2 In `ConversionStatsOverview`, put `:count from tracked carts` first in the "Purchases" description, then the two rates. Add `stats.tracked_purchases` to `resources/lang/{en,hu,ro}/conversions.php`. In `ConversionsPageTest`, seed tracked purchases and assert the new line. Verify with `vendor/bin/pest tests/analytics/Feature/Conversions`.
 - [x] 7.3 Update the conversions report in `UPGRADE.md`, `docs/changelog/2026-11-26.md` and `docs/system/PROJECT_SPECIFICATION.md`: the purchase rates divide purchases from tracked carts, and the stat shows that count. Verify that the three docs and the code use the same wording for "tracked carts".
 - [x] 7.4 Rerun `php -d memory_limit=-1 vendor/bin/pest --testsuite analytics`, `vendor/bin/pint --dirty --format agent` and `openspec validate add-conversion-funnel-reporting --strict`.
+
+## 8. Rates as separate stats (user decision, 2026-11-27)
+
+- [x] 8.1 In `ConversionStatsOverview`, show the checkout, purchase and cart purchase rates as three stats of their own after "Purchases", each with what it divides as description, as the Traffic sources page shows its order rates. "Checkouts" loses its description, and "Purchases" keeps only `:count from tracked carts`. Split `stats.{checkout,purchase,cart_purchase}_rate` into a label and a `_description` key in `resources/lang/{en,hu,ro}/conversions.php`. Update the stats assertions in `ConversionsPageTest`. Verify with `vendor/bin/pest tests/analytics/Feature/Conversions`.
+
+## 9. Traffic source on the first product (user decision, 2026-11-27)
+
+- [x] 9.1 Make `StampCartWithTrafficSource` observe `CartLine` `created` instead of `Cart` `creating`: when the line's cart has no source and the session has a current visit, merge it into the cart meta and save the cart quietly. Register it with `CartLine::observe()` in `AnalyticsServiceProvider`, and update the comments in `config/analytics.php`. Rewrite `StampCartWithTrafficSourceTest`: an empty cart gets no source; the first line stores the visit; `Cart::add()` leaves the source on the same instance; meta is kept; a later visit does not change it; an empty cart filled in a later visit gets that visit; `MergeCart` stamps the target; an empty cart on a prefetched page records no visit and its first line does; no source without a trackable visit. In `tests/core/Unit/Actions/Orders/SplitOrderTest.php`, check the outside-panel stamping with a cart line. Verify with `vendor/bin/pest tests/analytics/Feature/Traffic` and the split order test.
+- [x] 9.2 Add the `analytics/traffic-attribution` and `analytics/traffic-recording` deltas, and update `UPGRADE.md` (attribution line; drop the `auto_create = true` note), `docs/system/CODE_MAP.md`, `docs/system/PROJECT_SPECIFICATION.md` and the LFP-924 changelog file, `docs/changelog/2026-11-26.md`.
+- [x] 9.3 Rerun `php -d memory_limit=-1 vendor/bin/pest --testsuite analytics`, `vendor/bin/pint --dirty --format agent` and `openspec validate add-conversion-funnel-reporting --strict`.
+
+## 10. Funnel chart (user decision, 2026-11-27)
+
+- [x] 10.1 Add `ConversionFunnelChart` (`ApexChartWidget`, full width): one series with the four `totals()` steps, `isFunnel`, trapezoid shape, distributed colours, no legend or tooltip, and an `extraJsOptions()` data label "Step: count". Put it between `ConversionStatsOverview` and `ConversionsOverTimeChart` in `ConversionsPage::conversionWidgets()`. Add `widgets.funnel.heading` to `resources/lang/{en,hu,ro}/conversions.php`. In `ConversionsPageTest`, check the widget order and the funnel's categories and data for the seeded week. Verify with `vendor/bin/pest tests/analytics/Feature/Conversions`.
+- [x] 10.2 Add the "Funnel chart" requirement to the `analytics/conversion-report` delta, and name the chart in `UPGRADE.md`, `docs/system/CODE_MAP.md`, `docs/system/PROJECT_SPECIFICATION.md` and `docs/changelog/2026-11-26.md`. Verify with `openspec validate add-conversion-funnel-reporting --strict`.
+
+## 11. Charts show only tracked purchases (user decision, 2026-11-27)
+
+- [x] 11.1 In `ConversionReportQuery`, share a `trackedPurchasesQuery()` between `totals()` and `overTime()`, and rename the `overTime()` step `purchases` to `tracked_purchases`, built from it. `ConversionFunnelChart` shows `tracked_purchases`. Move the step labels to `widgets.steps` in `resources/lang/{en,hu,ro}/conversions.php` ("Purchases from tracked carts" for the last step), used by both charts. In `ConversionReportQueryTest` and `ConversionsPageTest`, expect only tracked purchases over time and in both charts, with an untracked purchase that does not show. Verify with `vendor/bin/pest tests/analytics/Feature/Conversions`.
+- [x] 11.2 Update the "Funnel chart", "Funnel over time" and "Recorded steps cover only time with recording on" requirements, `design.md`, `UPGRADE.md`, `docs/system/PROJECT_SPECIFICATION.md` and `docs/changelog/2026-11-26.md`. Verify with `openspec validate add-conversion-funnel-reporting --strict`.
 
 ## Workflow follow-up
 

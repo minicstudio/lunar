@@ -12,7 +12,7 @@ use Lunar\Analytics\Database\State\EnsureAnalyticsPermissions;
 use Lunar\Analytics\Traffic\Contracts\ClassifiesTrafficSource;
 use Lunar\Analytics\Traffic\Observers\StampCartWithTrafficSource;
 use Lunar\Analytics\Traffic\Support\TrafficSourceClassifier;
-use Lunar\Models\Cart;
+use Lunar\Models\CartLine;
 
 class AnalyticsServiceProvider extends ServiceProvider
 {
@@ -49,11 +49,11 @@ class AnalyticsServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register model observers. `Cart::observe()` follows a model-manifest replacement.
+     * Register model observers. `CartLine::observe()` follows a model-manifest replacement.
      */
     protected function registerObservers(): void
     {
-        Cart::observe(StampCartWithTrafficSource::class);
+        CartLine::observe(StampCartWithTrafficSource::class);
     }
 
     /**

@@ -64,6 +64,7 @@ packages/analytics/
     Filament/Pages/ConversionsPage.php
     Filament/Widgets/Concerns/InteractsWithConversionReport.php
     Filament/Widgets/ConversionStatsOverview.php
+    Filament/Widgets/ConversionFunnelChart.php
     Filament/Widgets/ConversionsOverTimeChart.php
 ```
 
@@ -173,7 +174,7 @@ The order rules, the period and the grouping move out of the traffic classes, un
   - rates are `null` when the divisor is 0.
 - **`overTime()`.** It returns `{interval, steps}`. `steps` maps each step to `group()` of its days, with 0 for days without events:
   - one query on events grouped by `type` and `DATE(created_at)`;
-  - one query on `placedQuery()` grouped by `DATE(placed_at)`, so the purchases series holds every purchase.
+  - one query on the tracked purchases grouped by `DATE(placed_at)`, so the series holds only purchases from tracked carts, as the rates use (user decision 2026-11-27; the step is named `tracked_purchases`).
 
 The exclusion lookup runs once per instance, as today.
 
@@ -194,21 +195,27 @@ The exclusion lookup runs once per instance, as today.
 
 Its widgets use `InteractsWithConversionReport`, which gives the page's report for the filters, `canView()` through `ConversionsPage::canAccess()` and rate formatting. No widget polls.
 
-- `ConversionStatsOverview`, full width, four stats:
+- `ConversionStatsOverview`, full width, seven stats, the counts in a row of four and the rates in a row of three below, as on the Traffic sources page:
   - "Add to cart";
   - "Carts";
-  - "Checkouts", with the checkout rate as description;
-  - "Purchases", with the number of purchases from tracked carts, the purchase rate and the cart purchase rate as description.
+  - "Checkouts";
+  - "Purchases", with the number of purchases from tracked carts as description;
+  - "Checkout rate", "Purchase rate" and "Cart purchase rate", each with what it divides as description.
 
   A rate without a value shows "—".
-- `ConversionsOverTimeChart` (`ApexChartWidget`, line, full width):
-  - four series;
+- `ConversionFunnelChart` (`ApexChartWidget`, full width, user decision 2026-11-27): adds to cart, carts, checkouts and tracked purchases from `totals()` as one bar series with `plotOptions.bar.isFunnel` and the trapezoid funnel shape, one colour per step. The funnel hides the axis labels, so an `extraJsOptions()` data label formatter writes "Step: count" on each bar, and overflowing labels stay visible. Heading "Conversion funnel".
+
+  Both charts show only purchases from tracked carts (user decision 2026-11-27), labelled "Purchases from tracked carts", so a chart never compares carts with purchases whose carts it never counted. Their step names come from the shared `widgets.steps` translations. The "Purchases" stat keeps counting every purchase.
+- `ConversionsOverTimeChart` (`ApexChartWidget`, grouped bars, full width):
+  - four series, side by side in each day, week or month, so each bucket shows its own funnel (user decision; a line showed only dots for short periods);
   - labels as in `VisitsOverTimeChart` (`D MMM` for days and weeks, `MMM YYYY` for months);
   - heading "Funnel per day / week / month".
 
 *Alternative:* the figures on the Traffic sources page. Rejected (user decision). That page answers which source works, while this one shows where shoppers drop out. It also counts only carts with a source, and it needs traffic recording.
 
-*Alternative:* a funnel bar chart. Rejected: it repeats the stat row, while the line shows the trend (user decision: numbers plus a chart).
+*Alternative:* a single funnel bar chart of the period's totals instead of the chart over time. Rejected: the chart per bucket shows the trend (user decision: numbers plus a chart). The funnel chart was later added next to it (user decision 2026-11-27), as the quickest view of where shoppers drop out.
+
+*Alternative:* a custom Blade funnel component. Rejected: the installed `leandrocfe/filament-apex-charts` (ApexCharts 6.10) draws funnels natively, with Filament's theme and dark mode.
 
 ### Permission `analytics:conversions`
 
@@ -225,6 +232,18 @@ These calls are the counterpart's work, listed here so it matches the spec:
 
 `UPGRADE.md` documents the calls for other hosts.
 
+### Traffic source on the first product line (user decision, 2026-11-27)
+
+After a completed order, `CartSessionManager::fetchOrCreate()` creates a new cart on the next `CartSession::current()` call, even with `$create = false`. `StampCartWithTrafficSource` stamped it on `Cart` `creating`, so the Traffic sources report counted an empty cart per order. For a logged-in customer, the empty cart also stayed their active cart in later sessions, so it held back new visits and passed the old visit to the next order.
+
+`StampCartWithTrafficSource` now observes `CartLine` `created`: when the line's cart has no source, it stores the session's current visit and saves the cart without events. `Cart::add()` refreshes the cart after the line is created, so the instance the storefront holds has the source. Login merges (`MergeCart`) create lines the same way, so a merged customer cart gets the current visit. The report query is unchanged. Hosts with `lunar.cart_session.auto_create = true` no longer lose the source: the cart created on the landing request gets the visit with its first product, so the `UPGRADE.md` note about them is removed.
+
+*Alternative:* count only carts with lines in the report. Rejected: the empty cart would still hold back visits and pass the old source on.
+
+*Alternative:* count only carts with a `cart_started` event. Rejected: the traffic report would depend on `ANALYTICS_CONVERSIONS_ENABLED`.
+
+*Alternative:* stop `CartSessionManager` from creating the cart. Rejected: it changes upstream core code and every `current()` caller after an order.
+
 ## Risks / Trade-offs
 
 - [A host does not call the recorder] → Adds to cart, carts and checkouts stay 0, while purchases are still counted. `UPGRADE.md` lists the calls among host responsibilities.
@@ -238,6 +257,8 @@ These calls are the counterpart's work, listed here so it matches the spec:
 - [Moving the traffic report's order rules] → It is a mechanical move behind the unchanged public methods, and the existing traffic tests must pass without edits.
 - [Conversions and session replays share navigation sort 2] → Their order follows Filament's tie handling. `lunarphp/admin` is not changed for it.
 - [Staff test on the storefront without logging in to the admin] → Their events are recorded. They are left out once the order is moved to `test-order`.
+- [Empty carts stamped before the release] → They keep their source and are still counted for their periods. For a logged-in customer, such a cart still holds back new visits until it becomes an order. Stored data is not changed (user decision).
+- [A cart created empty and filled later] → The traffic report counts carts by `created_at`, so it counts that cart on the day it was created.
 
 ## Migration Plan
 

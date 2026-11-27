@@ -50,6 +50,13 @@ The report SHALL show for the period the number of add-to-cart events, cart star
 - **WHEN** the period holds 120 add-to-cart events, 50 cart starts, 20 checkout starts and 8 purchases
 - **THEN** the report shows 120 adds to cart, 50 carts, 20 checkouts and 8 purchases
 
+### Requirement: Funnel chart
+The report SHALL show the period's funnel totals as a funnel chart, between the totals and the funnel over time: adds to cart, carts, checkouts and purchases from tracked carts from top to bottom, each labelled with its name and count. Purchases from carts that are not tracked SHALL NOT be shown in the chart.
+
+#### Scenario: A week of shopping as a funnel
+- **WHEN** the period holds 120 add-to-cart events, 50 cart starts, 20 checkout starts and 10 purchases, 8 of them from tracked carts
+- **THEN** the funnel chart shows "Add to cart: 120", "Carts: 50", "Checkouts: 20" and "Purchases from tracked carts: 8" from top to bottom
+
 ### Requirement: Purchases count as in the traffic report
 Purchases SHALL be the orders placed in the period that count, by the rules of "Only reportable placed orders count" and "An order counts by its current status" in `analytics/traffic-report`, whatever their traffic source. The report SHALL show the same number as the traffic sources report's orders for the same period.
 
@@ -103,7 +110,11 @@ The report SHALL NOT count the add-to-cart events, cart start or checkout start 
 - **THEN** the add to cart, the cart start and the checkout start are counted
 
 ### Requirement: Funnel over time
-The report SHALL show the period's add-to-cart events, cart starts, checkout starts and purchases over time, using the same days, weeks and months as "Visits over time" in `analytics/traffic-report`. Purchases over time SHALL count every purchase, as the purchases figure does. A day, week or month without events or purchases SHALL show 0 for that step.
+The report SHALL show the period's add-to-cart events, cart starts, checkout starts and purchases from tracked carts over time, using the same days, weeks and months as "Visits over time" in `analytics/traffic-report`. Purchases from carts that are not tracked SHALL NOT be shown over time. A day, week or month without events or purchases SHALL show 0 for that step.
+
+#### Scenario: Purchase from a cart that was not recorded
+- **WHEN** the period 1 to 7 October holds a purchase on 3 October from a tracked cart and one on 4 October from a cart without recorded events
+- **THEN** purchases over time show 1 on 3 October and 0 on 4 October
 
 #### Scenario: Day without checkouts
 - **WHEN** a day in the period 1 to 7 October has adds to cart but no checkout start
@@ -114,8 +125,8 @@ The report SHALL show the period's add-to-cart events, cart starts, checkout sta
 - **THEN** the four steps are shown for the same 14 weeks as the traffic sources report's visits
 
 ### Requirement: Recorded steps cover only time with recording on
-Add to carts, carts and checkouts SHALL show only the events recorded while conversion recording was on. Purchases SHALL be counted whether or not recording was on, and the purchase rates SHALL divide only the purchases from tracked carts.
+Add to carts, carts and checkouts SHALL show only the events recorded while conversion recording was on. Purchases SHALL be counted whether or not recording was on, and the purchase rates, the funnel chart and the funnel over time SHALL use only the purchases from tracked carts.
 
 #### Scenario: Recording switched on mid-period
 - **WHEN** conversion recording is switched on on 4 October, the staff member chooses 1 to 7 October, two orders were placed on 1 and 2 October from carts filled before 4 October, and one on 6 October from a cart recorded on 6 October
-- **THEN** adds to cart, carts and checkouts come from 4 to 7 October only, the report shows 3 purchases from the whole period, and the purchase rates use only the purchase of 6 October
+- **THEN** adds to cart, carts and checkouts come from 4 to 7 October only, the report shows 3 purchases from the whole period, and the purchase rates and both charts use only the purchase of 6 October

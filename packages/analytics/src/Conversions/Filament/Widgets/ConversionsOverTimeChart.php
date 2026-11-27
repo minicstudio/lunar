@@ -33,14 +33,14 @@ class ConversionsOverTimeChart extends ApexChartWidget
 
         foreach ($overTime['steps'] as $step => $buckets) {
             $series[] = [
-                'name' => __("lunarpanel.analytics::conversions.widgets.over_time.series.{$step}"),
+                'name' => __("lunarpanel.analytics::conversions.widgets.steps.{$step}"),
                 'data' => array_values($buckets),
             ];
         }
 
         return [
             'chart' => [
-                'type' => 'line',
+                'type' => 'bar',
                 'height' => 320,
                 'toolbar' => [
                     'show' => false,
@@ -58,7 +58,9 @@ class ConversionsOverTimeChart extends ApexChartWidget
                 'min' => 0,
             ],
             'stroke' => [
-                'curve' => 'smooth',
+                'show' => true,
+                'width' => 2,
+                'colors' => ['transparent'],
             ],
             'dataLabels' => [
                 'enabled' => false,

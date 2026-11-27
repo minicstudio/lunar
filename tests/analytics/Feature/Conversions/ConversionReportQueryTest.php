@@ -152,7 +152,7 @@ test('purchases count orders with and without a source, as the traffic report co
 });
 
 test('a split order counts as one purchase on the original order\'s placement date', function () {
-    $original = conversionPurchase('2026-10-02 10:00');
+    $original = trackedPurchase('2026-10-02 10:00');
     $newOrders = array_map(fn (): Order => conversionPurchase('2026-10-03 10:00', [
         'meta' => ['split_from_order_id' => $original->id],
     ]), range(1, 2));
@@ -164,13 +164,13 @@ test('a split order counts as one purchase on the original order\'s placement da
     $report = conversionReport();
 
     expect($report->totals()['purchases'])->toBe(1)
-        ->and($report->overTime()['steps']['purchases'])->toMatchArray([
+        ->and($report->overTime()['steps']['tracked_purchases'])->toMatchArray([
             '2026-10-02' => 1,
             '2026-10-03' => 0,
         ]);
 });
 
-test('purchases from carts without recorded events count, but the purchase rates divide only purchases from tracked carts', function () {
+test('purchases from carts without recorded events count, but the purchase rates and the steps over time use only purchases from tracked carts', function () {
     conversionEvents(20, ConversionEventType::BeginCheckout, '2026-10-02 10:00');
     conversionEvents(40, ConversionEventType::CartStarted, '2026-10-02 10:00');
 
@@ -191,7 +191,7 @@ test('purchases from carts without recorded events count, but the purchase rates
         'purchase_rate' => 0.4,
         'cart_purchase_rate' => 0.2,
     ])->and($traffic->totals()['orders'])->toBe(10)
-        ->and(array_sum(conversionReport()->overTime()['steps']['purchases']))->toBe(10);
+        ->and(array_sum(conversionReport()->overTime()['steps']['tracked_purchases']))->toBe(8);
 });
 
 test('a rate whose divisor is zero has no value', function () {
@@ -241,13 +241,14 @@ test('the events of a cart whose order was moved to test-order are left out, whi
 
 test('the steps are shown per day for 1 to 7 October, and a day without checkouts shows 0', function () {
     convertedCart('2026-10-02 10:00', adds: 2, checkout: false);
-    convertedCart('2026-10-03 10:00');
-    conversionPurchase('2026-10-03 11:00');
+    $purchasedCart = convertedCart('2026-10-03 10:00');
+    conversionPurchase('2026-10-03 11:00', ['cart_id' => $purchasedCart->id]);
+    untrackedPurchase('2026-10-04 11:00');
 
     $overTime = conversionReport()->overTime();
 
     expect($overTime['interval'])->toBe('day')
-        ->and(array_keys($overTime['steps']))->toBe(['add_to_cart', 'carts', 'checkouts', 'purchases'])
+        ->and(array_keys($overTime['steps']))->toBe(['add_to_cart', 'carts', 'checkouts', 'tracked_purchases'])
         ->and($overTime['steps']['add_to_cart'])->toBe([
             '2026-10-01' => 0,
             '2026-10-02' => 2,
@@ -259,14 +260,14 @@ test('the steps are shown per day for 1 to 7 October, and a day without checkout
         ])
         ->and($overTime['steps']['carts'])->toMatchArray(['2026-10-02' => 1, '2026-10-03' => 1])
         ->and($overTime['steps']['checkouts'])->toMatchArray(['2026-10-02' => 0, '2026-10-03' => 1])
-        ->and($overTime['steps']['purchases'])->toMatchArray(['2026-10-02' => 0, '2026-10-03' => 1]);
+        ->and($overTime['steps']['tracked_purchases'])->toMatchArray(['2026-10-02' => 0, '2026-10-03' => 1, '2026-10-04' => 0]);
 });
 
 test('the steps are shown for the same 14 weeks as visits from 4 August to 8 November', function () {
     conversionEvents(2, ConversionEventType::AddToCart, '2026-08-04 00:00');
     conversionEvents(1, ConversionEventType::CartStarted, '2026-08-09 23:59');
     conversionEvents(3, ConversionEventType::BeginCheckout, '2026-08-10 00:00');
-    conversionPurchase('2026-11-08 12:00');
+    trackedPurchase('2026-11-08 12:00');
 
     $from = CarbonImmutable::parse('2026-08-04');
     $to = CarbonImmutable::parse('2026-11-08');
@@ -283,10 +284,10 @@ test('the steps are shown for the same 14 weeks as visits from 4 August to 8 Nov
     expect($overTime['steps']['add_to_cart']['2026-08-04'])->toBe(2)
         ->and($overTime['steps']['carts']['2026-08-04'])->toBe(1)
         ->and($overTime['steps']['checkouts']['2026-08-10'])->toBe(3)
-        ->and($overTime['steps']['purchases']['2026-11-02'])->toBe(1);
+        ->and($overTime['steps']['tracked_purchases']['2026-11-02'])->toBe(1);
 });
 
-test('recording switched on mid-period gives events from that day, purchases from the whole period and rates from the tracked purchase', function () {
+test('recording switched on mid-period gives events from that day, purchases from the whole period, and rates and steps over time from the tracked purchase', function () {
     untrackedPurchase('2026-10-01 10:00');
     untrackedPurchase('2026-10-02 10:00');
 
@@ -306,5 +307,13 @@ test('recording switched on mid-period gives events from that day, purchases fro
         'purchase_rate' => 0.5,
         'cart_purchase_rate' => 0.5,
     ])->and(array_sum(array_slice($report->overTime()['steps']['carts'], 0, 3)))->toBe(0)
-        ->and(array_sum(array_slice($report->overTime()['steps']['purchases'], 0, 3)))->toBe(2);
+        ->and($report->overTime()['steps']['tracked_purchases'])->toBe([
+            '2026-10-01' => 0,
+            '2026-10-02' => 0,
+            '2026-10-03' => 0,
+            '2026-10-04' => 0,
+            '2026-10-05' => 0,
+            '2026-10-06' => 1,
+            '2026-10-07' => 0,
+        ]);
 });

@@ -9,6 +9,7 @@ use Livewire\Livewire;
 use Lunar\Admin\Filament\Pages\Dashboard;
 use Lunar\Analytics\Conversions\Enums\ConversionEventType;
 use Lunar\Analytics\Conversions\Filament\Pages\ConversionsPage;
+use Lunar\Analytics\Conversions\Filament\Widgets\ConversionFunnelChart;
 use Lunar\Analytics\Conversions\Filament\Widgets\ConversionsOverTimeChart;
 use Lunar\Analytics\Conversions\Filament\Widgets\ConversionStatsOverview;
 use Lunar\Analytics\Conversions\Models\ConversionEvent;
@@ -121,14 +122,14 @@ test('the stats overview shows the period totals and rates', function () {
     seedConversionReport();
 
     Livewire::test(ConversionStatsOverview::class, conversionFilters())
-        ->assertSeeInOrder(['Add to cart', '120', 'Carts', '50', 'Checkouts', '20'])
-        ->assertSee('Checkout rate (checkouts per cart): 40.0%')
         ->assertSeeInOrder([
-            'Purchases',
-            '10',
-            '8 from tracked carts',
-            'Purchase rate (purchases from tracked carts per checkout): 40.0%',
-            'Cart purchase rate (purchases from tracked carts per cart): 16.0%',
+            'Add to cart', '120',
+            'Carts', '50',
+            'Checkouts', '20',
+            'Purchases', '10', '8 from tracked carts',
+            'Checkout rate', '40.0%', 'Checkouts per cart',
+            'Purchase rate', '40.0%', 'Purchases from tracked carts per checkout',
+            'Cart purchase rate', '16.0%', 'Purchases from tracked carts per cart',
         ]);
 });
 
@@ -136,12 +137,35 @@ test('a rate without a value shows a dash', function () {
     $this->actingAs($this->makeStaff(admin: true), 'staff');
 
     Livewire::test(ConversionStatsOverview::class, conversionFilters())
-        ->assertSee('Checkout rate (checkouts per cart): —')
-        ->assertSee('Purchase rate (purchases from tracked carts per checkout): —')
-        ->assertSee('Cart purchase rate (purchases from tracked carts per cart): —');
+        ->assertSeeInOrder([
+            'Checkout rate', '—',
+            'Purchase rate', '—',
+            'Cart purchase rate', '—',
+        ]);
 });
 
-test('the chart shows the four steps with a heading per interval', function (string $from, string $to, string $heading, string $firstLabel) {
+test('the funnel chart sits between the stats and the chart over time', function () {
+    expect(ConversionsPage::conversionWidgets())->toBe([
+        ConversionStatsOverview::class,
+        ConversionFunnelChart::class,
+        ConversionsOverTimeChart::class,
+    ]);
+});
+
+test('the funnel chart shows the period totals with only the purchases from tracked carts', function () {
+    $this->actingAs($this->makeStaff(admin: true), 'staff');
+    seedConversionReport();
+
+    $funnel = Livewire::test(ConversionFunnelChart::class, conversionFilters())
+        ->assertSee('Conversion funnel')
+        ->assertSet('options.plotOptions.bar.isFunnel', true)
+        ->assertSet('options.xaxis.categories', ['Add to cart', 'Carts', 'Checkouts', 'Purchases from tracked carts']);
+
+    expect($funnel->get('options.series'))->toHaveCount(1)
+        ->and($funnel->get('options.series.0.data'))->toBe([120, 50, 20, 8]);
+});
+
+test('the chart shows the four steps, with only the purchases from tracked carts, and a heading per interval', function (string $from, string $to, string $heading, string $firstLabel) {
     $this->actingAs($this->makeStaff(admin: true), 'staff');
     seedConversionReport();
 
@@ -149,8 +173,8 @@ test('the chart shows the four steps with a heading per interval', function (str
         ->assertSee($heading)
         ->assertSet('options.xaxis.categories.0', $firstLabel);
 
-    expect(array_column($chart->get('options.series'), 'name'))->toBe(['Add to cart', 'Carts', 'Checkouts', 'Purchases'])
-        ->and(array_map('array_sum', array_column($chart->get('options.series'), 'data')))->toBe([120, 50, 20, 10]);
+    expect(array_column($chart->get('options.series'), 'name'))->toBe(['Add to cart', 'Carts', 'Checkouts', 'Purchases from tracked carts'])
+        ->and(array_map('array_sum', array_column($chart->get('options.series'), 'data')))->toBe([120, 50, 20, 8]);
 })->with([
     'a week, per day' => ['2026-10-01', '2026-10-07', 'Funnel per day', '1 Oct'],
     'three months, per week' => ['2026-08-04', '2026-11-08', 'Funnel per week', '4 Aug'],

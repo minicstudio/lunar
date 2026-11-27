@@ -29,6 +29,7 @@ Some of this already exists, and some of it is missing:
   Purchases follow the traffic report's order rules, so both pages show the same purchase count. Events of carts whose orders all do not count, such as test orders, are left out, as the traffic report does with carts.
 - **Shared report code.** The period filter, the day/week/month grouping and the order-counting rules move out of the traffic classes into shared classes. Both reports use them, and the traffic report's figures do not change.
 - The migration state class also creates `analytics:conversions`. No role is created.
+- **Traffic source on the first product (user decision, 2026-11-27).** A cart gets its traffic source when a product is first added to it, not when it is created. The empty cart created after a completed order therefore gets no source: the Traffic sources report no longer counts it, and it no longer passes the old visit to the customer's next cart and order. Stored carts are not changed.
 
 ## Capabilities
 
@@ -39,7 +40,10 @@ Some of this already exists, and some of it is missing:
 
 ### Modified Capabilities
 
-- None. `analytics/traffic-report` keeps its requirements. Only its implementation moves to the shared period and order classes. `analytics/traffic-recording` and `analytics/traffic-attribution` are unchanged.
+- `analytics/traffic-attribution`: a cart gets its source when a product is first added to it, so an empty cart has none.
+- `analytics/traffic-recording`: a pending visit is recorded when a product is added to a cart without a source, not when a cart is created.
+
+`analytics/traffic-report` keeps its requirements. Only its implementation moves to the shared period and order classes.
 
 ## Impact
 
@@ -51,9 +55,10 @@ Some of this already exists, and some of it is missing:
   - new shared `src/Reports/ReportPeriod`, `src/Reports/CountedOrders` and `src/Filament/Concerns/HasPeriodFilters`;
   - `src/Traffic/Reports/TrafficReportQuery` and `src/Traffic/Filament/Pages/TrafficSourcesPage` use the shared classes;
   - `AnalyticsServiceProvider`, `AnalyticsPlugin`;
+  - `src/Traffic/Observers/StampCartWithTrafficSource` observes `CartLine` `created` instead of `Cart` `creating`;
   - `resources/lang/{en,hu,ro}` (new `conversions.php`, filter labels moved to `plugin.php`, permission labels).
 - Core, admin and other packages: not changed. No new Composer dependency.
-- Tests in `tests/analytics/Feature/Conversions/` and `tests/analytics/Unit/`. The existing traffic tests must stay green.
+- Tests in `tests/analytics/Feature/Conversions/` and `tests/analytics/Unit/`. The existing traffic tests must stay green, except `StampCartWithTrafficSourceTest` and the sanity check in `tests/core/Unit/Actions/Orders/SplitOrderTest.php`, which follow the new stamping.
 - lunar-frontend needs a counterpart change, which is not part of this change. It calls the recorder:
   - `addToCart()` after each successful add: product page, product card, gift selection, wishlist and reorder;
   - `beginCheckout()` where the checkout page dispatches `CheckoutInitiatedEvent`.
@@ -69,6 +74,6 @@ Some of this already exists, and some of it is missing:
   - per-source conversion figures, such as add to cart or checkout columns on the Traffic sources report;
   - add-to-cart quantities and values, and remove-from-cart;
   - following individual carts through the funnel (cohorts);
-  - changing the traffic report's cart count;
+  - removing the traffic source from empty carts stamped before the release;
   - pruning old events;
   - backfilling from GA4 or existing carts.
