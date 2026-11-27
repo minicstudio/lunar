@@ -17,7 +17,7 @@ return [
     'nothing_to_retry' => 'This sheet has no failed analysis to retry.',
     'ai_not_configured' => 'AI analysis is not configured. The provider or API key is missing. Contact your developer.',
     'no_included_sheets' => 'Include at least one sheet.',
-    'sheet_not_analyzed' => 'The sheet ":sheet" has no AI proposal or applied profile yet. Retry its analysis, apply a profile, or skip the sheet.',
+    'sheet_not_mapped' => 'The sheet ":sheet" has no mapping yet. Map its columns, retry its analysis, apply a profile, or skip the sheet.',
     'sheet_mapping_invalid' => 'Sheet ":sheet": :error',
     'profile_without_mapping' => 'This sheet has no mapping to save yet.',
     'profile_name_required' => 'Enter a name for the profile.',

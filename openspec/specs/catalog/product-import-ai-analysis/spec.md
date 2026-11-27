@@ -272,11 +272,16 @@ A failed sheet MUST show an understandable message, the error code, the attempt 
 - **WHEN** the analysis fails because the key was rejected, the quota is used up, or the answer is unusable
 - **THEN** the sheet shows respectively "The AI provider rejected the API key. The configuration needs to be checked.", "The AI quota is used up or there are too many requests. Try again in a few minutes.", or "The AI answer could not be used: <reason>. Try again."
 
-### Requirement: Mapping cannot continue past a failed sheet
+### Requirement: Mapping cannot continue past an unmapped sheet
 
-Staff MUST NOT be able to continue from mapping to staging while any included sheet has neither a valid proposal nor an applied import profile. Skipping the failed sheet MUST allow continuing.
+Staff MUST NOT be able to continue from mapping to staging while any included sheet has neither a valid proposal, an applied import profile, nor a mapping staff made by hand. A failed analysis MUST NOT keep staff from mapping the sheet by hand: the sheet MUST start with the product type the analysis would have used (the first one), so the target list offers that type's attributes, and once staff map its columns, the import MUST be able to continue with that mapping, even though the import's status stays "analysis failed" until then. Skipping the failed sheet MUST also allow continuing.
 
 #### Scenario: One sheet failed
 
 - **WHEN** the sheet "Produse" failed and the sheet "Outlet" has a proposal
-- **THEN** the continue action is disabled until "Produse" is retried successfully or skipped
+- **THEN** the continue action is disabled with "The sheet "Produse" has no mapping yet. Map its columns, retry its analysis, apply a profile, or skip the sheet." until "Produse" is retried successfully, mapped by hand, or skipped
+
+#### Scenario: Failed sheet mapped by hand
+
+- **WHEN** the analysis of "Produse" failed, and staff open its tab and map "Cod" to variant SKU and "Denumire" to product name
+- **THEN** the product type is already the first one, the target list offers its attributes such as "Details › Short description", the continue action is enabled, and staging uses the staff's mapping

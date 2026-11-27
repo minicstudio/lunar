@@ -30,7 +30,7 @@ enum ImportStatus: string
         return match ($this) {
             self::Uploaded => [self::Analyzing, self::AwaitingMapping, self::Failed, self::Cancelled],
             self::Analyzing => [self::AwaitingMapping, self::AnalysisFailed, self::Cancelled],
-            self::AnalysisFailed => [self::Analyzing, self::AwaitingMapping, self::Cancelled],
+            self::AnalysisFailed => [self::Analyzing, self::AwaitingMapping, self::Staging, self::Cancelled],
             self::AwaitingMapping => [self::Analyzing, self::AnalysisFailed, self::Staging, self::Cancelled],
             self::Staging => [self::ReviewingValues, self::PreviewReady, self::AwaitingMapping, self::Cancelled],
             self::ReviewingValues => [self::AwaitingMapping, self::PreviewReady, self::Cancelled],

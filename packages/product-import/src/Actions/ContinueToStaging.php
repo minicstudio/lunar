@@ -15,8 +15,9 @@ use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportSheet;
 
 /**
- * Leaves the mapping step: checks that every included sheet has a valid
- * proposal or an applied profile and a valid mapping, then starts staging.
+ * Leaves the mapping step: checks that every included sheet has a mapping
+ * (the AI's proposal, an applied profile, or one staff made by hand) and
+ * that it is valid, then starts staging.
  */
 class ContinueToStaging
 {
@@ -40,7 +41,7 @@ class ContinueToStaging
             throw new ImportActionRefused($blocker);
         }
 
-        if (! $import->transitionTo(ImportStatus::Staging, ImportStatus::AwaitingMapping)) {
+        if (! $import->transitionTo(ImportStatus::Staging, [ImportStatus::AwaitingMapping, ImportStatus::AnalysisFailed])) {
             throw ImportActionRefused::because('action_not_completed');
         }
 
@@ -65,8 +66,8 @@ class ContinueToStaging
                 return __('lunarpanel.product-import::errors.ai_not_configured');
             }
 
-            if (! in_array($sheet->analysis_status, [SheetAnalysisStatus::Completed, SheetAnalysisStatus::ProfileApplied], true)) {
-                return __('lunarpanel.product-import::errors.sheet_not_analyzed', ['sheet' => $sheet->name]);
+            if (! $this->isMapped($sheet)) {
+                return __('lunarpanel.product-import::errors.sheet_not_mapped', ['sheet' => $sheet->name]);
             }
 
             $error = $this->mappingError($sheet);
@@ -85,14 +86,21 @@ class ContinueToStaging
     }
 
     /**
+     * Whether a sheet has a mapping to stage: the AI's proposal, an applied
+     * profile, or one staff made by hand, also after a failed analysis or
+     * instead of an offered profile. A sheet whose analysis still runs has
+     * none yet, because the proposal will replace it.
+     */
+    protected function isMapped(ProductImportSheet $sheet): bool
+    {
+        return $sheet->analysis_status !== SheetAnalysisStatus::Pending && $sheet->hasMapping();
+    }
+
+    /**
      * The first problem of a sheet's mapping.
      */
     protected function mappingError(ProductImportSheet $sheet): ?string
     {
-        if (! $sheet->hasMapping()) {
-            return __('lunarpanel.product-import::mapping.errors.product_type_required');
-        }
-
         return $this->validator->errors($sheet->sheetMapping(), $sheet->name)[0] ?? null;
     }
 

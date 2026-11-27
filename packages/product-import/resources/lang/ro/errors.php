@@ -17,7 +17,7 @@ return [
     'nothing_to_retry' => 'Această foaie nu are o analiză eșuată de reîncercat.',
     'ai_not_configured' => 'Analiza AI nu este configurată. Lipsește furnizorul sau cheia API. Contactează dezvoltatorul.',
     'no_included_sheets' => 'Include cel puțin o foaie.',
-    'sheet_not_analyzed' => 'Foaia „:sheet” nu are încă o propunere AI sau un profil aplicat. Reîncearcă analiza, aplică un profil sau sari peste foaie.',
+    'sheet_not_mapped' => 'Foaia „:sheet” nu are încă o mapare. Mapează-i coloanele, reîncearcă analiza, aplică un profil sau sari peste foaie.',
     'sheet_mapping_invalid' => 'Foaia „:sheet”: :error',
     'profile_without_mapping' => 'Această foaie nu are încă o mapare de salvat.',
     'profile_name_required' => 'Introdu un nume pentru profil.',

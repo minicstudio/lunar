@@ -17,7 +17,7 @@ return [
     'nothing_to_retry' => 'Ennek a munkalapnak nincs újrapróbálható sikertelen elemzése.',
     'ai_not_configured' => 'Az MI-elemzés nincs beállítva. Hiányzik a szolgáltató vagy az API-kulcs. Fordulj a fejlesztődhöz.',
     'no_included_sheets' => 'Legalább egy munkalapot vegyél fel.',
-    'sheet_not_analyzed' => 'A(z) „:sheet” munkalapnak még nincs MI-javaslata vagy alkalmazott profilja. Próbáld újra az elemzést, alkalmazz profilt, vagy hagyd ki a munkalapot.',
+    'sheet_not_mapped' => 'A(z) „:sheet” munkalapnak még nincs hozzárendelése. Rendeld hozzá az oszlopait, próbáld újra az elemzést, alkalmazz profilt, vagy hagyd ki a munkalapot.',
     'sheet_mapping_invalid' => '„:sheet” munkalap: :error',
     'profile_without_mapping' => 'Ennek a munkalapnak még nincs menthető hozzárendelése.',
     'profile_name_required' => 'Adj nevet a profilnak.',

@@ -138,7 +138,7 @@ return [
         'pair' => 'Pair number',
         'code_meanings' => 'Code meanings',
         'code' => 'Code',
-        'meaning' => 'Meaning',
+        'meaning_placeholder' => 'Choose a meaning',
         'add_code' => 'Add code',
         'remove' => 'Remove',
         'meanings' => [

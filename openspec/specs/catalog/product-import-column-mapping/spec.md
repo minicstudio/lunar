@@ -55,7 +55,7 @@ Meta title, meta description, and meta keywords columns MUST be mappable, in the
 
 ### Requirement: Staff can change, ignore, and restore every column
 
-The mapping step MUST show, for each sheet in its own tab, every column with its header, samples, target, and AI confidence. Staff MUST be able to change any target, ignore a column, and restore an ignored column. Ignored columns MUST NOT be staged or imported.
+The mapping step MUST show, for each sheet in its own tab, every column with its header, samples, target, and AI confidence. Staff MUST be able to change any target, ignore a column, and restore an ignored column. The target list MUST list the targets in the alphabetical order of their labels in the panel's language, accented letters sorting with their letter, after the "Not mapped" choice. Ignored columns MUST NOT be staged or imported.
 
 #### Scenario: Ignore a notes column
 

@@ -138,7 +138,7 @@ return [
         'pair' => 'Párszám',
         'code_meanings' => 'Kódok jelentése',
         'code' => 'Kód',
-        'meaning' => 'Jelentés',
+        'meaning_placeholder' => 'Válassz jelentést',
         'add_code' => 'Kód hozzáadása',
         'remove' => 'Eltávolítás',
         'meanings' => [
