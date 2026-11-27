@@ -1067,6 +1067,179 @@ Table "lunar_product_associations" {
   }
 }
 
+Table "lunar_product_import_files" {
+  "id" bigint [pk, not null, increment]
+  "product_import_id" bigint [not null]
+  "position" smallint [not null]
+  "original_name" varchar(255) [not null]
+  "disk" varchar(255) [not null]
+  "path" varchar(255)
+  "size" bigint
+  "encoding" varchar(32)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (product_import_id, position) [name: "lunar_product_import_files_product_import_id_position_index"]
+  }
+}
+
+Table "lunar_product_import_images" {
+  "id" bigint [pk, not null, increment]
+  "product_import_id" bigint [not null]
+  "product_import_row_id" bigint
+  "product_id" bigint [not null]
+  "product_variant_id" bigint
+  "url" varchar(2048) [not null, note: 'The image URL to download. Staff can correct the URL of a failed image before retrying the failed images; the raw cell of the row keeps the original URL.']
+  "position" int [not null, default: '0']
+  "status" varchar(16) [not null]
+  "media_id" bigint
+  "error" varchar(500)
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    product_import_row_id [name: "lunar_product_import_images_product_import_row_id_foreign"]
+    product_id [name: "lunar_product_import_images_product_id_index"]
+    (product_import_id, status) [name: "product_import_images_import_status"]
+  }
+}
+
+Table "lunar_product_import_profiles" {
+  "id" bigint [pk, not null, increment]
+  "name" varchar(255) [unique, not null]
+  "header_fingerprint" varchar(64) [not null]
+  "headers" json [not null]
+  "mapping" json [not null]
+  "options" json
+  "usage_count" int [not null, default: '0']
+  "last_used_at" timestamp
+  "staff_id" bigint
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    header_fingerprint [name: "lunar_product_import_profiles_header_fingerprint_index"]
+    staff_id [name: "lunar_product_import_profiles_staff_id_foreign"]
+  }
+}
+
+Table "lunar_product_import_rows" {
+  "id" bigint [pk, not null, increment]
+  "product_import_id" bigint [not null]
+  "product_import_sheet_id" bigint [not null]
+  "row_number" int [not null]
+  "raw" json [not null]
+  "typed" json
+  "normalized" json
+  "overrides" json
+  "role" varchar(24)
+  "role_override" varchar(24)
+  "source_id" varchar(255)
+  "parent_ref" varchar(255)
+  "group_key" varchar(255)
+  "match_value" varchar(255)
+  "status" varchar(16) [not null, default: 'pending']
+  "skip_reason" varchar(16)
+  "messages" json
+  "action" varchar(16)
+  "matched_product_id" bigint
+  "matched_variant_id" bigint
+  "product_id" bigint
+  "product_variant_id" bigint
+
+  Indexes {
+    (product_import_sheet_id, row_number) [name: "lunar_product_import_rows_product_import_sheet_id_row_number_index"]
+    (product_import_id, status) [name: "lunar_product_import_rows_product_import_id_status_index"]
+    (product_import_id, group_key) [name: "lunar_product_import_rows_product_import_id_group_key_index"]
+    (product_import_id, match_value) [name: "lunar_product_import_rows_product_import_id_match_value_index"]
+    (product_import_id, source_id) [name: "lunar_product_import_rows_product_import_id_source_id_index"]
+    (product_import_id, parent_ref) [name: "lunar_product_import_rows_product_import_id_parent_ref_index"]
+  }
+}
+
+Table "lunar_product_import_sheets" {
+  "id" bigint [pk, not null, increment]
+  "product_import_id" bigint [not null]
+  "product_import_file_id" bigint
+  "position" smallint [not null]
+  "name" varchar(255) [not null]
+  "header_row" int [not null, default: '1']
+  "row_count" int [not null, default: '0']
+  "skipped" tinyint(1) [not null, default: '0']
+  "columns" json
+  "analysis_status" varchar(32)
+  "ai_proposal" json
+  "analysis_error" json
+  "analysis_attempts" tinyint [not null, default: '0']
+  "mapping" json
+  "offered_profile_id" bigint
+  "offered_profile_score" decimal(5,4)
+  "profile_id" bigint
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (product_import_id, position) [name: "lunar_product_import_sheets_product_import_id_position_index"]
+    product_import_file_id [name: "lunar_product_import_sheets_product_import_file_id_foreign"]
+    offered_profile_id [name: "lunar_product_import_sheets_offered_profile_id_foreign"]
+    profile_id [name: "lunar_product_import_sheets_profile_id_foreign"]
+  }
+}
+
+Table "lunar_product_import_values" {
+  "id" bigint [pk, not null, increment]
+  "product_import_id" bigint [not null]
+  "type" varchar(16) [not null, note: 'category, brand, option, option_value, property, or discount']
+  "option_key" varchar(191) [not null, default: '']
+  "source_value" varchar(500) [not null]
+  "normalized_key" varchar(500) [not null]
+  "path" json
+  "details" json [note: 'For a discount: its kind (percent or amount), value (the percent, or the amount in minor units of the default currency), start, and end from the file.']
+  "sheets" json
+  "group_keys" json
+  "product_count" int [not null, default: '0']
+  "variant_count" int [not null, default: '0']
+  "match_type" varchar(16)
+  "matched_id" bigint
+  "score" decimal(5,4)
+  "action" varchar(16)
+  "target_id" bigint
+  "create_name" varchar(500)
+  "create_details" json [note: 'For a discount to create: its kind, value, start, and end, prefilled from details.']
+  "parent_id" bigint
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    (product_import_id, type, option_key, normalized_key) [unique, name: "product_import_values_unique_key"]
+  }
+}
+
+Table "lunar_product_imports" {
+  "id" bigint [pk, not null, increment]
+  "staff_id" bigint
+  "status" varchar(32) [not null]
+  "options" json [note: 'Match key, existing variants, status of new products, collection group, and additional collections. Separators are not import options: they belong to the columns of each sheet mapping.']
+  "resolved_options" json
+  "stats" json
+  "batch_id" varchar(255)
+  "ai_provider" varchar(255)
+  "ai_model" varchar(255)
+  "failure_message" text
+  "started_at" timestamp
+  "finished_at" timestamp
+  "pruned_at" timestamp
+  "created_at" timestamp
+  "updated_at" timestamp
+
+  Indexes {
+    staff_id [name: "lunar_product_imports_staff_id_foreign"]
+    status [name: "lunar_product_imports_status_index"]
+    finished_at [name: "lunar_product_imports_finished_at_index"]
+  }
+}
+
 Table "lunar_product_option_value_product_variant" {
   "id" bigint [pk, not null, increment]
   "value_id" bigint [not null]
@@ -1998,6 +2171,30 @@ Ref "lunar_prices_customer_group_id_foreign":"lunar_customer_groups"."id" < "lun
 Ref "lunar_product_associations_product_parent_id_foreign":"lunar_products"."id" < "lunar_product_associations"."product_parent_id"
 
 Ref "lunar_product_associations_product_target_id_foreign":"lunar_products"."id" < "lunar_product_associations"."product_target_id"
+
+Ref "lunar_product_import_files_product_import_id_foreign":"lunar_product_imports"."id" < "lunar_product_import_files"."product_import_id" [delete: cascade]
+
+Ref "lunar_product_import_images_product_import_id_foreign":"lunar_product_imports"."id" < "lunar_product_import_images"."product_import_id" [delete: cascade]
+
+Ref "lunar_product_import_images_product_import_row_id_foreign":"lunar_product_import_rows"."id" < "lunar_product_import_images"."product_import_row_id" [delete: cascade]
+
+Ref "lunar_product_import_profiles_staff_id_foreign":"lunar_staff"."id" < "lunar_product_import_profiles"."staff_id" [delete: set null]
+
+Ref "lunar_product_import_rows_product_import_id_foreign":"lunar_product_imports"."id" < "lunar_product_import_rows"."product_import_id" [delete: cascade]
+
+Ref "lunar_product_import_rows_product_import_sheet_id_foreign":"lunar_product_import_sheets"."id" < "lunar_product_import_rows"."product_import_sheet_id" [delete: cascade]
+
+Ref "lunar_product_import_sheets_product_import_id_foreign":"lunar_product_imports"."id" < "lunar_product_import_sheets"."product_import_id" [delete: cascade]
+
+Ref "lunar_product_import_sheets_product_import_file_id_foreign":"lunar_product_import_files"."id" < "lunar_product_import_sheets"."product_import_file_id" [delete: set null]
+
+Ref "lunar_product_import_sheets_offered_profile_id_foreign":"lunar_product_import_profiles"."id" < "lunar_product_import_sheets"."offered_profile_id" [delete: set null]
+
+Ref "lunar_product_import_sheets_profile_id_foreign":"lunar_product_import_profiles"."id" < "lunar_product_import_sheets"."profile_id" [delete: set null]
+
+Ref "lunar_product_import_values_product_import_id_foreign":"lunar_product_imports"."id" < "lunar_product_import_values"."product_import_id" [delete: cascade]
+
+Ref "lunar_product_imports_staff_id_foreign":"lunar_staff"."id" < "lunar_product_imports"."staff_id" [delete: set null]
 
 Ref "lunar_product_option_value_product_variant_value_id_foreign":"lunar_product_option_values"."id" < "lunar_product_option_value_product_variant"."value_id"
 

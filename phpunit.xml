@@ -57,6 +57,10 @@
         <testsuite name="product-feed">
             <directory suffix="Test.php">tests/product-feed</directory>
         </testsuite>
+        <testsuite name="product-import">
+            <directory suffix="Test.php">tests/product-import/Feature</directory>
+            <directory suffix="Test.php">tests/product-import/Unit</directory>
+        </testsuite>
     </testsuites>
     <php>
         <env name="DB_CONNECTION" value="testing"/>
