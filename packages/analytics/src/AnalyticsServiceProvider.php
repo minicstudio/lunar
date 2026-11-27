@@ -12,7 +12,7 @@ use Lunar\Analytics\Database\State\EnsureAnalyticsPermissions;
 use Lunar\Analytics\Traffic\Contracts\ClassifiesTrafficSource;
 use Lunar\Analytics\Traffic\Observers\StampCartWithTrafficSource;
 use Lunar\Analytics\Traffic\Support\TrafficSourceClassifier;
-use Lunar\Models\Cart;
+use Lunar\Models\CartLine;
 
 class AnalyticsServiceProvider extends ServiceProvider
 {
@@ -49,11 +49,11 @@ class AnalyticsServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register model observers. `Cart::observe()` follows a model-manifest replacement.
+     * Register model observers. `CartLine::observe()` follows a model-manifest replacement.
      */
     protected function registerObservers(): void
     {
-        Cart::observe(StampCartWithTrafficSource::class);
+        CartLine::observe(StampCartWithTrafficSource::class);
     }
 
     /**
@@ -105,11 +105,13 @@ class AnalyticsServiceProvider extends ServiceProvider
     }
 
     /**
-     * Load package migrations and translations.
+     * Load package migrations, translations, storefront views and the presence route.
      */
     protected function loadPackageAssets(): void
     {
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lunarpanel.analytics');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'lunar.analytics');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
         if (! config('lunar.database.disable_migrations', false)) {
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');

@@ -8,10 +8,11 @@ return [
     | Traffic sources
     |--------------------------------------------------------------------------
     |
-    | Records where storefront visitors come from, stamps new carts with the
-    | source of the current visit and powers the admin "Traffic sources"
-    | report. Hosts attach the `RecordTrafficVisit` middleware to their
-    | storefront routes, inside `StartSession`.
+    | Records where storefront visitors come from, stamps carts with the
+    | source of the current visit when a product is added to them and powers
+    | the admin "Traffic sources" report. Hosts attach the
+    | `RecordTrafficVisit` middleware to their storefront routes, inside
+    | `StartSession`.
     |
     */
     'traffic' => [
@@ -21,8 +22,8 @@ return [
         | Enabled
         |----------------------------------------------------------------------
         |
-        | When false, no visits are recorded and new carts get no traffic
-        | source. The report keeps showing the data already stored.
+        | When false, no visits are recorded and carts get no traffic source.
+        | The report keeps showing the data already stored.
         |
         */
         'enabled' => env('ANALYTICS_TRAFFIC_ENABLED', false),
@@ -82,5 +83,31 @@ return [
             'wbraid' => ['source' => 'google', 'medium' => 'cpc', 'before_referrer' => true],
             'fbclid' => ['source' => 'facebook', 'medium' => 'social', 'before_referrer' => false],
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conversions
+    |--------------------------------------------------------------------------
+    |
+    | Records the storefront's adds to cart, cart starts and checkout starts
+    | and powers the admin "Conversions" report. Hosts call
+    | `ConversionEventRecorder::addToCart()` after each successful add to
+    | cart and `ConversionEventRecorder::beginCheckout()` when the checkout
+    | page opens for a valid cart.
+    |
+    */
+    'conversions' => [
+        /*
+        |----------------------------------------------------------------------
+        | Enabled
+        |----------------------------------------------------------------------
+        |
+        | When false, no conversion events are recorded. Independent of
+        | traffic recording. The report keeps showing the events already
+        | stored, and purchases are always counted.
+        |
+        */
+        'enabled' => env('ANALYTICS_CONVERSIONS_ENABLED', false),
     ],
 ];

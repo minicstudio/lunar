@@ -12,6 +12,7 @@ use Lunar\Analytics\Traffic\Contracts\ClassifiesTrafficSource;
 use Lunar\Analytics\Traffic\DataTransferObjects\TrafficSource;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
 use Lunar\Models\Cart;
+use Throwable;
 
 /**
  * Records storefront visits and keeps the current visit in the Laravel session.
@@ -28,6 +29,14 @@ use Lunar\Models\Cart;
  * the current visit, as the cart observer does (`current()`). Writing a
  * current visit drops the pending one.
  *
+ * A visit counts once a browser confirms it. The first page view of a
+ * session stores its visit unconfirmed. The visit is confirmed when the
+ * session comes back: at its next storefront page view (`record()`), when a
+ * product is added to a cart (`current()`), or when the page's presence
+ * script reaches the presence route (`confirm()`). Crawlers that keep no
+ * cookies and run no scripts never confirm theirs. A visit started by a
+ * session that came back is stored confirmed.
+ *
  * @phpstan-type TrafficVisitPayload array{visit_id: ?int, source: string, medium: ?string, campaign: ?string}
  * @phpstan-type TrafficPendingVisitPayload array{source: string, medium: ?string, campaign: ?string, referrer_host: ?string, landing_path: string}
  */
@@ -42,6 +51,11 @@ class TrafficVisitRecorder
      * Session key holding the visit a prefetch would have started, until the page is opened.
      */
     public const PENDING_SESSION_KEY = 'analytics_traffic_pending_visit';
+
+    /**
+     * Session key holding the id of the current visit once it is confirmed.
+     */
+    public const CONFIRMED_SESSION_KEY = 'analytics_traffic_confirmed_visit';
 
     public function __construct(protected ClassifiesTrafficSource $classifier) {}
 
@@ -96,6 +110,11 @@ class TrafficVisitRecorder
      * shop's own referrer and no campaign parameters) records the pending
      * visit, with its landing path and referrer host; a request with a
      * source of its own records that source and drops the pending visit.
+     *
+     * A request that is not a prefetch, in a session holding a visit or a
+     * pending visit, shows the session came back: it confirms the current
+     * visit, and a visit it starts is stored confirmed. The first page view
+     * of a session stores its visit unconfirmed.
      */
     public function record(Request $request): void
     {
@@ -111,12 +130,17 @@ class TrafficVisitRecorder
             return;
         }
 
+        $pending = $current === null && ! $isPrefetch ? $this->pendingVisit($session) : null;
+        $cameBack = ! $isPrefetch && ($current !== null || $pending !== null);
+
+        if (! $isPrefetch && $current !== null) {
+            $this->confirmVisit($session, $current);
+        }
+
         $source = $this->classifier->classify($request);
         $landingPath = mb_substr('/'.ltrim($request->path(), '/'), 0, 255);
 
         if (! $source) {
-            $pending = $current === null && ! $isPrefetch ? $this->pendingVisit($session) : null;
-
             if ($pending === null) {
                 return;
             }
@@ -127,7 +151,7 @@ class TrafficVisitRecorder
             return;
         }
 
-        $this->start($request, $session, $current, $source, $landingPath, $isPrefetch);
+        $this->start($request, $session, $current, $source, $landingPath, $isPrefetch, confirmed: $cameBack);
     }
 
     /**
@@ -135,8 +159,9 @@ class TrafficVisitRecorder
      *
      * Null when recording is disabled, the request may not be tracked, no
      * session is available or the session has no visit. On a request that
-     * is not a prefetch, a session without a visit first records its
-     * pending visit, applying the cart rule of `record()`.
+     * is not a prefetch, the session came back: a session without a visit
+     * first records its pending visit confirmed, applying the cart rule of
+     * `record()`, and a session with a visit confirms it.
      *
      * @return TrafficVisitPayload|null
      */
@@ -155,8 +180,18 @@ class TrafficVisitRecorder
         $session = $request->session();
         $current = $this->normalisePayload($session->get(self::SESSION_KEY));
 
-        if ($current === null && ! $this->isPrefetch($request) && ($pending = $this->pendingVisit($session))) {
-            $this->start($request, $session, null, $this->pendingSource($pending), $pending['landing_path'], isPrefetch: false);
+        if ($this->isPrefetch($request)) {
+            return $current;
+        }
+
+        if ($current !== null) {
+            $this->confirmVisit($session, $current);
+
+            return $current;
+        }
+
+        if ($pending = $this->pendingVisit($session)) {
+            $this->start($request, $session, null, $this->pendingSource($pending), $pending['landing_path'], isPrefetch: false, confirmed: true);
 
             $current = $this->normalisePayload($session->get(self::SESSION_KEY));
         }
@@ -165,15 +200,61 @@ class TrafficVisitRecorder
     }
 
     /**
+     * Confirm the session's current visit, as the presence route does when
+     * the page's script runs in a browser.
+     *
+     * Does nothing when recording is disabled, the request may not be
+     * tracked or is a prefetch, or the session has no current visit. A
+     * prefetch's pending visit is left to the session's next request.
+     */
+    public function confirm(): void
+    {
+        if (! $this->enabled() || ! $this->shouldTrack()) {
+            return;
+        }
+
+        $request = request();
+
+        if (! $request->hasSession() || $this->isPrefetch($request)) {
+            return;
+        }
+
+        $session = $request->session();
+
+        if ($current = $this->normalisePayload($session->get(self::SESSION_KEY))) {
+            $this->confirmVisit($session, $current);
+        }
+    }
+
+    /**
+     * Whether the page should carry the presence script: recording is on,
+     * the request may be tracked, and the session has no visit yet, so this
+     * page view may start an unconfirmed one. A later page view confirms
+     * the visit by itself.
+     */
+    public function needsConfirmation(): bool
+    {
+        if (! $this->enabled() || ! $this->shouldTrack()) {
+            return false;
+        }
+
+        $request = request();
+
+        return $request->hasSession()
+            && $this->normalisePayload($request->session()->get(self::SESSION_KEY)) === null;
+    }
+
+    /**
      * Start a visit with the given source, unless the visitor's cart has a traffic source.
      *
      * With a sourced cart, a session without a visit continues the cart's
      * visit. Otherwise a prefetch stores the pending visit, and any other
-     * request inserts the visit and makes it current.
+     * request inserts the visit and makes it current, confirmed or not.
      *
      * @param  TrafficVisitPayload|null  $current  The session's current visit.
+     * @param  bool  $confirmed  Whether the session came back, so a browser holds it.
      */
-    protected function start(Request $request, Session $session, ?array $current, TrafficSource $source, string $landingPath, bool $isPrefetch): void
+    protected function start(Request $request, Session $session, ?array $current, TrafficSource $source, string $landingPath, bool $isPrefetch, bool $confirmed): void
     {
         if ($cartSource = $this->visitorCartSource($request, $session)) {
             if ($current === null) {
@@ -201,7 +282,12 @@ class TrafficVisitRecorder
             'campaign' => $source->campaign,
             'referrer_host' => $source->referrerHost,
             'landing_path' => $landingPath,
+            'confirmed_at' => $confirmed ? now() : null,
         ]);
+
+        if ($confirmed) {
+            $session->put(self::CONFIRMED_SESSION_KEY, (int) $visit->getKey());
+        }
 
         $this->putCurrent($session, [
             'visit_id' => (int) $visit->getKey(),
@@ -209,6 +295,38 @@ class TrafficVisitRecorder
             'medium' => $visit->medium,
             'campaign' => $visit->campaign,
         ]);
+    }
+
+    /**
+     * Confirm the session's current visit, once per visit and session.
+     *
+     * The update only touches an unconfirmed visit, so a repeated or
+     * concurrent confirmation changes nothing. A failed update is reported
+     * and retried at the session's next request, so it never interrupts the
+     * page or the add to cart that confirms.
+     *
+     * @param  TrafficVisitPayload  $current
+     */
+    protected function confirmVisit(Session $session, array $current): void
+    {
+        $visitId = $current['visit_id'];
+
+        if ($visitId === null || $session->get(self::CONFIRMED_SESSION_KEY) === $visitId) {
+            return;
+        }
+
+        try {
+            TrafficVisit::query()
+                ->whereKey($visitId)
+                ->whereNull('confirmed_at')
+                ->update(['confirmed_at' => now()]);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return;
+        }
+
+        $session->put(self::CONFIRMED_SESSION_KEY, $visitId);
     }
 
     /**

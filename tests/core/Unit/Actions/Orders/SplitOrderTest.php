@@ -25,6 +25,7 @@ use Lunar\Exceptions\Orders\UnauthorizedOrderSplitException;
 use Lunar\Facades\ShippingManifest;
 use Lunar\Jobs\Orders\MarkAsNewCustomer;
 use Lunar\Models\Cart;
+use Lunar\Models\CartLine;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
 use Lunar\Models\Customer;
@@ -1123,7 +1124,7 @@ it('gives the split carts no traffic source while the panel serves the request',
         'campaign' => null,
     ]);
 
-    expect(Cart::factory()->create()->meta['traffic_source']['source'])->toBe('google');
+    expect(CartLine::factory()->create()->cart->meta['traffic_source']['source'])->toBe('google');
 
     $filament->setServingStatus(true);
 

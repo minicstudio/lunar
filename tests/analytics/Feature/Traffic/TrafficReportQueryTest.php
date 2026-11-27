@@ -551,3 +551,20 @@ test('landing pages are ordered by visits', function () {
     expect($page->total())->toBe(3)
         ->and($page->items())->toBe([['landing_path' => '/blog', 'visits' => 3]]);
 });
+
+test('unconfirmed visits are left out of every visit figure', function () {
+    reportVisits(3, 'google', 'organic', '2026-10-02 10:00', '/sale');
+    TrafficVisit::factory()->unconfirmed()->count(5)->create([
+        'source' => 'direct',
+        'medium' => 'none',
+        'landing_path' => '/products/phone',
+        'created_at' => CarbonImmutable::parse('2026-10-02 11:00'),
+    ]);
+
+    $report = octoberReport();
+
+    expect($report->totals()['visits'])->toBe(3)
+        ->and($report->visitsBySource())->toHaveCount(1)
+        ->and(array_sum($report->visitsPerDay()))->toBe(3)
+        ->and(array_column($report->landingPages(), 'landing_path'))->toBe(['/sale']);
+});

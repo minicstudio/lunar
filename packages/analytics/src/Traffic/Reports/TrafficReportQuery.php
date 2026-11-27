@@ -4,15 +4,13 @@ namespace Lunar\Analytics\Traffic\Reports;
 
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Carbon\CarbonPeriod;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Collection;
+use Lunar\Analytics\Reports\CountedOrders;
+use Lunar\Analytics\Reports\ReportPeriod;
 use Lunar\Analytics\Traffic\Models\TrafficVisit;
 use Lunar\Facades\DB;
 use Lunar\Models\Cart;
-use Lunar\Models\Order;
 
 /**
  * Computes every figure of the traffic sources report for one period.
@@ -23,17 +21,8 @@ use Lunar\Models\Order;
  * individual visits. Order value is `total - shipping_total`, summed without
  * currency conversion, like the dashboard.
  *
- * An order counts when `Order::reportable()` keeps its current status, placed
- * or not. A `split` original counts when one of the orders it was split into
- * counts, following orders that were split again. A split counts as one
- * order, the original, with its own `placed_at` and value; its new orders
- * are not counted (unlike the dashboard, which counts the new orders).
- *
- * Carts whose orders (by `cart_id`) all do not count, and visits whose orders
- * (by `meta.traffic_source.visit_id`) all do not count, are left out of every
- * figure. Carts and visits without orders are counted. The lookup runs once
- * per instance and reads only orders with an excluded status created or
- * placed from the period start.
+ * Which orders count, and which carts and visits are left out because of
+ * their orders, follows `CountedOrders`.
  */
 class TrafficReportQuery
 {
@@ -45,29 +34,16 @@ class TrafficReportQuery
     /**
      * Longest period, in days, whose visits over time are shown per day.
      */
-    public const DAILY_MAX_DAYS = 31;
+    public const DAILY_MAX_DAYS = ReportPeriod::DAILY_MAX_DAYS;
 
     /**
      * Longest period, in days, whose visits over time are shown per week.
      */
-    public const WEEKLY_MAX_DAYS = 182;
+    public const WEEKLY_MAX_DAYS = ReportPeriod::WEEKLY_MAX_DAYS;
 
-    /**
-     * Status of an order that was split into new orders.
-     */
-    protected const SPLIT_STATUS = 'split';
+    protected ReportPeriod $period;
 
-    protected CarbonImmutable $from;
-
-    protected CarbonImmutable $to;
-
-    /**
-     * Visits and carts left out because of their orders, and the split
-     * originals that count; null until looked up.
-     *
-     * @var array{visit_ids: list<int>, cart_ids: list<int>, split_original_ids: list<int>}|null
-     */
-    protected ?array $orderExclusions = null;
+    protected CountedOrders $orders;
 
     /**
      * @param  CarbonInterface  $from  First day of the period, included.
@@ -75,12 +51,8 @@ class TrafficReportQuery
      */
     public function __construct(CarbonInterface $from, CarbonInterface $to)
     {
-        if ($from->greaterThan($to)) {
-            [$from, $to] = [$to, $from];
-        }
-
-        $this->from = CarbonImmutable::instance($from)->startOfDay();
-        $this->to = CarbonImmutable::instance($to)->endOfDay();
+        $this->period = new ReportPeriod($from, $to);
+        $this->orders = new CountedOrders($this->period);
     }
 
     /**
@@ -88,7 +60,7 @@ class TrafficReportQuery
      */
     public function from(): CarbonImmutable
     {
-        return $this->from;
+        return $this->period->from();
     }
 
     /**
@@ -96,7 +68,7 @@ class TrafficReportQuery
      */
     public function to(): CarbonImmutable
     {
-        return $this->to;
+        return $this->period->to();
     }
 
     /**
@@ -136,43 +108,27 @@ class TrafficReportQuery
 
         $days = [];
 
-        foreach (CarbonPeriod::create($this->from->startOfDay(), '1 day', $this->to->startOfDay()) as $day) {
-            $key = $day->format('Y-m-d');
-            $days[$key] = (int) ($counts[$key] ?? 0);
+        foreach ($this->period->days() as $day) {
+            $days[$day] = (int) ($counts[$day] ?? 0);
         }
 
         return $days;
     }
 
     /**
-     * Visits over time, grouped by period length: per day for periods of up
-     * to 31 days, per week (Monday to Sunday) up to 182 days, otherwise per
-     * calendar month. Each bucket is keyed by its first day inside the period
-     * (`Y-m-d`), so the first and last week or month can be partial; buckets
-     * without visits give 0. Sums `visitsPerDay()`, without another query.
+     * Visits over time, grouped by period length as `ReportPeriod::group()`
+     * does: per day for periods of up to 31 days, per week (Monday to Sunday)
+     * up to 182 days, otherwise per calendar month; buckets without visits
+     * give 0. Sums `visitsPerDay()`, without another query.
      *
      * @return array{interval: 'day'|'week'|'month', visits: array<string, int>}
      */
     public function visitsOverTime(): array
     {
-        $interval = $this->visitsOverTimeInterval();
-        $days = $this->visitsPerDay();
-
-        if ($interval === 'day') {
-            return ['interval' => $interval, 'visits' => $days];
-        }
-
-        $visits = [];
-
-        foreach ($days as $day => $count) {
-            $date = CarbonImmutable::parse($day);
-            $bucketStart = $interval === 'week' ? $date->startOfWeek(CarbonInterface::MONDAY) : $date->startOfMonth();
-            $key = ($bucketStart->lessThan($this->from) ? $this->from : $bucketStart)->format('Y-m-d');
-
-            $visits[$key] = ($visits[$key] ?? 0) + $count;
-        }
-
-        return ['interval' => $interval, 'visits' => $visits];
+        return [
+            'interval' => $this->visitsOverTimeInterval(),
+            'visits' => $this->period->group($this->visitsPerDay()),
+        ];
     }
 
     /**
@@ -182,13 +138,7 @@ class TrafficReportQuery
      */
     public function visitsOverTimeInterval(): string
     {
-        $days = (int) round($this->from->diffInDays($this->to->startOfDay())) + 1;
-
-        return match (true) {
-            $days <= self::DAILY_MAX_DAYS => 'day',
-            $days <= self::WEEKLY_MAX_DAYS => 'week',
-            default => 'month',
-        };
+        return $this->period->interval();
     }
 
     /**
@@ -234,8 +184,8 @@ class TrafficReportQuery
     {
         return Cart::query()
             ->toBase()
-            ->whereBetween('created_at', [$this->from, $this->to])
-            ->whereNotIn('id', $this->orderExclusions()['cart_ids'])
+            ->whereBetween('created_at', [$this->period->from(), $this->period->to()])
+            ->whereNotIn('id', $this->orders->excludedCartIds())
             ->whereNotNull('meta->traffic_source->source')
             ->select([
                 'meta->traffic_source->source as source',
@@ -264,17 +214,7 @@ class TrafficReportQuery
      */
     public function ordersBySource(): array
     {
-        $splitOriginalIds = $this->orderExclusions()['split_original_ids'];
-
-        return Order::query()
-            ->whereNotNull('placed_at')
-            ->whereBetween('placed_at', [$this->from, $this->to])
-            ->where(fn (EloquentBuilder $query) => $query
-                ->where(fn (EloquentBuilder $query) => $query
-                    ->reportable()
-                    ->whereNull('meta->split_from_order_id'))
-                ->when($splitOriginalIds !== [], fn (EloquentBuilder $query) => $query
-                    ->orWhereIn('id', $splitOriginalIds)))
+        return $this->orders->placedQuery()
             ->toBase()
             ->select([
                 'meta->traffic_source->source as source',
@@ -399,14 +339,15 @@ class TrafficReportQuery
     }
 
     /**
-     * The period's visits, without those left out because of their orders.
+     * The period's confirmed visits, without those left out because of their orders.
      */
     protected function visitsQuery(): Builder
     {
         return TrafficVisit::query()
             ->toBase()
-            ->whereBetween('created_at', [$this->from, $this->to])
-            ->whereNotIn('id', $this->orderExclusions()['visit_ids']);
+            ->whereNotNull('confirmed_at')
+            ->whereBetween('created_at', [$this->period->from(), $this->period->to()])
+            ->whereNotIn('id', $this->orders->excludedVisitIds());
     }
 
     /**
@@ -419,169 +360,6 @@ class TrafficReportQuery
             ->groupBy('landing_path')
             ->orderByDesc('visits')
             ->orderBy('landing_path');
-    }
-
-    /**
-     * Look up, once, the visits and carts left out because none of their
-     * orders counts, and the split originals that count.
-     *
-     * Every order is created after its cart and visit, so the orders with an
-     * excluded status created or placed from the period start cover every
-     * order of the period's carts and visits and every split original placed
-     * in the period. Their cart and visit ids are candidates, except those of
-     * split originals that count. A candidate stays out unless another order
-     * that counts has the same `cart_id` or `meta.traffic_source.visit_id`;
-     * split new orders carry their original's visit id.
-     *
-     * @return array{visit_ids: list<int>, cart_ids: list<int>, split_original_ids: list<int>}
-     */
-    protected function orderExclusions(): array
-    {
-        if ($this->orderExclusions !== null) {
-            return $this->orderExclusions;
-        }
-
-        $excludedOrders = Order::query()
-            ->whereNot(fn (EloquentBuilder $query) => $query->reportable())
-            ->where(fn (EloquentBuilder $query) => $query
-                ->where('created_at', '>=', $this->from)
-                ->orWhere('placed_at', '>=', $this->from))
-            ->get(['id', 'cart_id', 'status', 'meta']);
-
-        $splitOriginalIds = $this->countingSplitOriginalIds($excludedOrders);
-
-        [$countingOrders, $notCountingOrders] = $excludedOrders
-            ->partition(fn (Order $order): bool => in_array((int) $order->id, $splitOriginalIds, true));
-
-        $candidateCartIds = $this->ids($notCountingOrders->pluck('cart_id'))
-            ->diff($this->ids($countingOrders->pluck('cart_id')))
-            ->values()
-            ->all();
-
-        $candidateVisitIds = $this->ids($notCountingOrders->map(fn (Order $order): mixed => $this->visitIdOf($order)))
-            ->diff($this->ids($countingOrders->map(fn (Order $order): mixed => $this->visitIdOf($order))))
-            ->values()
-            ->all();
-
-        $keptCartIds = $candidateCartIds === [] ? [] : $this->ids(
-            Order::reportable()
-                ->whereIn('cart_id', $candidateCartIds)
-                ->distinct()
-                ->pluck('cart_id')
-        )->all();
-
-        $keptVisitIds = $candidateVisitIds === [] ? [] : $this->ids(
-            Order::reportable()
-                ->whereIn('meta->traffic_source->visit_id', $candidateVisitIds)
-                ->toBase()
-                ->select('meta->traffic_source->visit_id as visit_id')
-                ->distinct()
-                ->pluck('visit_id')
-        )->all();
-
-        return $this->orderExclusions = [
-            'visit_ids' => array_values(array_diff($candidateVisitIds, $keptVisitIds)),
-            'cart_ids' => array_values(array_diff($candidateCartIds, $keptCartIds)),
-            'split_original_ids' => $splitOriginalIds,
-        ];
-    }
-
-    /**
-     * Ids of the split originals among the given orders that count.
-     *
-     * An original is a `split` order not split from another order. It counts
-     * when one of its new orders counts, or is itself split and has a new
-     * order that counts, and so on. One query per split level.
-     *
-     * @param  Collection<int, Order>  $orders
-     * @return list<int>
-     */
-    protected function countingSplitOriginalIds(Collection $orders): array
-    {
-        /** @var array<int, int> $pending new order id => original id */
-        $pending = [];
-
-        foreach ($orders as $order) {
-            if ($order->status !== self::SPLIT_STATUS || data_get($order->meta, 'split_from_order_id') !== null) {
-                continue;
-            }
-
-            foreach ($this->splitIntoOrderIdsOf($order) as $newOrderId) {
-                $pending[$newOrderId] = (int) $order->id;
-            }
-        }
-
-        /** @var array<int, int> $counting */
-        $counting = [];
-        $seen = [];
-
-        while ($pending !== []) {
-            $seen += $pending;
-            $next = [];
-
-            $newOrders = Order::query()
-                ->whereIn('id', array_keys($pending))
-                ->where(fn (EloquentBuilder $query) => $query
-                    ->reportable()
-                    ->orWhere('status', self::SPLIT_STATUS))
-                ->get(['id', 'status', 'meta']);
-
-            foreach ($newOrders as $newOrder) {
-                $originalId = $pending[(int) $newOrder->id];
-
-                if ($newOrder->status !== self::SPLIT_STATUS) {
-                    $counting[$originalId] = $originalId;
-
-                    continue;
-                }
-
-                foreach ($this->splitIntoOrderIdsOf($newOrder) as $newOrderId) {
-                    if (! isset($seen[$newOrderId])) {
-                        $next[$newOrderId] = $originalId;
-                    }
-                }
-            }
-
-            $pending = array_filter($next, fn (int $originalId): bool => ! isset($counting[$originalId]));
-        }
-
-        return array_values($counting);
-    }
-
-    /**
-     * The ids in an order's `meta.split_into_order_ids`.
-     *
-     * @return list<int>
-     */
-    protected function splitIntoOrderIdsOf(Order $order): array
-    {
-        $ids = data_get($order->meta, 'split_into_order_ids');
-
-        return is_array($ids) ? $this->ids(collect($ids))->all() : [];
-    }
-
-    /**
-     * The visit id in an order's `meta.traffic_source`.
-     */
-    protected function visitIdOf(Order $order): mixed
-    {
-        return data_get($order->meta, 'traffic_source.visit_id');
-    }
-
-    /**
-     * Distinct positive integer ids from the given values.
-     *
-     * @param  Collection<array-key, mixed>  $values
-     * @return Collection<int, int>
-     */
-    protected function ids(Collection $values): Collection
-    {
-        return $values
-            ->toBase()
-            ->filter(fn (mixed $value): bool => is_numeric($value) && (int) $value > 0)
-            ->map(fn (mixed $value): int => (int) $value)
-            ->unique()
-            ->values();
     }
 
     /**

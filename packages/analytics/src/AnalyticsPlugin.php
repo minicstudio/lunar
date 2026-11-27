@@ -8,6 +8,7 @@ use Filament\Panel;
 use Lunar\Admin\Filament\Resources\OrderResource;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Analytics\Conversions\Filament\Pages\ConversionsPage;
 use Lunar\Analytics\Traffic\Filament\Extensions\ManageOrderExtension;
 use Lunar\Analytics\Traffic\Filament\Extensions\OrderResourceExtension;
 use Lunar\Analytics\Traffic\Filament\Pages\TrafficSourcesPage;
@@ -41,7 +42,11 @@ class AnalyticsPlugin implements Plugin
                 ->label(fn () => __('lunarpanel.analytics::plugin.navigation.group')),
         ])->pages([
             TrafficSourcesPage::class,
-        ])->widgets(TrafficSourcesPage::trafficWidgets());
+            ConversionsPage::class,
+        ])->widgets([
+            ...TrafficSourcesPage::trafficWidgets(),
+            ...ConversionsPage::conversionWidgets(),
+        ]);
 
         LunarPanel::extensions([
             OrderResource::class => OrderResourceExtension::class,

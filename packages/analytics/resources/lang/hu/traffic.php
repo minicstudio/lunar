@@ -6,11 +6,6 @@ return [
         'navigation_label' => 'Forgalmi források',
     ],
 
-    'filters' => [
-        'from' => 'Kezdete',
-        'to' => 'Vége',
-    ],
-
     'stats' => [
         'visits' => 'Látogatások',
         'carts' => 'Kosarak',
