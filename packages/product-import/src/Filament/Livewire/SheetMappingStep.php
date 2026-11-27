@@ -2,6 +2,7 @@
 
 namespace Lunar\ProductImport\Filament\Livewire;
 
+use Collator;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -437,7 +438,7 @@ class SheetMappingStep extends Component implements HasActions, HasSchemas
             'tabs' => $sheets->map(fn (ProductImportSheet $sheet): array => $this->tab($sheet, $activeSheet))->all(),
             'activeSheet' => $activeSheet,
             'columns' => $activeSheet && ! $activeSheet->skipped ? $this->columnRows($activeSheet, $productTypeId) : [],
-            'targets' => $registry->targets($productTypeId),
+            'targets' => $this->sortedTargets($productTypeId),
             'languages' => $registry->languageCodes(),
             'productOptions' => $registry->options(),
             'productTypes' => ProductType::query()->orderBy('name')->pluck('name', 'id')->all(),
@@ -452,6 +453,24 @@ class SheetMappingStep extends Component implements HasActions, HasSchemas
             'separators' => self::SEPARATORS,
             'busy' => $import->status->isBusy(),
         ]);
+    }
+
+    /**
+     * The targets of the target dropdown in the alphabetical order of their
+     * labels in the panel's language, so an accented label ("Înălțime
+     * variantă") sorts with its letter. The registry keeps its own order,
+     * which the AI prompt uses.
+     *
+     * @return list<TargetDefinition>
+     */
+    protected function sortedTargets(?int $productTypeId): array
+    {
+        $collator = new Collator(app()->getLocale());
+
+        return collect(app(TargetFieldRegistry::class)->targets($productTypeId))
+            ->sort(fn (TargetDefinition $first, TargetDefinition $second): int => (int) $collator->compare($first->label, $second->label))
+            ->values()
+            ->all();
     }
 
     /**
@@ -649,12 +668,23 @@ class SheetMappingStep extends Component implements HasActions, HasSchemas
         }
 
         return [
-            'product_type_id' => $mapping->productTypeId,
+            'product_type_id' => $mapping->productTypeId ?? $this->defaultProductTypeId(),
             'grouping' => $mapping->grouping->strategy->value,
             'weight_unit' => $mapping->weightUnit,
             'length_unit' => $mapping->lengthUnit,
             'columns' => $columns,
         ];
+    }
+
+    /**
+     * The product type a sheet without a mapping starts with, such as one
+     * whose analysis failed: the first one, as the AI analysis uses, so the
+     * target list offers its attributes (short description, SEO fields)
+     * before staff choose a type. It is stored with the first saved change.
+     */
+    protected function defaultProductTypeId(): ?int
+    {
+        return ProductType::query()->orderBy('id')->value('id');
     }
 
     /**

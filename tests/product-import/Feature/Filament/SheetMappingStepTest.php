@@ -4,8 +4,11 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 use Lunar\FieldTypes\Text;
+use Lunar\FieldTypes\TranslatedText;
+use Lunar\Models\Attribute;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
 use Lunar\Models\ProductType;
@@ -20,6 +23,7 @@ use Lunar\ProductImport\Enums\NewProductStatus;
 use Lunar\ProductImport\Enums\SheetAnalysisStatus;
 use Lunar\ProductImport\Filament\Livewire\SheetMappingStep;
 use Lunar\ProductImport\Filament\Resources\ProductImportResource\Pages\ViewProductImport;
+use Lunar\ProductImport\Jobs\StageImport;
 use Lunar\ProductImport\Models\ProductImport;
 use Lunar\ProductImport\Models\ProductImportProfile;
 use Lunar\ProductImport\Models\ProductImportSheet;
@@ -105,6 +109,47 @@ test('retrying the failed sheet enables continue', function () {
         ->assertActionEnabled('continue');
 
     expect($this->produse->fresh()->analysis_status)->toBe(SheetAnalysisStatus::Completed);
+});
+
+test('the failed sheet starts with the first product type and offers its attributes, and mapping it by hand enables continue', function () {
+    $summary = Attribute::factory()->create([
+        'handle' => 'short-description',
+        'attribute_type' => 'product',
+        'type' => TranslatedText::class,
+        'name' => ['en' => 'Short description'],
+    ]);
+    $this->productType->mappedAttributes()->attach($summary->id);
+    Queue::fake([StageImport::class]);
+
+    Livewire::test(SheetMappingStep::class, ['import' => $this->import])
+        ->call('selectSheet', $this->produse->id)
+        ->assertSee('The sheet "Produse" has no mapping yet.')
+        ->assertSet("sheets.{$this->produse->id}.product_type_id", $this->productType->id)
+        ->assertSee('Short description')
+        ->set("sheets.{$this->produse->id}.columns.0.target", 'variant.sku')
+        ->set("sheets.{$this->produse->id}.columns.1.target", 'product.name')
+        ->assertActionEnabled('continue')
+        ->callAction('continue');
+
+    expect($this->import->fresh()->status)->toBe(ImportStatus::Staging)
+        ->and($this->produse->fresh()->sheetMapping()->productTypeId)->toBe($this->productType->id)
+        ->and($this->produse->fresh()->sheetMapping()->column(1)->target)->toBe('product.name');
+    Queue::assertPushed(StageImport::class);
+});
+
+test('the target list is in the alphabetical order of its labels in the panel language', function () {
+    app()->setLocale('ro');
+
+    $labels = collect(Livewire::test(SheetMappingStep::class, ['import' => $this->import])
+        ->call('selectSheet', $this->outlet->id)
+        ->viewData('targets'))
+        ->pluck('label')
+        ->all();
+
+    expect($labels[0])->toBe('Brand')
+        ->and(array_search('Categorie', $labels))->toBeLessThan(array_search('Nume produs', $labels))
+        ->and(array_search('Nume produs', $labels))->toBeLessThan(array_search('SKU variantă', $labels))
+        ->and(array_search('Înălțime variantă', $labels))->toBeLessThan(array_search('Lungime variantă', $labels));
 });
 
 test('applying the offered profile fills the mapping', function () {

@@ -9,11 +9,13 @@ use Lunar\Models\Language;
 use Lunar\Models\ProductType;
 use Lunar\ProductImport\Actions\ContinueToStaging;
 use Lunar\ProductImport\Actions\RetrySheetAnalysis;
+use Lunar\ProductImport\Actions\SaveSheetMapping;
 use Lunar\ProductImport\Actions\SkipSheet;
 use Lunar\ProductImport\Analysis\AnalysisCoordinator;
 use Lunar\ProductImport\Analysis\ColumnMappingAgent;
 use Lunar\ProductImport\Data\ColumnMapping;
 use Lunar\ProductImport\Data\ImportOptions;
+use Lunar\ProductImport\Data\SheetMapping;
 use Lunar\ProductImport\Enums\ImportStatus;
 use Lunar\ProductImport\Enums\NewProductStatus;
 use Lunar\ProductImport\Enums\SheetAnalysisStatus;
@@ -63,7 +65,7 @@ test('continuing is refused while a sheet failed and allowed after a retry', fun
     expect($this->import->fresh()->status)->toBe(ImportStatus::AnalysisFailed);
 
     expect(fn () => app(ContinueToStaging::class)->handle($this->import->fresh()))
-        ->toThrow(ImportActionRefused::class, 'The sheet "Produse" has no AI proposal or applied profile yet.');
+        ->toThrow(ImportActionRefused::class, 'The sheet "Produse" has no mapping yet.');
 
     $failProduse = false;
     app(RetrySheetAnalysis::class)->handle($this->produse->fresh());
@@ -89,6 +91,36 @@ test('skipping the failed sheet allows continuing', function () {
     app(ContinueToStaging::class)->handle($this->import->fresh());
 
     expect($this->import->fresh()->status)->toBe(ImportStatus::Staging);
+});
+
+test('a failed sheet that staff map by hand allows continuing', function () {
+    ColumnMappingAgent::fake(function (string $prompt) {
+        if (str_contains($prompt, '"sheet":"Produse"')) {
+            throw new InvalidApiKeyException('openai', new Response(new Psr7Response(401)));
+        }
+
+        return sheetAnswer();
+    });
+
+    app(AnalysisCoordinator::class)->startForImport($this->import);
+
+    expect($this->import->fresh()->status)->toBe(ImportStatus::AnalysisFailed);
+
+    app(SaveSheetMapping::class)->handle($this->produse->fresh(), new SheetMapping(
+        productTypeId: ProductType::query()->value('id'),
+        columns: [
+            new ColumnMapping(0, 'Cod', 'variant.sku'),
+            new ColumnMapping(1, 'Denumire', 'product.name', 'ro'),
+            new ColumnMapping(2, 'Pret'),
+        ],
+    ));
+
+    app(ContinueToStaging::class)->handle($this->import->fresh());
+
+    expect($this->import->fresh()->status)->toBe(ImportStatus::Staging)
+        ->and($this->produse->fresh()->analysis_status)->toBe(SheetAnalysisStatus::Failed)
+        ->and($this->produse->fresh()->sheetMapping()->column(0)->target)->toBe('variant.sku');
+    Queue::assertPushed(StageImport::class, fn (StageImport $job) => $job->importId === $this->import->id);
 });
 
 test('an invalid mapping blocks continuing', function () {

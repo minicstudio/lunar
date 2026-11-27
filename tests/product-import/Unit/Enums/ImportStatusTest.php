@@ -12,7 +12,7 @@ function importStatusTransitions(): array
     return [
         'uploaded' => [ImportStatus::Analyzing, ImportStatus::AwaitingMapping, ImportStatus::Failed, ImportStatus::Cancelled],
         'analyzing' => [ImportStatus::AwaitingMapping, ImportStatus::AnalysisFailed, ImportStatus::Cancelled],
-        'analysis_failed' => [ImportStatus::Analyzing, ImportStatus::AwaitingMapping, ImportStatus::Cancelled],
+        'analysis_failed' => [ImportStatus::Analyzing, ImportStatus::AwaitingMapping, ImportStatus::Staging, ImportStatus::Cancelled],
         'awaiting_mapping' => [ImportStatus::Analyzing, ImportStatus::AnalysisFailed, ImportStatus::Staging, ImportStatus::Cancelled],
         'staging' => [ImportStatus::ReviewingValues, ImportStatus::PreviewReady, ImportStatus::AwaitingMapping, ImportStatus::Cancelled],
         'reviewing_values' => [ImportStatus::AwaitingMapping, ImportStatus::PreviewReady, ImportStatus::Cancelled],

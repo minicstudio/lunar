@@ -330,7 +330,7 @@
                         <x-filament::input.select
                           wire:model.live="sheets.{{ $activeSheet->id }}.columns.{{ $column['index'] }}.values.{{ $position }}.meaning"
                           :disabled="$busy">
-                          <option value="">{{ __('lunarpanel.product-import::ui.mapping.meaning') }}</option>
+                          <option value="">{{ __('lunarpanel.product-import::ui.mapping.meaning_placeholder') }}</option>
                           @foreach ($column['meanings'] as $meaning)
                           <option value="{{ $meaning }}">{{ __('lunarpanel.product-import::ui.mapping.meanings.' . $meaning) }}</option>
                           @endforeach

@@ -138,7 +138,7 @@ return [
         'pair' => 'Număr pereche',
         'code_meanings' => 'Semnificația codurilor',
         'code' => 'Cod',
-        'meaning' => 'Semnificație',
+        'meaning_placeholder' => 'Alege o semnificație',
         'add_code' => 'Adaugă cod',
         'remove' => 'Elimină',
         'meanings' => [
